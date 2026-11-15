@@ -52,7 +52,7 @@ export class Astronaut {
     } };
     this.tools.L.stir.children[1].rotation.x = Math.PI / 2; this.hot = hot; this.tool = null;
     for (const t of Object.values(this.tools.R)) this.arms[1].add(t); for (const t of Object.values(this.tools.L)) this.arms[0].add(t);
-    this.lamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.5, 0.7, 1); this.lamp.position.set(0, 1.9, 0.3); this.lamp.target.position.set(0, 0.4, 14); g.add(this.lamp, this.lamp.target);
+    this.lamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.5, 0.7, 1); this.lamp.visible = false; this.lamp.position.set(0, 1.9, 0.3); this.lamp.target.position.set(0, 0.4, 14); g.add(this.lamp, this.lamp.target);
     this.phase = 0;
   }
   // Suit on: helmet, visor, backpack. Suit off (indoors): blue jumpsuit, bare hands, cartoon head with a cap.

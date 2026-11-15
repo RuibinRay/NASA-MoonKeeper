@@ -108,7 +108,7 @@ Training can be skipped from the title screen.
 5. **Fetch what you lack.** Other stations have materials and people. The Polar Ice Mine has water.
 6. **Give jobs away.** Robots cost electricity, rescued astronauts cost food.
 
-A settings screen offers a guide mode: REGO highlights the choice it would make and draws a path on the floor.
+A settings screen offers a guide mode: REGO highlights the choice it would make and draws a path on the floor. It also sets the graphics detail (Auto, High, Medium or Low) and can show a frame-rate counter.
 
 ## Features
 
