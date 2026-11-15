@@ -250,6 +250,7 @@ function fpsTick(now) {
 }
 world.setQuality(G.qLevel()); G._fpsTick = fpsTick;   // test hook
 G.setGuide = (on) => { G.guide = !!on; world.guideOn = G.guide; try { localStorage.setItem('mk-guide', G.guide ? '1' : '0'); } catch (e) {} };
+G.audio.music = stored('mk-music', '1') === '1'; G.setMusic = (on) => { G.audio.setMusic(on); store('mk-music', on ? '1' : '0'); };
 G.setSound = (on) => { if (G.audio.on !== !!on) G.audio.toggle(); $('#b-sound').innerHTML = G.audio.on ? IC.sound : IC.mute; };
 $('#goal-x').onclick = () => { G.goal = null; world.setTarget(null); ui.objective(null); $('#goal-x').classList.add('hidden'); G.audio?.play('click'); };
 $('#b-set').innerHTML = IC.gear; $('#b-set').onclick = () => !ui.busy && ui.settings(); $('#btn-settings').onclick = () => ui.settings();
@@ -360,7 +361,7 @@ function placeVehicles(dt) {
       if (G.state === 'play' && S[k2].charge > 0 && S[k2].charge < need * 1.25 + 0.04) G.warn('cold-' + k2, `<b>Time to go!</b> The cold has drained the ${name} to <b>${Math.round(S[k2].charge * 100)}%</b>. That is only just enough to get home. Take what you have and leave now.`, 'alert', 45000); } }
   // --- the hopper on its legs. Like the rover's springs, this is for the eye only: it never changes where the hopper goes.
   const H = s.dyn || (s.dyn = { dy: 0, dv: 0, roll: 0, thr: 0, dust: 0, hud: 0 }), flying = P.in === 'ship'; if (!flying) { s.thr = 0; s.steer = 0; }
-  if (s.hit) { H.dv -= s.hit; if (P.zone === 'top') for (const [ex, ez] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) world.puff(s.x + ex * 2.3, s.z + ez * 1.8, 5, ex * 2.4, ez * 2.4, 0.7, 0.8); G.audio.play('blip'); s.hit = 0; }   // feet down: the body dips and dust jumps from each pad
+  if (s.hit) { H.dv -= s.hit; if (P.zone === 'top') for (const [ex, ez] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) world.puff(s.x + ex * 2.3, s.z + ez * 1.8, 5, ex * 2.4, ez * 2.4, 0.7, 0.8); G.audio.play('thud'); s.hit = 0; }   // feet down: the body dips and dust jumps from each pad
   H.dv += ((0 - H.dy) * 45 - H.dv * 5.5) * dt; H.dy = clamp(H.dy + H.dv * dt, -0.32, 0.12);   // soft and slow, as things settle in one-sixth gravity
   H.thr += ((s.thr || 0) - H.thr) * Math.min(1, dt * 6); H.roll += ((flying && s.alt > 0.3 ? -(s.steer || 0) * 0.16 : 0) - H.roll) * Math.min(1, dt * 3);
   sg.position.set(s.x, s.y, s.z); sg.rotation.set(clamp(-Math.hypot(s.vx, s.vz) * 0.01, -0.3, 0), s.yaw, H.roll, 'YXZ');
@@ -450,6 +451,10 @@ function frame(now, manual) {
   placeItems();
   world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook', sleeping: G.sleepLeft > 0, shipThrust: G.ship.dyn ? G.ship.dyn.thr : 0 });
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
+  // sound follows where you are: the station hums with its power, the helmet muffles the world, music darkens with danger
+  { const S = G.S; G._dgT = (G._dgT || 0) - dt; if (S && G._dgT <= 0) { G._dgT = 0.5; const st = S.storm, urgent = G.state === 'play' ? G.alerts().filter((a) => a.kind !== 'warn').length : 0;
+      G._danger = G.state !== 'play' ? 0 : clamp(urgent * 0.45 + (S.flow.eff < 1 ? 0.35 : 0) + (S.health < 50 ? 0.4 : 0) + (st && S.t >= st.start ? 0.5 : 0), 0, 1); }
+    G.audio.update(dt, { indoors: !!G.inside, suit: S ? !!S.suitOn : true, power: S ? S.flow.eff : 1, vehicle: P.in, speed: P.in === 'car' ? G.car.v : P.in === 'dig' ? G.dig.v : P.in === 'ship' ? Math.hypot(G.ship.vx, G.ship.vz) : Math.hypot(P.vel.x, P.vel.z), thrust: G.ship.dyn ? G.ship.dyn.thr : 0, digging: !!G.dig.dig, danger: G._danger || 0 }); }
   world.render();
   if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { G._sleepAlerts = G.alerts().filter((a) => a.kind !== 'warn').length; G._sleepBatt = G.S.battery; } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepBatt = undefined; }
 }
