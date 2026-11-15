@@ -259,7 +259,7 @@ const stickEl = $('#stick'), knob = stickEl.querySelector('i');
 const stickMove = (e) => { const r = stickEl.getBoundingClientRect(), x = (e.clientX - r.left - 59) / 59, y = (e.clientY - r.top - 59) / 59, l = Math.max(1, Math.hypot(x, y)); G.stick.x = x / l; G.stick.y = -y / l; knob.style.transform = `translate(${(x / l) * 34}px,${(y / l) * 34}px)`; };
 stickEl.onpointerdown = (e) => { stickEl.setPointerCapture(e.pointerId); stickMove(e); G.touch = true; }; stickEl.onpointermove = (e) => e.buttons && stickMove(e); stickEl.onpointerup = stickEl.onpointercancel = () => { G.stick.x = G.stick.y = 0; knob.style.transform = ''; };
 $('#t-use').onclick = () => G.doAction('e'); $('#t-alt').onclick = () => G.doAction('q'); const hold = (b, key) => { b.onpointerdown = () => (G.keys[key] = true); b.onpointerup = b.onpointerleave = () => (G.keys[key] = false); }; hold($('#t-jump'), ' '); hold($('#t-down'), 'c');
-if ('ontouchstart' in window) { $('#touch').classList.remove('hidden'); G.touch = true; }
+if ('ontouchstart' in window) { $('#touch').classList.remove('hidden'); G.touch = true; $('#dlg-next').textContent = 'Tap anywhere ▸'; }
 
 // ---------- per-frame updates ----------
 const tmp = new V3();

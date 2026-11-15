@@ -412,3 +412,30 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
 /* ---------- Space Guide: practice page ---------- */
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:10px}
 .pgrid .choice{font-size:13px;color:var(--mute)}.pgrid .choice b{color:var(--text);font-size:15.5px;margin-bottom:2px}
+
+/* ---------- phones, pass 2: nothing on top of anything else, every button within reach ---------- */
+#dlg-box{padding-bottom:26px}   /* room for "Click anywhere" under the last line */
+@media (max-height:480px) and (orientation:landscape){
+  #stick{bottom:16px}                                   /* below the alert list, not on it */
+  #touch button{width:60px;height:60px;right:18px}
+  #t-use{bottom:118px}#t-alt{bottom:52px}#t-jump{bottom:118px;right:84px!important}#t-down{bottom:52px;right:84px!important}   /* clear of the map above and the button bar below */
+  #prompt{top:auto;bottom:182px;right:12px;padding:4px 12px 4px 8px;white-space:normal;text-align:right;max-width:230px;line-height:1.25;font-size:13px}#objective{max-width:40vw;font-size:12px}   /* sits just above the E / Q buttons */
+  #toasts{right:160px;bottom:52px}
+  #minimap{height:64px}                                 /* a shorter map leaves room for the prompt above the buttons */
+}
+@media (max-width:600px) and (orientation:portrait){
+  #top{flex-wrap:wrap;gap:6px;padding:8px}
+  #clock{order:1;flex:1 1 0;min-width:0}#clock-main{flex-wrap:wrap;gap:2px 8px}#clock-sub{flex-direction:column;gap:1px}
+  #side{order:2;width:88px}#minimap{width:88px;height:72px}#you,#suit{width:88px;padding:3px 6px;font-size:11px}
+  #gauges{order:3;flex:0 0 100%;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .gauge{max-width:none;padding:4px 5px}.gauge .g-top{font-size:10.5px;gap:2px}.gauge .g-top b{font-size:11.5px}.gauge .g-top .ic{width:13px;height:13px}
+  #objective{left:8px;right:8px;top:248px;max-width:none;transform:none;font-size:12.5px}
+  #goal-x{top:300px;right:8px}
+  #hud #alerts{top:300px;max-width:58vw;gap:3px}#alerts .alert{padding:3px 8px;font-size:12px}#alerts .alert small{display:none}#alerts .alert:nth-child(n+3){display:none}
+  #btns{left:8px;right:8px;gap:3px}#btns button{flex:1 1 0;min-width:0;padding:6px 0}
+  #stick{bottom:132px}#t-use{bottom:192px}#t-alt{bottom:266px}#t-jump{bottom:192px}#t-down{bottom:118px}
+  #rego{max-width:94vw;left:3vw;bottom:342px}#rego-text{font-size:12.5px;line-height:1.35}
+  #prompt{left:50%;bottom:54px;transform:translateX(-50%);max-width:94vw;width:max-content;font-size:13.5px;padding:6px 14px 6px 9px;animation:none}
+  #toasts{bottom:420px;max-width:60vw}
+  #job{bottom:330px}
+}
