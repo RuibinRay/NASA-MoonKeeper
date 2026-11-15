@@ -1,4 +1,4 @@
-// MOONKEEPER 2 — the 3D world: a wide lunar surface (base, solar field, other stations) and the red-walled station inside the lava tube.
+// MOONKEEPER 2 — the 3D world: a wide lunar surface (base, solar field, other stations) and the white-panelled station inside the lava tube.
 import * as THREE from '../lib/three.module.min.js';
 import { K, STATIONS, SITES, PIT, TUBE, HALL, AIRLOCK, BASE, MINE, ROOMS, ROOM_H, MOUNTS, CAR_PAD, SHIP_PAD, BENCH, FAB, FAB_OUT, roomRect, roomSpot, doorSpot } from './config.js';
 
@@ -89,7 +89,7 @@ export class World {
       warm: glow(0xffc27a, 2.2), cyan: glow(0x49e6ff, 2.2), amber: glow(0xffa424, 2.5), redG: glow(0xff3b30, 2.5), greenG: glow(0x4dff88, 2.2), pink: glow(0xff4fd8, 1.6), whiteG: glow(0xffffff, 1.6),
     };
     this.M.door = std({ color: 0xff7a1a, roughness: 0.6 }); this.wallTint = new THREE.Color(0xffffff);
-    swap(this.M.wall, ['assets/tex/wall3.jpg', 'assets/tex/wall.jpg'], 0, (t, i) => { if (i) return; this.wallTint.set(0xd4463a); this.M.wall.color.copy(this.wallTint); for (const R of Object.values(this.rooms || {})) { R.wall.map = t; R.wall.needsUpdate = true; } });
+    swap(this.M.wall, ['assets/tex/wall3.jpg', 'assets/tex/wall.jpg'], 0, (t, i) => { if (i) return; this.wallTint.set(0xf3f0ea); this.M.wall.color.copy(this.wallTint); for (const R of Object.values(this.rooms || {})) { R.wall.map = t; R.wall.needsUpdate = true; } });
     swap(this.M.floor, ['assets/tex/floor3.jpg', 'assets/tex/floor.jpg']); swap(this.M.ceil, 'assets/tex/ceil3.jpg', 0, () => this.M.ceil.color.set(0xffffff));
     swap(this.M.door, 'assets/tex/door3.jpg', 0, (t) => { t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; this.M.door.color.set(0xffffff); this.M.door.roughness = 0.5; this.M.door.metalness = 0.25; }); swap(this.M.rego, 'assets/tex/rego.jpg', 170);
     this.panelClean = new THREE.Color(0xffffff); this.panelDusty = new THREE.Color(0x9a9690);
@@ -437,7 +437,7 @@ export class World {
     this.deepHemi = new THREE.HemisphereLight(0xfff4ec, 0x8a7f78, 1.5); D.add(this.deepHemi); this.skyBounce = new THREE.PointLight(0xfff0d8, 0, 110, 1.3); this.skyBounce.position.set(skyX + 3, 7, -2); D.add(this.skyBounce);
   }
 
-  // ---------- the station: red-walled rooms joined to one hall by bulkhead doors ----------
+  // ---------- the station: white-panelled rooms joined to one hall by bulkhead doors ----------
   _station() {
     const D = this.deep, M = this.M, DH = 4.2; this.rooms = {}; this.doorSigns = {}; this.floorGlow = glow(0x49e6ff, 2.2); this.spinners = []; this.bubbles = []; this.blinkers = [];
     // Walls are drawn on the inside only, so the camera can sit outside a room and still see in.

@@ -54,7 +54,7 @@ js/life.js            crops, plant health, plant food, Water Plant, experiment, 
 js/lifeui.js          farm, Water Plant, life-support loop, research and experiment screens
 docs/GAME_OVERVIEW.md  what the game is, what it teaches, how to play, the data behind it, test results, what to improve
 docs/ROADMAP.md       what is built, what comes next, and which real data each plan uses
-js/world.js           3D world (surface base, other stations, the cave, the red-walled station, vehicles)
+js/world.js           3D world (surface base, other stations, the cave, the white-panelled station, vehicles)
 js/actors.js          astronaut, REGO, BOLT robots
 js/ui.js, icons.js    interface and hand-drawn icons
 js/minigames.js       dish aiming, air-filter build, fire fighting
