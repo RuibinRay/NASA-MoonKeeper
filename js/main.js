@@ -25,6 +25,7 @@ const G = (window.G = {
 });
 G.audio = new Sound(); G.world = new World(canvas); G.ui = new UI(G);
 G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.astro.lamp.visible = true; G.world.scene.add(G.astro.group, G.rego.group);
+G.lampMounts = [G.astro, G.rego].map((a) => { const m = new THREE.Group(); m.add(a.lamp, a.lamp.target); G.world.scene.add(m); return [m, a.group]; });   // lamps outside the bodies: hiding a body must not change the light count
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
 G.dig = { x: MINE.x - 10, z: MINE.z + 9, yaw: 2.3, v: 0, load: 0, prog: 0, boom: 0, dig: 0, dry: 0 };   // the digger at the Polar Ice Mine
 const groundY = (zone, x, z) => (zone === 'top' ? world.heightAt(x, z) : TUBE.y);
@@ -389,7 +390,7 @@ function updateRego(dt) {
   R.y = groundY(P.zone, R.x, R.z); g.position.copy(R);
   const want = sp > 0.8 ? Math.atan2(dx, dz) : js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z); let dy = want - g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); g.rotation.y += dy * Math.min(1, dt * 6);
   let look = (js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z)) - g.rotation.y; look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -1.1, 1.1); G.rego.update(dt, sp, look);
-  const dark = P.zone === 'deep' ? !G.inside || (G.S && G.S.flow.eff < 1) : G.inCrater || (G.S && !G.S.flow.sun.up); G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = (dark || js) && !P.in ? (js ? 9 : 5) : 0;   // REGO lights the work
+  const dark = P.zone === 'deep' ? !G.inside || (G.S && G.S.flow.eff < 1) : G.inCrater || (G.S && !G.S.flow.sun.up); for (const [m, g] of G.lampMounts) { m.position.copy(g.position); m.quaternion.copy(g.quaternion); } G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = (dark || js) && !P.in ? (js ? 9 : 5) : 0;   // REGO lights the work
 }
 function updateCamera(dt) {
   const c = world.camera; G.shake *= Math.pow(0.25, dt); const veh = P.in === 'car' ? 5 : P.in === 'ship' ? 8 : P.in === 'dig' ? 7 : 0;
@@ -459,6 +460,7 @@ function frame(now, manual) {
   if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { G._sleepAlerts = G.alerts().filter((a) => a.kind !== 'warn').length; G._sleepBatt = G.S.battery; } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepBatt = undefined; }
 }
 requestAnimationFrame(frame);
+setTimeout(() => world.warm(), 400);   // build the shaders while the title screen is up
 G.frame = (now) => frame(now, true);   // test hook: step the loop by hand
 
 // ---------- saving ----------

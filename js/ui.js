@@ -133,7 +133,8 @@ export class UI {
       const show = () => {
         const L = lines[i], w = WHO[L.who] || WHO.rego; $('#dlg-img').src = `assets/img/${w.img}.jpg`; $('#dlg-name').textContent = w.name; full = gloss(L.text); text.innerHTML = ''; box.dataset.who = WHO[L.who] ? L.who : 'rego'; this._faceSpeaker(L.who);
         if (L.who === 'rego') { this.G.rego?.setMood(L.mood || 'happy'); this.G.audio?.play('chirp'); }
-        const type = () => { let n = 0; typing = setInterval(() => { n += 3; text.innerHTML = full.slice(0, n).replace(/<[^>]*$/, ''); if (n >= full.length) { clearInterval(typing); typing = null; text.innerHTML = full; } }, 16); };
+        const type = () => { const cuts = []; for (let i = 0, tag = false; i < full.length; i++) { if (full[i] === '<') tag = true; if (!tag) cuts.push(i + 1); if (full[i] === '>') tag = false; }   // count letters you can see, so the line never seems to stall on a hidden tag
+          let n = 0; typing = setInterval(() => { n += 3; if (n >= cuts.length) { clearInterval(typing); typing = null; text.innerHTML = full; } else text.innerHTML = full.slice(0, cuts[n]); }, 16); };
         if (w.delay) { delay.classList.remove('hidden'); const bar = delay.querySelector('i'); bar.style.transition = 'none'; bar.style.width = '0'; requestAnimationFrame(() => { bar.style.transition = `width ${K.LIGHT_DELAY_S}s linear`; bar.style.width = '100%'; }); typing = 1; setTimeout(() => { delay.classList.add('hidden'); this.G.audio?.play('radio'); type(); }, K.LIGHT_DELAY_S * 1000); }
         else { delay.classList.add('hidden'); type(); }
       };

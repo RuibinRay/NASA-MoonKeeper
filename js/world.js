@@ -359,7 +359,7 @@ export class World {
     const stick = this.digStick = new THREE.Group(); stick.position.set(0, 0, 3.4); boom.add(stick); this.put(stick, this.box(0.28, 0.28, 2.3, M.yellow), 0, 0, 1.15); this.put(stick, this.cyl(0.07, 0.07, 1.6, M.metal, 6), 0, 0.3, 0.2, Math.PI / 2);
     const bk = this.digBucket = new THREE.Group(); bk.position.set(0, 0, 2.3); stick.add(bk); this.put(bk, this.box(1.3, 0.14, 1.0, M.grey), 0, -0.45, 0.2); this.put(bk, this.box(1.3, 0.9, 0.14, M.grey), 0, -0.05, -0.3); for (const sx of [-0.65, 0.65]) this.put(bk, this.box(0.1, 0.9, 1.0, M.grey), sx, -0.05, 0.2); for (let i = -2; i <= 2; i++) this.put(bk, this.box(0.14, 0.1, 0.3, M.metal), i * 0.28, -0.45, 0.8);
     this.digLoad = this.put(bk, this.box(1.1, 0.5, 0.8, frost), 0, -0.1, 0.2); this.digLoad.visible = false;
-    this.digLamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.6, 0.6, 1); this.digLamp.visible = false; this.digLamp.position.set(0, 3.3, 1); this.digLamp.target.position.set(0, 0, 9); d.add(this.digLamp, this.digLamp.target);
+    this.digLamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.6, 0.6, 1); this.digLamp.position.set(0, 3.3, 1); this.digLamp.target.position.set(0, 0, 9); d.add(this.digLamp, this.digLamp.target);
   }
 
   // Other countries' stations: a cracked dome, a leaning mast with a coloured beacon you can see from far away.
@@ -761,6 +761,23 @@ export class World {
   stationPos(id) { const s = STATIONS.find((q) => q.id === id) || (() => { const t = SITES.find((q) => q.id === id); return { zone: 'top', pos: [t.pos[0] + 2, t.pos[1] + 16] }; })(); return this.at(s.zone, s.pos[0], s.pos[1]); }
   // Where the orange guide beam stands: { zone, x, z, id }
   setTarget(t) { this.target = t; if (!t) { this.beacon.visible = false; return; } const p = this.at(t.zone, t.x, t.z); this.beacon.position.set(p.x, p.y + 30, p.z); }
+  // Builds the shaders for both zones, by day and by night, and uploads every texture, so the first elevator ride,
+  // the first nightfall and the first look around cost nothing in play. Runs once, in the background.
+  warm() {
+    if (this._warm) return this._warm;
+    const R = this.renderer, wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const state = (zone, night) => { const z0 = this.zone, sh = this.sunLight.castShadow, vis = this.lampPool.map((q) => q.l.visible), cv = this.car.visible, sv = this.ship.visible, dv = this.dig.visible;
+      this.setZone(zone); this.car.visible = this.ship.visible = this.dig.visible = zone === 'top'; this.sunLight.castShadow = zone === 'top' && !night && (!this.Q || this.Q.shadow > 0); for (const q of this.lampPool) q.l.visible = zone === 'top' && night;
+      let p; try { p = R.compileAsync ? R.compileAsync(this.scene, this.camera) : (R.compile(this.scene, this.camera), null); } catch (e) { p = null; }
+      this.setZone(z0); this.sunLight.castShadow = sh; this.lampPool.forEach((q, i) => (q.l.visible = vis[i])); this.car.visible = cv; this.ship.visible = sv; this.dig.visible = dv; return p; };
+    return (this._warm = (async () => {
+      const t0 = performance.now(), seen = new Set();
+      for (const [zone, night] of [['top', false], ['deep', false], ['top', true]]) { try { await state(zone, night); } catch (e) {} await wait(30); }
+      for (const root of [this.top, this.deep, this.scene]) root.traverse((o) => { if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) for (const k of ['map', 'normalMap', 'roughnessMap', 'emissiveMap', 'alphaMap', 'bumpMap']) if (m[k] && m[k].image) seen.add(m[k]); });
+      let n = 0; for (const tx of seen) { try { R.initTexture(tx); } catch (e) {} if (++n % 4 === 0) await wait(0); }
+      this.warmMs = Math.round(performance.now() - t0); return this.warmMs;
+    })());
+  }
   setZone(z) { this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; const show = z === 'top' ? this.top : this.deep, hide = z === 'top' ? this.deep : this.top; if (hide.parent) this.scene.remove(hide); if (!show.parent) this.scene.add(show); this.earth.visible = this.sunSprite.visible = z === 'top'; }
   // Press one tyre print into the dust at (x, z), pointing along yaw.
   track(x, z, yaw) { const m = (this._tm || (this._tm = new THREE.Matrix4())).makeRotationY(yaw); m.setPosition(x, this.heightAt(x, z) + 0.045, z); this.tracks.setMatrixAt(this.trackI++ % 900, m); this.tracks.instanceMatrix.needsUpdate = true; }
@@ -868,10 +885,10 @@ export class World {
       const digging = (b && b.mode === 'ilm') || (S.flow.use.isru > 0); this.digT = (this.digT || 0) + (digging ? dt : 0); this.digger.rotation.y = -0.7 + Math.sin(this.digT * 0.6) * 0.7; this.digger.position.y = Math.abs(Math.sin(this.digT * 1.2)) * 0.05;
     }
     if (S && S.mine && topZ) {   // the mine: floodlights always on (this floor has no day), patches fade as they are dug out, canisters fill
-      const near = ctx.player && Math.hypot(ctx.player.x - MINE.x, ctx.player.z - MINE.z) < MINE.r * 2.2; for (const l of this.mineLights) { l.intensity = near ? 260 : 0; l.visible = !!near; }
+      const near = ctx.player && Math.hypot(ctx.player.x - MINE.x, ctx.player.z - MINE.z) < MINE.r * 2.2; for (const l of this.mineLights) l.intensity = near ? 260 : 0;
       this.iceM.emissiveIntensity = 0.75 + 0.25 * Math.sin(t * 2.2); S.mine.patches.forEach((p, i) => { const g = this.minePatches[i]; g.visible = p.left > 0; if (g.visible) g.scale.setScalar(0.55 + 0.45 * Math.min(1, p.left / 6)); });
       this.mineFill.visible = S.mine.hopper > 0; this.mineLed.material.emissive.setHex(S.mine.hopper > 0 ? 0xffa424 : 0x4dff88); this.mineBeam.material.opacity = 0.11 + 0.05 * Math.sin(t * 2);
-      this.digLamp.intensity = ctx.digOn ? 60 : 0; this.digLamp.visible = !!ctx.digOn;
+      this.digLamp.intensity = ctx.digOn ? 60 : 0;
       const cp = this.mineCable.geometry.attributes.position; cp.setXYZ(0, this.mineMast.x, this.mineMast.y, this.mineMast.z); cp.setXYZ(1, this.dig.position.x, this.dig.position.y + 2.6, this.dig.position.z); cp.needsUpdate = true;
     }
     this.dig.visible = topZ;
@@ -880,7 +897,7 @@ export class World {
       for (const p of this.pads) { const v = S[p.k], on = v.charging; p.ring.material.emissive.setHex(on ? 0x49e6ff : 0x2a5560); p.ring.material.emissiveIntensity = on ? 2 + Math.sin(t * 6) : 1; p.led.material.emissive.setHex(v.charge > 0.5 ? 0x4dff88 : v.charge > 0.2 ? 0xffa424 : 0xff3b30); }
       this.carLed.material.emissive.setHex(S.car.charge > 0.5 ? 0x4dff88 : S.car.charge > 0.2 ? 0xffa424 : 0xff3b30); this.shipLed.material.emissive.setHex(S.ship.charge > 0.5 ? 0x4dff88 : S.ship.charge > 0.2 ? 0xffa424 : 0xff3b30);
     }
-    this.car.visible = this.ship.visible = topZ; this.carLamp.intensity = ctx.carOn && night ? 40 : 0; this.shipLamp.intensity = ctx.shipOn && night ? 50 : 0; this.carLamp.visible = this.carLamp.intensity > 0; this.shipLamp.visible = this.shipLamp.intensity > 0;
+    this.car.visible = this.ship.visible = topZ; this.carLamp.intensity = ctx.carOn && night ? 40 : 0; this.shipLamp.intensity = ctx.shipOn && night ? 50 : 0;
     { const th = ctx.shipThrust || 0; for (const j of this.shipJets) { j.material.opacity = th > 0.03 ? Math.min(0.95, 0.3 + 0.5 * th + Math.random() * 0.15) : 0; j.scale.y = 0.45 + 1.5 * th + Math.random() * 0.25; j.scale.x = j.scale.z = 0.8 + 0.35 * th; } }   // longer and brighter with more thrust
     for (const s of SITES) { const o = this.sites[s.id], done = S && S.rescued.includes(s.id); o.beam.material.opacity = (done ? 0.05 : 0.14) + 0.05 * Math.sin(t * 2); o.b.material.emissiveIntensity = 1.5 + Math.sin(t * 4) * 1.2; }
     // ---- the station
