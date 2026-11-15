@@ -14,6 +14,7 @@ const FACTS = [
   'Air pressure is why we need walls. Outside there is no air at all, so the air inside pushes out through any hole.',
   'A message to Earth takes 1.3 seconds. On Mars it would take 4 to 24 minutes. Imagine waiting that long for an answer!',
   'Hens can eat dried grass, seeds and plant scraps. People cannot — our tummies are built differently.',
+  'Why is there no glowing beam under the skylight? You can only see a light beam when air or dust scatters it. The cave has no air, so sunlight just makes a bright patch on the floor.',
   'A spacesuit is a tiny spaceship shaped like a person: it holds air, keeps you warm and blocks the Sun. Indoors you do not need it — astronauts on the Space Station work in T-shirts.',
   'Fish and plants help each other: fish poo feeds the plants, and the plants clean the water. It is called aquaponics.',
 ];
@@ -95,7 +96,7 @@ export function installActions(G) {
     else if (door) c.e = { label: s.rooms[door.id].door ? `Lock the ${door.name} door` : `Unlock the ${door.name} door`, run: () => G.toggleDoor(door.id) };
     else if (st && st.id === 'suit') c.e = suitAct();
     else if (lift) c.e = { label: st.id === 'gate' ? 'Ride the elevator down into the cave' : 'Ride the elevator up to the surface', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
-    else if (st && G.state === 'play') c.e = { label: st.name, run: () => G.openStation(st) };
+    else if (st && G.state === 'play') c.e = { label: st.info ? `Look at the ${st.name}` : st.name, run: () => G.openStation(st) };
     if (veh && G[veh].cargo.length) { const last = G[veh].cargo[G[veh].cargo.length - 1]; c.q = { label: `Take the ${ITEMS[last.type].name} out (${G[veh].cargo.length} on board)`, run: () => G.take(last) }; }
     return c;
   };
@@ -107,6 +108,7 @@ export function installActions(G) {
     const s = G.S, F = computeFlows(s), f = s.f, id = st.id;
     if (st.site) return sitePanel(st.site);
     if (st.room) return roomPanel(id);
+    if (st.info) return ui.panel(st.name, { stats: [], actions: [], note: world.baseHit ? `${st.info}<br><br><b>After the meteor shower:</b> ${st.hit}` : st.info, img: 'rm_surface' });
     if (id === 'bench') return ui.panel('Fix-It Bench', { stats: s.bench.map((b, i) => [`Slot ${i + 1}`, !b ? 'empty' : b.left > 0 ? `fixing… ${fmt.hrs(jobHours(s, b.left))} left` : 'FIXED — pick it up']), note: 'Carry a broken solar panel here and press E. The robot arm fixes it while you do something else. Each repair uses 1 material and electricity.' });
     if (id === 'fab') return ui.panel('Robot-Arm Builder', { stats: [['Materials', fmt.mat(s.mat)], ['Now building', s.fab ? `${s.fab.what === 'panel' ? 'solar panel' : 'battery module'} — ${fmt.hrs(jobHours(s, s.fab.left))} left` : 'nothing']],
       actions: [

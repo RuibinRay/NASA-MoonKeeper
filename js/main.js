@@ -295,7 +295,7 @@ G.save = () => { try { const S = G.S; if (!S || S.over) return; const o = { S: s
 G.clearSave = () => { try { localStorage.removeItem('mk2-save'); } catch (e) {} };
 G.hasSave = () => { try { return !!localStorage.getItem('mk2-save'); } catch (e) { return false; } };
 function loadGame() {
-  const o = JSON.parse(localStorage.getItem('mk2-save')); G.S = deserialize(o.S); installActions(G); installEvents(G); G.done = o.done || {}; G.nextEventAt = o.next; G.itemSeq = o.seq;
+  const o = JSON.parse(localStorage.getItem('mk2-save')); G.S = deserialize(o.S); world.baseHit = true; installActions(G); installEvents(G); G.done = o.done || {}; G.nextEventAt = o.next; G.itemSeq = o.seq;
   const byId = {}; for (const i of o.items) { const it = G.spawnItem(i.type, i.zone, i.x, i.z, i.where); it.id = i.id; it.rot = i.rot; byId[i.id] = it; }
   Object.assign(G.car, o.car, { cargo: o.car.cargo.map((id) => byId[id]).filter(Boolean) }); Object.assign(G.ship, o.ship, { cargo: o.ship.cargo.map((id) => byId[id]).filter(Boolean), vx: 0, vz: 0, vy: 0, alt: 0 });
   P.zone = o.p.zone; G.S.zone = P.zone; world.setZone(P.zone); P.pos.set(o.p.x, groundY(P.zone, o.p.x, o.p.z), o.p.z); G.regoPos.set(o.p.x + 1.5, P.pos.y, o.p.z + 1.5); P.carry = byId[o.p.carry] || null;
@@ -317,7 +317,7 @@ async function start(modeKey, skip, seed) {
   $('#title').classList.add('hidden');
   if (!skip) { await comicIntro(G); G.state = 'tutorial'; ui.showHud(true); await tutorial(G); ui.showHud(false); }
   G.state = 'tutorial'; await disaster(G, skip);
-  applyDisaster(G.S); for (const s of SITES) s.loot.forEach((type, i) => G.spawnItem(type, 'top', s.pos[0] + 14 + (i % 3) * 2.2, s.pos[1] + 12 + Math.floor(i / 3) * 2.2)); G.spawnSurvivors();
+  applyDisaster(G.S); world.baseHit = true; for (const s of SITES) s.loot.forEach((type, i) => G.spawnItem(type, 'top', s.pos[0] + 14 + (i % 3) * 2.2, s.pos[1] + 12 + Math.floor(i / 3) * 2.2)); G.spawnSurvivors();
   if (P.zone !== 'deep') { P.zone = 'deep'; G.S.zone = 'deep'; world.setZone('deep'); } P.pos.set(-17, TUBE.y, -10); cam.yaw = Math.PI; P.face = 0; G.regoPos.set(-15, TUBE.y, -9); if (P.carry) G.removeItem(P.carry); G.S.suitOn = false;   // you were indoors, out of your suit, when it hit
   ui.showHud(true); G.state = 'play'; G.simOn = true; G.nextEventAt = G.S.t + 7 + G.S.rng() * 5; G.save();
   ui.bubble('I am right here with you. The big screen shows what is broken. <b>First job: power.</b> Put your suit on at the airlock, take the elevator up, pull a broken panel off its mount, and bring it down to the Fix-It Bench. Press <b>H</b> whenever you want my advice.', 'happy', 18); G.pointTo('lift');

@@ -24,13 +24,14 @@ With REGO the robot you must keep the **power on** and the **air in** until resc
 
 ## What you do
 
-1. **Fix the power.** Pull a broken solar panel off its mount, drag it to the rover, drive to the pit elevator, carry it down to the **Fix-It Bench**, wait while the robot arm repairs it, then carry it back up and install it.
-2. **Keep the air in.** Every room is a bubble of air behind a bulkhead door. When one is holed, patch it — or lock its door to save the rest of the station (that room freezes and must be rebuilt).
-3. **Rebuild.** Wrecked rooms (farm, bathroom, bunks, battery store…) are rebuilt in a short scene that plays by itself while the clock runs.
-4. **Eat.** Tins run out. Grow potatoes and tomatoes, keep the hens fed (they eat dry feed people cannot), collect eggs, and cook.
-5. **Expand.** The robot-arm builder makes new solar panels and battery modules from materials; you carry and install them.
-6. **Explore.** Three other stations (Aurora, Sakura, Chandra) have crates of materials, food and water, and a stranded astronaut each. Go by rover or hopper; both need charging on their pads.
-7. **Give jobs.** Robots cost electricity; rescued astronauts cost food. Assign them in the Control Center, which also shows where every error is.
+1. **Fix the power.** Pull a broken solar panel off its mount, drag it to the rover, drive to the pit elevator, ride down into the cave, haul it through the airlock to the **Fix-It Bench**, wait while the robot arm repairs it, then carry it back up and install it.
+2. **Mind your suit.** The surface and the cave have no air. Inside the station, take your suit off at the Suit Lockers in the airlock (indoor jobs go faster, and you can cook and sleep) — and put it back on before you step out.
+3. **Keep the air in.** Every room is a bubble of air behind a bulkhead door. When one is holed, patch it — or lock its door to save the rest of the station (that room freezes and must be rebuilt).
+4. **Rebuild.** Wrecked rooms (farm, bathroom, bunks, battery store…) are rebuilt in a short scene that plays by itself while the clock runs.
+5. **Eat.** Tins run out. Grow potatoes and tomatoes, keep the hens fed (they eat dry feed people cannot), collect eggs, and cook.
+6. **Expand.** The robot-arm builder makes new solar panels and battery modules from materials; you carry and install them.
+7. **Explore.** The surface base (Habitat Dome, Command Tower, Greenhouse Dome, Research Lab, Battery Bank, Water Plant, Moon-Dust Mine) was holed by the meteor shower; walk up to any building and press E to learn what it was for. Three other stations (Aurora, Sakura, Chandra) have crates of materials, food and water, and a stranded astronaut each. Go by rover or hopper; both need charging on their pads.
+8. **Give jobs.** Robots cost electricity; rescued astronauts cost food. Assign them in the Control Center, which also shows where every error is.
 
 Modes: **Cadet** (4 days), **Pilot** (7 days), **Commander** (10 days, scarce materials), **Unlimited** (no end, endless materials).
 
@@ -44,7 +45,7 @@ js/actions.js         what E does everywhere, room panels, alerts, REGO's advice
 js/events.js          surprise events (real-dated storms, moonquakes, impacts, air leaks…)
 js/story.js           comic pages, training, meteor-shower scene, endings
 js/sim.js             the survival simulation (pure logic; `node tools/sim_test.mjs` checks balance)
-js/world.js           3D world (surface, other stations, red-walled station, vehicles)
+js/world.js           3D world (surface base, other stations, the cave, the red-walled station, vehicles)
 js/actors.js          astronaut, REGO, BOLT robots
 js/ui.js, icons.js    interface and hand-drawn icons
 js/minigames.js       dish aiming, air-filter build, fire fighting
