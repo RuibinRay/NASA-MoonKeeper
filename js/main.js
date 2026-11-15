@@ -5,6 +5,7 @@ import { Astronaut, Rego, Bolt } from './actors.js';
 import { UI } from './ui.js';
 import { Sound } from './audio.js';
 import { Voice } from './voice.js';
+import { radioLine } from './radio.js';
 import { IC } from './icons.js';
 import { playProcedure, playMini } from './minigames.js';
 import { jobEffect } from './jobfx.js';
@@ -475,6 +476,9 @@ function frame(now, manual) {
   placeItems();
   world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook', sleeping: G.sleepLeft > 0, shipThrust: G.ship.dyn ? G.ship.dyn.thr : 0 });
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
+  { const S = G.S; G._radioT = (G._radioT ?? 25) - dt;
+    if (S && G._radioT <= 0) { const quiet = G.state === 'play' && !ui.busy && !G.eventBusy && !G.inJob && !G.riding && !G.paused && G.sleepLeft <= 0, line = quiet ? radioLine(S) : null;
+      if (line) ui.toast(`<b>${line.who}</b>${line.text}`, line.who === 'RADIO' ? 'radio off' : 'radio'); G._radioT = line ? 55 + Math.random() * 35 : 12; } }
   // sound follows where you are: the station hums with its power, the helmet muffles the world, music darkens with danger
   { const S = G.S; G._dgT = (G._dgT || 0) - dt; if (S && G._dgT <= 0) { G._dgT = 0.5; const st = S.storm, urgent = G.state === 'play' ? G.alerts().filter((a) => a.kind !== 'warn').length : 0;
       G._danger = G.state !== 'play' ? 0 : clamp(urgent * 0.45 + (S.flow.eff < 1 ? 0.35 : 0) + (S.health < 50 ? 0.4 : 0) + (st && S.t >= st.start ? 0.5 : 0), 0, 1); }

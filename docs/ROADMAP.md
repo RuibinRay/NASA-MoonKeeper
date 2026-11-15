@@ -88,7 +88,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | 3 | **Station interiors.** Moving machinery in each of the 11 rooms, emergency and power-out lighting, one consistent material pass, new textures. | Lighting and machinery done in all 11 rooms (see below). Material pass and new textures to do |
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
 | 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | Hopper done (see below). Gait and transitions to do |
-| 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | Sound and music done (see below); reactive lighting was done in step 3. Radio chatter to do |
+| 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | Done: sound, music and the radio (see below); reactive lighting was done in step 3 |
 | 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | Questions, REGO's voice and the Day and night page done (see below). Ice picture and map to do |
 
 ### Step 1: what changed and what was measured
@@ -194,7 +194,7 @@ All of it is made in the browser; there are no audio files. It was checked by me
 
 Output figures are average level times 1,000, read from the game's own audio output in the test browser.
 
-Still to do in step 6: radio chatter with Mission Control.
+Radio chatter was added afterwards: see the next section.
 
 ### Step 7, first part: a question after each emergency
 
@@ -226,3 +226,20 @@ REGO speaks with the voice built into the player's own device (the browser's spe
 | No voice on the device | The switch is not shown |
 
 Checked by intercepting what the game hands to the speech feature, not by ear. The voice itself depends on the device: on the test computer it was "Microsoft Zira". Nobody has listened to it yet.
+
+### Step 6, second part: Mission Control on the radio
+
+During quiet play, about once a minute, Mission Control says one short line. It appears as a note with a dish icon and a two-tone radio call. The lines are in `js/radio.js` and checked by `node tools/radio_test.mjs` (14 checks).
+
+| When | What you hear |
+| --- | --- |
+| The dish is not pointing at Earth, or the Earth Link is off | Static, and a reminder why. No Mission Control until the link is back. This gives the Earth Link a reason beyond storm warnings |
+| The link comes back | "We have you again, Tranquility Deep. It is good to hear you." |
+| Oxygen, water or a falling battery is low | A warning naming it, at most once every 20 game hours each |
+| A solar storm is overhead | "Stay under the rock until we call the all-clear." |
+| Sunset is less than 14 hours away; night has begun | One line each, once per mission |
+| An astronaut was brought home | A word of thanks, once per rescue |
+| The rescue ship | How far out it is, every 40 game hours, and once when it is less than a day away |
+| Nothing is happening | One of five calm lines: the radio delay, the rock roof, resting, the rule that no choice is free |
+
+It never speaks over a window, a job, an elevator ride, an emergency or sleep. What has been said is kept with the mission, so a reload does not repeat it. REGO does not read these lines: they are Mission Control's.
