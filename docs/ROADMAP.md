@@ -209,4 +209,4 @@ After an emergency is settled, one card asks why it happened. There are 14 quest
 | The clock is stopped while the card is up | The same rule as the emergency itself: stop, then think |
 | Questions can be switched off in Settings | For players who only want to play |
 
-Every fact in the questions is one the game already uses, with its source in `docs/SCIENCE_AND_SOURCES.md`. The mission keeps count of how many were asked and how many answered right.
+Every fact in the questions is one the game already uses, with its source in `docs/SCIENCE_AND_SOURCES.md`. The end screen shows how many were asked and how many answered right: as a badge on every ending, and as a line in "How you did it" when the mission is won. Nothing is shown if no question was asked.
