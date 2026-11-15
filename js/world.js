@@ -122,7 +122,8 @@ export class World {
     for (let i = 0; i < p.count; i++) {
       let x = p.getX(i), z = p.getZ(i), y = this.heightAt(x, z); const dp = Math.hypot(x - PIT.x, z - PIT.z);
       if (dp < PIT.r) { if (dp > PIT.r - step * 1.6) { const k = (PIT.r - 0.3) / Math.max(dp, 0.01); x = PIT.x + (x - PIT.x) * k; z = PIT.z + (z - PIT.z) * k; p.setX(i, x); p.setZ(i, z); } y = -105; }
-      p.setY(i, y); const tone = (0.78 + fbm(x * 0.02 + 40, z * 0.02) * 0.4 - (dp < PIT.r ? 0.55 : 0)) * (0.2 + 0.8 * smooth(MINE.r * 0.82, MINE.r * 1.02, Math.hypot(x - MINE.x, z - MINE.z)));   // the mine's floor never sees the Sun colors.set([tone, tone * 0.985, tone * 0.96], i * 3);
+      p.setY(i, y); const tone = (0.78 + fbm(x * 0.02 + 40, z * 0.02) * 0.4 - (dp < PIT.r ? 0.55 : 0)) * (0.2 + 0.8 * smooth(MINE.r * 0.82, MINE.r * 1.02, Math.hypot(x - MINE.x, z - MINE.z)));   // the mine's floor never sees the Sun
+      colors.set([tone, tone * 0.985, tone * 0.96], i * 3);
     }
     g.setAttribute('color', new THREE.BufferAttribute(colors, 3)); g.computeVertexNormals();
     const mesh = new THREE.Mesh(g, this.M.rego); mesh.receiveShadow = true; this.top.add(mesh);

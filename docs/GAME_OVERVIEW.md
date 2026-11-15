@@ -316,15 +316,24 @@ The game was played from the title screen to the rescue by a script that presses
 | The recipe screen said a run looked good when the station had no power for it. | It warns when the battery and spare power cannot cover the run. |
 | The game said Earth never moves in the sky. | It now says Earth stays in almost the same spot. Guide mode also no longer marks Cook or Sleep while the suit is on. |
 
+### Found in a follow-up check of the hardest mode
+
+| Problem | Fix |
+| --- | --- |
+| The Moon's ground was drawn black. A code comment had swallowed the line that colours it, since the ice-mine update. | The ground is grey again. |
+| The rover never used any charge. The same mistake had swallowed the line that drains its battery. | Driving uses charge again: about 2.6 km on a full battery. |
+| Commander could only be won with perfect routes, and even then with empty tanks. The night needed about twice the power the station could store, and repairs take longer than the simple check assumed. | Sunset in Commander now comes on day 4.5 instead of day 3.4. The night is still the longest of any mode, at five and a half days. |
+
 ### Automatic checks
 
 - **71 calculation checks** pass. They cover water and oxygen balance, crop growth, the Water Plant physics, the mine, research, and saving. One was added in this pass.
-- **A balance run of all four modes** with two simple computer players. Cadet and Pilot are won by both. Unlimited is survived by the sensible one.
+- **A balance run of all four modes** with two simple computer players that fix things for free, and a planned player that pays game time for every walk, drive and elevator ride. The planned player wins Cadet, Pilot and Commander with each of its three repair plans. Doing nothing loses Commander.
+- **A scan for code hidden inside comments**, the mistake behind three of the bugs on this page, finds none.
 - **A syntax check** of every code file passes.
 
 ### Not yet verified
 
-- **Commander mode to the end.** The simple computer player runs out of water on day 9 of 10. It never uses the Water Plant or the ice mine, so this may be the intended difficulty, but nobody has shown that a player can win.
+- **Commander by hand.** The planned computer player wins it, but only after Commander's sunset was moved from day 3.4 to day 4.5 (see below). It ends with little oxygen to spare, and it does not face surprise events, so a person should still play it through.
 - **Phones.** Held sideways, the game is usable but crowded. Held upright, the warning list covers the resource bars. Touch controls were seen on screen but not played.
 - **Speed on a real computer.** In the test window a frame took about 40 thousandths of a second, which is about 25 frames a second. The test window slows pages down, so the real figure is unknown.
 - **Real children.** No child has played it yet. Reading level and where players get stuck are untested.
@@ -344,7 +353,7 @@ The list is in order of how much each item would help the goal: children learnin
 
 4. **Phone layout.** Held upright, the warning list covers the resource bars. Either ask the player to turn the phone sideways or stack the panels. Then play a whole mission with the touch controls.
 5. **Speed.** The surface draws about 260,000 triangles in about 200 separate draw calls. Merging repeated objects such as panels, crates and rocks would help older laptops and phones. Measure on a real computer first.
-6. **Hard mode.** Show that Commander can be won by a player who uses the Water Plant and the ice mine. If not, give a little more starting water.
+6. **Hard mode.** Play Commander through by hand. The computer check says a good player wins with about one kilogram of oxygen left, which may still be too tight once surprise events are added.
 7. **Reading help.** A read-aloud voice for REGO's lines, larger text, a colour-blind check of the warning colours, and other languages.
 
 ### Third: use more of the real data

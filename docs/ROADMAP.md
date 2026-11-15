@@ -71,7 +71,8 @@ Rules for every step: no visible light beams or billowing dust (there is no air)
 - A full Cadet mission was played by script on 14 November 2026, from the training to the rescue. The results and the six fixes are in [GAME_OVERVIEW.md](GAME_OVERVIEW.md).
 - **Phones.** Held sideways the game is usable but crowded. Held upright, the warning list covers the resource bars. Touch controls have not been played through.
 - Pilot and Unlimited were checked only by the two scripted strategies in `tools/sim_test.mjs`.
-- **Commander has not been won.** The sensible scripted strategy runs out of water on day 9 of 10. It does not use the Water Plant or the ice mine, so a player may do better, but nobody has shown it.
+- **Commander has not been won by a person.** A planned computer player (`tools/planned_player.mjs`) that pays game time for every trip wins it with three different repair plans, after sunset was moved from day 3.4 to day 4.5. It ends with about one kilogram of oxygen left and faces no surprise events, so the margin is thin.
+- Doing nothing wins Cadet and Pilot in the balance check, because the check has no surprise events. Whether that holds in real play has not been looked at.
 - Frame rate has not been measured on a real computer. The surface draws about 260,000 triangles in about 200 draw calls.
 - No child has played the game yet.
 - Peas, soybeans and spinach are listed as candidate crops because we could not open a primary source for their spaceflights. Herbs are our own addition.

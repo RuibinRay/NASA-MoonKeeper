@@ -292,7 +292,8 @@ function updateVehicle(dt, free) {
     const c = G.car, max = S.car.charge > 0 ? 15 : 2.2; c.v += (thr * max - c.v) * Math.min(1, dt * 1.5); if (Math.abs(thr) < 0.05) c.v *= 1 - Math.min(1, dt * 1.2);
     c.st = st; c.yaw += st * dt * 1.6 * clamp(c.v / 5, -1, 1); const p = { x: c.x + Math.sin(c.yaw) * c.v * dt, z: c.z + Math.cos(c.yaw) * c.v * dt }, bx = p.x, bz = p.z; pushOut(p, 'top', 2.2); topBounds(p, 12); if (p.x !== bx || p.z !== bz) c.v *= 0.6;
     const moved = Math.hypot(p.x - c.x, p.z - c.z); c.x = p.x; c.z = p.z;
-    if (Math.abs(c.v) > 3 && Math.random() < dt * 22) { const sx = Math.sin(c.yaw), cz = Math.cos(c.yaw), side = Math.random() < 0.5 ? -1.3 : 1.3, back = c.v > 0 ? -2.1 : 2.1; world.puff(c.x + sx * back + cz * side, c.z + cz * back - sx * side, 2, -sx * c.v * 0.28, -cz * c.v * 0.28, 1.2 + Math.abs(c.v) * 0.12, 0.9); }   // rooster tails behind the wheels S.car.charge = Math.max(0, S.car.charge - (moved / 2600) * perk); S.stats.km += moved / 1000;
+    if (Math.abs(c.v) > 3 && Math.random() < dt * 22) { const sx = Math.sin(c.yaw), cz = Math.cos(c.yaw), side = Math.random() < 0.5 ? -1.3 : 1.3, back = c.v > 0 ? -2.1 : 2.1; world.puff(c.x + sx * back + cz * side, c.z + cz * back - sx * side, 2, -sx * c.v * 0.28, -cz * c.v * 0.28, 1.2 + Math.abs(c.v) * 0.12, 0.9); }   // rooster tails behind the wheels
+    S.car.charge = Math.max(0, S.car.charge - (moved / 2600) * perk); S.stats.km += moved / 1000;
     P.pos.set(c.x, world.heightAt(c.x, c.z), c.z); P.face = c.yaw;
   } else {
     const s = G.ship, dead = S.ship.charge <= 0, up = free && !dead ? (k[' '] ? 1 : 0) - (k.c || k.Control ? 1 : 0) : dead ? -0.6 : 0, fly = s.alt > 0.25;
