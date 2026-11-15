@@ -1,0 +1,190 @@
+{
+  "style": "Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "resolution": "4k",
+  "quality": "high",
+  "jobs": [
+    {
+      "id": "ref_rego",
+      "aspect_ratio": "16:9",
+      "prompt": "Character design reference sheet on a dark charcoal studio backdrop. One small friendly lunar helper robot shown three times: front view, side view, three-quarter back view. ORIGINAL design: a compact rounded-rectangular body of white ceramic panels with safety-orange trim and scuffed moon-dust wear, two chunky dark mesh-metal tank treads, a short flexible neck, a wide rounded head with ONE continuous dark glass visor screen showing two large glowing cyan oval pixel eyes with a curious happy expression, a tiny antenna with a small amber light on top of the head, a small fold-out solar panel on its back, two short three-finger utility arms, a round headlamp on the chest. About knee-high to a human. Charming, expressive, sturdy, believable near-future space hardware."
+    },
+    {
+      "id": "ref_suit",
+      "aspect_ratio": "16:9",
+      "prompt": "Astronaut suit design reference sheet on a dark charcoal studio backdrop. One next-generation lunar surface spacesuit shown three times, full body: front view, side view, back view. Sleek white suit with soft armor plates on chest, shoulders and knees, safety-orange accent bands on the upper arms and knees, light grey flexible joints, dusty grey boots, a slim life-support backpack with a small cyan status light, chest control panel with small buttons, wrist display, a large rounded helmet with a gold mirrored visor that completely hides the face. Slight lunar dust on boots and legs. Believable near-future engineering, friendly and heroic."
+    },
+    {
+      "id": "p_vasquez",
+      "aspect_ratio": "1:1",
+      "prompt": "Head-and-shoulders portrait of a veteran astronaut commander, a Latina woman in her late forties with short dark hair with one grey streak, warm confident smile, kind tired eyes. She wears a white lunar spacesuit with RED commander stripes on the shoulders, helmet off, the metal neck ring visible. Background: softly blurred interior of a Moon habitat with warm lights and a small round window. Shallow depth of field, warm key light."
+    },
+    {
+      "id": "p_okoro",
+      "aspect_ratio": "1:1",
+      "prompt": "Head-and-shoulders portrait of a cheerful flight engineer astronaut, a Nigerian man in his mid thirties with short hair and a neat beard, big friendly grin. He wears a white lunar spacesuit with BLUE engineer stripes on the shoulders, helmet off, the metal neck ring visible, a small wrench tucked in a chest loop. Background: softly blurred interior of a Moon habitat with tool racks and pink greenhouse glow. Shallow depth of field, warm key light."
+    },
+    {
+      "id": "p_flight",
+      "aspect_ratio": "1:1",
+      "prompt": "Head-and-shoulders portrait of a calm mission control flight director, a South Asian woman in her fifties with silver-streaked hair tied back, wearing a slim headset with microphone and a dark blue vest over a white shirt. Serious but reassuring expression. Background: softly blurred dark mission control room with rows of glowing blue screens and a large display of the Moon. Shallow depth of field, cool screen light on her face."
+    },
+    {
+      "id": "p_rego",
+      "aspect_ratio": "1:1",
+      "refs": [
+        "ref_rego"
+      ],
+      "prompt": "Close-up portrait of the same small helper robot from the reference image: white ceramic body panels with safety-orange trim, wide head with one dark glass visor showing two big glowing cyan oval pixel eyes, happy curious expression, head tilted slightly, tiny antenna with amber light. Background: softly blurred lunar surface and black sky with a small blue Earth. Shallow depth of field."
+    },
+    {
+      "id": "p_rookie",
+      "aspect_ratio": "1:1",
+      "refs": [
+        "ref_suit"
+      ],
+      "prompt": "Head-and-shoulders portrait of a young rookie astronaut wearing the same white lunar spacesuit with safety-orange accent bands from the reference image, helmet on, gold mirrored visor completely hiding the face and reflecting a small blue Earth and a grey lunar horizon. Background: softly blurred lunar surface and black sky. Heroic three-quarter angle."
+    },
+    {
+      "id": "title",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_suit",
+        "ref_rego"
+      ],
+      "prompt": "Epic wide key art for a Moon survival adventure. Seen from behind and slightly to the side: one astronaut in the white spacesuit with orange accent bands from the reference, and the small white-and-orange helper robot on tank treads from the reference beside them, standing at the rim of a gigantic round pit in the lunar surface, a collapsed lava-tube skylight about one hundred meters across with sheer layered basalt walls. Deep inside the pit, warm lights of an underground base and a faint pink greenhouse glow. In the middle distance a field of dark blue solar panels, a communications dish and a landed spacecraft. A small half-lit blue Earth hangs high in the black sky. Low sun, very long shadows. Composition leaves dark empty sky in the upper left third."
+    },
+    {
+      "id": "intro_arrival",
+      "aspect_ratio": "16:9",
+      "prompt": "A futuristic lunar lander descending on a pillar of thin engine exhaust toward a small Moon outpost on a flat grey lava plain: rows of dark blue solar panels, a large parabolic communications dish, a dome airlock half-buried under piled regolith, a landing pad with ring lights, and beyond it a huge round pit, the skylight of a lava tube, with an elevator gantry on its rim. Kicked-up dust sprays outward in straight lines. A small blue Earth high in the black sky. Aerial three-quarter view."
+    },
+    {
+      "id": "intro_tube",
+      "aspect_ratio": "16:9",
+      "prompt": "Interior of an enormous lunar lava tube, a natural basalt tunnel about eighty meters wide with a high arched ceiling of dark rippled volcanic rock. On the flat floor sits a futuristic underground base: white inflatable habitat modules with glowing round windows, a long greenhouse of stacked plant racks under magenta-pink LED grow lights, silver oxygen and water tanks, battery racks with green indicator lights, and strings of warm work lights. A dramatic shaft of hard white sunlight falls from a round skylight far above, with an elevator cable running up through it. Tiny astronaut figure for scale. Awe-inspiring, cozy and safe."
+    },
+    {
+      "id": "mentors",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "p_vasquez",
+        "p_okoro",
+        "ref_rego"
+      ],
+      "prompt": "Inside a cozy Moon habitat, the two astronauts from the reference portraits stand side by side facing the camera as if welcoming a new crew member: the Latina commander with short dark hair and grey streak in a white suit with red stripes, and the Nigerian engineer with a neat beard in a white suit with blue stripes, both with helmets off held under one arm, both smiling warmly. The small white-and-orange helper robot from the reference sits between them looking up with happy cyan eyes. Behind them a control desk with glowing screens and a round window showing the grey lunar surface. Warm interior light."
+    },
+    {
+      "id": "accident",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_suit",
+        "ref_rego"
+      ],
+      "prompt": "Somber, quiet wide shot on the lunar surface. In the foreground, seen from behind, one astronaut in the white suit with orange bands from the reference and the small helper robot from the reference stand still, looking toward the distant rim of a huge round pit where a section of the edge has freshly collapsed. Two sets of rover wheel tracks lead across the dust to the broken edge and stop. A thin cloud of dust hangs motionless above the gap. An abandoned tool case lies on the ground. No people or vehicles visible at the pit. Low sun, very long shadows, small blue Earth in the black sky. Respectful, melancholy mood, no gore."
+    },
+    {
+      "id": "mission_control",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "p_flight"
+      ],
+      "prompt": "A futuristic mission control room on Earth at night, rows of consoles with blue glowing screens, a giant wall display showing a map of the Moon with a blinking marker and a countdown graphic made of simple bars, a few controllers in headsets working tensely. In the foreground the flight director from the reference portrait, a South Asian woman with silver-streaked hair and a headset, leans on a console looking up at the big screen with determination. Cool blue light, cinematic depth."
+    },
+    {
+      "id": "night",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_suit",
+        "ref_rego"
+      ],
+      "prompt": "Lunar night at a Moon outpost. One astronaut in the white suit with orange bands from the reference sits on a supply crate next to the small helper robot from the reference; both look up at a nearly full blue-and-white Earth high in the black starry sky. The landscape is lit only by soft blue earthshine and a few warm amber work lights; rows of solar panels sit dark and idle; heaters glow faint orange on equipment. The robot's cyan eyes glow gently and its headlamp makes a small pool of light. Quiet, lonely, hopeful."
+    },
+    {
+      "id": "win",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_suit",
+        "ref_rego"
+      ],
+      "prompt": "Triumphant lunar dawn. A sleek rescue lander descends on a bright plume toward a landing pad with ring lights, the rising Sun blazing just above the grey horizon and casting extremely long shadows. In the foreground, seen from behind, one astronaut in the white suit with orange bands from the reference raises both arms in joy, and the small helper robot from the reference raises its little arms too, its cyan eyes curved happily. Solar panels catching the first gold light. Small blue Earth in the black sky. Joyful, emotional, heroic."
+    },
+    {
+      "id": "lose",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_rego"
+      ],
+      "prompt": "A powered-down underground Moon base inside a dark lava tube. Habitat windows dark, greenhouse lights off with wilted plants in shadow, frost on pipes and tanks, a single red emergency light. In the foreground the small helper robot from the reference sits alone with dim, sad cyan eyes, its headlamp casting a weak cone of light across the dusty floor. Melancholy but gentle, not scary."
+    },
+    {
+      "id": "ev_solar",
+      "aspect_ratio": "16:9",
+      "prompt": "Inside a Moon base command room during a space-weather alert. A large curved monitor fills most of the frame showing a solar-observatory telescope image of the Sun in glowing orange extreme-ultraviolet light with one intensely bright white flare and a looping plasma eruption on its edge. Red and amber warning lights wash over the consoles. In the foreground the small helper robot from the reference looks at the screen with wide alarmed cyan eyes, one arm pointing at the flare. A second smaller screen shows a simple rising bar graph. Tense, urgent, scientifically believable.",
+      "refs": [
+        "ref_rego"
+      ]
+    },
+    {
+      "id": "ev_meteor",
+      "aspect_ratio": "16:9",
+      "prompt": "The instant a small meteoroid strikes the lunar surface right beside a field of dark blue solar panels at a Moon outpost: a blinding white-orange flash, a symmetric cone of dust and rock fragments spraying outward in perfectly straight lines with no billowing because there is no air, a few panels cracked and tilted. Black sky, hard sunlight, frozen-moment action shot."
+    },
+    {
+      "id": "ev_dust",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_suit"
+      ],
+      "prompt": "Close view of solar panels on the Moon coated in a thick layer of fine clingy grey lunar dust, with a clean streak where a gloved hand has wiped. One astronaut in the white suit with orange bands from the reference kneels beside a panel holding a soft brush. Along the far horizon at sunset a faint ghostly glowing band of electrically levitated dust. Low golden sun, long shadows, black sky."
+    },
+    {
+      "id": "ev_quake",
+      "aspect_ratio": "16:9",
+      "prompt": "A moonquake shaking an underground Moon base inside a huge dark lava tube: fine dust and small pebbles drifting slowly down from the rock ceiling in low gravity, hanging work lights swinging, a silver pipe joint cracked and spraying a white jet of vapor, warning lights flashing amber, white habitat modules and tanks in the background. Slight motion blur, tense but not catastrophic."
+    },
+    {
+      "id": "ev_fire",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_rego"
+      ],
+      "prompt": "Inside a Moon habitat equipment bay, a small electrical fire burns in an open life-support rack: rounded, slow, blue-and-orange flames typical of low gravity, thin smoke spreading along the ceiling, red alarm strobes. A crew member's gloved arm in the foreground aims a fire extinguisher nozzle at the base of the flames. The small helper robot from the reference watches with wide worried cyan eyes. Urgent, dramatic lighting."
+    },
+    {
+      "id": "ev_co2",
+      "aspect_ratio": "16:9",
+      "prompt": "Close-up on a workbench inside a Moon habitat: two hands in thin inner gloves assembling an improvised air filter, a square white canister being fitted to a round hose using grey duct tape, a plastic bag and a cardboard cover, tools and a paper checklist beside it. A wall display behind shows a rising orange bar. Homage to the Apollo 13 fix. Warm task-lamp light, shallow depth of field."
+    },
+    {
+      "id": "ev_crops",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_rego"
+      ],
+      "prompt": "Inside a space greenhouse under magenta-pink LED grow lights: rows of red romaine lettuce, radishes and dwarf wheat in white hydroponic racks. Some leaves in the foreground show fuzzy grey-white mold spots. A crew member's gloved hand gently lifts a sick leaf to inspect it, while the small helper robot from the reference peers closely with concerned cyan eyes. Fine water mist in the air. Detailed, tender."
+    },
+    {
+      "id": "ev_comms",
+      "aspect_ratio": "16:9",
+      "prompt": "A large white parabolic communications dish on a tall mast at a Moon outpost, pointed precisely at a small blue half-lit Earth high in the black sky. A thin visible beam of light links dish and Earth. Regolith berm and cable runs at the base, solar panels beyond. Low angle looking up, heroic, crisp hard sunlight."
+    },
+    {
+      "id": "ev_freeze",
+      "aspect_ratio": "16:9",
+      "prompt": "Deep lunar night at a Moon outpost at minus 170 degrees Celsius: machinery, cable reels and a communications mast coated in sparkling frost, small electric heaters glowing orange-red around the most important equipment, dark idle solar panels, the scene lit by cold blue earthshine from a nearly full Earth. Bitterly cold, still and silent."
+    },
+    {
+      "id": "ev_supply",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_rego"
+      ],
+      "prompt": "On the lunar surface beside a parked cargo sled, an open supply case packed with neatly labeled spare parts, coiled cables, filters and tool kits, lit from inside by a soft white light. The small helper robot from the reference lifts one arm in delight, cyan eyes curved happily. Hard sunlight, long shadows, black sky."
+    },
+    {
+      "id": "codex_lavatube",
+      "aspect_ratio": "16:9",
+      "prompt": "Cinematic cutaway cross-section of the Moon's surface revealing a huge hollow lava tube beneath a grey lava plain. On the surface: solar panels, a dish antenna, a landing pad and an elevator gantry at the edge of a round collapsed skylight pit. Below, inside the tunnel, a glowing underground base with white habitat modules and a pink-lit greenhouse, protected under thick layers of basalt rock. Sunlight shaft through the skylight. Clean, clear, educational composition like a museum diorama, black space above with a small blue Earth."
+    }
+  ]
+}

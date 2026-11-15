@@ -1,0 +1,460 @@
+// MOONKEEPER 2 — the 3D world: a wide lunar surface (base, solar field, other stations) and the red-walled station inside the lava tube.
+import * as THREE from '../lib/three.module.min.js';
+import { K, STATIONS, SITES, PIT, TUBE, HALL, LOBBY, ROOMS, ROOM_H, MOUNTS, CAR_PAD, SHIP_PAD, BENCH, FAB, FAB_OUT, roomRect, roomSpot, doorSpot } from './config.js';
+
+const V3 = THREE.Vector3;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const hash = (x, y) => { const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); };
+function vnoise(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
+function fbm(x, y, o = 4) { let s = 0, a = 0.5, f = 1; for (let i = 0; i < o; i++) { s += a * vnoise(x * f, y * f); a *= 0.5; f *= 2.03; } return s; }
+function seeded(seed) { let a = seed; return () => { a = (a * 1664525 + 1013904223) % 4294967296; return a / 4294967296; }; }
+function canvasTex(w, h, draw, rep) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); } return t; }
+const std = (o) => new THREE.MeshStandardMaterial(o);
+const glow = (color, intensity = 1.5) => new THREE.MeshStandardMaterial({ color: 0x111111, emissive: color, emissiveIntensity: intensity });
+const PANEL_W = 5, PANEL_D = 2.8;
+
+// Earth in the lunar sky for 8.3355°N 33.222°E with a typical libration tilt: azimuth 248°, elevation 57°. It stays there.
+export const EARTH_DIR = new V3(-0.5017, 0.8409, 0.2027).normalize();
+
+export class World {
+  constructor(canvas) {
+    const r = this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75)); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+    r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05;
+    this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x000000);
+    this.camera = new THREE.PerspectiveCamera(62, 1, 0.25, 7000);
+    this.top = new THREE.Group(); this.deep = new THREE.Group(); this.deep.position.y = TUBE.y; this.scene.add(this.top, this.deep);
+    this.colliders = { top: [], deep: [] }; this.walk = []; this.t = 0; this.zone = 'top'; this.sunDir = new V3(0, 1, 0); this.lamps = [];
+    this._mats(); this._lights(); this._sky(); this._terrain(); this._topside(); this._sites(); this._vehicles(); this._tube(); this._station(); this._markers(); this._fx();
+    this.setZone('top'); this.resize(); window.addEventListener('resize', () => this.resize());
+  }
+  resize() { const w = window.innerWidth, h = window.innerHeight; this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
+
+  _mats() {
+    const rnd = seeded(7), L = new THREE.TextureLoader();
+    const swap = (mat, url, rep) => L.load(url, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; if (rep) t.repeat.set(rep, rep); t.anisotropy = 4; mat.map = t; mat.needsUpdate = true; }, undefined, () => {});
+    this.texRego = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#8b8985'; g.fillRect(0, 0, w, h); for (let i = 0; i < 9000; i++) { const v = 105 + rnd() * 70 | 0; g.fillStyle = `rgba(${v},${v - 2},${v - 5},${0.25 + rnd() * 0.4})`; const s = rnd() * 2.2 + 0.4; g.fillRect(rnd() * w, rnd() * h, s, s); } }, 150);
+    this.texPanel = canvasTex(256, 128, (g, w, h) => { g.fillStyle = '#0c1a3c'; g.fillRect(0, 0, w, h); for (let i = 0; i < 8; i++) for (let j = 0; j < 4; j++) { g.fillStyle = `rgb(${14 + (i + j) % 2 * 6},${34 + rnd() * 14 | 0},${92 + rnd() * 30 | 0})`; g.fillRect(i * 32 + 2, j * 32 + 2, 28, 28); } g.strokeStyle = 'rgba(200,220,255,0.4)'; for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 32, 0); g.lineTo(i * 32, h); g.stroke(); } });
+    this.texPanelB = canvasTex(256, 128, (g, w, h) => { g.fillStyle = '#1a1d24'; g.fillRect(0, 0, w, h); for (let i = 0; i < 8; i++) for (let j = 0; j < 4; j++) { g.fillStyle = `rgb(${30 + rnd() * 20 | 0},${34 + rnd() * 16 | 0},${48 + rnd() * 26 | 0})`; g.fillRect(i * 32 + 2, j * 32 + 2, 28, 28); } g.strokeStyle = '#d8dde6'; g.lineWidth = 2; for (let k = 0; k < 5; k++) { g.beginPath(); let x = rnd() * w, y = rnd() * h; g.moveTo(x, y); for (let i = 0; i < 6; i++) { x += (rnd() - 0.5) * 70; y += (rnd() - 0.5) * 50; g.lineTo(x, y); } g.stroke(); } });
+    this.texRock = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#6b6762'; g.fillRect(0, 0, w, h); for (let i = 0; i < 2600; i++) { const v = 60 + rnd() * 90 | 0; g.fillStyle = `rgba(${v},${v},${v + 2},0.5)`; g.fillRect(rnd() * w, rnd() * h, 1 + rnd() * 5, 1 + rnd() * 2); } for (let j = 0; j < 9; j++) { g.strokeStyle = 'rgba(15,15,15,0.5)'; g.lineWidth = 1 + rnd() * 2; g.beginPath(); const y = rnd() * h; g.moveTo(0, y); for (let x = 0; x <= w; x += 16) g.lineTo(x, y + Math.sin(x * 0.05 + j) * 5 + rnd() * 3); g.stroke(); } }, 6);
+    const wallTex = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#e9e4dc'; g.fillRect(0, 0, w, h); for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { g.fillStyle = '#c4281c'; g.beginPath(); g.roundRect(i * 128 + 6, j * 128 + 6, 116, 116, 12); g.fill(); g.fillStyle = 'rgba(255,255,255,0.12)'; g.beginPath(); g.roundRect(i * 128 + 12, j * 128 + 12, 104, 40, 10); g.fill(); g.fillStyle = '#d9d9d9'; for (const [a, b] of [[14, 14], [114, 14], [14, 114], [114, 114]]) { g.beginPath(); g.arc(i * 128 + a, j * 128 + b, 3, 0, 7); g.fill(); } } });
+    wallTex.wrapS = wallTex.wrapT = THREE.RepeatWrapping;
+    const floorTex = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#9aa0a6'; g.fillRect(0, 0, w, h); g.strokeStyle = '#5c6268'; g.lineWidth = 3; for (let i = 0; i <= 2; i++) { g.beginPath(); g.moveTo(i * 128, 0); g.lineTo(i * 128, h); g.moveTo(0, i * 128); g.lineTo(w, i * 128); g.stroke(); } g.fillStyle = 'rgba(255,255,255,0.08)'; for (let i = 0; i < 300; i++) g.fillRect(rnd() * w, rnd() * h, 6, 2); });
+    floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
+    this.texScreen = canvasTex(256, 128, (g, w, h) => { g.fillStyle = '#04121c'; g.fillRect(0, 0, w, h); g.strokeStyle = '#49e6ff'; g.lineWidth = 2; g.beginPath(); for (let x = 0; x < w; x += 4) g.lineTo(x, 70 + Math.sin(x * 0.07) * 18 + Math.sin(x * 0.21) * 7); g.stroke(); g.fillStyle = '#49e6ff'; for (let i = 0; i < 6; i++) g.fillRect(14 + i * 40, 104 - i % 3 * 8, 26, 12 + i % 3 * 8); g.fillStyle = '#ffb347'; g.fillRect(12, 12, 90, 8); });
+    this.M = {
+      rego: std({ color: 0xb4b3b1, map: this.texRego, roughness: 1, vertexColors: true }), rock: std({ color: 0x77736e, roughness: 1 }),
+      basalt: std({ color: 0xc9c2b8, map: this.texRock, roughness: 1, side: THREE.DoubleSide }),
+      white: std({ color: 0xe8e8e3, roughness: 0.75 }), grey: std({ color: 0x7c8088, roughness: 0.7, metalness: 0.3 }), dark: std({ color: 0x23262b, roughness: 0.6, metalness: 0.4 }),
+      metal: std({ color: 0xb9bec6, roughness: 0.35, metalness: 0.85 }), orange: std({ color: 0xff7a1a, roughness: 0.6 }), foil: std({ color: 0xd9a531, roughness: 0.45, metalness: 0.8 }),
+      teal: std({ color: 0x1fb5a8, roughness: 0.6 }), yellow: std({ color: 0xf2c21a, roughness: 0.6 }), blue: std({ color: 0x3a78d8, roughness: 0.5 }), green: std({ color: 0x3f9b46, roughness: 0.8 }), greenD: std({ color: 0x2b6e34, roughness: 0.85 }),
+      red: std({ color: 0xd43a2a, roughness: 0.7 }), soil: std({ color: 0x5a4332, roughness: 1 }), straw: std({ color: 0xd9b45a, roughness: 1 }), hen: std({ color: 0xa5602c, roughness: 0.9 }),
+      panel: std({ color: 0xffffff, map: this.texPanel, roughness: 0.3, metalness: 0.4, emissive: 0x0a1a44, emissiveIntensity: 0.25 }),
+      panelB: std({ color: 0xffffff, map: this.texPanelB, roughness: 0.8 }),
+      wall: std({ color: 0xffffff, map: wallTex, roughness: 0.85 }), floor: std({ color: 0xffffff, map: floorTex, roughness: 0.7, metalness: 0.15 }), ceil: std({ color: 0xd9dadc, roughness: 0.9 }),
+      screen: new THREE.MeshBasicMaterial({ map: this.texScreen }), glass: std({ color: 0xbfe6ff, roughness: 0.05, transparent: true, opacity: 0.22, depthWrite: false }),
+      water: std({ color: 0x2f8fd8, roughness: 0.1, transparent: true, opacity: 0.6 }), tankW: std({ color: 0x5aa6d8, roughness: 0.35, metalness: 0.4 }), tankO2: std({ color: 0xe6f2ea, roughness: 0.4, metalness: 0.3 }),
+      tomato: std({ color: 0xe5362b, roughness: 0.5 }), fish: std({ color: 0xff8a2a, roughness: 0.5 }),
+      warm: glow(0xffc27a, 2.2), cyan: glow(0x49e6ff, 2.2), amber: glow(0xffa424, 2.5), redG: glow(0xff3b30, 2.5), greenG: glow(0x4dff88, 2.2), pink: glow(0xff4fd8, 1.6), whiteG: glow(0xffffff, 1.6),
+    };
+    swap(this.M.wall, 'assets/tex/wall.jpg'); swap(this.M.floor, 'assets/tex/floor.jpg'); swap(this.M.rego, 'assets/tex/rego.jpg', 170);
+    this.panelClean = new THREE.Color(0xffffff); this.panelDusty = new THREE.Color(0x9a9690);
+  }
+  _lights() {
+    this.sunLight = new THREE.DirectionalLight(0xffffff, 3.2); const s = this.sunLight.shadow; s.mapSize.set(2048, 2048); s.camera.near = 1; s.camera.far = 700; Object.assign(s.camera, { left: -95, right: 95, top: 95, bottom: -95 }); s.bias = -0.0006; s.normalBias = 0.6; this.sunLight.castShadow = true;
+    this.earthLight = new THREE.DirectionalLight(0x9dbcf7, 0.2); this.hemi = new THREE.HemisphereLight(0x10141c, 0xaeacaa, 0.6);
+    this.scene.add(this.sunLight, this.sunLight.target, this.earthLight, this.earthLight.target, this.hemi);
+  }
+  lamp(group, x, y, z, color, intensity, dist = 55) { const l = new THREE.PointLight(color, intensity, dist, 1.2); l.position.set(x, y, z); group.add(l); this.lamps.push({ l, base: intensity, top: group === this.top }); return l; }
+  _sky() {
+    const sky = this.sky = new THREE.Group(); this.scene.add(sky);
+    const rnd = seeded(99), n = 2200, pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const u = rnd() * 2 - 1, a = rnd() * Math.PI * 2, s = Math.sqrt(1 - u * u), R = 3600; pos.set([Math.cos(a) * s * R, u * R, Math.sin(a) * s * R], i * 3); const b = 0.45 + rnd() * 0.55, tint = rnd(); col.set([b * (0.85 + tint * 0.15), b * 0.92, b * (1 - tint * 0.15)], i * 3); }
+    const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); sg.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    this.starMat = new THREE.PointsMaterial({ size: 2.1, sizeAttenuation: false, vertexColors: true, depthWrite: false, depthTest: false });
+    const stars = new THREE.Points(sg, this.starMat); stars.renderOrder = -20; stars.frustumCulled = false; sky.add(stars);
+    const D = 2600, ang = (K.EARTH_ANGULAR_DEG * K.EARTH_DRAW_SCALE * Math.PI) / 180;
+    const tex = new THREE.TextureLoader().load('assets/tex/earth.jpg'); tex.colorSpace = THREE.SRGBColorSpace;
+    this.earthMat = new THREE.ShaderMaterial({ uniforms: { map: { value: tex }, sunDir: { value: new V3(1, 0, 0) } },
+      vertexShader: 'varying vec3 vN; varying vec3 vP; varying vec2 vUv; void main(){ vUv=uv; vN=normalize(mat3(modelMatrix)*normal); vec4 wp=modelMatrix*vec4(position,1.0); vP=wp.xyz; gl_Position=projectionMatrix*viewMatrix*wp; }',
+      fragmentShader: `uniform sampler2D map; uniform vec3 sunDir; varying vec3 vN; varying vec3 vP; varying vec2 vUv;
+        void main(){ vec3 n=normalize(vN); float d=dot(n,sunDir); float day=smoothstep(-0.06,0.22,d); vec3 c=texture2D(map,vUv).rgb; vec3 v=normalize(cameraPosition-vP); float rim=pow(1.0-max(dot(n,v),0.0),2.5);
+          vec3 col=c*day*1.5+vec3(0.25,0.5,1.0)*rim*(0.15+day*0.9)+vec3(0.004,0.006,0.012); gl_FragColor=vec4(col,1.0);
+          #include <colorspace_fragment>
+        }`, depthTest: false, depthWrite: false });
+    this.earth = new THREE.Mesh(new THREE.SphereGeometry(D * Math.tan(ang / 2), 48, 32), this.earthMat); this.earth.position.copy(EARTH_DIR).multiplyScalar(D); this.earth.renderOrder = -10; this.earth.frustumCulled = false; sky.add(this.earth);
+    const lat = (K.LAT * Math.PI) / 180, moonAxis = new V3(0, Math.sin(lat), -Math.cos(lat));
+    const yAx = moonAxis.addScaledVector(EARTH_DIR, -moonAxis.dot(EARTH_DIR)).normalize().applyAxisAngle(EARTH_DIR, 0.3), zAx = EARTH_DIR.clone().negate(), xAx = new V3().crossVectors(yAx, zAx).normalize();
+    this.earthBase = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAx, yAx, zAx)); this.earthSpin = new THREE.Quaternion(); this.yUp = new V3(0, 1, 0);
+    const gl = canvasTex(256, 256, (g, w) => { const gr = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.08, 'rgba(255,252,235,1)'); gr.addColorStop(0.16, 'rgba(255,236,190,0.35)'); gr.addColorStop(0.5, 'rgba(255,220,160,0.06)'); gr.addColorStop(1, 'rgba(255,220,160,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, w); });
+    this.sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: gl, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })); this.sunSprite.scale.set(620, 620, 1); this.sunSprite.renderOrder = -9; sky.add(this.sunSprite);
+  }
+
+  // ---------- terrain ----------
+  heightAt(x, z) {
+    let far = smooth(105, 190, Math.hypot(x - 10, z + 10));
+    for (const s of SITES) far = Math.min(far, smooth(34, 80, Math.hypot(x - s.pos[0], z - s.pos[1])));
+    let h = (fbm(x * 0.006 + 3, z * 0.006 + 7) - 0.5) * 22 * far + (fbm(x * 0.05, z * 0.05) - 0.5) * (0.35 + 1.4 * far);
+    for (const c of this.craters) { const q = Math.hypot(x - c.x, z - c.z) / c.r; if (q < 2) h += (q < 1 ? -c.d * (1 - q * q) : 0) + c.d * 0.35 * Math.exp(-Math.pow((q - 1) / 0.28, 2)); }
+    const dp = Math.hypot(x - PIT.x, z - PIT.z); if (dp < PIT.r + 22) h -= 5 * smooth(PIT.r + 22, PIT.r, dp);
+    return h;
+  }
+  _terrain() {
+    const rnd = seeded(2049); this.craters = [];
+    for (let i = 0; i < 420; i++) {
+      const x = (rnd() - 0.5) * 1600, z = (rnd() - 0.5) * 1600, dBase = Math.hypot(x - 10, z + 10), r = dBase < 150 ? 1.5 + rnd() * 4 : 4 + rnd() * rnd() * 30;
+      if (Math.hypot(x - PIT.x, z - PIT.z) < PIT.r + 26 + r) continue;
+      if (STATIONS.some((s) => s.zone === 'top' && Math.hypot(x - s.pos[0], z - s.pos[1]) < 20 + r)) continue;
+      if (SITES.some((s) => Math.hypot(x - s.pos[0], z - s.pos[1]) < 44 + r)) continue;
+      if (Math.abs(x) < 56 && z < -44 && z > -112) continue;   // keep the solar field level
+      if (x < -8 && x > -66 && z > 26 && z < 60) continue;      // and the parking pads
+      this.craters.push({ x, z, r, d: r * (0.16 + rnd() * 0.1) });
+    }
+    const size = 1700, seg = 330, g = new THREE.PlaneGeometry(size, size, seg, seg); g.rotateX(-Math.PI / 2);
+    const p = g.attributes.position, step = size / seg, colors = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) {
+      let x = p.getX(i), z = p.getZ(i), y = this.heightAt(x, z); const dp = Math.hypot(x - PIT.x, z - PIT.z);
+      if (dp < PIT.r) { if (dp > PIT.r - step * 1.6) { const k = (PIT.r - 0.3) / Math.max(dp, 0.01); x = PIT.x + (x - PIT.x) * k; z = PIT.z + (z - PIT.z) * k; p.setX(i, x); p.setZ(i, z); } y = -105; }
+      p.setY(i, y); const tone = 0.78 + fbm(x * 0.02 + 40, z * 0.02) * 0.4 - (dp < PIT.r ? 0.55 : 0); colors.set([tone, tone * 0.985, tone * 0.96], i * 3);
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3)); g.computeVertexNormals();
+    const mesh = new THREE.Mesh(g, this.M.rego); mesh.receiveShadow = true; this.top.add(mesh);
+    const wall = new THREE.Mesh(new THREE.CylinderGeometry(PIT.r - 0.5, PIT.r - 6, 104, 48, 1, true), this.M.basalt.clone()); wall.material.side = THREE.BackSide; wall.position.set(PIT.x, -57, PIT.z); this.top.add(wall);
+    for (let i = 0; i < 30; i++) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.5 + rnd(), 6, 5), i % 3 === 0 ? this.M.redG : this.M.warm); const a = rnd() * 7, rr = rnd() * 30; m.position.set(PIT.x + Math.cos(a) * rr, -104, PIT.z + Math.sin(a) * rr); this.top.add(m); }
+    const rg = new THREE.DodecahedronGeometry(1, 0), n = 420, im = new THREE.InstancedMesh(rg, this.M.rock, n), o = new THREE.Object3D();
+    for (let i = 0, placed = 0; placed < n && i < 6000; i++) {
+      const x = (rnd() - 0.5) * 1500, z = (rnd() - 0.5) * 1500;
+      if (Math.hypot(x - PIT.x, z - PIT.z) < PIT.r + 6 || STATIONS.some((s) => s.zone === 'top' && Math.hypot(x - s.pos[0], z - s.pos[1]) < 22) || (Math.abs(x) < 60 && z < -40 && z > -116) || (x < -6 && x > -70 && z > 24 && z < 62)) continue;
+      const s = 0.25 + rnd() * rnd() * 2.2; o.position.set(x, this.heightAt(x, z) + s * 0.25, z); o.scale.set(s, s * (0.5 + rnd() * 0.5), s * (0.7 + rnd() * 0.6)); o.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3); o.updateMatrix(); im.setMatrixAt(placed++, o.matrix);
+    }
+    im.castShadow = true; im.receiveShadow = true; this.top.add(im);
+  }
+
+  // ---------- small mesh helpers ----------
+  box(w, h, d, m) { const x = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); x.castShadow = true; x.receiveShadow = true; return x; }
+  cyl(rt, rb, h, m, seg = 16) { const x = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m); x.castShadow = true; x.receiveShadow = true; return x; }
+  sph(r, m, ws = 16, hs = 10) { const x = new THREE.Mesh(new THREE.SphereGeometry(r, ws, hs), m); x.castShadow = true; return x; }
+  put(parent, mesh, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) { mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, rz); parent.add(mesh); return mesh; }
+  group(parent, x, z, ground = true) { const g = new THREE.Group(); g.position.set(x, ground ? this.heightAt(x, z) : 0, z); parent.add(g); return g; }
+  solid(zone, x, z, r) { const c = { x, z, r }; this.colliders[zone].push(c); return c; }
+
+  // Things the player can carry. Returned meshes are added to the scene by the game.
+  makeItem(type) {
+    const g = new THREE.Group(), M = this.M;
+    if (type === 'panel' || type === 'panelB') { this.put(g, this.box(PANEL_W, 0.12, PANEL_D, type === 'panel' ? M.panel : M.panelB), 0, 0.1, 0); this.put(g, this.box(PANEL_W + 0.2, 0.08, PANEL_D + 0.2, M.grey), 0, 0.02, 0); if (type === 'panelB') g.children[0].rotation.z = 0.05; }
+    else if (type === 'battery') { this.put(g, this.box(1.3, 1.0, 0.9, M.dark), 0, 0.5, 0); this.put(g, this.box(1.0, 0.12, 0.05, M.greenG), 0, 0.7, 0.46); this.put(g, this.box(1.34, 0.1, 0.94, M.orange), 0, 1.02, 0); }
+    else if (type === 'water') { this.put(g, this.cyl(0.5, 0.5, 1.1, M.tankW, 14), 0, 0.55, 0); this.put(g, this.cyl(0.52, 0.52, 0.1, M.white, 14), 0, 1.1, 0); }
+    else { this.put(g, this.box(1.1, 0.9, 1.1, type === 'cans' ? M.green : M.orange), 0, 0.45, 0); this.put(g, this.box(1.14, 0.12, 1.14, M.white), 0, 0.5, 0); this.put(g, this.box(0.5, 0.3, 0.04, type === 'cans' ? M.warm : M.cyan), 0, 0.55, 0.56); }
+    return g;
+  }
+
+  _topside() {
+    const M = this.M, T = this.top;
+    // --- Solar field: 24 mounts. Each can be empty, working, or broken.
+    this.mounts = MOUNTS.map(([x, z], i) => {
+      const g = this.group(T, x, z); this.put(g, this.cyl(0.2, 0.3, 2.4, M.grey), 0, 1.2, 0); this.put(g, this.cyl(0.5, 0.6, 0.2, M.dark, 12), 0, 0.1, 0);
+      const head = new THREE.Group(); head.position.y = 2.5; g.add(head); const tilt = new THREE.Group(); head.add(tilt);
+      const mat = M.panel.clone(), ok = this.put(tilt, this.box(PANEL_W, 0.12, PANEL_D, mat), 0, 0, 0); this.put(tilt, this.box(PANEL_W + 0.2, 0.08, PANEL_D + 0.2, M.grey), 0, -0.1, 0);
+      const bad = this.put(g, this.box(PANEL_W, 0.12, PANEL_D, M.panelB), 0.4, 1.5, 0.3, 0.5 + hash(i, 1) * 0.5, hash(i, 2), 0.3);
+      const cap = this.put(g, this.sph(0.22, M.amber), 0, 2.5, 0); this.solid('top', x, z, 0.8);
+      return { g, head, tilt, mat, ok, bad, cap, seed: hash(i, 3), state: -1 };
+    });
+    const sIn = this.group(T, 0, -46); this.put(sIn, this.box(2.2, 1.5, 0.9, M.dark), 0, 0.75, 0); this.put(sIn, new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.9), M.screen), 0, 1.0, 0.46); this.solid('top', 0, -46, 1.4);
+    this.lamp(T, 0, 7, -46, 0xcfe4ff, 26);
+    // --- Earth link dish
+    const d = this.group(T, -64, -10); this.put(d, this.cyl(0.5, 0.9, 9, M.white), 0, 4.5, 0); this.put(d, this.box(3, 1.2, 3, M.grey), 0, 0.6, 0);
+    this.dishHead = new THREE.Group(); this.dishHead.position.y = 9.4; d.add(this.dishHead);
+    const pts = []; for (let i = 0; i <= 12; i++) { const rr = (i / 12) * 5; pts.push(new THREE.Vector2(rr, rr * rr * 0.075)); }
+    const bowl = new THREE.Mesh(new THREE.LatheGeometry(pts, 36), std({ color: 0xf0f0ec, roughness: 0.6, side: THREE.DoubleSide })); bowl.castShadow = true; this.dishHead.add(bowl);
+    this.put(this.dishHead, this.cyl(0.07, 0.07, 3.4, M.grey, 8), 0, 1.9, 0); this.put(this.dishHead, this.sph(0.35, M.dark), 0, 3.6, 0);
+    this.dishLight = this.put(d, this.sph(0.28, M.greenG.clone()), 0, 9.2, 0.9);
+    this.dishAim = new THREE.Quaternion().setFromUnitVectors(new V3(0, 1, 0), EARTH_DIR); this.dishOff = new THREE.Quaternion().setFromUnitVectors(new V3(0, 1, 0), new V3(0.75, 0.5, -0.4).normalize()); this.dishHead.quaternion.copy(this.dishAim);
+    this.solid('top', -64, -10, 2.4); this.lamp(T, -58, 5, -4, 0xcfe4ff, 18);
+    // --- Landing pad + lander
+    const pad = this.group(T, 80, 42); this.put(pad, this.cyl(15, 15.5, 0.3, std({ color: 0x55534f, roughness: 1 }), 40), 0, 0.15, 0);
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * 6.283; this.put(pad, this.sph(0.28, M.cyan), Math.cos(a) * 14, 0.45, Math.sin(a) * 14); }
+    const L = new THREE.Group(); L.position.y = 0.3; pad.add(L);
+    this.put(L, this.cyl(3.4, 3.8, 3.2, M.foil, 8), 0, 4.2, 0); this.put(L, this.cyl(2.2, 3.2, 2.6, M.white, 8), 0, 7.1, 0); this.put(L, this.sph(1.5, M.white), 0, 8.6, 0); this.put(L, this.cyl(0.6, 1.5, 1.8, M.dark, 14), 0, 1.9, 0);
+    for (let i = 0; i < 4; i++) { const a = i * 1.5708 + 0.785; this.put(L, this.cyl(0.14, 0.14, 6, M.metal, 8), Math.cos(a) * 4.3, 2.6, Math.sin(a) * 4.3, Math.sin(a) * 0.55, 0, -Math.cos(a) * 0.55); this.put(L, this.cyl(0.9, 0.9, 0.2, M.foil, 12), Math.cos(a) * 5.9, 0.12, Math.sin(a) * 5.9); }
+    this.solid('top', 80, 42, 6.5); this.lamp(T, 72, 8, 36, 0xbfe9ff, 22);
+    // --- Pit elevator gantry, airlock dome, cargo depot
+    const gz = PIT.z - PIT.r, e = this.group(T, 0, gz - 4);
+    for (const [px, pz] of [[-3, -3], [3, -3], [-3, 5], [3, 5]]) this.put(e, this.box(0.5, 16, 0.5, M.grey), px, 8, pz);
+    this.put(e, this.box(7, 0.6, 9, M.grey), 0, 16, 1); this.put(e, this.box(1.2, 1.2, 14, M.orange), 0, 15.2, 6); this.put(e, this.cyl(0.06, 0.06, 120, M.dark, 6), 0, -44, 9);
+    this.put(e, this.box(4.5, 0.3, 4.5, M.metal), 0, 0.5, 1.5); for (let i = 0; i < 3; i++) this.put(e, this.sph(0.25, M.amber), -3 + i * 3, 16.5, 5.5);
+    const dome = this.group(T, -16, gz - 12); const dm = new THREE.Mesh(new THREE.SphereGeometry(7, 28, 14, 0, 6.283, 0, 1.5708), std({ color: 0x8e8b86, map: this.texRego, roughness: 1 })); dm.castShadow = true; dome.add(dm);
+    this.put(dome, this.box(3, 3, 1.2, M.white), 0, 1.5, 6.6); this.put(dome, new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.2), M.warm), 0, 1.4, 7.22); this.solid('top', -16, gz - 12, 7.6); this.lamp(T, 0, 9, gz - 6, 0xffd9a8, 34);
+    const dp = this.group(T, 20, 48); this.put(dp, this.box(9, 0.25, 7, std({ color: 0x4f4d4a, roughness: 1 })), 0, 0.12, 0); this.put(dp, this.box(0.3, 3.4, 0.3, M.orange), -4, 1.7, -3); this.put(dp, this.box(2.2, 1, 0.1, M.cyan), -4, 3.2, -3); for (let i = 0; i < 3; i++) this.put(dp, this.box(1.1, 0.9, 1.1, i % 2 ? M.orange : M.white), 2.6 + (i % 2) * 1.2, 0.6 + (i > 1 ? 0.9 : 0), -2.2);
+    const post = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.09, 0.09, 1.3, 6), M.orange, 48), tip = new THREE.InstancedMesh(new THREE.SphereGeometry(0.16, 8, 6), M.amber, 48), o = new THREE.Object3D();
+    for (let i = 0; i < 48; i++) { const a = (i / 48) * 6.283, x = PIT.x + Math.cos(a) * (PIT.r + 9), z = PIT.z + Math.sin(a) * (PIT.r + 9), y = this.heightAt(x, z); o.position.set(x, y + 0.65, z); o.updateMatrix(); post.setMatrixAt(i, o.matrix); o.position.y = y + 1.4; o.updateMatrix(); tip.setMatrixAt(i, o.matrix); }
+    T.add(post, tip);
+    // --- Charging pads for the rover and the hopper
+    this.pads = [];
+    for (const [k, [x, z], r] of [['car', CAR_PAD, 5], ['ship', SHIP_PAD, 6.5]]) {
+      const g = this.group(T, x, z); this.put(g, this.cyl(r, r + 0.3, 0.2, std({ color: 0x4a4a4c, roughness: 1 }), 30), 0, 0.1, 0);
+      const ring = this.put(g, new THREE.Mesh(new THREE.TorusGeometry(r - 0.5, 0.12, 6, 40), M.cyan.clone()), 0, 0.24, 0, Math.PI / 2); this.put(g, this.box(0.5, 2.6, 0.5, M.yellow), r - 0.2, 1.3, -r + 0.6); const led = this.put(g, this.sph(0.25, M.greenG.clone()), r - 0.2, 2.8, -r + 0.6);
+      this.pads.push({ k, ring, led });
+    }
+    this.lamp(T, -36, 8, 42, 0xbfe9ff, 26);
+    // --- Moon-dust oxygen plant
+    const is = this.group(T, 64, -38); this.put(is, this.cyl(2.6, 3, 6, M.grey, 20), 0, 3, 0); this.isruGlow = this.put(is, new THREE.Mesh(new THREE.CylinderGeometry(2.66, 2.66, 0.9, 20, 1, true), glow(0xff6a1a, 0.1)), 0, 2.2, 0);
+    this.put(is, this.sph(2.3, M.tankO2), 6, 2.6, 1); this.put(is, this.sph(2.3, M.tankO2), 6, 2.6, -4.5); this.put(is, this.box(3, 2.4, 3, M.dark), -5, 3.4, 0); this.put(is, this.box(1.2, 0.4, 8, M.orange), -5, 1.6, 4.5, 0.32, 0, 0);
+    this.solid('top', 64, -38, 4); this.solid('top', 70, -39.5, 4.6); this.solid('top', 59, -38, 2.4); this.lamp(T, 57, 6, -31, 0xffc9a0, 18);
+    // --- Reactor behind its berm, heater hub
+    const re = this.group(T, 128, -98); this.put(re, this.cyl(1.6, 2, 5, M.metal, 16), 0, 2.5, 0); for (let i = 0; i < 4; i++) this.put(re, this.box(0.15, 7, 5.5, std({ color: 0xd8dade, roughness: 0.5, metalness: 0.5 })), Math.cos(i * 1.5708) * 4.4, 6, Math.sin(i * 1.5708) * 4.4, 0, -i * 1.5708, 0);
+    this.reactorBeacon = this.put(re, this.sph(0.4, M.amber.clone()), 0, 10, 0); this.solid('top', 128, -98, 6);
+    const y = this.group(T, -86, -56); this.put(y, this.box(7, 3.4, 5, M.white), 0, 1.7, 0); this.put(y, this.box(7.4, 0.3, 5.4, M.orange), 0, 3.5, 0); this.heaterGlow = this.put(y, this.box(2.6, 1.4, 0.2, glow(0xff5a1a, 0.4)), 0, 1.6, 2.62); this.solid('top', -86, -56, 4.6); this.lamp(T, -78, 6, -48, 0xffd9a8, 18);
+  }
+
+  // Other countries' stations: a cracked dome, a leaning mast with a coloured beacon you can see from far away.
+  _sites() {
+    const M = this.M; this.sites = {};
+    for (const s of SITES) {
+      const g = this.group(this.top, s.pos[0], s.pos[1]), col = glow(s.color, 2.4);
+      const dm = new THREE.Mesh(new THREE.SphereGeometry(10, 26, 14, 0.5, 5.2, 0, 1.5708), std({ color: 0xd8d8d2, roughness: 0.7, side: THREE.DoubleSide })); dm.castShadow = true; g.add(dm);
+      this.put(g, this.box(4, 3.4, 2, M.white), 0, 1.7, 9.4); this.put(g, new THREE.Mesh(new THREE.PlaneGeometry(1.8, 2.4), col), 0, 1.5, 10.42);
+      this.put(g, this.cyl(0.25, 0.4, 16, M.grey, 8), -15, 7.5, -4, 0, 0, 0.32); const b = this.put(g, this.sph(0.7, col), -17.5, 15.4, -4);
+      for (let i = 0; i < 4; i++) this.put(g, this.box(PANEL_W, 0.12, PANEL_D, M.panelB), 14 + i * 3.5, 0.5 + hash(i, 5), -8 + i * 4, hash(i, 6), hash(i, 7) * 3, 0.4);
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 150, 14, 1, true), new THREE.MeshBasicMaterial({ color: s.color, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); beam.position.set(0, 75, 0); g.add(beam);
+      this.solid('top', s.pos[0], s.pos[1], 10.6); const l = this.lamp(this.top, s.pos[0], this.heightAt(s.pos[0], s.pos[1]) + 6, s.pos[1] + 12, s.color, 30, 70);
+      this.sites[s.id] = { g, beam, b };
+    }
+  }
+
+  // The rover car and the hopper ship. The game moves them; this only builds them.
+  _vehicles() {
+    const M = this.M;
+    const car = this.car = new THREE.Group(); this.scene.add(car);
+    this.put(car, this.box(2.5, 0.7, 4.8, M.white), 0, 1.0, 0); this.put(car, this.box(2.6, 0.18, 4.9, M.orange), 0, 0.62, 0); this.put(car, this.box(2.3, 0.14, 2.3, M.grey), 0, 1.43, -1.15);
+    for (const [px, pz] of [[-1.1, 0.4], [1.1, 0.4], [-1.1, 2.1], [1.1, 2.1]]) this.put(car, this.cyl(0.06, 0.06, 1.5, M.grey, 6), px, 2.1, pz);
+    this.put(car, this.box(2.4, 0.1, 1.9, M.orange), 0, 2.88, 1.25); this.put(car, this.box(1.6, 0.5, 0.5, M.dark), 0, 1.5, 1.2); this.put(car, this.cyl(0.03, 0.03, 2, M.grey, 5), -1, 3.9, 0.4); this.put(car, this.sph(0.09, M.amber), -1, 4.9, 0.4);
+    this.carWheels = []; for (const [wx, wz] of [[-1.5, 1.8], [1.5, 1.8], [-1.5, 0], [1.5, 0], [-1.5, -1.8], [1.5, -1.8]]) { const w = this.cyl(0.62, 0.62, 0.5, M.dark, 14); w.rotation.z = Math.PI / 2; w.position.set(wx, 0.62, wz); car.add(w); this.carWheels.push(w); }
+    this.carLed = this.put(car, this.box(0.9, 0.12, 0.05, M.greenG.clone()), 0, 1.25, 2.43);
+    this.carLamp = new THREE.SpotLight(0xfff2dc, 0, 90, 0.5, 0.6, 1); this.carLamp.position.set(0, 1.6, 2.5); this.carLamp.target.position.set(0, 0, 22); car.add(this.carLamp, this.carLamp.target);
+    this.carCargo = new THREE.Group(); this.carCargo.position.set(0, 1.5, -1.15); car.add(this.carCargo);
+    const ship = this.ship = new THREE.Group(); this.scene.add(ship);
+    this.put(ship, this.box(3.2, 2.0, 4.6, M.white), 0, 1.9, 0); this.put(ship, this.box(3.26, 0.35, 4.66, M.teal), 0, 1.5, 0); this.put(ship, this.sph(1.25, M.glass.clone(), 18, 12), 0, 2.3, 2.0); this.put(ship, this.box(2.6, 0.12, 2.2, M.grey), 0, 2.98, -1.0);
+    this.shipJets = []; for (const [px, pz] of [[-1.9, 1.7], [1.9, 1.7], [-1.9, -1.7], [1.9, -1.7]]) { this.put(ship, this.cyl(0.07, 0.07, 1.5, M.metal, 6), px * 1.05, 0.7, pz * 1.05, 0, 0, px > 0 ? -0.3 : 0.3); this.put(ship, this.cyl(0.5, 0.5, 0.12, M.foil, 10), px * 1.2, 0.06, pz * 1.05); this.put(ship, this.cyl(0.32, 0.42, 0.6, M.dark, 10), px, 1.0, pz); const f = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.6, 10), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); f.rotation.x = Math.PI; f.position.set(px, 0.0, pz); ship.add(f); this.shipJets.push(f); }
+    this.shipLed = this.put(ship, this.box(1.1, 0.14, 0.05, M.greenG.clone()), 0, 1.95, -2.33);
+    this.shipLamp = new THREE.SpotLight(0xdff2ff, 0, 120, 0.55, 0.6, 1); this.shipLamp.position.set(0, 1.5, 2.6); this.shipLamp.target.position.set(0, -6, 20); ship.add(this.shipLamp, this.shipLamp.target);
+    this.shipCargo = new THREE.Group(); this.shipCargo.position.set(0, 3.05, -1.0); ship.add(this.shipCargo);
+  }
+
+  // ---------- the lava tube (now the shell around the station) ----------
+  _tube() {
+    const M = this.M, D = this.deep, { halfLen: HL, halfWidth: HW, height: HT, skyX, skyR } = TUBE;
+    const nx = 52, na = 22, pos = [], idx = [], uv = [];
+    for (let i = 0; i <= nx; i++) for (let j = 0; j <= na; j++) { const x = -HL - 8 + (i / nx) * (2 * HL + 16), th = (j / na) * Math.PI, rip = (fbm(x * 0.045, j * 0.5, 3) - 0.5) * 7 + Math.sin(x * 0.21 + j) * 0.7; pos.push(x, Math.pow(Math.sin(th), 0.72) * (HT + rip) - 0.4, -Math.cos(th) * (HW + 4 + rip * 0.6)); uv.push(i / nx * 9, j / na * 3); }
+    for (let i = 0; i < nx; i++) for (let j = 0; j < na; j++) { const a = i * (na + 1) + j, b = a + na + 1, cx = (pos[a * 3] + pos[b * 3]) / 2, cz = (pos[a * 3 + 2] + pos[(a + 1) * 3 + 2]) / 2, cy = pos[a * 3 + 1]; if (Math.hypot(cx - skyX, cz) < skyR && cy > HT * 0.7) continue; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+    const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); tg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); tg.setIndex(idx); tg.computeVertexNormals(); D.add(new THREE.Mesh(tg, M.basalt));
+    const fg = new THREE.PlaneGeometry(2 * HL + 40, 2 * HW + 30, 60, 24); fg.rotateX(-Math.PI / 2); const fp = fg.attributes.position;
+    for (let i = 0; i < fp.count; i++) fp.setY(i, (fbm(fp.getX(i) * 0.08, fp.getZ(i) * 0.08) - 0.5) * 0.4 - 0.25 + smooth(HW - 6, HW + 6, Math.abs(fp.getZ(i))) * 5);
+    fg.computeVertexNormals(); D.add(new THREE.Mesh(fg, std({ color: 0x6f6b66, map: this.texRego, roughness: 1 })));
+    const rnd = seeded(31); for (const sx of [-1, 1]) for (let i = 0; i < 14; i++) { const b = new THREE.Mesh(new THREE.DodecahedronGeometry(9 + rnd() * 9, 1), M.basalt); b.position.set(sx * (HL + 4 + rnd() * 10), rnd() * HT * 0.9, (rnd() - 0.5) * 2 * HW); b.rotation.set(rnd() * 3, rnd() * 3, 0); D.add(b); }
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(skyR, skyR + 2, 70, 28, 1, true), M.basalt); shaft.position.set(skyX, HT + 30, 0); D.add(shaft);
+    this.beam = new THREE.Mesh(new THREE.CylinderGeometry(skyR * 0.5, skyR * 0.6, HT + 55, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff3d8, transparent: true, opacity: 0.07, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); this.beam.position.set(skyX, LOBBY.h + (HT + 55) / 2, 0); D.add(this.beam);
+    for (const dx of [-1.6, 1.6]) this.put(D, this.cyl(0.07, 0.07, HT + 60, M.dark, 6), skyX + dx, LOBBY.h + (HT + 60) / 2, 0);
+    this.deepHemi = new THREE.HemisphereLight(0xfff4ec, 0x8a7f78, 1.5); D.add(this.deepHemi);
+  }
+
+  // ---------- the station: red-walled rooms joined to one hall by bulkhead doors ----------
+  _station() {
+    const D = this.deep, M = this.M, DH = 4.2; this.rooms = {};
+    // Walls are drawn on the inside only, so the camera can sit outside a room and still see in.
+    const P = (w, h, mat, tile = 4) => { const g = new THREE.PlaneGeometry(w, h), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * w) / tile, (uv.getY(i) * h) / tile); return new THREE.Mesh(g, mat); };
+    const floor = (g, x0, x1, z0, z1) => { const m = P(x1 - x0, z1 - z0, M.floor); m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, 0.03, (z0 + z1) / 2); m.receiveShadow = true; g.add(m); };
+    const ceil = (g, x0, x1, z0, z1, h) => { const m = P(x1 - x0, z1 - z0, M.ceil, 8); m.rotation.x = Math.PI / 2; m.position.set((x0 + x1) / 2, h, (z0 + z1) / 2); g.add(m); };
+    const wx = (g, xa, xb, z, nz, y0, y1, mat) => { if (xb - xa < 0.05) return; const m = P(xb - xa, y1 - y0, mat); m.position.set((xa + xb) / 2, (y0 + y1) / 2, z); if (nz < 0) m.rotation.y = Math.PI; g.add(m); };
+    const wz = (g, za, zb, x, nx, y0, y1, mat) => { if (zb - za < 0.05) return; const m = P(zb - za, y1 - y0, mat); m.position.set(x, (y0 + y1) / 2, (za + zb) / 2); m.rotation.y = nx > 0 ? Math.PI / 2 : -Math.PI / 2; g.add(m); };
+    const strip = (g, x, y, z, w, d, mat) => this.put(g, new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), mat), x, y, z);
+    // hall
+    const hall = new THREE.Group(); D.add(hall); floor(hall, HALL.x0, HALL.x1, HALL.z0, HALL.z1); ceil(hall, HALL.x0, HALL.x1, HALL.z0, HALL.z1, HALL.h);
+    for (const side of [-1, 1]) { let x = HALL.x0; const z = side * HALL.z1; for (const r of ROOMS.filter((q) => q.side === side).sort((a, b) => a.door - b.door)) { wx(hall, x, r.door - 2, z, -side, 0, HALL.h, M.wall); wx(hall, r.door - 2, r.door + 2, z, -side, DH, HALL.h, M.wall); x = r.door + 2; } wx(hall, x, HALL.x1, z, -side, 0, HALL.h, M.wall); }
+    wz(hall, HALL.z0, HALL.z1, HALL.x1, -1, 0, HALL.h, M.wall);
+    this.hallLights = []; for (let x = HALL.x0 + 6; x < HALL.x1; x += 12) this.hallLights.push(strip(hall, x, HALL.h - 0.05, 0, 5, 0.6, M.whiteG.clone()));
+    this.walk.push({ x0: HALL.x0 - 1, x1: HALL.x1 - 0.6, z0: HALL.z0 + 0.5, z1: HALL.z1 - 0.5 });
+    // lobby with the elevator
+    const lb = new THREE.Group(); D.add(lb); floor(lb, LOBBY.x0, LOBBY.x1, LOBBY.z0, LOBBY.z1); ceil(lb, LOBBY.x0, LOBBY.x1, LOBBY.z0, LOBBY.z1, LOBBY.h);
+    wz(lb, LOBBY.z0, LOBBY.z1, LOBBY.x0, 1, 0, LOBBY.h, M.wall); wx(lb, LOBBY.x0, LOBBY.x1, LOBBY.z0, 1, 0, LOBBY.h, M.wall); wx(lb, LOBBY.x0, LOBBY.x1, LOBBY.z1, -1, 0, LOBBY.h, M.wall);
+    wz(lb, LOBBY.z0, HALL.z0, LOBBY.x1, -1, 0, LOBBY.h, M.wall); wz(lb, HALL.z1, LOBBY.z1, LOBBY.x1, -1, 0, LOBBY.h, M.wall); wz(lb, HALL.z0, HALL.z1, LOBBY.x1, -1, HALL.h, LOBBY.h, M.wall);
+    this.put(lb, this.cyl(4, 4.3, 0.3, M.metal, 24), TUBE.skyX, 0.15, 0); this.put(lb, this.box(4.4, 3, 0.15, M.orange), TUBE.skyX - 3.4, 1.8, 0, 0, Math.PI / 2); for (let i = 0; i < 4; i++) this.put(lb, this.sph(0.2, M.amber), TUBE.skyX + Math.cos(i * 1.57 + 0.78) * 3.9, 0.5, Math.sin(i * 1.57 + 0.78) * 3.9);
+    strip(lb, -72, LOBBY.h - 0.05, 0, 8, 1.2, M.whiteG); this.walk.push({ x0: LOBBY.x0 + 0.8, x1: LOBBY.x1 + 1, z0: LOBBY.z0 + 0.8, z1: LOBBY.z1 - 0.8 });
+    this.lamp(D, -72, 5, 0, 0xfff0e0, 20, 40); for (const x of [-30, 10, 50]) this.lamp(D, x, 4, 0, 0xfff0e0, 14, 46);
+    // rooms
+    for (const def of ROOMS) {
+      const g = new THREE.Group(); D.add(g); const { x0, x1, z0, z1 } = roomRect(def), s = def.side, zd = s < 0 ? z1 : z0, zf = s < 0 ? z0 : z1, wall = M.wall.clone(), light = M.whiteG.clone();
+      floor(g, x0, x1, z0, z1); ceil(g, x0, x1, z0, z1, ROOM_H);
+      wx(g, x0, def.door - 2, zd, s, 0, ROOM_H, wall); wx(g, def.door + 2, x1, zd, s, 0, ROOM_H, wall); wx(g, def.door - 2, def.door + 2, zd, s, DH, ROOM_H, wall); wx(g, x0, x1, zf, -s, 0, ROOM_H, wall);
+      wz(g, z0, z1, x0, 1, 0, ROOM_H, wall); wz(g, z0, z1, x1, -1, 0, ROOM_H, wall);
+      const ta = s < 0 ? z1 : HALL.z1, tb = s < 0 ? HALL.z0 : z0; floor(g, def.door - 2, def.door + 2, ta, tb); ceil(g, def.door - 2, def.door + 2, ta, tb, DH); wz(g, ta, tb, def.door - 2, 1, 0, DH, wall); wz(g, ta, tb, def.door + 2, -1, 0, DH, wall);
+      for (let k = 0; k < 2; k++) strip(g, x0 + (x1 - x0) * (0.3 + k * 0.4), ROOM_H - 0.05, (z0 + z1) / 2, 1, (z1 - z0) * 0.6, light);
+      const door = this.put(g, this.box(3.9, DH - 0.1, 0.3, M.orange), def.door, DH / 2, s * 4.5); this.put(door, new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M.cyan), 0, 0.5, 0.16); this.put(door, new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M.cyan), 0, 0.5, -0.16, 0, Math.PI);
+      const [sx, sz] = doorSpot(def), sw = this.put(g, this.box(0.3, 1.4, 0.5, M.dark), def.door + 1.86, 1.2, sz), swLed = this.put(g, this.box(0.06, 0.5, 0.3, M.greenG.clone()), def.door + 1.68, 1.4, sz);
+      const [cx, cz] = roomSpot(def), con = new THREE.Group(); con.position.set(cx + 2.6, 0, cz - s * 1.2); g.add(con); this.put(con, this.box(1.2, 1.1, 0.7, M.dark), 0, 0.55, 0); this.put(con, new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.6), M.screen), 0, 1.45, 0, -0.3, s < 0 ? 0 : Math.PI);
+      const props = new THREE.Group(); g.add(props); const debris = new THREE.Group(); g.add(debris); const rnd = seeded(def.door * 7 + 91);
+      for (let i = 0; i < 12; i++) { const b = this.box(0.4 + rnd() * 1.6, 0.2 + rnd() * 0.7, 0.4 + rnd() * 1.4, i % 3 ? M.grey : M.red); b.position.set(x0 + 2 + rnd() * (x1 - x0 - 4), 0.3, z0 + 2 + rnd() * (z1 - z0 - 4)); b.rotation.set(rnd(), rnd() * 3, rnd()); debris.add(b); }
+      const hx = x0 + (x1 - x0) * 0.72, hole = new THREE.Group(); hole.position.set(hx, ROOM_H - 0.06, zf - s * 3); g.add(hole);
+      this.put(hole, new THREE.Mesh(new THREE.CircleGeometry(0.9, 9), new THREE.MeshBasicMaterial({ color: 0x000000 })), 0, 0, 0, Math.PI / 2); const jet = this.put(hole, new THREE.Mesh(new THREE.ConeGeometry(1.5, 4.4, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0xdff4ff, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })), 0, -2.2, 0);
+      this.rooms[def.id] = { def, g, wall, light, door, swLed, props, debris, hole, jet, holePos: new V3(hx, 0, zf - s * 3), open: 1 };
+      this.walk.push({ x0: x0 + 0.7, x1: x1 - 0.7, z0: z0 + 0.7, z1: z1 - 0.7 }, { x0: def.door - 1.5, x1: def.door + 1.5, z0: Math.min(ta, tb) - 1, z1: Math.max(ta, tb) + 1 });
+    }
+    this._props();
+  }
+  // Furniture and machines. Anything added to a room's `props` group is hidden while the room is wrecked and comes back step by step as it is rebuilt.
+  _props() {
+    const M = this.M, R = this.rooms, add = (id, mesh, x, y, z, rx = 0, ry = 0, rz = 0) => this.put(R[id].props, mesh, x, y, z, rx, ry, rz), hard = (x, z, r) => this.solid('deep', x, z, r);
+    const rc = (id) => { const d = R[id].def, q = roomRect(d); return { ...q, cx: (q.x0 + q.x1) / 2, cz: (q.z0 + q.z1) / 2, s: d.side }; };
+    // Workshop: Fix-It bench with two slots, robot arm, builder line
+    { add('workshop', this.box(7, 0.9, 3.4, M.grey), BENCH[0], 0.45, BENCH[1] - 2.6); add('workshop', this.box(7.2, 0.15, 3.6, M.orange), BENCH[0], 0.95, BENCH[1] - 2.6); hard(BENCH[0], BENCH[1] - 2.6, 2.6);
+      this.benchSlots = [0, 1].map((i) => { const g = new THREE.Group(); g.position.set(BENCH[0] - 1.7 + i * 3.4, 1.08, BENCH[1] - 2.6); g.scale.setScalar(0.62); const a = this.box(PANEL_W, 0.12, PANEL_D, M.panelB), b = this.box(PANEL_W, 0.12, PANEL_D, M.panel); g.add(a, b); g.rotation.y = Math.PI / 2; R.workshop.props.add(g); return { g, a, b }; });
+      const arm = this.arm = new THREE.Group(); arm.position.set(BENCH[0] + 5.2, 0, BENCH[1] - 3); R.workshop.props.add(arm); this.put(arm, this.cyl(0.7, 0.9, 0.6, M.yellow, 14), 0, 0.3, 0);
+      const a1 = this.armA = new THREE.Group(); a1.position.y = 0.6; arm.add(a1); this.put(a1, this.box(0.4, 2.4, 0.4, M.yellow), 0, 1.2, 0); const a2 = this.armB = new THREE.Group(); a2.position.y = 2.4; a1.add(a2); this.put(a2, this.box(0.32, 2.0, 0.32, M.white), 0, 1.0, 0); this.put(a2, this.box(0.5, 0.3, 0.5, M.dark), 0, 2.05, 0); this.armTip = this.put(a2, this.sph(0.14, M.cyan.clone()), 0, 2.3, 0);
+      add('workshop', this.box(9, 0.8, 2.2, M.dark), FAB[0], 0.4, FAB[1] - 2.9); add('workshop', this.box(9, 0.1, 1.8, M.metal), FAB[0], 0.86, FAB[1] - 2.9); for (const dx of [-4, 4]) add('workshop', this.box(0.25, 3.2, 0.25, M.yellow), FAB[0] + dx, 1.6, FAB[1] - 2.9); add('workshop', this.box(8.4, 0.25, 0.25, M.yellow), FAB[0], 3.2, FAB[1] - 2.9);
+      this.fabHead = add('workshop', this.box(0.6, 0.7, 0.6, M.orange), FAB[0], 2.75, FAB[1] - 2.9); this.fabPart = add('workshop', this.box(PANEL_W * 0.55, 0.1, PANEL_D * 0.55, M.panel), FAB[0], 0.98, FAB[1] - 2.9); hard(FAB[0] - 2.5, FAB[1] - 2.9, 1.8); hard(FAB[0] + 2.5, FAB[1] - 2.9, 1.8);
+      add('workshop', this.box(2.6, 0.2, 2.6, M.yellow), FAB_OUT[0], 0.1, FAB_OUT[1]); for (let i = 0; i < 4; i++) add('workshop', this.box(1.2, 1.1, 1.2, i % 2 ? M.orange : M.white), -34.5, 0.55 + (i > 1 ? 1.1 : 0), -9 - (i % 2) * 1.4); }
+    // Control Center: the big map wall + desks
+    { const c = rc('control'); this.ccCanvas = document.createElement('canvas'); this.ccCanvas.width = 1024; this.ccCanvas.height = 512; this.ccTex = new THREE.CanvasTexture(this.ccCanvas); this.ccTex.colorSpace = THREE.SRGBColorSpace;
+      add('control', new THREE.Mesh(new THREE.PlaneGeometry(15, 5), new THREE.MeshBasicMaterial({ map: this.ccTex })), c.cx, 3.2, c.z0 + 0.12); add('control', this.box(15.6, 5.5, 0.1, M.dark), c.cx, 3.2, c.z0 + 0.05);
+      for (let i = 0; i < 3; i++) { add('control', this.box(3.2, 0.9, 1.3, M.dark), c.x0 + 4.5 + i * 6.4, 0.45, c.cz - 2); add('control', new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.1), M.screen), c.x0 + 4.5 + i * 6.4, 1.55, c.cz - 2.3, -0.25); hard(c.x0 + 4.5 + i * 6.4, c.cz - 2, 1.5); } }
+    // Kitchen
+    { const c = rc('kitchen'); add('kitchen', this.box(10, 1, 1.4, M.white), c.cx, 0.5, c.z0 + 1.1); add('kitchen', this.box(10.2, 0.1, 1.5, M.grey), c.cx, 1.05, c.z0 + 1.1); this.stove = add('kitchen', this.cyl(0.45, 0.45, 0.06, glow(0xff5a1a, 0.2), 18), c.cx - 2, 1.13, c.z0 + 1.1); add('kitchen', this.cyl(0.5, 0.4, 0.5, M.metal, 14), c.cx - 2, 1.4, c.z0 + 1.1);
+      add('kitchen', this.box(1.6, 3, 1.3, M.metal), c.x1 - 1.6, 1.5, c.z0 + 1.2); add('kitchen', this.cyl(1.5, 1.5, 0.12, M.white, 20), c.cx, 0.95, c.cz + 2); add('kitchen', this.cyl(0.15, 0.3, 0.9, M.grey, 8), c.cx, 0.45, c.cz + 2); hard(c.cx, c.cz + 2, 1.7);
+      this.canStacks = []; for (let i = 0; i < 8; i++) this.canStacks.push(add('kitchen', this.cyl(0.22, 0.22, 0.5, i % 2 ? M.green : M.orange, 10), c.x0 + 1.2 + (i % 4) * 0.55, 1.35 + Math.floor(i / 4) * 0.52, c.z0 + 1.1)); }
+    // Oxygen Room
+    { const c = rc('oxygen'); this.o2Tanks = []; for (let i = 0; i < 3; i++) { this.o2Tanks.push(add('oxygen', this.sph(1.7, M.tankO2.clone(), 18, 12), c.x0 + 3 + i * 4.2, 2.0, c.z0 + 2.4)); add('oxygen', this.cyl(0.5, 0.8, 0.6, M.grey, 10), c.x0 + 3 + i * 4.2, 0.3, c.z0 + 2.4); hard(c.x0 + 3 + i * 4.2, c.z0 + 2.4, 1.9); }
+      add('oxygen', this.box(5, 2.6, 1.4, M.grey), c.cx, 1.3, c.cz + 2.5); this.o2Glow = add('oxygen', this.box(4.2, 0.35, 0.1, M.cyan.clone()), c.cx, 2.0, c.cz + 3.22); add('oxygen', this.cyl(0.18, 0.18, 5, M.metal, 8), c.cx, 2.9, c.cz + 2.5, 0, 0, 1.5708); hard(c.cx - 1.4, c.cz + 2.5, 1.5); hard(c.cx + 1.4, c.cz + 2.5, 1.5); }
+    // Potato farm: soil beds with bushy plants
+    { const c = rc('potato'); this.potatoes = []; const pg = new THREE.SphereGeometry(0.55, 7, 5);
+      for (let b = 0; b < 3; b++) { const z = c.z0 + 3 + b * 5; add('potato', this.box(25, 0.7, 2.4, M.white), c.cx, 0.35, z); add('potato', this.box(24.6, 0.2, 2.0, M.soil), c.cx, 0.75, z); add('potato', this.box(25, 0.1, 0.5, M.pink), c.cx, ROOM_H - 1.2, z); for (let k = 0; k < 14; k++) { const p = new THREE.Mesh(pg, k % 3 ? M.green : M.greenD); p.position.set(c.x0 + 3.4 + k * 1.75, 1.05, z + (hash(k, b) - 0.5) * 0.8); R.potato.props.add(p); this.potatoes.push({ m: p, ph: hash(k, b + 9) }); } hard(c.cx - 8, z, 1.4); hard(c.cx, z, 1.4); hard(c.cx + 8, z, 1.4); } }
+    // Tomato farm: vines with red fruit
+    { const c = rc('tomato'); this.tomatoes = []; const tg = new THREE.SphereGeometry(0.2, 7, 5);
+      for (let b = 0; b < 3; b++) { const z = c.z0 + 3 + b * 5; add('tomato', this.box(19, 0.7, 1.8, M.white), c.cx, 0.35, z); add('tomato', this.box(19, 0.1, 0.5, M.pink), c.cx, ROOM_H - 1.2, z); for (let k = 0; k < 10; k++) { const x = c.x0 + 3.2 + k * 1.95; add('tomato', this.cyl(0.05, 0.05, 2.6, M.greenD, 5), x, 2.0, z); const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.5, 6, 5), M.green); leaf.position.set(x, 2.3, z); leaf.scale.set(1, 1.6, 1); R.tomato.props.add(leaf); for (let f = 0; f < 3; f++) { const t = new THREE.Mesh(tg, M.tomato); t.position.set(x + (hash(k, f) - 0.5) * 0.7, 1.3 + f * 0.55, z + (hash(f, k) - 0.5) * 0.7); R.tomato.props.add(t); this.tomatoes.push(t); } } hard(c.cx - 6, z, 1.2); hard(c.cx, z, 1.2); hard(c.cx + 6, z, 1.2); } }
+    // Battery Store
+    { const c = rc('storage'); this.battBars = []; for (let i = 0; i < 4; i++) { const x = c.x0 + 2.6 + i * 3.6; add('storage', this.box(3, 3.4, 1.6, M.dark), x, 1.7, c.z1 - 1.5); this.battBars.push(add('storage', this.box(0.35, 2.6, 0.08, M.greenG.clone()), x, 1.7, c.z1 - 2.34)); add('storage', this.box(3.1, 0.2, 1.7, M.orange), x, 3.5, c.z1 - 1.5); hard(x, c.z1 - 1.5, 1.7); }
+      this.modSlots = []; for (let i = 0; i < 6; i++) { const m = add('storage', this.box(1.3, 1.0, 0.9, M.dark), c.x0 + 1.6 + (i % 3) * 1.7, 0.5 + Math.floor(i / 3) * 1.05, c.z0 + 6); this.modSlots.push(m); } }
+    // Bunk Room
+    { const c = rc('quarters'); for (let i = 0; i < 3; i++) { const x = c.x0 + 3.5 + i * 6; for (const y of [0.5, 2.3]) { add('quarters', this.box(2.2, 0.35, 4.2, M.white), x, y, c.z1 - 2.8); add('quarters', this.box(2.0, 0.2, 2.8, [M.orange, M.teal, M.blue][i]), x, y + 0.26, c.z1 - 2.2); add('quarters', this.box(1.4, 0.25, 0.8, M.white), x, y + 0.3, c.z1 - 4.4); } for (const dx of [-1.05, 1.05]) add('quarters', this.box(0.12, 3.2, 0.12, M.grey), x + dx, 1.6, c.z1 - 0.8); hard(x, c.z1 - 2.8, 1.8); }
+      add('quarters', this.box(1.2, 2.6, 0.8, M.grey), c.x0 + 1, 1.3, c.z0 + 1.2); }
+    // Bathroom
+    { const c = rc('bathroom'); add('bathroom', this.cyl(1.2, 1.2, 3.4, M.glass.clone(), 16), c.x0 + 2.4, 1.7, c.z1 - 2.4); add('bathroom', this.cyl(1.25, 1.25, 0.15, M.white, 16), c.x0 + 2.4, 0.08, c.z1 - 2.4); add('bathroom', this.cyl(0.5, 0.4, 0.8, M.white, 14), c.x1 - 2.2, 0.4, c.z1 - 2); add('bathroom', this.box(0.9, 1.0, 0.3, M.white), c.x1 - 2.2, 1.0, c.z1 - 1.3); add('bathroom', this.box(1.6, 0.25, 0.9, M.white), c.cx + 0.5, 1.0, c.z0 + 4.2); add('bathroom', new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.2), M.cyan), c.cx + 0.5, 2.2, c.z1 - 0.2, 0, Math.PI); hard(c.x0 + 2.4, c.z1 - 2.4, 1.4); }
+    // Water Room
+    { const c = rc('water'); this.waterTanks = []; for (let i = 0; i < 2; i++) { this.waterTanks.push(add('water', this.cyl(2, 2, 4.8, M.tankW.clone(), 20), c.x0 + 3.4 + i * 5.2, 2.4, c.z1 - 3)); hard(c.x0 + 3.4 + i * 5.2, c.z1 - 3, 2.2); } add('water', this.box(4.4, 2.2, 1.1, M.white), c.cx + 2, 1.1, c.cz - 1); this.waterGlow = add('water', this.box(3.6, 0.3, 0.1, M.cyan.clone()), c.cx + 2, 1.7, c.cz - 1.57); add('water', this.cyl(0.18, 0.18, 6, M.metal, 8), c.cx + 1, 3, c.cz + 1, 0, 0, 1.5708); hard(c.cx + 2, c.cz - 1, 2); }
+    // Animal Bay: hen coop, feed sacks, fish tank
+    { const c = rc('animal'), px = c.x0 + 5, pz = c.cz + 2.5; add('animal', this.cyl(3.6, 3.6, 0.12, M.straw, 24), px, 0.1, pz); for (let i = 0; i < 14; i++) { const a = (i / 14) * 6.283; add('animal', this.cyl(0.05, 0.05, 1, M.white, 5), px + Math.cos(a) * 3.6, 0.5, pz + Math.sin(a) * 3.6); } add('animal', new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.04, 5, 36), M.white), px, 1.0, pz, Math.PI / 2); add('animal', this.box(2.2, 1.3, 1.4, M.red), px, 0.65, pz + 2.2);
+      this.hens = []; for (let i = 0; i < 6; i++) { const h = new THREE.Group(); const b = this.sph(0.34, M.hen, 10, 8); b.scale.set(1, 0.9, 1.25); h.add(b); this.put(h, this.sph(0.17, M.hen, 8, 6), 0, 0.34, 0.3); this.put(h, new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 5), M.orange), 0, 0.32, 0.5, Math.PI / 2); this.put(h, this.box(0.05, 0.12, 0.12, M.red), 0, 0.52, 0.3); h.position.set(px, 0.42, pz); R.animal.props.add(h); this.hens.push({ g: h, a: i * 1.05, r: 0.8 + (i % 3) * 0.8, sp: 0.25 + hash(i, 4) * 0.3 }); }
+      this.henPod = add('animal', this.sph(1.1, M.white, 14, 10), px, 0.9, pz); this.henPod.scale.set(1.3, 0.8, 1); this.henPos = new V3(px, 0, pz);
+      this.sacks = []; for (let i = 0; i < 5; i++) this.sacks.push(add('animal', this.box(0.9, 0.5, 0.6, M.straw), c.x0 + 1.2 + (i % 2) * 1, 0.25 + Math.floor(i / 2) * 0.5, c.z0 + 6));
+      const tx = c.x1 - 3.6, tz = c.z0 + 7; add('animal', this.box(4.6, 0.7, 2.2, M.dark), tx, 0.35, tz); add('animal', this.box(4.4, 1.6, 2.0, M.water), tx, 1.5, tz); add('animal', this.box(4.5, 1.7, 2.1, M.glass.clone()), tx, 1.5, tz); this.fishes = []; for (let i = 0; i < 5; i++) { const f = this.sph(0.16, M.fish, 8, 6); f.scale.set(1.8, 1, 0.6); f.position.set(tx, 1.5, tz); R.animal.props.add(f); this.fishes.push({ m: f, ph: i * 1.3, tx, tz }); } hard(tx, tz, 2.2); hard(px, pz + 2.2, 1.4); }
+    this.farmLights = [this.lamp(this.deep, 57, 4.6, -15, 0xff4fd8, 20, 34), this.lamp(this.deep, 60, 4.6, 15, 0xff4fd8, 20, 34)];
+  }
+
+  _markers() {
+    this.rings = {};
+    const all = [...STATIONS, ...SITES.map((s) => ({ id: s.id, zone: 'top', pos: [s.pos[0] + 2, s.pos[1] + 16] }))];
+    for (const s of all) {
+      const parent = s.zone === 'top' ? this.top : this.deep, y = s.zone === 'top' ? this.heightAt(s.pos[0], s.pos[1]) + 0.14 : 0.08;
+      const ring = new THREE.Mesh(new THREE.RingGeometry(1.3, 1.6, 36), new THREE.MeshBasicMaterial({ color: 0x49e6ff, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(s.pos[0], y, s.pos[1]); parent.add(ring); this.rings[s.id] = ring;
+    }
+    this.beacon = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 60, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); this.beacon.visible = false; this.scene.add(this.beacon);
+    this.target = null;
+  }
+  _fx() {
+    this.flash = new THREE.PointLight(0xfff0d0, 0, 300, 1.2); this.top.add(this.flash);
+    const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(240 * 3), 3)); this.debris = new THREE.Points(dg, new THREE.PointsMaterial({ color: 0xd8d4cc, size: 0.5, transparent: true, opacity: 0 })); this.debris.frustumCulled = false; this.top.add(this.debris); this.debrisV = [];
+    const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(60 * 3), 3)); this.sparkPts = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffd27a, size: 0.14, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); this.sparkPts.frustumCulled = false; this.scene.add(this.sparkPts);
+    this.sparkV = Array.from({ length: 60 }, () => [0, 0, 0, 0]); this.sparkAt = null; this.sparkLight = new THREE.PointLight(0xffc27a, 0, 14, 1.5); this.scene.add(this.sparkLight);
+  }
+  // world position (THREE.Vector3) of a point given in a zone's own coordinates
+  at(zone, x, z, y = 0) { return new V3(x, (zone === 'top' ? this.heightAt(x, z) : TUBE.y) + y, z); }
+  stationPos(id) { const s = STATIONS.find((q) => q.id === id) || (() => { const t = SITES.find((q) => q.id === id); return { zone: 'top', pos: [t.pos[0] + 2, t.pos[1] + 16] }; })(); return this.at(s.zone, s.pos[0], s.pos[1]); }
+  // Where the orange guide beam stands: { zone, x, z, id }
+  setTarget(t) { this.target = t; if (!t) { this.beacon.visible = false; return; } const p = this.at(t.zone, t.x, t.z); this.beacon.position.set(p.x, p.y + 30, p.z); }
+  setZone(z) { this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; this.earth.visible = this.sunSprite.visible = z === 'top'; }
+  walkable(x, z) { for (const r of this.walk) if (x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1) return true; return false; }
+  sparks(pos) { this.sparkAt = pos; if (!pos) { this.sparkPts.material.opacity = 0; this.sparkLight.intensity = 0; } }
+  impactAt(x, z) {
+    const y = this.heightAt(x, z); this.flash.position.set(x, y + 6, z); this.flash.intensity = 9000;
+    const p = this.debris.geometry.attributes.position; this.debrisV = [];
+    for (let i = 0; i < 240; i++) { p.setXYZ(i, x, y + 0.3, z); const a = Math.random() * 6.283, up = 4 + Math.random() * 16, out = 3 + Math.random() * 14; this.debrisV.push([Math.cos(a) * out, up, Math.sin(a) * out]); }
+    p.needsUpdate = true; this.debris.material.opacity = 1; this.debrisT = 0;
+  }
+
+  // Called every frame. S = sim state (may be null). ctx = { player:{x,z}, zone, carOn, shipOn, shipFly }
+  update(dt, S, focus, ctx = {}) {
+    this.t += dt; const t = this.t, M = this.M;
+    const sn = S ? S.flow.sun : { e: -0.5, u: 0.6, n: -0.1, factor: 1, up: true, elev: 37 };
+    this.sunDir.set(sn.e, sn.u, -sn.n).normalize(); const topZ = this.zone === 'top', night = !sn.up;
+    this.sky.position.copy(this.camera.position); this.earthMat.uniforms.sunDir.value.copy(this.sunDir);
+    this.earth.quaternion.copy(this.earthBase).multiply(this.earthSpin.setFromAxisAngle(this.yUp, (S ? S.t / 24 : t / 60) * 6.283));
+    this.sunSprite.position.copy(this.sunDir).multiplyScalar(2500); this.sunSprite.visible = topZ && sn.u > -0.03;
+    const earthLit = (1 - this.sunDir.dot(EARTH_DIR)) / 2; this.earthLit = earthLit;
+    this.sunLight.intensity = topZ ? 3.4 * sn.factor : 0; const f = focus || this.camera.position;
+    this.sunLight.target.position.set(Math.round(f.x / 4) * 4, topZ ? f.y : 0, Math.round(f.z / 4) * 4);
+    this.sunLight.position.copy(this.sunLight.target.position).addScaledVector(this.sunDir.clone().setY(Math.max(this.sunDir.y, 0.06)).normalize(), 300); this.sunLight.castShadow = topZ && sn.factor > 0.02;
+    this.earthLight.intensity = topZ ? (night ? 0.25 + 1.25 * earthLit : 0.1) : 0; this.earthLight.target.position.copy(f); this.earthLight.position.copy(f).addScaledVector(EARTH_DIR, 200);
+    this.hemi.intensity = topZ ? 0.3 + 0.6 * sn.factor : 0; this.starMat.color.setScalar(topZ ? (night ? 1 : 0.5) : 0.8);
+    const dim = S && S.flow.eff < 1 ? 0.35 : 1;
+    for (const L of this.lamps) L.l.intensity = L.top ? (topZ ? L.base * (night ? 1.5 : 0.25) : 0) : (topZ ? 0 : L.base * dim);
+    this.deepHemi.intensity = topZ ? 0 : 1.5 * (0.45 + 0.55 * dim);
+    // solar mounts
+    const az = Math.atan2(this.sunDir.x, this.sunDir.z), el = Math.asin(clamp(this.sunDir.y, 0, 1)), dust = S ? S.dust : 0.1;
+    this.mounts.forEach((m, i) => {
+      const st = S ? S.mounts[i] : i < 8 ? 1 : 0; if (st !== m.state) { m.state = st; m.head.visible = st === 1; m.bad.visible = st === 2; m.cap.visible = st === 0; }
+      if (st === 1) { if (!night) m.head.rotation.y = az; m.tilt.rotation.x = night ? 0 : Math.PI / 2 - el; m.mat.color.lerpColors(this.panelClean, this.panelDusty, clamp(dust * 1.25, 0, 1)); m.mat.emissiveIntensity = 0.25 * (1 - dust); }
+    });
+    const down = S && S.f.commsDown; this.dishHead.quaternion.slerp(down ? this.dishOff : this.dishAim, 0.04);
+    this.dishLight.material.emissive.setHex(down ? 0xff3b30 : S && S.lv.comms === 0 ? 0x555555 : 0x4dff88); this.dishLight.material.emissiveIntensity = down ? 1.5 + Math.sin(t * 8) : 2;
+    this.isruGlow.material.emissiveIntensity = S && S.flow.use.isru > 0 ? 2.4 + Math.sin(t * 5) * 0.5 : 0.05;
+    this.heaterGlow.material.emissiveIntensity = S ? 0.3 + S.lv.heat * 0.9 * (S.f.heater ? 0.3 + 0.3 * Math.sin(t * 12) : 1) : 0.4;
+    this.reactorBeacon.material.emissiveIntensity = 1.5 + Math.sin(t * 2.2) * 1.2;
+    if (S) {
+      for (const p of this.pads) { const v = S[p.k], on = v.charging; p.ring.material.emissive.setHex(on ? 0x49e6ff : 0x2a5560); p.ring.material.emissiveIntensity = on ? 2 + Math.sin(t * 6) : 1; p.led.material.emissive.setHex(v.charge > 0.5 ? 0x4dff88 : v.charge > 0.2 ? 0xffa424 : 0xff3b30); }
+      this.carLed.material.emissive.setHex(S.car.charge > 0.5 ? 0x4dff88 : S.car.charge > 0.2 ? 0xffa424 : 0xff3b30); this.shipLed.material.emissive.setHex(S.ship.charge > 0.5 ? 0x4dff88 : S.ship.charge > 0.2 ? 0xffa424 : 0xff3b30);
+    }
+    this.car.visible = this.ship.visible = topZ; this.carLamp.intensity = ctx.carOn && night ? 40 : 0; this.shipLamp.intensity = ctx.shipOn && night ? 50 : 0;
+    for (const j of this.shipJets) { j.material.opacity = ctx.shipFly ? 0.55 + Math.random() * 0.3 : 0; j.scale.y = 0.8 + Math.random() * 0.5; }
+    for (const s of SITES) { const o = this.sites[s.id], done = S && S.rescued.includes(s.id); o.beam.material.opacity = (done ? 0.05 : 0.14) + 0.05 * Math.sin(t * 2); o.b.material.emissiveIntensity = 1.5 + Math.sin(t * 4) * 1.2; }
+    // ---- the station
+    if (S && !topZ) {
+      const px = ctx.player ? ctx.player.x : 0, pz = ctx.player ? ctx.player.z : 0;
+      for (const id in this.rooms) {
+        const R = this.rooms[id], r = S.rooms[id], d = R.def, wreck = r.built < 1, near = Math.hypot(px - d.door, pz - d.side * 4.5) < 4.6;
+        R.wall.color.setRGB(1, 1, 1).lerp(new THREE.Color(0x7f9fc4), r.frozen ? 0.65 : clamp(1 - r.p / K.AIR_KPA, 0, 1) * 0.35);
+        R.light.emissive.setHex(r.hole > 0 ? 0xff3b30 : 0xffffff); R.light.emissiveIntensity = (r.hole > 0 ? 1.2 + Math.sin(t * 9) : wreck ? 0.12 : 1.6) * (0.4 + 0.6 * dim);
+        const n = R.props.children.length, show = wreck ? Math.floor(n * clamp((r.built - 0.3) / 0.7, 0, 1) * 0.85) : n; for (let i = 0; i < n; i++) R.props.children[i].visible = i < show;
+        R.debris.visible = wreck; R.debris.scale.setScalar(wreck ? clamp(1.3 - r.built, 0.3, 1) : 1); R.hole.visible = r.hole > 0; R.jet.visible = r.hole > 0 && r.p > 4; R.jet.material.opacity = 0.12 + 0.3 * (r.p / K.AIR_KPA) * (0.6 + 0.4 * Math.sin(t * 30));
+        R.open += ((r.door || near ? 1 : 0) - R.open) * Math.min(1, dt * 6); R.door.position.y = 2.1 + R.open * 4.0; R.swLed.material.emissive.setHex(r.door ? 0x4dff88 : 0xff3b30);
+      }
+      const b = S.battery / S.flow.cap; this.battBars.forEach((bar, i) => { bar.scale.y = b > i / 4 - 0.02 ? clamp((b - i / 4) * 4, 0.12, 1) : 0.08; bar.material.emissive.setHex(b < 0.15 ? 0xff3b30 : b < 0.35 ? 0xffa424 : 0x4dff88); });
+      this.modSlots.forEach((m, i) => { if (m.visible) m.visible = i < S.mods; });
+      const o = S.o2 / S.o2Cap; this.o2Tanks.forEach((tk, i) => tk.material.emissive.setRGB(0, 0.3 * clamp(o * 3 - i, 0, 1), 0.12 * clamp(o * 3 - i, 0, 1))); this.o2Glow.material.emissive.setHex(S.flow.o2Elec > 0 ? 0x49e6ff : 0x333333);
+      const w = S.water / S.waterCap; this.waterTanks.forEach((tk) => tk.material.emissive.setRGB(0, 0.1 * w, 0.35 * w)); this.waterGlow.material.emissive.setHex(S.f.leakWater ? 0xff3b30 : 0x49e6ff);
+      const lit = S.lv.farm * S.flow.eff; M.pink.emissiveIntensity = 0.25 + 0.6 * lit; this.farmLights[0].intensity = S.rooms.potato.built >= 1 ? 6 + 6 * lit : 0; this.farmLights[1].intensity = S.rooms.tomato.built >= 1 ? 6 + 6 * lit : 0;
+      const cp = S.crops.potato, gp = clamp(0.35 + cp.g * 0.6 + (cp.ripe ? 0.35 : 0), 0.3, 1.25) * (0.4 + 0.6 * cp.hp); this.potatoes.forEach((p) => { if (p.m.visible) p.m.scale.set(gp + p.ph * 0.2, gp * 0.8, gp + p.ph * 0.2); });
+      const ct = S.crops.tomato, ripeN = Math.floor(this.tomatoes.length * clamp((ct.ripe + ct.g * 0.7) / 2, 0, 1)); this.tomatoes.forEach((m, i) => { if (m.visible) m.visible = i < ripeN; });
+      const ok = S.rooms.animal.built >= 1 && !S.rooms.animal.frozen && S.rooms.animal.p > 55; this.henPod.visible = this.henPod.visible && !ok;
+      this.hens.forEach((h, i) => { if (!h.g.visible) return; h.g.visible = ok && i < S.hens; h.a += dt * h.sp * (S.feed > 0 ? 1 : 0.3); h.g.position.set(this.henPos.x + Math.cos(h.a) * h.r, 0.42 + Math.abs(Math.sin(t * 5 + i)) * 0.06, this.henPos.z + Math.sin(h.a) * h.r * 0.8); h.g.rotation.y = -h.a; h.g.rotation.x = Math.sin(t * 3 + i * 2) > 0.8 ? 0.6 : 0; });
+      this.sacks.forEach((s, i) => { if (s.visible) s.visible = S.feed > i * 1.1; }); this.fishes.forEach((fi) => { if (fi.m.visible) { fi.m.visible = S.fish; fi.m.position.set(fi.tx + Math.sin(t * 0.6 + fi.ph) * 1.7, 1.5 + Math.sin(t * 0.9 + fi.ph * 2) * 0.45, fi.tz + Math.cos(t * 0.5 + fi.ph) * 0.6); fi.m.rotation.y = Math.cos(t * 0.6 + fi.ph) > 0 ? 0 : Math.PI; } });
+      this.canStacks.forEach((c, i) => { if (c.visible) c.visible = S.cans > i * 2; }); this.stove.material.emissiveIntensity = ctx.cooking ? 2.5 : 0.15;
+      const busy = S.bench.some((b2) => b2 && b2.left > 0) || !!S.fab;
+      this.benchSlots.forEach((sl, i) => { const b2 = S.bench[i]; sl.g.visible = sl.g.visible && !!b2; sl.a.visible = !!b2 && b2.left > 0; sl.b.visible = !!b2 && b2.left <= 0; });
+      if (busy) { this.armA.rotation.z = Math.sin(t * 1.7) * 0.5; this.armA.rotation.y = Math.sin(t * 0.8) * 1.2; this.armB.rotation.z = -0.9 + Math.sin(t * 2.3) * 0.5; this.armTip.material.emissiveIntensity = 2 + Math.sin(t * 20) * 2; } else this.armTip.material.emissiveIntensity = 0.6;
+      this.fabPart.visible = this.fabPart.visible && !!S.fab; if (S.fab) { this.fabHead.position.x = FAB[0] + Math.sin(t * 2.4) * 3.6; const k = 1 - S.fab.left / S.fab.total; this.fabPart.scale.set(0.2 + 0.8 * k, 1, 1); }
+    }
+    this.beam.material.opacity = 0.02 + 0.09 * sn.factor;
+    // markers
+    const pulse = 0.4 + 0.25 * Math.sin(t * 3), tid = this.target && this.target.id;
+    for (const id in this.rings) { const r = this.rings[id]; r.material.opacity = id === tid ? 0.95 : pulse; r.material.color.setHex(id === tid ? 0xffb347 : 0x49e6ff); r.scale.setScalar(id === tid ? 1.5 + 0.2 * Math.sin(t * 5) : 1); }
+    if (this.target) { this.beacon.visible = this.target.zone === this.zone; this.beacon.material.opacity = 0.16 + 0.08 * Math.sin(t * 4); }
+    // effects
+    if (this.flash.intensity > 1) this.flash.intensity *= Math.pow(0.02, dt);
+    if (this.debris.material.opacity > 0.01) { this.debrisT += dt; const p = this.debris.geometry.attributes.position; for (let i = 0; i < this.debrisV.length; i++) { const v = this.debrisV[i]; v[1] -= K.GRAVITY * dt; p.setXYZ(i, p.getX(i) + v[0] * dt, Math.max(p.getY(i) + v[1] * dt, -200), p.getZ(i) + v[2] * dt); } p.needsUpdate = true; this.debris.material.opacity = clamp(1 - this.debrisT / 14, 0, 1); }
+    if (this.sparkAt) {
+      const p = this.sparkPts.geometry.attributes.position, a = this.sparkAt;
+      for (let i = 0; i < 60; i++) { const v = this.sparkV[i]; v[3] -= dt; if (v[3] <= 0) { p.setXYZ(i, a.x + (Math.random() - 0.5) * 0.6, a.y + 0.8 + Math.random() * 0.8, a.z + (Math.random() - 0.5) * 0.6); v[0] = (Math.random() - 0.5) * 3; v[1] = 1 + Math.random() * 3; v[2] = (Math.random() - 0.5) * 3; v[3] = 0.25 + Math.random() * 0.5; } else { v[1] -= 4 * dt; p.setXYZ(i, p.getX(i) + v[0] * dt, p.getY(i) + v[1] * dt, p.getZ(i) + v[2] * dt); } }
+      p.needsUpdate = true; this.sparkPts.material.opacity = 0.95; this.sparkLight.position.set(a.x, a.y + 1.2, a.z); this.sparkLight.intensity = 3 + Math.random() * 5;
+    }
+  }
+  render() { this.renderer.render(this.scene, this.camera); }
+}

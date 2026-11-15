@@ -1,0 +1,878 @@
+{
+ "ref_rego": {
+  "request_id": "01a1dc23-5e52-77df-9068-eed700899b99",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc23-5e52-77df-9068-eed700899b99/status",
+  "prompt": "Character design reference sheet on a dark charcoal studio backdrop. One small friendly lunar helper robot shown three times: front view, side view, three-quarter back view. ORIGINAL design: a compact rounded-rectangular body of white ceramic panels with safety-orange trim and scuffed moon-dust wear, two chunky dark mesh-metal tank treads, a short flexible neck, a wide rounded head with ONE continuous dark glass visor screen showing two large glowing cyan oval pixel eyes with a curious happy expression, a tiny antenna with a small amber light on top of the head, a small fold-out solar panel on its back, two short three-finger utility arms, a round headlamp on the chest. About knee-high to a human. Charming, expressive, sturdy, believable near-future space hardware. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/ref_rego.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc23-5e52-77df-9068-eed700899b99/b76b00ad-e01d-4b92-8698-cd45183843f6.png",
+  "bytes": 12560155,
+  "seconds": 46
+ },
+ "ref_suit": {
+  "request_id": "01a1dc23-5e4e-7585-b35a-4648cd27a687",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc23-5e4e-7585-b35a-4648cd27a687/status",
+  "prompt": "Astronaut suit design reference sheet on a dark charcoal studio backdrop. One next-generation lunar surface spacesuit shown three times, full body: front view, side view, back view. Sleek white suit with soft armor plates on chest, shoulders and knees, safety-orange accent bands on the upper arms and knees, light grey flexible joints, dusty grey boots, a slim life-support backpack with a small cyan status light, chest control panel with small buttons, wrist display, a large rounded helmet with a gold mirrored visor that completely hides the face. Slight lunar dust on boots and legs. Believable near-future engineering, friendly and heroic. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/ref_suit.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc23-5e4e-7585-b35a-4648cd27a687/21cb1370-5b10-4d0b-b88c-e0675e1a620c.png",
+  "bytes": 12794979,
+  "seconds": 40
+ },
+ "p_vasquez": {
+  "request_id": "01a1dc23-5e55-707e-a768-1eda45fbf62b",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc23-5e55-707e-a768-1eda45fbf62b/status",
+  "prompt": "Head-and-shoulders portrait of a veteran astronaut commander, a Latina woman in her late forties with short dark hair with one grey streak, warm confident smile, kind tired eyes. She wears a white lunar spacesuit with RED commander stripes on the shoulders, helmet off, the metal neck ring visible. Background: softly blurred interior of a Moon habitat with warm lights and a small round window. Shallow depth of field, warm key light. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/p_vasquez.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc23-5e55-707e-a768-1eda45fbf62b/d1711259-1cfd-427f-8ff3-e2ffab9c53f1.png",
+  "bytes": 10627675,
+  "seconds": 52
+ },
+ "p_okoro": {
+  "request_id": "01a1dc23-5e43-73ff-ac55-0199c726aeda",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc23-5e43-73ff-ac55-0199c726aeda/status",
+  "prompt": "Head-and-shoulders portrait of a cheerful flight engineer astronaut, a Nigerian man in his mid thirties with short hair and a neat beard, big friendly grin. He wears a white lunar spacesuit with BLUE engineer stripes on the shoulders, helmet off, the metal neck ring visible, a small wrench tucked in a chest loop. Background: softly blurred interior of a Moon habitat with tool racks and pink greenhouse glow. Shallow depth of field, warm key light. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/p_okoro.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc23-5e43-73ff-ac55-0199c726aeda/a6a65a96-44fb-40b4-9460-4116325608d9.png",
+  "bytes": 11697299,
+  "seconds": 58
+ },
+ "p_flight": {
+  "request_id": "01a1dc23-5e3f-7d7c-87cd-37f220001404",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc23-5e3f-7d7c-87cd-37f220001404/status",
+  "prompt": "Head-and-shoulders portrait of a calm mission control flight director, a South Asian woman in her fifties with silver-streaked hair tied back, wearing a slim headset with microphone and a dark blue vest over a white shirt. Serious but reassuring expression. Background: softly blurred dark mission control room with rows of glowing blue screens and a large display of the Moon. Shallow depth of field, cool screen light on her face. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/p_flight.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc23-5e3f-7d7c-87cd-37f220001404/b687d2ea-9d96-49ae-b1bd-fdb449dada50.png",
+  "bytes": 10207862,
+  "seconds": 52
+ },
+ "p_rego": {
+  "request_id": "01a1dc26-8539-7226-85cb-30ce85d17fa0",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc26-8539-7226-85cb-30ce85d17fa0/status",
+  "prompt": "Close-up portrait of the same small helper robot from the reference image: white ceramic body panels with safety-orange trim, wide head with one dark glass visor showing two big glowing cyan oval pixel eyes, happy curious expression, head tilted slightly, tiny antenna with amber light. Background: softly blurred lunar surface and black sky with a small blue Earth. Shallow depth of field. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/p_rego.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc26-8539-7226-85cb-30ce85d17fa0/3f2721b5-5bd3-49f8-b7ca-ed6d999cf572.png",
+  "bytes": 11107391,
+  "seconds": 65
+ },
+ "p_rookie": {
+  "request_id": "01a1dc26-8565-7757-ab6a-c32e60ca0861",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc26-8565-7757-ab6a-c32e60ca0861/status",
+  "prompt": "Head-and-shoulders portrait of a young rookie astronaut wearing the same white lunar spacesuit with safety-orange accent bands from the reference image, helmet on, gold mirrored visor completely hiding the face and reflecting a small blue Earth and a grey lunar horizon. Background: softly blurred lunar surface and black sky. Heroic three-quarter angle. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_suit"
+  ],
+  "file": "assets/art/4k/p_rookie.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc26-8565-7757-ab6a-c32e60ca0861/921a1bd3-27a5-4af6-a178-f06ceb1ac261.png",
+  "bytes": 11944023,
+  "seconds": 65
+ },
+ "title": {
+  "request_id": "01a1dc26-8565-71c6-b4b7-683468022197",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc26-8565-71c6-b4b7-683468022197/status",
+  "prompt": "Epic wide key art for a Moon survival adventure. Seen from behind and slightly to the side: one astronaut in the white spacesuit with orange accent bands from the reference, and the small white-and-orange helper robot on tank treads from the reference beside them, standing at the rim of a gigantic round pit in the lunar surface, a collapsed lava-tube skylight about one hundred meters across with sheer layered basalt walls. Deep inside the pit, warm lights of an underground base and a faint pink greenhouse glow. In the middle distance a field of dark blue solar panels, a communications dish and a landed spacecraft. A small half-lit blue Earth hangs high in the black sky. Low sun, very long shadows. Composition leaves dark empty sky in the upper left third. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_suit",
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/title.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc26-8565-71c6-b4b7-683468022197/94d3d5bc-379b-4ffb-9b5b-484495bac825.png",
+  "bytes": 13388510,
+  "seconds": 58
+ },
+ "intro_arrival": {
+  "request_id": "01a1dc26-856d-789a-8de4-8be1e6aa302c",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc26-856d-789a-8de4-8be1e6aa302c/status",
+  "prompt": "A futuristic lunar lander descending on a pillar of thin engine exhaust toward a small Moon outpost on a flat grey lava plain: rows of dark blue solar panels, a large parabolic communications dish, a dome airlock half-buried under piled regolith, a landing pad with ring lights, and beyond it a huge round pit, the skylight of a lava tube, with an elevator gantry on its rim. Kicked-up dust sprays outward in straight lines. A small blue Earth high in the black sky. Aerial three-quarter view. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/intro_arrival.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc26-856d-789a-8de4-8be1e6aa302c/36db03e2-0e67-4e45-b115-846efcb51a75.png",
+  "bytes": 14923339,
+  "seconds": 52
+ },
+ "intro_tube": {
+  "request_id": "01a1dc26-8565-76ec-bae9-b710bcf629d4",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc26-8565-76ec-bae9-b710bcf629d4/status",
+  "prompt": "Interior of an enormous lunar lava tube, a natural basalt tunnel about eighty meters wide with a high arched ceiling of dark rippled volcanic rock. On the flat floor sits a futuristic underground base: white inflatable habitat modules with glowing round windows, a long greenhouse of stacked plant racks under magenta-pink LED grow lights, silver oxygen and water tanks, battery racks with green indicator lights, and strings of warm work lights. A dramatic shaft of hard white sunlight falls from a round skylight far above, with an elevator cable running up through it. Tiny astronaut figure for scale. Awe-inspiring, cozy and safe. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/intro_tube.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc26-8565-76ec-bae9-b710bcf629d4/1debab08-c67e-4d3c-bf60-2ce1992da47e.png",
+  "bytes": 13618721,
+  "seconds": 46
+ },
+ "mentors": {
+  "request_id": "01a1dc26-8556-784a-b4bc-700f19106562",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc26-8556-784a-b4bc-700f19106562/status",
+  "prompt": "Inside a cozy Moon habitat, the two astronauts from the reference portraits stand side by side facing the camera as if welcoming a new crew member: the Latina commander with short dark hair and grey streak in a white suit with red stripes, and the Nigerian engineer with a neat beard in a white suit with blue stripes, both with helmets off held under one arm, both smiling warmly. The small white-and-orange helper robot from the reference sits between them looking up with happy cyan eyes. Behind them a control desk with glowing screens and a round window showing the grey lunar surface. Warm interior light. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "p_vasquez",
+   "p_okoro",
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/mentors.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc26-8556-784a-b4bc-700f19106562/e9ebe176-9b65-4d4b-a48e-56f7c638ef2b.png",
+  "bytes": 12675452,
+  "seconds": 65
+ },
+ "accident": {
+  "request_id": "01a1dc27-3a27-7d83-be52-1243c8ba49d4",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc27-3a27-7d83-be52-1243c8ba49d4/status",
+  "prompt": "Somber, quiet wide shot on the lunar surface. In the foreground, seen from behind, one astronaut in the white suit with orange bands from the reference and the small helper robot from the reference stand still, looking toward the distant rim of a huge round pit where a section of the edge has freshly collapsed. Two sets of rover wheel tracks lead across the dust to the broken edge and stop. A thin cloud of dust hangs motionless above the gap. An abandoned tool case lies on the ground. No people or vehicles visible at the pit. Low sun, very long shadows, small blue Earth in the black sky. Respectful, melancholy mood, no gore. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_suit",
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/accident.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc27-3a27-7d83-be52-1243c8ba49d4/ce11357b-426e-4773-8cd3-2e2753877b90.png",
+  "bytes": 13864093,
+  "seconds": 58
+ },
+ "mission_control": {
+  "request_id": "01a1dc27-525f-7a86-a6d2-e6bb516f3720",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc27-525f-7a86-a6d2-e6bb516f3720/status",
+  "prompt": "A futuristic mission control room on Earth at night, rows of consoles with blue glowing screens, a giant wall display showing a map of the Moon with a blinking marker and a countdown graphic made of simple bars, a few controllers in headsets working tensely. In the foreground the flight director from the reference portrait, a South Asian woman with silver-streaked hair and a headset, leans on a console looking up at the big screen with determination. Cool blue light, cinematic depth. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "p_flight"
+  ],
+  "file": "assets/art/4k/mission_control.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc27-525f-7a86-a6d2-e6bb516f3720/db6a42cc-dc46-4f61-8109-9b42e091629d.png",
+  "bytes": 10063013,
+  "seconds": 52
+ },
+ "night": {
+  "request_id": "01a1dc27-6a4e-7eb7-9a7e-01dbb2129261",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc27-6a4e-7eb7-9a7e-01dbb2129261/status",
+  "prompt": "Lunar night at a Moon outpost. One astronaut in the white suit with orange bands from the reference sits on a supply crate next to the small helper robot from the reference; both look up at a nearly full blue-and-white Earth high in the black starry sky. The landscape is lit only by soft blue earthshine and a few warm amber work lights; rows of solar panels sit dark and idle; heaters glow faint orange on equipment. The robot's cyan eyes glow gently and its headlamp makes a small pool of light. Quiet, lonely, hopeful. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_suit",
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/night.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc27-6a4e-7eb7-9a7e-01dbb2129261/067e8fc8-ffe7-4a41-96aa-6918a8f0dc81.png",
+  "bytes": 10960568,
+  "seconds": 58
+ },
+ "win": {
+  "request_id": "01a1dc27-829b-7584-92ae-5d200fdff003",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc27-829b-7584-92ae-5d200fdff003/status",
+  "prompt": "Triumphant lunar dawn. A sleek rescue lander descends on a bright plume toward a landing pad with ring lights, the rising Sun blazing just above the grey horizon and casting extremely long shadows. In the foreground, seen from behind, one astronaut in the white suit with orange bands from the reference raises both arms in joy, and the small helper robot from the reference raises its little arms too, its cyan eyes curved happily. Solar panels catching the first gold light. Small blue Earth in the black sky. Joyful, emotional, heroic. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_suit",
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/win.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc27-829b-7584-92ae-5d200fdff003/a4b9bbb4-b190-4899-a2e2-d15dcac25ee8.png",
+  "bytes": 12891249,
+  "seconds": 58
+ },
+ "lose": {
+  "request_id": "01a1dc27-83f5-7486-9c18-dafd37906f73",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc27-83f5-7486-9c18-dafd37906f73/status",
+  "prompt": "A powered-down underground Moon base inside a dark lava tube. Habitat windows dark, greenhouse lights off with wilted plants in shadow, frost on pipes and tanks, a single red emergency light. In the foreground the small helper robot from the reference sits alone with dim, sad cyan eyes, its headlamp casting a weak cone of light across the dusty floor. Melancholy but gentle, not scary. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/lose.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc27-83f5-7486-9c18-dafd37906f73/ab504089-0fa3-45be-840e-a643665af6ef.png",
+  "bytes": 10823048,
+  "seconds": 58
+ },
+ "ev_solar": {
+  "request_id": "01a1dc2b-9e57-707f-a60c-b73462163e3f",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc2b-9e57-707f-a60c-b73462163e3f/status",
+  "prompt": "Inside a Moon base command room during a space-weather alert. A large curved monitor fills most of the frame showing a solar-observatory telescope image of the Sun in glowing orange extreme-ultraviolet light with one intensely bright white flare and a looping plasma eruption on its edge. Red and amber warning lights wash over the consoles. In the foreground the small helper robot from the reference looks at the screen with wide alarmed cyan eyes, one arm pointing at the flare. A second smaller screen shows a simple rising bar graph. Tense, urgent, scientifically believable. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/ev_solar.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc2b-9e57-707f-a60c-b73462163e3f/dee3cf7b-0a0e-4f60-8a59-a26dd5fe4797.png",
+  "bytes": 10195073,
+  "seconds": 52
+ },
+ "ev_meteor": {
+  "request_id": "01a1dc28-1c70-75f5-afd9-e8725a30c121",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc28-1c70-75f5-afd9-e8725a30c121/status",
+  "prompt": "The instant a small meteoroid strikes the lunar surface right beside a field of dark blue solar panels at a Moon outpost: a blinding white-orange flash, a symmetric cone of dust and rock fragments spraying outward in perfectly straight lines with no billowing because there is no air, a few panels cracked and tilted. Black sky, hard sunlight, frozen-moment action shot. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/ev_meteor.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc28-1c70-75f5-afd9-e8725a30c121/5d91fe01-e722-42c9-bb63-22691f6db5f0.png",
+  "bytes": 15052242,
+  "seconds": 52
+ },
+ "ev_dust": {
+  "request_id": "01a1dc28-1db5-7646-84c6-4f7ae87177ce",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc28-1db5-7646-84c6-4f7ae87177ce/status",
+  "prompt": "Close view of solar panels on the Moon coated in a thick layer of fine clingy grey lunar dust, with a clean streak where a gloved hand has wiped. One astronaut in the white suit with orange bands from the reference kneels beside a panel holding a soft brush. Along the far horizon at sunset a faint ghostly glowing band of electrically levitated dust. Low golden sun, long shadows, black sky. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_suit"
+  ],
+  "file": "assets/art/4k/ev_dust.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc28-1db5-7646-84c6-4f7ae87177ce/a101a905-60db-46e1-b983-53a7ed00d0c6.png",
+  "bytes": 13483003,
+  "seconds": 52
+ },
+ "ev_quake": {
+  "request_id": "01a1dc28-4cd8-7e47-87de-ad5fe0e14561",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc28-4cd8-7e47-87de-ad5fe0e14561/status",
+  "prompt": "A moonquake shaking an underground Moon base inside a huge dark lava tube: fine dust and small pebbles drifting slowly down from the rock ceiling in low gravity, hanging work lights swinging, a silver pipe joint cracked and spraying a white jet of vapor, warning lights flashing amber, white habitat modules and tanks in the background. Slight motion blur, tense but not catastrophic. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/ev_quake.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc28-4cd8-7e47-87de-ad5fe0e14561/bf931970-dfd7-428e-8545-f9e83c351525.png",
+  "bytes": 10847668,
+  "seconds": 45
+ },
+ "ev_fire": {
+  "request_id": "01a1dc28-4e68-7440-a551-c4380d7be76d",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc28-4e68-7440-a551-c4380d7be76d/status",
+  "prompt": "Inside a Moon habitat equipment bay, a small electrical fire burns in an open life-support rack: rounded, slow, blue-and-orange flames typical of low gravity, thin smoke spreading along the ceiling, red alarm strobes. A crew member's gloved arm in the foreground aims a fire extinguisher nozzle at the base of the flames. The small helper robot from the reference watches with wide worried cyan eyes. Urgent, dramatic lighting. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/ev_fire.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc28-4e68-7440-a551-c4380d7be76d/a39c5953-d5b1-498d-991f-8b12c9f55ea2.png",
+  "bytes": 10578062,
+  "seconds": 58
+ },
+ "ev_co2": {
+  "request_id": "01a1dc28-6583-77f7-a370-0cb9d664046d",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc28-6583-77f7-a370-0cb9d664046d/status",
+  "prompt": "Close-up on a workbench inside a Moon habitat: two hands in thin inner gloves assembling an improvised air filter, a square white canister being fitted to a round hose using grey duct tape, a plastic bag and a cardboard cover, tools and a paper checklist beside it. A wall display behind shows a rising orange bar. Homage to the Apollo 13 fix. Warm task-lamp light, shallow depth of field. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/ev_co2.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc28-6583-77f7-a370-0cb9d664046d/b9fcfd15-c847-48d9-b570-421d40b62f30.png",
+  "bytes": 10452919,
+  "seconds": 45
+ },
+ "ev_crops": {
+  "request_id": "01a1dc28-659d-707c-a7df-262b950533ca",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc28-659d-707c-a7df-262b950533ca/status",
+  "prompt": "Inside a space greenhouse under magenta-pink LED grow lights: rows of red romaine lettuce, radishes and dwarf wheat in white hydroponic racks. Some leaves in the foreground show fuzzy grey-white mold spots. A crew member's gloved hand gently lifts a sick leaf to inspect it, while the small helper robot from the reference peers closely with concerned cyan eyes. Fine water mist in the air. Detailed, tender. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/ev_crops.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc28-659d-707c-a7df-262b950533ca/2ee4e429-6a73-49a5-af8e-f31fece72161.png",
+  "bytes": 12052053,
+  "seconds": 58
+ },
+ "ev_comms": {
+  "request_id": "01a1dc28-e934-70fd-9695-6221df7863a6",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc28-e934-70fd-9695-6221df7863a6/status",
+  "prompt": "A large white parabolic communications dish on a tall mast at a Moon outpost, pointed precisely at a small blue half-lit Earth high in the black sky. A thin visible beam of light links dish and Earth. Regolith berm and cable runs at the base, solar panels beyond. Low angle looking up, heroic, crisp hard sunlight. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/ev_comms.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc28-e934-70fd-9695-6221df7863a6/2370a8c3-9168-40d1-85f6-d524c2273b61.png",
+  "bytes": 11694092,
+  "seconds": 39
+ },
+ "ev_freeze": {
+  "request_id": "01a1dc28-e9c0-7bf2-b9d9-026fb96db90f",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc28-e9c0-7bf2-b9d9-026fb96db90f/status",
+  "prompt": "Deep lunar night at a Moon outpost at minus 170 degrees Celsius: machinery, cable reels and a communications mast coated in sparkling frost, small electric heaters glowing orange-red around the most important equipment, dark idle solar panels, the scene lit by cold blue earthshine from a nearly full Earth. Bitterly cold, still and silent. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/ev_freeze.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc28-e9c0-7bf2-b9d9-026fb96db90f/90cde3a5-0d2f-4587-a820-85fb71730b75.png",
+  "bytes": 12729366,
+  "seconds": 45
+ },
+ "ev_supply": {
+  "request_id": "01a1dc28-fec7-73d0-8d49-099dba735528",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc28-fec7-73d0-8d49-099dba735528/status",
+  "prompt": "On the lunar surface beside a parked cargo sled, an open supply case packed with neatly labeled spare parts, coiled cables, filters and tool kits, lit from inside by a soft white light. The small helper robot from the reference lifts one arm in delight, cyan eyes curved happily. Hard sunlight, long shadows, black sky. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_rego"
+  ],
+  "file": "assets/art/4k/ev_supply.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc28-fec7-73d0-8d49-099dba735528/fbc16579-c9cc-46f8-9d17-aeb1fce975fa.png",
+  "bytes": 14191413,
+  "seconds": 52
+ },
+ "codex_lavatube": {
+  "request_id": "01a1dc29-1776-7c7f-be15-38f09a558378",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc29-1776-7c7f-be15-38f09a558378/status",
+  "prompt": "Cinematic cutaway cross-section of the Moon's surface revealing a huge hollow lava tube beneath a grey lava plain. On the surface: solar panels, a dish antenna, a landing pad and an elevator gantry at the edge of a round collapsed skylight pit. Below, inside the tunnel, a glowing underground base with white habitat modules and a pink-lit greenhouse, protected under thick layers of basalt rock. Sunlight shaft through the skylight. Clean, clear, educational composition like a museum diorama, black space above with a small blue Earth. Cinematic film still, photorealistic, large-format camera, anamorphic lens, hard unfiltered sunlight with deep black shadows because the Moon has no air, pitch-black sky, fine grey lunar regolith, ultra detailed, natural film color grade. No text, no captions, no letters, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/4k/codex_lavatube.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc29-1776-7c7f-be15-38f09a558378/54b57a9d-f8e4-442b-8b80-321ab3eab561.png",
+  "bytes": 13591561,
+  "seconds": 46
+ },
+ "c_rego": {
+  "request_id": "01a1dc72-9fd8-7d86-93a7-00acf579fbf1",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc72-9fd8-7d86-93a7-00acf579fbf1/status",
+  "prompt": "Cartoon portrait of the same small helper robot as in the reference image: white rounded body with orange trim, tank treads, wide head with one dark glass visor showing two big glowing cyan oval eyes, tiny antenna with an amber light, round chest headlamp. Happy curious expression, head tilted. Dark blue starry background. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_rego"
+  ],
+  "file": "assets/art/v2/c_rego.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc72-9fd8-7d86-93a7-00acf579fbf1/4385482c-858a-4b2e-9f7b-344f619e0fff.png",
+  "bytes": 5932637,
+  "seconds": 52
+ },
+ "c_rego_sheet": {
+  "request_id": "01a1dc72-9fe7-768a-9400-37471dd38eab",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc72-9fe7-768a-9400-37471dd38eab/status",
+  "prompt": "Cartoon character sheet of the same small helper robot as in the reference image, shown three times full body: front view, side view, back view. White rounded body with orange trim, two dark tank treads, wide head with one dark visor and two glowing cyan oval eyes, tiny antenna with amber light, small solar panel on its back, two short arms. Plain light grey background. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_rego"
+  ],
+  "file": "assets/art/v2/c_rego_sheet.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc72-9fe7-768a-9400-37471dd38eab/66d00f45-7982-4097-90c4-a59b89f3c03f.png",
+  "bytes": 4267192,
+  "seconds": 45
+ },
+ "c_rookie": {
+  "request_id": "01a1dc72-9fe4-73a4-b09d-5c8e57b69ac4",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc72-9fe4-73a4-b09d-5c8e57b69ac4/status",
+  "prompt": "Cartoon portrait of a young astronaut hero wearing the same white spacesuit with orange accent bands as in the reference image, helmet on with a shiny gold mirrored visor that hides the face, giving a cheerful thumbs up. Dark blue starry background with a small blue Earth. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_suit"
+  ],
+  "file": "assets/art/v2/c_rookie.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc72-9fe4-73a4-b09d-5c8e57b69ac4/a08aba54-c3b6-408f-b195-d77ec77fa6bc.png",
+  "bytes": 5888056,
+  "seconds": 52
+ },
+ "c_rookie_sheet": {
+  "request_id": "01a1dc72-9feb-7f9b-a316-0b5adf5bba60",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc72-9feb-7f9b-a316-0b5adf5bba60/status",
+  "prompt": "Cartoon character sheet of a young astronaut in the same white spacesuit as in the reference image, shown three times full body: front view, side view, back view. Orange accent bands on the upper arms and knees, grey boots, slim backpack with a small cyan light, round helmet with a gold mirrored visor hiding the face. Plain light grey background. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "ref_suit"
+  ],
+  "file": "assets/art/v2/c_rookie_sheet.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc72-9feb-7f9b-a316-0b5adf5bba60/b8896408-61c1-4762-bfe0-75926ce7d1ca.png",
+  "bytes": 4061423,
+  "seconds": 45
+ },
+ "c_vasquez": {
+  "request_id": "01a1dc72-9fec-7bbd-857f-2358c8ffd1dd",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc72-9fec-7bbd-857f-2358c8ffd1dd/status",
+  "prompt": "Cartoon portrait of the same woman as in the reference image: a Latina astronaut commander in her late forties with short dark hair and one grey streak, warm confident smile, white spacesuit with red stripes on the shoulders, helmet off. Soft warm background of a red-walled space station room. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "p_vasquez"
+  ],
+  "file": "assets/art/v2/c_vasquez.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc72-9fec-7bbd-857f-2358c8ffd1dd/f4b8d23c-ffc5-40b1-b845-010f79fb08b3.png",
+  "bytes": 5275719,
+  "seconds": 58
+ },
+ "c_okoro": {
+  "request_id": "01a1dc72-9fee-7324-aac7-3f41a143789f",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc72-9fee-7324-aac7-3f41a143789f/status",
+  "prompt": "Cartoon portrait of the same man as in the reference image: a cheerful Nigerian flight engineer astronaut in his mid thirties with short hair and a neat beard, big friendly grin, white spacesuit with blue stripes on the shoulders, helmet off, a small wrench in a chest loop. Soft warm background of a red-walled space station workshop. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "p_okoro"
+  ],
+  "file": "assets/art/v2/c_okoro.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc72-9fee-7324-aac7-3f41a143789f/e27ece3d-6018-46c9-b4f4-1ef659135be6.png",
+  "bytes": 5678000,
+  "seconds": 58
+ },
+ "c_flight": {
+  "request_id": "01a1dc73-5046-7bd4-af52-3ff820b411f8",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc73-5046-7bd4-af52-3ff820b411f8/status",
+  "prompt": "Cartoon portrait of the same woman as in the reference image: a calm mission control flight director, a South Asian woman in her fifties with silver-streaked hair tied back, slim headset with microphone, dark blue vest over a white shirt, kind serious expression. Background of blue glowing mission control screens. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "p_flight"
+  ],
+  "file": "assets/art/v2/c_flight.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc73-5046-7bd4-af52-3ff820b411f8/b210deae-ea30-47ee-9dff-bf69699d5b2c.png",
+  "bytes": 5059477,
+  "seconds": 57
+ },
+ "c_ingrid": {
+  "request_id": "01a1dc73-5083-7de6-8950-c26dfff75a52",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc73-5083-7de6-8950-c26dfff75a52/status",
+  "prompt": "Cartoon portrait of a brave astronaut pilot from a northern European moon station: a woman in her thirties with a blonde braid and freckles, relieved happy smile, white spacesuit with teal stripes on the shoulders, helmet off. Background of a damaged dome on the Moon. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/c_ingrid.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc73-5083-7de6-8950-c26dfff75a52/2eeb9ead-93eb-4be3-b79b-5c64d806a47a.png",
+  "bytes": 5377402,
+  "seconds": 51
+ },
+ "c_kenji": {
+  "request_id": "01a1dc73-6a52-7997-88ba-91acd6394a59",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc73-6a52-7997-88ba-91acd6394a59/status",
+  "prompt": "Cartoon portrait of a clever astronaut engineer from a Japanese moon outpost: a man in his forties with round glasses and short black hair, gentle grateful smile, white spacesuit with purple stripes on the shoulders, helmet off, a small screwdriver behind his ear. Background of a damaged moon outpost. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/c_kenji.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc73-6a52-7997-88ba-91acd6394a59/52718b6d-fd29-4765-845c-13e018496dce.png",
+  "bytes": 5292943,
+  "seconds": 51
+ },
+ "c_anika": {
+  "request_id": "01a1dc73-6a5c-78c9-93ff-9b7e0e29582a",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc73-6a5c-78c9-93ff-9b7e0e29582a/status",
+  "prompt": "Cartoon portrait of a friendly astronaut botanist from an Indian moon base: a woman in her thirties with a long dark ponytail, bright smile, holding a tiny green seedling in a pot, white spacesuit with green stripes on the shoulders, helmet off. Background of a damaged greenhouse dome on the Moon. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/c_anika.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc73-6a5c-78c9-93ff-9b7e0e29582a/759321df-3540-4664-95b3-f0d944b6e038.png",
+  "bytes": 5370648,
+  "seconds": 51
+ },
+ "c_bot": {
+  "request_id": "01a1dc73-8257-79a0-bfac-5026ef9a9734",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc73-8257-79a0-bfac-5026ef9a9734/status",
+  "prompt": "Cartoon portrait of a small yellow service robot called BOLT: boxy rounded body with black hazard stripes, one big round blue camera eye, two little wheels, one folding tool arm with a gripper, cheerful and helpful. Background of a red-walled space station corridor. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/c_bot.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc73-8257-79a0-bfac-5026ef9a9734/a8c81c3d-c3c8-41ed-b2d1-4e2730b10d00.png",
+  "bytes": 4609608,
+  "seconds": 44
+ },
+ "c_hen": {
+  "request_id": "01a1dc73-8265-7f2a-b244-e81e7f74dd8e",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc73-8265-7f2a-b244-e81e7f74dd8e/status",
+  "prompt": "Cartoon portrait of a plump happy brown hen sitting on a cozy straw nest with three eggs, inside a red-walled space station animal room with a round window showing stars. Funny and cute. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/c_hen.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc73-8265-7f2a-b244-e81e7f74dd8e/0a83af2d-3233-4f24-85f0-a2aaf1d86f4d.png",
+  "bytes": 5467138,
+  "seconds": 51
+ },
+ "cm01": {
+  "request_id": "01a1dc74-187f-77ce-bbce-c3d18ed583fa",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-187f-77ce-bbce-c3d18ed583fa/status",
+  "prompt": "Wide establishing panel: a small lander spacecraft descends on a bright engine plume toward a Moon base beside a gigantic round pit. Rows of blue solar panels, a big dish antenna, a landing pad with ring lights, an elevator tower on the pit's edge. A small blue Earth in the black sky. Grey cratered ground, long shadows. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/cm01.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-187f-77ce-bbce-c3d18ed583fa/877713e5-e9ae-4a8a-a499-56eb08401019.png",
+  "bytes": 10348931,
+  "seconds": 39
+ },
+ "cm08": {
+  "request_id": "01a1dc74-308a-7372-9cfe-bce5d1804c86",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-308a-7372-9cfe-bce5d1804c86/status",
+  "prompt": "Dramatic wide panel on the Moon's surface: a shower of small space rocks strikes a Moon base. Many bright white-orange impact flashes burst across the ground, cones of dust and rock fly outward in straight lines, blue solar panels shatter and tilt, a dish antenna topples, a dome cracks. No people visible. Black sky, a small blue Earth. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/cm08.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-308a-7372-9cfe-bce5d1804c86/64c5735d-f608-419c-b5b5-08d61939547d.png",
+  "bytes": 9589383,
+  "seconds": 39
+ },
+ "cm09": {
+  "request_id": "01a1dc74-3177-726b-9bd3-a9d3222bb1eb",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-3177-726b-9bd3-a9d3222bb1eb/status",
+  "prompt": "Quiet aftermath on the Moon's surface: dust slowly settling over a wrecked Moon base. Broken solar panels lie on the ground, a dish antenna leans sideways, small fresh craters everywhere. An empty rover sits alone with one blinking amber light. No people visible. Sad, still, gentle mood. Black sky with a small blue Earth. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/cm09.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-3177-726b-9bd3-a9d3222bb1eb/f2bb9438-b3ba-49b2-8b58-8bc4da9176bd.png",
+  "bytes": 4965548,
+  "seconds": 39
+ },
+ "ev2_meteor": {
+  "request_id": "01a1dc74-3259-7bed-ba9a-dcdacebb33c2",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-3259-7bed-ba9a-dcdacebb33c2/status",
+  "prompt": "A small space rock hits the Moon's surface right beside a row of blue solar panels: a bright white-orange flash, a neat cone of dust and pebbles flying outward in straight lines, two panels cracked and tilted. Black sky. Dramatic but not scary. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/ev2_meteor.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-3259-7bed-ba9a-dcdacebb33c2/e54b0471-3650-4602-84f0-2b4e6feb9d47.png",
+  "bytes": 6339302,
+  "seconds": 39
+ },
+ "ev2_breach": {
+  "request_id": "01a1dc8c-878c-78ae-84fc-ab5e787f5cb4",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc8c-878c-78ae-84fc-ab5e787f5cb4/status",
+  "prompt": "Inside an empty red-walled space station tunnel with no people and no characters: air is rushing out through a small jagged hole in the ceiling where stars are visible, a white misty stream with green leaves and sheets of paper flying up toward the hole. A big round steel bulkhead door with yellow-black stripes is sliding shut. A red warning lamp spins. Urgent but not scary. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/ev2_breach.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc8c-878c-78ae-84fc-ab5e787f5cb4/36317326-f4d2-4f37-8aea-8cc9cdf4ac0d.png",
+  "bytes": 4390539,
+  "seconds": 33
+ },
+ "ev2_quake": {
+  "request_id": "01a1dc74-4977-7c96-8e8f-590d06b6a380",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-4977-7c96-8e8f-590d06b6a380/status",
+  "prompt": "A moonquake shakes a red-walled space station corridor: ceiling lamps swinging, wobble lines, a silver pipe joint cracked and spraying a jet of water mist, a toolbox sliding across the floor. Amber warning lights. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/ev2_quake.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-4977-7c96-8e8f-590d06b6a380/4aaa1f77-fc8a-4d65-a023-70838ca0f605.png",
+  "bytes": 5482366,
+  "seconds": 38
+ },
+ "ev2_co2": {
+  "request_id": "01a1dc74-b1ee-73cf-a92f-e2d434bacf34",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-b1ee-73cf-a92f-e2d434bacf34/status",
+  "prompt": "Close-up on a workbench in a red-walled space station: two gloved hands build a homemade air filter by fitting a square white box onto a round hose with grey duct tape, a plastic bag and a piece of card. Tools and a checklist lie nearby. A wall gauge shows a rising orange bar. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/ev2_co2.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-b1ee-73cf-a92f-e2d434bacf34/fec1bf3b-0161-4ee7-9d3d-beb2f19c55ec.png",
+  "bytes": 5355665,
+  "seconds": 38
+ },
+ "ev2_comms": {
+  "request_id": "01a1dc74-c9fa-7789-97b1-3a15956ece4f",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-c9fa-7789-97b1-3a15956ece4f/status",
+  "prompt": "A big white dish antenna on the Moon pointing at a small blue Earth in the black sky, with a thin glowing beam linking them. Low heroic angle, grey ground, solar panels in the distance. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/ev2_comms.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-c9fa-7789-97b1-3a15956ece4f/84ce0cb2-d682-479a-8dab-5281606dfdff.png",
+  "bytes": 4952324,
+  "seconds": 38
+ },
+ "ev2_freeze": {
+  "request_id": "01a1dc74-ca60-7573-8f3d-fa14e3def6d3",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-ca60-7573-8f3d-fa14e3def6d3/status",
+  "prompt": "Deep lunar night at a Moon base: machines and a radio mast covered in sparkling frost, little electric heaters glowing orange around them, dark solar panels, soft blue light from a big round Earth in the starry sky. Very cold and still. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/ev2_freeze.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-ca60-7573-8f3d-fa14e3def6d3/ec27bc85-e5a8-4916-a272-26448a143a79.png",
+  "bytes": 5937429,
+  "seconds": 39
+ },
+ "tex_wall": {
+  "request_id": "01a1dc74-cb09-7a26-bf52-e30824967367",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-cb09-7a26-bf52-e30824967367/status",
+  "prompt": "Wall of a cozy science-fiction space station: bright red padded rectangular panels in a regular grid with thin white trim lines, small silver rivets at the corners and a few small vents. Clean, slightly worn. Seamless tileable game texture, flat orthographic top-down view, even soft lighting with no strong shadows, no perspective, fills the whole frame edge to edge. No text, no letters, no logos, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/tex_wall.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-cb09-7a26-bf52-e30824967367/ccb0632f-f29a-4b02-b5c8-83a5dd916775.png",
+  "bytes": 6159078,
+  "seconds": 45
+ },
+ "tex_floor": {
+  "request_id": "01a1dc74-cbc2-715e-8da7-345e8b305063",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-cbc2-715e-8da7-345e8b305063/status",
+  "prompt": "Space station floor: light grey metal deck plates in a regular square grid with anti-slip diamond pattern, thin dark seams, and a few yellow guide stripes. Seamless tileable game texture, flat orthographic top-down view, even soft lighting with no strong shadows, no perspective, fills the whole frame edge to edge. No text, no letters, no logos, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/tex_floor.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-cbc2-715e-8da7-345e8b305063/6e32f8e3-e293-428d-9560-3b31032b466a.png",
+  "bytes": 7007632,
+  "seconds": 39
+ },
+ "tex_rego": {
+  "request_id": "01a1dc74-e019-7cc2-a395-b45843cdcd0f",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc74-e019-7cc2-a395-b45843cdcd0f/status",
+  "prompt": "Lunar regolith ground: fine grey dusty soil with scattered tiny pebbles and many very small shallow craters, neutral grey, realistic. Seamless tileable game texture, flat orthographic top-down view, even soft lighting with no strong shadows, no perspective, fills the whole frame edge to edge. No text, no letters, no logos, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v2/tex_rego.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc74-e019-7cc2-a395-b45843cdcd0f/d9d6ce92-a44d-46ea-b01b-683be140846e.png",
+  "bytes": 11677892,
+  "seconds": 64
+ },
+ "cm02": {
+  "request_id": "01a1dc76-ae26-7c80-8721-cbf42d861582",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc76-ae26-7c80-8721-cbf42d861582/status",
+  "prompt": "On the Moon's surface beside the landed spacecraft: the young astronaut hero in the white suit with orange bands and gold visor steps off the ladder. Two astronauts greet them with big waves: the commander with red shoulder stripes and the engineer with blue shoulder stripes, both wearing helmets with clear visors showing their smiling faces. The small white-and-orange helper robot rolls up happily with its arms raised. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet",
+   "c_rego_sheet",
+   "c_vasquez",
+   "c_okoro"
+  ],
+  "file": "assets/art/v2/cm02.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc76-ae26-7c80-8721-cbf42d861582/d996d59f-4cf9-46c8-b633-d81ec766466d.png",
+  "bytes": 5154195,
+  "seconds": 52
+ },
+ "cm03": {
+  "request_id": "01a1dc76-ae1d-7ed5-84d0-e77301344640",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc76-ae1d-7ed5-84d0-e77301344640/status",
+  "prompt": "Inside an underground Moon station that looks like the inside of a space station: bright RED padded wall panels with white trim, a round bulkhead door, floor lights. The engineer with blue shoulder stripes, helmet off, proudly shows the young astronaut hero a farm room glowing with pink grow lights: rows of leafy potato plants and tomato vines with red tomatoes, and a small coop with three brown hens. The helper robot watches a hen curiously. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet",
+   "c_okoro",
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/cm03.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc76-ae1d-7ed5-84d0-e77301344640/81cd5c37-33b3-407a-82dd-90157089fe31.png",
+  "bytes": 5242285,
+  "seconds": 52
+ },
+ "cm04": {
+  "request_id": "01a1dc76-ae13-73a8-af48-1174e97ae5c4",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc76-ae13-73a8-af48-1174e97ae5c4/status",
+  "prompt": "Inside a red-walled control center with a huge glowing map screen of the Moon base. The commander with red shoulder stripes, helmet off, points forward with a confident smile, like a coach starting practice. The young astronaut hero in white suit with orange bands stands ready, the helper robot salutes beside them. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet",
+   "c_vasquez",
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/cm04.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc76-ae13-73a8-af48-1174e97ae5c4/fbaf4dce-6d30-4cf9-9065-245e61216ee5.png",
+  "bytes": 4648583,
+  "seconds": 45
+ },
+ "cm05": {
+  "request_id": "01a1dc76-ae22-7c16-aaee-3906565b7034",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc76-ae22-7c16-aaee-3906565b7034/status",
+  "prompt": "A huge wall screen in a red-walled control center, split into three video-call windows. In each window an alarmed astronaut from a different Moon station speaks urgently and points upward: a woman with a blonde braid and teal stripes, a man with round glasses and purple stripes, a woman with a dark ponytail and green stripes. Red alarm lights flash around the screen. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_ingrid",
+   "c_kenji",
+   "c_anika"
+  ],
+  "file": "assets/art/v2/cm05.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc76-ae22-7c16-aaee-3906565b7034/842c3124-d255-4a48-93c8-c6b3ca992fa4.png",
+  "bytes": 4319642,
+  "seconds": 45
+ },
+ "cm06": {
+  "request_id": "01a1dc76-ae16-746a-89a5-3c4261377e34",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc76-ae16-746a-89a5-3c4261377e34/status",
+  "prompt": "Close-up of a round green radar screen showing a big swarm of bright dots rushing toward a small outline of the Moon base. The small helper robot stares at it with wide worried cyan eyes, one little hand on the console. Red alarm glow. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/cm06.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc76-ae16-746a-89a5-3c4261377e34/d850bed0-79cd-42fb-858c-68c35924ef53.png",
+  "bytes": 4282196,
+  "seconds": 45
+ },
+ "cm07": {
+  "request_id": "01a1dc76-ae0b-7af0-8f1d-7d9771dbe1ed",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc76-ae0b-7af0-8f1d-7d9771dbe1ed/status",
+  "prompt": "In a red-walled station corridor: the commander with red shoulder stripes and the engineer with blue shoulder stripes, helmets on, run toward an elevator door. The commander looks back and holds up a hand in a stay-here gesture toward the young astronaut hero in the white suit with orange bands, who stands with the small helper robot. Urgent motion lines. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet",
+   "c_vasquez",
+   "c_okoro",
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/cm07.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc76-ae0b-7af0-8f1d-7d9771dbe1ed/b2c49fe5-cfbf-44ac-97c3-3674b7dfdb12.png",
+  "bytes": 4312248,
+  "seconds": 52
+ },
+ "cm10": {
+  "request_id": "01a1dc77-5e85-74d4-b573-8e006639591b",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc77-5e85-74d4-b573-8e006639591b/status",
+  "prompt": "A dark red-walled control center lit only by red emergency lights. A huge map screen of the Moon base is covered in red warning triangles. Seen from behind, the young astronaut hero in the white suit with orange bands and the small helper robot stand small in front of the screen. The robot's cyan eyes look up at the astronaut with worry. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet",
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/cm10.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc77-5e85-74d4-b573-8e006639591b/689a3dfe-3dd0-46a5-a49a-429db6e5ba3e.png",
+  "bytes": 4350062,
+  "seconds": 45
+ },
+ "cm11": {
+  "request_id": "01a1dc77-5f44-782d-95fd-b13697f7361d",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc77-5f44-782d-95fd-b13697f7361d/status",
+  "prompt": "A big screen shows the mission control flight director, a kind serious woman with silver-streaked hair and a headset, speaking calmly and holding up a hand in reassurance. In the foreground, seen from behind, the young astronaut hero in the white suit with orange bands listens. Soft blue light from the screen in a dim red-walled room. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_flight",
+   "c_rookie_sheet"
+  ],
+  "file": "assets/art/v2/cm11.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc77-5f44-782d-95fd-b13697f7361d/e73cf0c3-3d74-46f2-a4b3-4656e935fd79.png",
+  "bytes": 4218395,
+  "seconds": 45
+ },
+ "cm12": {
+  "request_id": "01a1dc77-5f5a-7139-b083-fad50bbd2f73",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc77-5f5a-7139-b083-fad50bbd2f73/status",
+  "prompt": "Hopeful close panel: the young astronaut hero in the white suit with orange bands and gold visor kneels and rests one gloved hand on the head of the small helper robot. The robot's cyan eyes are brave and determined, one little fist raised. Behind them a single ceiling light flickers back on in the red-walled station. Warm light, new courage. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet",
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/cm12.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc77-5f5a-7139-b083-fad50bbd2f73/b59366da-96ee-43f0-b50d-5d40d0929595.png",
+  "bytes": 4068863,
+  "seconds": 38
+ },
+ "title2": {
+  "request_id": "01a1dc77-782a-7667-9ac1-275ab892b056",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc77-782a-7667-9ac1-275ab892b056/status",
+  "prompt": "Epic cartoon key art for a Moon adventure game. The young astronaut hero in the white suit with orange bands and gold visor stands heroically with the small white-and-orange helper robot on the grey Moon surface, seen from a low three-quarter back angle. Beside them a chunky six-wheeled rover car carrying a blue solar panel. Behind them a field of solar panels, a huge round pit glowing with warm red light from an underground station, and a small boxy hopper spaceship parked on a round charging pad. A blue Earth in the black starry sky. The upper left third is dark empty sky. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet",
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/title2.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc77-782a-7667-9ac1-275ab892b056/d9156bf3-b389-4b14-9af2-a9f02640628f.png",
+  "bytes": 11367507,
+  "seconds": 51
+ },
+ "win2": {
+  "request_id": "01a1dc77-7887-7637-82e2-bef25289d12f",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc77-7887-7637-82e2-bef25289d12f/status",
+  "prompt": "Joyful cartoon scene at lunar dawn: a rescue spaceship lands on a pad with glowing ring lights, the rising Sun just above the grey horizon. In the foreground the young astronaut hero in the white suit with orange bands jumps with both arms up, the small helper robot cheers with raised arms, and three rescued astronauts with teal, purple and green shoulder stripes wave. Rows of repaired solar panels shine. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet",
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/win2.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc77-7887-7637-82e2-bef25289d12f/9f6b2703-b60d-49b6-b8aa-dd7416d4dc37.png",
+  "bytes": 5957771,
+  "seconds": 45
+ },
+ "lose2": {
+  "request_id": "01a1dc77-78d1-73a8-a337-d4adcc15f00b",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc77-78d1-73a8-a337-d4adcc15f00b/status",
+  "prompt": "Gentle sad cartoon scene: a dark red-walled Moon station corridor with the lights off and one small red emergency lamp. The small helper robot sits alone on the floor with dim droopy cyan eyes, its chest lamp making a little pool of light. Quiet, not scary. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/lose2.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc77-78d1-73a8-a337-d4adcc15f00b/5b1029c1-e8c9-43db-b3db-93105ecc97d2.png",
+  "bytes": 3628114,
+  "seconds": 38
+ },
+ "ev2_solar": {
+  "request_id": "01a1dc77-f603-7293-91f9-00d8bd85da8d",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc77-f603-7293-91f9-00d8bd85da8d/status",
+  "prompt": "A red-walled control room during a space-weather alert: a big screen shows the orange Sun with one super-bright flare bursting from its edge. The small helper robot points at the screen with wide alarmed cyan eyes. Amber warning lights. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/ev2_solar.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc77-f603-7293-91f9-00d8bd85da8d/4beafece-913f-4f78-b7e8-65ec6fd76aef.png",
+  "bytes": 4545170,
+  "seconds": 39
+ },
+ "ev2_dust": {
+  "request_id": "01a1dc78-0e29-77c1-8857-b1b12daf7193",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc78-0e29-77c1-8857-b1b12daf7193/status",
+  "prompt": "Solar panels on the Moon covered in a thick layer of grey clingy dust, with one clean shiny streak. The young astronaut hero in the white suit with orange bands kneels beside a panel with a soft brush. Low golden Sun, long shadows, black sky. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet"
+  ],
+  "file": "assets/art/v2/ev2_dust.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc78-0e29-77c1-8857-b1b12daf7193/05652d6e-1ad1-46b1-ac02-c513c8db652e.png",
+  "bytes": 6629433,
+  "seconds": 39
+ },
+ "ev2_fire": {
+  "request_id": "01a1dc78-0e9d-7c6c-8b33-e9a4819ad6cb",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc78-0e9d-7c6c-8b33-e9a4819ad6cb/status",
+  "prompt": "A small fire in a red-walled space station kitchen: round slow blue-and-orange flames on a cooker, grey smoke along the ceiling. The young astronaut hero in the white suit with orange bands aims a red fire extinguisher at the base of the flames. The small helper robot covers its eyes with one hand, peeking. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet",
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/ev2_fire.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc78-0e9d-7c6c-8b33-e9a4819ad6cb/2a989710-0ca3-4ec2-9f6d-bf4c9b156121.png",
+  "bytes": 4501400,
+  "seconds": 45
+ },
+ "ev2_crops": {
+  "request_id": "01a1dc78-0f31-7ca9-80f3-b66a712d6f17",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc78-0f31-7ca9-80f3-b66a712d6f17/status",
+  "prompt": "Inside a space farm with pink grow lights: tomato vines with red tomatoes, some leaves showing fuzzy grey mold spots. The small helper robot inspects a sick leaf closely with worried cyan eyes, holding a tiny magnifying glass. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/ev2_crops.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc78-0f31-7ca9-80f3-b66a712d6f17/92e9789c-c9de-49c1-8ee1-d4b76efa034c.png",
+  "bytes": 5264720,
+  "seconds": 45
+ },
+ "ev2_rescue": {
+  "request_id": "01a1dc78-27b9-7840-9c8d-1514b69a1ea8",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc78-27b9-7840-9c8d-1514b69a1ea8/status",
+  "prompt": "Beside a cracked dome of another Moon station, an astronaut with teal shoulder stripes and a clear visor waves both arms with joy at being found. The young astronaut hero in the white suit with orange bands and the small helper robot arrive beside their six-wheeled rover car. Supply crates sit nearby. Hopeful and warm. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rookie_sheet",
+   "c_rego_sheet",
+   "c_ingrid"
+  ],
+  "file": "assets/art/v2/ev2_rescue.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc78-27b9-7840-9c8d-1514b69a1ea8/e6fb01dc-5109-48fd-b4db-93eb21a7720b.png",
+  "bytes": 5963135,
+  "seconds": 51
+ },
+ "ev2_hens": {
+  "request_id": "01a1dc78-420b-74a5-a867-42dd636cbbad",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc78-420b-74a5-a867-42dd636cbbad/status",
+  "prompt": "Inside a red-walled space station animal room: four plump brown hens look up hopefully at an almost empty sack of dry feed pellets. The small helper robot holds a little scoop and scratches its head. A glass fish tank with orange fish glows in the background. Funny and cute. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/ev2_hens.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc78-420b-74a5-a867-42dd636cbbad/e7002073-868a-47a4-b349-718eaf18d0d3.png",
+  "bytes": 5249238,
+  "seconds": 38
+ },
+ "ev2_supply": {
+  "request_id": "01a1dc78-8df8-772c-9f32-aef47af3fe6d",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dc78-8df8-772c-9f32-aef47af3fe6d/status",
+  "prompt": "An open supply case full of neatly packed spare parts, cables and food tins, glowing softly from inside, on the floor of a red-walled space station storage room. The small helper robot lifts one arm in delight, cyan eyes curved happily. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "c_rego_sheet"
+  ],
+  "file": "assets/art/v2/ev2_supply.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc78-8df8-772c-9f32-aef47af3fe6d/c0399e58-9c6b-40dc-8abb-50720cdaa30a.png",
+  "bytes": 4874337,
+  "seconds": 38
+ }
+}

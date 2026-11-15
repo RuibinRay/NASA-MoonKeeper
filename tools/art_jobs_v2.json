@@ -1,0 +1,371 @@
+{
+  "outDir": "assets/art/v2",
+  "resolution": "2k",
+  "quality": "high",
+  "styles": {
+    "cartoon": "Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+    "comic": "Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+    "texture": "Seamless tileable game texture, flat orthographic top-down view, even soft lighting with no strong shadows, no perspective, fills the whole frame edge to edge. No text, no letters, no logos, no watermark."
+  },
+  "jobs": [
+    {
+      "id": "c_rego",
+      "style": "cartoon",
+      "aspect_ratio": "1:1",
+      "refs": [
+        "ref_rego"
+      ],
+      "prompt": "Cartoon portrait of the same small helper robot as in the reference image: white rounded body with orange trim, tank treads, wide head with one dark glass visor showing two big glowing cyan oval eyes, tiny antenna with an amber light, round chest headlamp. Happy curious expression, head tilted. Dark blue starry background."
+    },
+    {
+      "id": "c_rego_sheet",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_rego"
+      ],
+      "prompt": "Cartoon character sheet of the same small helper robot as in the reference image, shown three times full body: front view, side view, back view. White rounded body with orange trim, two dark tank treads, wide head with one dark visor and two glowing cyan oval eyes, tiny antenna with amber light, small solar panel on its back, two short arms. Plain light grey background."
+    },
+    {
+      "id": "c_rookie",
+      "style": "cartoon",
+      "aspect_ratio": "1:1",
+      "refs": [
+        "ref_suit"
+      ],
+      "prompt": "Cartoon portrait of a young astronaut hero wearing the same white spacesuit with orange accent bands as in the reference image, helmet on with a shiny gold mirrored visor that hides the face, giving a cheerful thumbs up. Dark blue starry background with a small blue Earth."
+    },
+    {
+      "id": "c_rookie_sheet",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "ref_suit"
+      ],
+      "prompt": "Cartoon character sheet of a young astronaut in the same white spacesuit as in the reference image, shown three times full body: front view, side view, back view. Orange accent bands on the upper arms and knees, grey boots, slim backpack with a small cyan light, round helmet with a gold mirrored visor hiding the face. Plain light grey background."
+    },
+    {
+      "id": "c_vasquez",
+      "style": "cartoon",
+      "aspect_ratio": "1:1",
+      "refs": [
+        "p_vasquez"
+      ],
+      "prompt": "Cartoon portrait of the same woman as in the reference image: a Latina astronaut commander in her late forties with short dark hair and one grey streak, warm confident smile, white spacesuit with red stripes on the shoulders, helmet off. Soft warm background of a red-walled space station room."
+    },
+    {
+      "id": "c_okoro",
+      "style": "cartoon",
+      "aspect_ratio": "1:1",
+      "refs": [
+        "p_okoro"
+      ],
+      "prompt": "Cartoon portrait of the same man as in the reference image: a cheerful Nigerian flight engineer astronaut in his mid thirties with short hair and a neat beard, big friendly grin, white spacesuit with blue stripes on the shoulders, helmet off, a small wrench in a chest loop. Soft warm background of a red-walled space station workshop."
+    },
+    {
+      "id": "c_flight",
+      "style": "cartoon",
+      "aspect_ratio": "1:1",
+      "refs": [
+        "p_flight"
+      ],
+      "prompt": "Cartoon portrait of the same woman as in the reference image: a calm mission control flight director, a South Asian woman in her fifties with silver-streaked hair tied back, slim headset with microphone, dark blue vest over a white shirt, kind serious expression. Background of blue glowing mission control screens."
+    },
+    {
+      "id": "c_ingrid",
+      "style": "cartoon",
+      "aspect_ratio": "1:1",
+      "prompt": "Cartoon portrait of a brave astronaut pilot from a northern European moon station: a woman in her thirties with a blonde braid and freckles, relieved happy smile, white spacesuit with teal stripes on the shoulders, helmet off. Background of a damaged dome on the Moon."
+    },
+    {
+      "id": "c_kenji",
+      "style": "cartoon",
+      "aspect_ratio": "1:1",
+      "prompt": "Cartoon portrait of a clever astronaut engineer from a Japanese moon outpost: a man in his forties with round glasses and short black hair, gentle grateful smile, white spacesuit with purple stripes on the shoulders, helmet off, a small screwdriver behind his ear. Background of a damaged moon outpost."
+    },
+    {
+      "id": "c_anika",
+      "style": "cartoon",
+      "aspect_ratio": "1:1",
+      "prompt": "Cartoon portrait of a friendly astronaut botanist from an Indian moon base: a woman in her thirties with a long dark ponytail, bright smile, holding a tiny green seedling in a pot, white spacesuit with green stripes on the shoulders, helmet off. Background of a damaged greenhouse dome on the Moon."
+    },
+    {
+      "id": "c_bot",
+      "style": "cartoon",
+      "aspect_ratio": "1:1",
+      "prompt": "Cartoon portrait of a small yellow service robot called BOLT: boxy rounded body with black hazard stripes, one big round blue camera eye, two little wheels, one folding tool arm with a gripper, cheerful and helpful. Background of a red-walled space station corridor."
+    },
+    {
+      "id": "c_hen",
+      "style": "cartoon",
+      "aspect_ratio": "1:1",
+      "prompt": "Cartoon portrait of a plump happy brown hen sitting on a cozy straw nest with three eggs, inside a red-walled space station animal room with a round window showing stars. Funny and cute."
+    },
+    {
+      "id": "cm01",
+      "style": "comic",
+      "aspect_ratio": "21:9",
+      "resolution": "4k",
+      "prompt": "Wide establishing panel: a small lander spacecraft descends on a bright engine plume toward a Moon base beside a gigantic round pit. Rows of blue solar panels, a big dish antenna, a landing pad with ring lights, an elevator tower on the pit's edge. A small blue Earth in the black sky. Grey cratered ground, long shadows."
+    },
+    {
+      "id": "cm02",
+      "style": "comic",
+      "aspect_ratio": "3:2",
+      "refs": [
+        "c_rookie_sheet",
+        "c_rego_sheet",
+        "c_vasquez",
+        "c_okoro"
+      ],
+      "prompt": "On the Moon's surface beside the landed spacecraft: the young astronaut hero in the white suit with orange bands and gold visor steps off the ladder. Two astronauts greet them with big waves: the commander with red shoulder stripes and the engineer with blue shoulder stripes, both wearing helmets with clear visors showing their smiling faces. The small white-and-orange helper robot rolls up happily with its arms raised."
+    },
+    {
+      "id": "cm03",
+      "style": "comic",
+      "aspect_ratio": "3:2",
+      "refs": [
+        "c_rookie_sheet",
+        "c_okoro",
+        "c_rego_sheet"
+      ],
+      "prompt": "Inside an underground Moon station that looks like the inside of a space station: bright RED padded wall panels with white trim, a round bulkhead door, floor lights. The engineer with blue shoulder stripes, helmet off, proudly shows the young astronaut hero a farm room glowing with pink grow lights: rows of leafy potato plants and tomato vines with red tomatoes, and a small coop with three brown hens. The helper robot watches a hen curiously."
+    },
+    {
+      "id": "cm04",
+      "style": "comic",
+      "aspect_ratio": "3:2",
+      "refs": [
+        "c_rookie_sheet",
+        "c_vasquez",
+        "c_rego_sheet"
+      ],
+      "prompt": "Inside a red-walled control center with a huge glowing map screen of the Moon base. The commander with red shoulder stripes, helmet off, points forward with a confident smile, like a coach starting practice. The young astronaut hero in white suit with orange bands stands ready, the helper robot salutes beside them."
+    },
+    {
+      "id": "cm05",
+      "style": "comic",
+      "aspect_ratio": "3:2",
+      "refs": [
+        "c_ingrid",
+        "c_kenji",
+        "c_anika"
+      ],
+      "prompt": "A huge wall screen in a red-walled control center, split into three video-call windows. In each window an alarmed astronaut from a different Moon station speaks urgently and points upward: a woman with a blonde braid and teal stripes, a man with round glasses and purple stripes, a woman with a dark ponytail and green stripes. Red alarm lights flash around the screen."
+    },
+    {
+      "id": "cm06",
+      "style": "comic",
+      "aspect_ratio": "3:2",
+      "refs": [
+        "c_rego_sheet"
+      ],
+      "prompt": "Close-up of a round green radar screen showing a big swarm of bright dots rushing toward a small outline of the Moon base. The small helper robot stares at it with wide worried cyan eyes, one little hand on the console. Red alarm glow."
+    },
+    {
+      "id": "cm07",
+      "style": "comic",
+      "aspect_ratio": "3:2",
+      "refs": [
+        "c_rookie_sheet",
+        "c_vasquez",
+        "c_okoro",
+        "c_rego_sheet"
+      ],
+      "prompt": "In a red-walled station corridor: the commander with red shoulder stripes and the engineer with blue shoulder stripes, helmets on, run toward an elevator door. The commander looks back and holds up a hand in a stay-here gesture toward the young astronaut hero in the white suit with orange bands, who stands with the small helper robot. Urgent motion lines."
+    },
+    {
+      "id": "cm08",
+      "style": "comic",
+      "aspect_ratio": "21:9",
+      "resolution": "4k",
+      "prompt": "Dramatic wide panel on the Moon's surface: a shower of small space rocks strikes a Moon base. Many bright white-orange impact flashes burst across the ground, cones of dust and rock fly outward in straight lines, blue solar panels shatter and tilt, a dish antenna topples, a dome cracks. No people visible. Black sky, a small blue Earth."
+    },
+    {
+      "id": "cm09",
+      "style": "comic",
+      "aspect_ratio": "3:2",
+      "prompt": "Quiet aftermath on the Moon's surface: dust slowly settling over a wrecked Moon base. Broken solar panels lie on the ground, a dish antenna leans sideways, small fresh craters everywhere. An empty rover sits alone with one blinking amber light. No people visible. Sad, still, gentle mood. Black sky with a small blue Earth."
+    },
+    {
+      "id": "cm10",
+      "style": "comic",
+      "aspect_ratio": "3:2",
+      "refs": [
+        "c_rookie_sheet",
+        "c_rego_sheet"
+      ],
+      "prompt": "A dark red-walled control center lit only by red emergency lights. A huge map screen of the Moon base is covered in red warning triangles. Seen from behind, the young astronaut hero in the white suit with orange bands and the small helper robot stand small in front of the screen. The robot's cyan eyes look up at the astronaut with worry."
+    },
+    {
+      "id": "cm11",
+      "style": "comic",
+      "aspect_ratio": "3:2",
+      "refs": [
+        "c_flight",
+        "c_rookie_sheet"
+      ],
+      "prompt": "A big screen shows the mission control flight director, a kind serious woman with silver-streaked hair and a headset, speaking calmly and holding up a hand in reassurance. In the foreground, seen from behind, the young astronaut hero in the white suit with orange bands listens. Soft blue light from the screen in a dim red-walled room."
+    },
+    {
+      "id": "cm12",
+      "style": "comic",
+      "aspect_ratio": "3:2",
+      "refs": [
+        "c_rookie_sheet",
+        "c_rego_sheet"
+      ],
+      "prompt": "Hopeful close panel: the young astronaut hero in the white suit with orange bands and gold visor kneels and rests one gloved hand on the head of the small helper robot. The robot's cyan eyes are brave and determined, one little fist raised. Behind them a single ceiling light flickers back on in the red-walled station. Warm light, new courage."
+    },
+    {
+      "id": "title2",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "resolution": "4k",
+      "refs": [
+        "c_rookie_sheet",
+        "c_rego_sheet"
+      ],
+      "prompt": "Epic cartoon key art for a Moon adventure game. The young astronaut hero in the white suit with orange bands and gold visor stands heroically with the small white-and-orange helper robot on the grey Moon surface, seen from a low three-quarter back angle. Beside them a chunky six-wheeled rover car carrying a blue solar panel. Behind them a field of solar panels, a huge round pit glowing with warm red light from an underground station, and a small boxy hopper spaceship parked on a round charging pad. A blue Earth in the black starry sky. The upper left third is dark empty sky."
+    },
+    {
+      "id": "win2",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "c_rookie_sheet",
+        "c_rego_sheet"
+      ],
+      "prompt": "Joyful cartoon scene at lunar dawn: a rescue spaceship lands on a pad with glowing ring lights, the rising Sun just above the grey horizon. In the foreground the young astronaut hero in the white suit with orange bands jumps with both arms up, the small helper robot cheers with raised arms, and three rescued astronauts with teal, purple and green shoulder stripes wave. Rows of repaired solar panels shine."
+    },
+    {
+      "id": "lose2",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "c_rego_sheet"
+      ],
+      "prompt": "Gentle sad cartoon scene: a dark red-walled Moon station corridor with the lights off and one small red emergency lamp. The small helper robot sits alone on the floor with dim droopy cyan eyes, its chest lamp making a little pool of light. Quiet, not scary."
+    },
+    {
+      "id": "ev2_solar",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "c_rego_sheet"
+      ],
+      "prompt": "A red-walled control room during a space-weather alert: a big screen shows the orange Sun with one super-bright flare bursting from its edge. The small helper robot points at the screen with wide alarmed cyan eyes. Amber warning lights."
+    },
+    {
+      "id": "ev2_meteor",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "prompt": "A small space rock hits the Moon's surface right beside a row of blue solar panels: a bright white-orange flash, a neat cone of dust and pebbles flying outward in straight lines, two panels cracked and tilted. Black sky. Dramatic but not scary."
+    },
+    {
+      "id": "ev2_dust",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "c_rookie_sheet"
+      ],
+      "prompt": "Solar panels on the Moon covered in a thick layer of grey clingy dust, with one clean shiny streak. The young astronaut hero in the white suit with orange bands kneels beside a panel with a soft brush. Low golden Sun, long shadows, black sky."
+    },
+    {
+      "id": "ev2_breach",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "prompt": "Inside an empty red-walled space station tunnel with no people and no characters: air is rushing out through a small jagged hole in the ceiling where stars are visible, a white misty stream with green leaves and sheets of paper flying up toward the hole. A big round steel bulkhead door with yellow-black stripes is sliding shut. A red warning lamp spins. Urgent but not scary."
+    },
+    {
+      "id": "ev2_quake",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "prompt": "A moonquake shakes a red-walled space station corridor: ceiling lamps swinging, wobble lines, a silver pipe joint cracked and spraying a jet of water mist, a toolbox sliding across the floor. Amber warning lights."
+    },
+    {
+      "id": "ev2_fire",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "c_rookie_sheet",
+        "c_rego_sheet"
+      ],
+      "prompt": "A small fire in a red-walled space station kitchen: round slow blue-and-orange flames on a cooker, grey smoke along the ceiling. The young astronaut hero in the white suit with orange bands aims a red fire extinguisher at the base of the flames. The small helper robot covers its eyes with one hand, peeking."
+    },
+    {
+      "id": "ev2_co2",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "prompt": "Close-up on a workbench in a red-walled space station: two gloved hands build a homemade air filter by fitting a square white box onto a round hose with grey duct tape, a plastic bag and a piece of card. Tools and a checklist lie nearby. A wall gauge shows a rising orange bar."
+    },
+    {
+      "id": "ev2_crops",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "c_rego_sheet"
+      ],
+      "prompt": "Inside a space farm with pink grow lights: tomato vines with red tomatoes, some leaves showing fuzzy grey mold spots. The small helper robot inspects a sick leaf closely with worried cyan eyes, holding a tiny magnifying glass."
+    },
+    {
+      "id": "ev2_comms",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "prompt": "A big white dish antenna on the Moon pointing at a small blue Earth in the black sky, with a thin glowing beam linking them. Low heroic angle, grey ground, solar panels in the distance."
+    },
+    {
+      "id": "ev2_freeze",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "prompt": "Deep lunar night at a Moon base: machines and a radio mast covered in sparkling frost, little electric heaters glowing orange around them, dark solar panels, soft blue light from a big round Earth in the starry sky. Very cold and still."
+    },
+    {
+      "id": "ev2_rescue",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "c_rookie_sheet",
+        "c_rego_sheet",
+        "c_ingrid"
+      ],
+      "prompt": "Beside a cracked dome of another Moon station, an astronaut with teal shoulder stripes and a clear visor waves both arms with joy at being found. The young astronaut hero in the white suit with orange bands and the small helper robot arrive beside their six-wheeled rover car. Supply crates sit nearby. Hopeful and warm."
+    },
+    {
+      "id": "ev2_hens",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "c_rego_sheet"
+      ],
+      "prompt": "Inside a red-walled space station animal room: four plump brown hens look up hopefully at an almost empty sack of dry feed pellets. The small helper robot holds a little scoop and scratches its head. A glass fish tank with orange fish glows in the background. Funny and cute."
+    },
+    {
+      "id": "ev2_supply",
+      "style": "cartoon",
+      "aspect_ratio": "16:9",
+      "refs": [
+        "c_rego_sheet"
+      ],
+      "prompt": "An open supply case full of neatly packed spare parts, cables and food tins, glowing softly from inside, on the floor of a red-walled space station storage room. The small helper robot lifts one arm in delight, cyan eyes curved happily."
+    },
+    {
+      "id": "tex_wall",
+      "style": "texture",
+      "aspect_ratio": "1:1",
+      "prompt": "Wall of a cozy science-fiction space station: bright red padded rectangular panels in a regular grid with thin white trim lines, small silver rivets at the corners and a few small vents. Clean, slightly worn."
+    },
+    {
+      "id": "tex_floor",
+      "style": "texture",
+      "aspect_ratio": "1:1",
+      "prompt": "Space station floor: light grey metal deck plates in a regular square grid with anti-slip diamond pattern, thin dark seams, and a few yellow guide stripes."
+    },
+    {
+      "id": "tex_rego",
+      "style": "texture",
+      "aspect_ratio": "1:1",
+      "prompt": "Lunar regolith ground: fine grey dusty soil with scattered tiny pebbles and many very small shallow craters, neutral grey, realistic."
+    }
+  ]
+}

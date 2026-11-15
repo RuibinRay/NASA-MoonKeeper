@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>MOONKEEPER — Hold Tranquility Deep</title>
+<meta name="description" content="A 3D Moon-base survival and building game for ages 7 to 18. Keep the power on and the air in until rescue arrives.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Bangers&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="view"></canvas>
+<canvas id="rad"></canvas>
+<div id="fade"></div>
+
+<!-- HUD (in-game) -->
+<div id="hud" class="hidden">
+  <div id="top">
+    <div id="clock" class="glass">
+      <div id="clock-main"><b id="c-day">Day 1</b><span id="c-time">08:00</span><span id="c-zone">TOPSIDE</span></div>
+      <div id="timeline"><div id="tl-fill"></div><div id="tl-storm"></div><div id="tl-now"></div></div>
+      <div id="clock-sub"><span id="c-sun"></span><span id="c-rescue"></span></div>
+    </div>
+    <div id="gauges"></div>
+    <div id="side">
+      <canvas id="minimap" width="340" height="340"></canvas>
+      <div id="you" class="glass"><span id="hp-ic" title="Your health"></span><div class="bar"><i id="hp"></i></div><span id="carry"></span></div>
+    </div>
+  </div>
+  <div id="alerts"></div>
+  <div id="banner" class="hidden"></div>
+  <div id="labels"></div>
+  <div id="objective" class="glass hidden"></div>
+  <div id="job" class="glass hidden"><div id="job-title"></div><div class="bar"><i id="job-bar"></i></div><div class="row"><span id="job-step"></span><span id="job-left"></span></div></div>
+  <div id="rego" class="hidden"><img src="assets/img/c_rego.jpg" alt="REGO the robot"><div id="rego-text"></div></div>
+  <div id="prompt" class="hidden"></div>
+  <div id="toasts"></div>
+  <div id="btns">
+    <button id="b-power" title="Power Board (Tab)"></button>
+    <button id="b-map" title="Map (M)"></button>
+    <button id="b-ask" title="Ask REGO what to do (H)"></button>
+    <button id="b-data" title="Space Guide (N)"></button>
+    <button id="b-view" title="Switch first / third person (V)"></button>
+    <button id="b-speed" title="Game speed"></button>
+    <button id="b-pause" title="Pause (P)"></button>
+    <button id="b-sound" title="Sound on/off"></button>
+  </div>
+  <div id="touch" class="hidden">
+    <div id="stick"><i></i></div>
+    <button id="t-use">E</button><button id="t-alt">Q</button><button id="t-jump">UP</button><button id="t-down">DN</button>
+  </div>
+  <div id="sleep" class="hidden">Sleeping… time is racing by</div>
+</div>
+
+<!-- full-screen layers -->
+<div id="title" class="screen">
+  <div class="title-bg"></div>
+  <div class="title-inner">
+    <div class="eyebrow">A Moon-base survival and building adventure</div>
+    <h1>MOON<span>KEEPER</span></h1>
+    <p class="tagline">A meteor shower has hit every station on the Moon. You are the only one left at <b>Tranquility Deep</b>.<br>Keep the power on. Keep the air in. And remember: <b>no choice is free.</b></p>
+    <div id="modes"></div>
+    <div class="title-btns">
+      <button id="btn-start" class="primary">New Mission</button>
+      <button id="btn-continue" class="primary alt hidden">Continue</button>
+      <label class="check"><input type="checkbox" id="skip-tut"> Skip the comic and training</label>
+      <button id="btn-codex" class="ghost">How to Play</button>
+      <button id="btn-how" class="ghost">Real or made up?</button>
+    </div>
+    <div class="fine">Plays in your browser · no download · no login · your mission saves itself</div>
+  </div>
+</div>
+<div id="comic" class="screen hidden"></div>
+<div id="modal" class="hidden"></div>
+<div id="dialog" class="hidden"><img id="dlg-img" alt=""><div id="dlg-box"><div id="dlg-name"></div><div id="dlg-delay" class="hidden"><span>Radio signal crossing 384,400 km…</span><i></i></div><div id="dlg-text"></div><div id="dlg-next">Enter / click ▸</div></div></div>
+<div id="end" class="screen hidden"></div>
+<div id="tip"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
