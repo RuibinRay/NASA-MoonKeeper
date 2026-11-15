@@ -568,6 +568,9 @@ On the Moon a yellow line on the ground shows the way whenever REGO gives a hint
 
 On the Moon's surface the line is straight. That would not do at the Mars base, where pressurised tunnels join the modules into a wall, so the line is planned round them: a grid of 2 m squares, the shortest way over the open ones, then pulled tight so it only bends where it must. It leaves more room when you are in the rover. `routeAround` in `js/mars/terrain.js` is pure logic; `node tools/mars_test.mjs` checks every pair of doors (182 routes): none passes through a building, tunnel or boulder, and none is more than 4.5 times the straight distance. A route takes about 0.2 ms and is only planned again when you or the target have moved.
 
+### Mars in every language
+
+The 324 texts of Mars step one (the planet cards, the briefing, all 14 buildings, the gauges, REGO's Mars hints, the map) are translated into the same 15 languages, so every language is complete again (2,660 texts each). Three Mars lines that were built from pieces became whole sentences: the sky demo (clear, dusty, a regional storm), the season (one phrase per season) and "1 building still to see". Checked on screen: Mars in German has no English left; the Arabic mission briefing now keeps "24 L" in its own order (a value in a right-to-left box takes the direction of its own first letter). The translation tool now spaces only numbers that the English writes with a thousands comma, so German decimals such as 0,057 stay as written; three German lines it had broken are repaired. The background "SI-generated" marks are skipped by screen readers, like the picture marks.
 ### A better Map (the Map screen, first of two map steps)
 
 The Map was white blobs on brown. It is now its own file, `js/mars/map.js`, and does these things:

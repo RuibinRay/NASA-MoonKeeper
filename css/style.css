@@ -540,6 +540,10 @@ body.mars #suit{color:#ffd9bf}
 .mission-bg::before{right:16px;top:14px}
 .end-bg::before{right:16px;top:14px}
 #mission.mars .mission-bg::before{content:none}   /* the Mars mission page has a drawn gradient, not an SI picture */
+/* right to left: a value such as "24 L" or "3.0 kg" keeps its own order instead of turning into "L 24" */
+html[data-dir="rtl"] .bf b,html[data-dir="rtl"] #modal .win b,html[data-dir="rtl"] #modal .win .stat span,html[data-dir="rtl"] .cost{unicode-bidi:plaintext;text-align:right}
+/* the background marks are for eyes: a screen reader skips them (the picture marks carry aria-hidden) */
+@supports (content: "x" / "") { .title-bg::before,.mission-bg::before,.end-bg::before{content:var(--t-si,'SI-generated') / ''} #mission.mars .mission-bg::before{content:none} }
 
 /* ---------- the Mars map ---------- */
 .mapbox{position:relative;line-height:0}.mapbox canvas{width:100%;border-radius:12px;border:1px solid var(--line);touch-action:none;cursor:grab}
