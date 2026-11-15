@@ -469,3 +469,12 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
 .gauge.up .g-top b{animation:bumpUp .7s ease-out}.gauge.down .g-top b{animation:bumpDown .7s ease-out}
 #objective.changed{animation:goalIn .6s ease-out}
 @media (prefers-reduced-motion:reduce){#modal.in,#modal.in .win,#modal.in .choice,#modal.in .set-row,#hud.enter #top,#hud.enter #alerts,#hud.enter #btns,#dialog,#job,.alert.new,.gauge.up .g-top b,.gauge.down .g-top b,#objective.changed{animation:none}.bar i{transition:none}}
+/* The real Moon page of the Map: the base and the polar ice at their true distance */
+.rm-moon{width:100%;max-width:520px;height:auto;max-height:76vh;display:block;margin:0 auto}
+.rm-moon text{font-family:var(--body,inherit);font-size:12.5px;fill:#dbe6f0;paint-order:stroke;stroke:rgba(4,9,15,.85);stroke-width:3px;stroke-linejoin:round}
+.rm-moon .rm-you{font-weight:700;fill:#ffb347;font-size:14px}.rm-moon .rm-km{font-weight:700;fill:#fff;font-size:13px}.rm-moon .rm-icel{fill:#bfe2ff;font-size:11px}
+.rm-sea{opacity:.5}.rm-sea path{fill:#2a303c}.rm-ray circle{fill:rgba(255,255,255,.6)}.rm-grid line,.rm-grid ellipse{fill:none;stroke:rgba(255,255,255,.1)}
+.rm-ice{fill:rgba(111,177,255,.6)}.rm-trip{fill:none;stroke:#fff;stroke-width:1.6;stroke-dasharray:5 4}
+.rm-pole{fill:#6fb1ff;stroke:#04121f}.rm-probe{fill:#49e6ff;stroke:#04121f}.rm-base{fill:#ffb347;stroke:#2a1500;stroke-width:1.5}
+.rm p{margin:7px 0;font-size:14px;line-height:1.5}.rm-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.rm-cards .big{font-size:19px;white-space:nowrap}.rm-cards .datacard{padding:9px 10px}
+@media (max-width:900px){.rm-cards{grid-template-columns:1fr}}

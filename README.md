@@ -52,6 +52,7 @@ js/events.js          surprise events (real-dated storms, moonquakes, impacts, a
 js/story.js           comic pages, training, meteor-shower scene, endings
 js/sim.js             the survival simulation (pure logic; `node tools/sim_test.mjs` checks that every mission can be won)
 js/radio.js           what Mission Control says on the radio, and when (pure logic; `node tools/radio_test.mjs`)
+js/moonmap.js         the real Moon to scale: real positions, distances, and the drawing for the Map's "The real Moon" page (pure logic; `node tools/moonmap_test.mjs` runs 42 checks)
 js/life.js            crops, plant health, plant food, Water Plant, experiment, research (pure logic; `node tools/life_test.mjs` runs 71 checks)
 js/lifeui.js          farm, Water Plant, life-support loop, research and experiment screens
 docs/GAME_OVERVIEW.md  what the game is, what it teaches, how to play, the data behind it, test results, what to improve
