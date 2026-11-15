@@ -37,8 +37,10 @@ export const PLANT = {
 
 const NONE = {}, STOPS = { isru: 1, water: 1, greenhouse: 1, thermal: 1, comms: 1 };   // which broken machines stand still (a broken scrubber bed still lets Life Support clean water)
 export function createMars(seed = 1) {
-  let a = seed >>> 0; const rng = () => { a = (a + 0x6d2b79f5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  // The random numbers keep their place in S.rs, a plain number, so a saved game carries on the same sequence when it is loaded.
+  const rng = () => { S.rs = (S.rs + 0x6d2b79f5) >>> 0; const a = S.rs; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const S = {
+    rs: seed >>> 0,
     planet: 'mars', mode: 'mars', seed, rng, m: { key: 'mars', hourLen: 12, days: Infinity }, hours: Infinity, over: null,
     t0: 0, t: 8.5 * (MARS.SOL_H / 24),   // Earth hours since midnight of sol 1; play starts at 08:30 local solar time
     ls0: 45,                              // season at landing: northern spring, the clear part of the year
@@ -124,6 +126,6 @@ export function marsStep(S, dt) {
 }
 export const marsClock = (S) => { const sn = marsSun(S), h = Math.floor(sn.hour), m = Math.floor((sn.hour - h) * 60); return { sol: sn.sol, text: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` }; };
 
-// What can be saved and brought back (the random-number function is rebuilt from the seed).
+// What can be saved and brought back. The random-number function is rebuilt, and picks up where the saved game left off (S.rs).
 export const marsSerialize = (S) => { const o = { ...S }; delete o.rng; delete o.flow; return o; };
 export function marsDeserialize(o) { const S = createMars(o.seed || 1); Object.assign(S, o); S.flow = marsFlows(S); return S; }

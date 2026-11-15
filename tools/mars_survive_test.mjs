@@ -5,7 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MARS, LOADS, PLANT, createMars, marsStep } from '../js/mars/sim.js';
-import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, dangers, grade } from '../js/mars/survive.js';
+import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, dangers, grade, exploreUpkeep } from '../js/mars/survive.js';
+import { marsSerialize, marsDeserialize, marsFlows } from '../js/mars/sim.js';
 
 let pass = 0, fail = 0;
 const ok = (cond, name, got) => { if (cond) pass++; else { fail++; console.log('  FAIL', name, got === undefined ? '' : '→ ' + got); } };
@@ -104,6 +105,30 @@ ok(Object.values(FAULTS).reduce((s, f) => s + f.parts, 0) <= MISSION.parts + MIS
   ok(['air', 'co2', 'cold', 'water', 'food'].every((c) => new RegExp(`\\b${c}: \\{ title: tt\\(`).test(mis)), 'every way of losing has an ending that explains it');
   ok(Math.abs((MARS.O2_PP * 4 * MARS.SOL_H) / 24 - 3.45) < 0.05 && mis.includes('3.4 kg of oxygen a sol'), 'the ending quotes what the crew really breathe');
   ok(PLANT.O2_KG_H * MARS.SOL_H > (MARS.O2_PP * 4 * MARS.SOL_H) / 24, 'a working oxygen plant makes more than the crew breathe, so mending it is enough'); }
+
+// ---- 8. free exploring looks after itself, however long you stay ----
+{ const noon = (S) => { S.t = 12 * (SOL / 24); S.flow = marsFlows(S); return S; };
+  const A = noon(createMars(2)); A.panelDust = 0.3; ok(exploreUpkeep(A).join() === 'brush' && A.panelDust === 0.03, 'very dusty panels are brushed by the crew, by day');
+  const B = createMars(2); B.t = 1 * (SOL / 24); B.flow = marsFlows(B); B.panelDust = 0.3; ok(exploreUpkeep(B).length === 0 && B.panelDust === 0.3, 'not at night');
+  const C = noon(createMars(2)); C.panelDust = 0.3; C.tau = 4; ok(exploreUpkeep(C).length === 0, 'and not in a storm, when it would be wasted');
+  const D = noon(createMars(2)); D.panelDust = 0.2; ok(exploreUpkeep(D).length === 0, 'a little dust is left for the player to deal with');
+  const E = noon(createMars(2)); E.food = 59; ok(exploreUpkeep(E).join() === 'food' && E.food === 659, 'a supply lander brings food before the store runs out');
+  const H = noon(fresh(2)); H.panelDust = 0.5; H.food = 5; ok(exploreUpkeep(H).length === 0 && H.panelDust === 0.5 && H.food === 5, 'none of this happens in the survival mission: there you are on your own');
+  const W = noon(createMars(2)); W.battery = 40; W.t = 22 * (SOL / 24); W.flow = marsFlows(W); ok(exploreUpkeep(W).join() === 'shed' && SHED.every((k) => !W.on[k]) && W.on.lifesupport && W.on.thermal && W.on.isru && W.on.water, 'with the battery nearly empty at night the crew switch off what can wait, and nothing that keeps people alive');
+  ok(exploreUpkeep(W).length === 0, 'once'); W.battery = 400; W.t = 36.7 * (SOL / 24); W.flow = marsFlows(W); ok(W.flow.net > 0 && exploreUpkeep(W).join() === 'unshed' && SHED.every((k) => W.on[k]), 'and switch it all back on when the Sun has filled the battery');
+  const P2 = noon(createMars(2)); P2.on.lab = false; P2.battery = 40; P2.t = 22 * (SOL / 24); P2.flow = marsFlows(P2); exploreUpkeep(P2); P2.battery = 400; P2.t = 36.7 * (SOL / 24); P2.flow = marsFlows(P2); exploreUpkeep(P2); ok(P2.on.lab === false && P2.on.greenhouse === true, 'a building you switched off yourself stays off');
+  const Y = createMars(6); let brown = 0, minFood = 1e9, maxDust = 0, brushes = 0, drops = 0, sheds = 0, minHealth = 100, minRoom = 99; for (let i = 0; i < 668 * SOL * 10; i++) { const F = marsStep(Y, 0.1); if (F.eff < 1) brown += 0.1; for (const e of exploreUpkeep(Y)) { if (e === 'brush') brushes++; else if (e === 'food') drops++; else if (e === 'shed') sheds++; } minFood = Math.min(minFood, Y.food); maxDust = Math.max(maxDust, Y.panelDust); minHealth = Math.min(minHealth, Y.health); minRoom = Math.min(minRoom, Y.habTemp); }
+  ok(brown < 40 && minHealth > 90 && minRoom > 12, 'a whole Mars year of exploring, winter included: the power holds, the rooms stay warm and the crew stay well', `${brown.toFixed(1)} h of brownout, rooms down to ${minRoom.toFixed(0)}°C, health down to ${minHealth.toFixed(0)}`);
+  ok(sheds > 20, 'because the crew shed load on the long winter nights', sheds);
+  ok(minFood > 0 && drops >= 1 && drops <= 4, 'the food never runs out', `lowest ${minFood.toFixed(0)} kg, ${drops} supply landers`);
+  ok(maxDust <= 0.26 && brushes >= 1, 'and the panels never get dirtier than a quarter', `${(maxDust * 100).toFixed(0)}%, brushed ${brushes} times`);
+  console.log(`  a year of exploring: ${brown.toFixed(1)} h brownout, load shed on ${sheds} nights, panels brushed ${brushes} times, ${drops} food deliveries`); }
+
+// ---- 9. a loaded game carries on the same random sequence ----
+{ const A = createMars(41); const first = [A.rng(), A.rng(), A.rng()]; const B = marsDeserialize(JSON.parse(JSON.stringify(marsSerialize(A)))); const nextA = [A.rng(), A.rng()], nextB = [B.rng(), B.rng()];
+  ok(nextA[0] === nextB[0] && nextA[1] === nextB[1], 'after loading, the next random numbers are the ones the saved game would have had');
+  ok(!first.includes(nextB[0]), 'not the sequence from the start again'); const C = createMars(41); ok(C.rng() === first[0], 'and the same seed still gives the same start');
+  const M = fresh(41), M2 = startSurvival(createMars(41)); ok(JSON.stringify(M.plan) === JSON.stringify(M2.plan), 'so a seed still repeats a mission exactly'); }
 
 console.log(`${pass} checks passed${fail ? ', ' + fail + ' FAILED' : ''}`);
 process.exitCode = fail ? 1 : 0;

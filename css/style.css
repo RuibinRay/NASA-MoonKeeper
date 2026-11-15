@@ -564,3 +564,5 @@ html[data-dir="rtl"] .bf b,html[data-dir="rtl"] #modal .win b,html[data-dir="rtl
 #train-skip{position:absolute;left:50%;top:172px;transform:translateX(-50%);padding:4px 13px;border-radius:20px;font-size:12.5px;font-weight:600;color:#ffd9bf;background:rgba(30,16,8,.9);border:1px solid rgba(255,170,120,.55);pointer-events:auto;cursor:pointer}
 #train-skip:hover{border-color:#ffb27a}
 @media (max-width:1000px){#train-skip{left:auto;right:10px;top:304px;transform:none}}
+/* on a phone held sideways the skip button sits beside the stick, clear of the touch buttons and the bottom bar */
+@media (max-height:520px){#train-skip{left:150px;right:auto;top:auto;bottom:12px;transform:none}}

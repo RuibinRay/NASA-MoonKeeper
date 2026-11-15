@@ -632,3 +632,21 @@ The survival mission dropped a new player in with only REGO's hints. Mars now ha
 **Also fixed here.** A repair made outside the survival mission (the practice one) stopped with an error after mending; it now finishes properly.
 
 **Checked.** `node tools/mars_training_test.mjs`: 40 checks, walking a stand-in player through every step: each step finishes when the thing is done and not before, in order. In the browser: all eleven steps played through to the end, the skip button, the hand-over to a fresh survival mission, and the mission page's tick box. Not done: a child has not tried it, and it has not been played on a phone. The texts are in English only.
+
+### Small leftovers, cleared
+
+**Time skips.** A long wait (a repair, a rest) is now taken in steps of six minutes. Before, one long step used the sunlight at its start for the whole wait, so a daytime wait could count the battery too low.
+
+**Random numbers after loading.** A loaded Mars game now carries on the same random sequence instead of starting it again; the place in the sequence is saved with the game.
+
+**A year of exploring.** A year-long run showed two things. Left alone, the panels reach their dust limit and the food runs out, so while you explore (not in the survival mission) the crew now brush the panels when they are a quarter covered, and a supply lander brings food before the store is empty. The run also showed something the first Mars step had missed: **in winter the outpost cannot carry its full load**. At 39.5°N the winter days are short and the Sun is low, and even with clean panels the base browned out about 1,500 hours a year. While you explore, the crew now switch off what can wait when the battery is nearly empty and switch it back on when the Sun has refilled it (about 150 nights a year); REGO says so the first time. In the survival mission nothing is done for you. A winter mission would be a natural next one.
+
+**The Map on a phone.** Two fingers now zoom the Map (pinch), keeping the spot between the fingers where it is; one finger still drags and a tap still picks. Checked with touch events; not yet on a real phone.
+
+**Training on a phone.** At phone size the "Skip training" button sat on top of the touch buttons; it now sits beside the stick. The E button and the lightning button were checked to carry the first three steps.
+
+**Checks that were broken.** `tools/build_docs.mjs` did not run at all (a stray backtick in its text); it runs again and has a real `--check`. `tools/mini_test.mjs` flagged the harvest game as too tight on time on Pilot and Commander (70% and 84% of the clock for a perfect player); the game now gives 24 seconds instead of 17 (49% and 62%).
+
+**Housekeeping.** The stale remote branch `feat/mars-map` is deleted; its one extra commit was a test file main already has, byte for byte.
+
+**Checked.** `node tools/mars_survive_test.mjs`: 70 checks (18 new: the year of exploring, the crew's upkeep rules, the random sequence after loading). All other checks pass.

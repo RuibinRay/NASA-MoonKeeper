@@ -3,10 +3,11 @@
 import { tt } from '../i18n.js';
 import { IC } from '../icons.js';
 import { MARS, LOADS, marsStep } from './sim.js';
-import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, grade } from './survive.js';
+import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, grade, exploreUpkeep } from './survive.js';
 
 const $ = (s) => document.querySelector(s);
 // A broken battery module or a jammed row of solar tables is mended at the Power Station; everything else at its own building.
+const STEP = 0.1;
 const AT = (id) => (id === 'battery' || id === 'solar' ? 'power' : id);
 const PRIORITY = ['thermal', 'isru', 'lifesupport', 'battery', 'solar', 'water', 'greenhouse', 'comms'];
 // What the player reads for each thing that can break.
@@ -40,8 +41,13 @@ export function makeMission(env) {
   const intro = () => { const s = S(), ph = stormPhase(s); ui.bubble(tt`<b>Hold the outpost for ${MISSION.sols} sols.</b> The supply lander is on its way, the tanks are low, and a <b>dust storm arrives in ${hrs(ph.inH)}</b>. Machines will break: mend them at their doors. <b>First, take the rover to the lander</b> and unpack the spare parts still in its hold. Press <b>H</b> whenever you want to know what matters most.`, 'worried', 24); G.pointTo('lander'); };
 
   // Move time forward by h hours. Returns true if something happened that should wake a resting player.
-  function step(h) {
-    const s = S(); if (!on()) { marsStep(s, h); return false; } let woke = false;
+  // Time moves in steps of six minutes at most. One long step would use the sunlight at its start for the whole wait:
+  // a two-hour job begun at dawn would count as dark, and one begun at noon as full Sun.
+  function step(hours) {
+    let woke = false; for (let left = hours; left > 1e-9 && !(S().over); left -= STEP) woke = stepOnce(Math.min(STEP, left)) || woke; return woke;
+  }
+  function stepOnce(h) {
+    const s = S(); if (!on()) { marsStep(s, h); if (!s.train) for (const e of exploreUpkeep(s)) upkeep(e); return false; } let woke = false;
     for (const e of surviveStep(s, h)) { woke = true;
       if (e.type === 'fault') { const f = FAULT_TEXT[e.id]; G.audio.play('alarm'); ui.bubble(`${f.alert} ${f.fix}`, 'alert', 16); G.pointTo(AT(e.id)); log(f.name, 'bad'); }
       else if (e.type === 'storm' && e.phase === 'on') { G.audio.play('alarm'); ui.bubble(tt`<b>The dust storm is here.</b> The Sun's direct light is going, and the solar field will make about a third of its power for the next ${hrs(s.storm.t1 - s.t)}. Switch off what the crew can do without, so the battery lasts each night. Press <b>H</b> and I will say what to switch off first.`, 'alert', 20); log(tt('The dust storm arrived.'), 'bad'); }
@@ -49,6 +55,14 @@ export function makeMission(env) {
       else if (e.type === 'over') end(); }
     return woke;
   }
+
+  // Free exploring has no ending, so the outpost must not run itself into the ground while you look round: the crew brush
+  // the panels when they get very dusty, and a supply lander brings food before the store runs out.
+  let shedSaid = false;
+  const upkeep = (e) => { if (e === 'brush') ui.toast(tt('The crew brushed the dust off the solar panels.'), 'good'); else if (e === 'food') ui.toast(tt('A supply lander has brought food for another year.'), 'good');
+    else if (e === 'shed' && shedSaid) ui.toast(tt('Battery low: the crew have switched off what can wait until the Sun is up.'));
+    else if (e === 'shed') { shedSaid = true; ui.bubble(tt('<b>The battery is nearly empty.</b> The crew have switched off what can wait: the laboratory, the greenhouse lamps, the radio, the garage, the living quarters and the medical bay. Life support, heat, oxygen and water stay on. They will switch everything back on when the Sun has filled the battery.'), 'worried', 16); }
+    else if (e === 'unshed') ui.toast(tt('Power is back. The crew have switched everything on again.'), 'good'); };
 
   // ---------- alerts and advice ----------
   function alerts(a) {
