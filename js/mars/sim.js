@@ -80,6 +80,10 @@ export function airTemp(S, sn = marsSun(S)) {
 // One-way radio time to Earth (minutes): from 3 to 22, as the two planets go round the Sun.
 export function lightMinutes(S, t = S.t) { const th = 2.0 + (2 * Math.PI * (t / 24)) / 779.94, d = Math.sqrt(1 + 1.5237 * 1.5237 - 2 * 1.5237 * Math.cos(th)); return (d * 149597870.7) / 299792.458 / 60; }
 
+// Earth seen from Mars is never far from the Sun: at most about 47° away. Degrees between them in the sky, + when Earth
+// is a morning star (it rises before the Sun), − when it is an evening star. Uses the same line-up of the planets as the radio time.
+export function earthElongation(S, t = S.t) { const th = 2.0 + (2 * Math.PI * (t / 24)) / 779.94, ex = Math.cos(th) - MARS.A_AU, ey = Math.sin(th); return (Math.atan2(ey, -ex) * 180) / Math.PI; }
+
 // Everything that flows right now: power in and out, oxygen, water, food. Rates are per Earth hour unless named.
 export function marsFlows(S) {
   const sn = marsSun(S), G = groundLight(S, sn), perSol = MARS.SOL_H / 24;

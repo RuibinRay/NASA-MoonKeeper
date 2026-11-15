@@ -584,3 +584,15 @@ The Map was white blobs on brown. It is now its own file, `js/mars/map.js`, and 
 - **The region and planet pages** now answer the pointer: move it and read the real latitude, longitude and height from NASA's MOLA data (Olympus Mons reads +19,040 m, Hellas −6,280 m). The region has lines of latitude and longitude, rings at 25, 50 and 75 km, the hill that stands highest on the outpost's skyline, and EM-16, a landing site a published study looked at (Proposed).
 
 **Checked.** `node tools/mars_test.mjs`: 143 checks (18 new on the Map: the readings match the data, zooming keeps the point under the pointer, the view cannot be lost off the edge). In the browser: all four pages, pointing, clicking a building, a question mark and bare ground, zoom, drag, and the corner map; no errors. The new texts are not translated yet.
+
+### Better ground and scenery (second of two map steps)
+
+**The ground.** Dark, winding dust-devil tracks now cross the plain, pale dust lies in the lee of the young craters, and the blotches in the soil are calmer. Rocks are dark basalt with pale dust lying on their tops.
+
+**The sky.** The Sun has its own small disc (about two-thirds the size it looks from Earth). Thin, streaky ice clouds drift high up: faint by day, bright around sunrise and sunset, gone in a dust storm. Before dawn a blue-white star stands near where the Sun will rise: that is Earth, placed from the same line-up of the planets the radio delay uses. At night Phobos crosses low in the south, from west to east. REGO points each of them out the first time.
+
+**Three more places to find** (11 in all): a terraced crater with a real bench in its wall, the lander's heat shield, backshell and parachute lying where they fell, and a seismometer under its dome, far from the base so footsteps do not shake it. Out beyond the map, 16 larger craters give the far plain some shape.
+
+**What kind of fact each is** is in MARS_SCIENCE.md, section 9. Several of these come from general knowledge of Mars and were not checked against a source in this pass; that list says which.
+
+**Checked.** `node tools/mars_test.mjs`: 161 checks (18 new). In the browser: each new place seen and found, the clouds by day and at dawn, Earth before sunrise, Phobos at night, no errors. Frame time could not be measured reliably in a background tab; the number of triangles drawn is unchanged (about 590,000 at the base).

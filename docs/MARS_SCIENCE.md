@@ -116,10 +116,23 @@ MOLA files: NASA Planetary Data System, Geosciences Node — https://pds-geoscie
 | Olympus Mons | 18.65°N, 226.2°E; summit 21,300 m above the MOLA datum | Observed | https://planetarynames.wr.usgs.gov/Feature/4453 ; https://pgda.gsfc.nasa.gov/products/62 |
 | Valles Marineris | 14.01°S, 301.41°E; about 3,870 km long | Observed | https://planetarynames.wr.usgs.gov/Feature/6288 |
 
+## 8a. Scenery (added with the "better ground and scenery" step)
+
+| What | In the game | Class | Note |
+|---|---|---|---|
+| Sun's size in the sky | About two-thirds of what it looks from Earth | Observed (derived from the orbit: 1 / 1.52) | Mars Fact Sheet |
+| Earth in Mars's sky | A star never more than 41° from the Sun; a morning star at the start of the game | Game (geometry from the orbit sizes, with a made-up starting line-up; the real maximum is a little larger because Mars's orbit is not a circle) | `earthElongation` in `js/mars/sim.js` |
+| Marsquake from a meteorite | InSight felt a magnitude 4 quake from the 24 Dec 2021 impact | Observed | https://www.jpl.nasa.gov/news/nasas-insight-lander-detects-stunning-meteoroid-impact-on-mars |
+| The seismometer by the base | A dome on the ground, 270 m out | Game (the instrument is Demonstrated: InSight) | — |
+| Terraced crater, heat shield and parachute, far craters, dust streaks | Placed for play | Game | — |
+| Phobos | Rises in the west, sets in the east, about every 11 hours, low in the south from this latitude | Not verified in this pass | See the list below |
+| Dust-devil tracks, ice clouds | Dark winding tracks; thin clouds brightest at twilight | Not verified in this pass | See the list below |
+
 ## 8. Not verified in this pass
 
 - Some NASA pages say Olympus Mons is "over 40 km" from base to summit; MOLA gives 21.3 km above the datum. The game uses the MOLA value.
 - No opened NASA page gave the percentage of sunlight lost in the **2018** storm; the 99% figure is from 2007.
 - The exact touchdown points of Curiosity and Perseverance were not found on a page that opened, so the game does not show them.
 - The dust-to-sunlight formula has not been checked against the Appelbaum & Flood tables; it is labelled Game.
+- Scenery details written from general knowledge, with no source opened in this pass: that Phobos rises in the west and crosses the sky about every 11 hours (its real period is about 7.7 hours; the 33° height in the south is our own geometry); that dust devils leave dark tracks and that thin ice clouds are seen at twilight; that terraced craters are used with radar to measure buried ice; that landers drop their heat shield and parachute within sight of where they land.
 - Several journal pages were read as abstracts only (Piqueux 2019, Dundas 2021 and 2023, Mellon 2009, Bramson 2015, Morgan 2021).
