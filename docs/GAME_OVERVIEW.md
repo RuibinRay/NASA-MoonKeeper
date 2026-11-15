@@ -321,6 +321,15 @@ The game was played from the title screen to the rescue by a script that presses
 | A water-from-rock run that made no water still earned research. | No water, no research. |
 | The recipe screen said a run looked good when the station had no power for it. | It warns when the battery and spare power cannot cover the run. |
 | The game said Earth never moves in the sky. | It now says Earth stays in almost the same spot. Guide mode also no longer marks Cook or Sleep while the suit is on. |
+| REGO kept running at the wall. Its place was a fixed point behind your right shoulder, even when that point was inside a wall; it ran there, was put back on top of you, and ran there again, many times a second. Standing by a hall wall for 10 seconds, REGO ran 92 m. | REGO chooses a place it can reach, follows the path you walked when a wall is in the way, and stays put once it is near you and out of your way. In the same 10 seconds it now moves about 1 m. |
+| Nothing warned you when oxygen, water or food ran out. | An alert a day and a half ahead, an emergency six hours ahead, and "OUT OF OXYGEN" when it is gone. An emergency wakes a sleeper. |
+| "A meteoroid smashed 0 solar panel." | When no working panel is left, the card and the log say so. |
+| The same "Frozen Solid" card came up about 13 times in one night, each time "breaking" a heater circuit that was already broken. | Nothing breaks twice. One spell of cold shows one card; later breaks are a short note, and a standing alert says the machines are freezing. |
+| A rover parked within 5 m of a broken solar panel hid it: E always drove the rover. | E goes to whichever you stand closer to, and Q to the other. |
+| The clock read "Day 8 of 7" on the last morning. | It reads "Rescue day". |
+| REGO told you to run and patch a leak that emptied the oxygen tank on the way. | The leak card and REGO work out how much oxygen the walk and the patch will take, show it, and say "lock the door" when there is not enough. |
+| REGO pushed solar panels and the 9 kW oxygen plant at night. | Panel repairs are advised only with daylight left to use them; at night the panel alert says they can wait, and the oxygen plant comes with a warning about its power. |
+| Nothing pointed at crew jobs, though two robots on Farm duty and Cook more than doubled the food. | When food is getting low and a helper is resting, REGO names the helper and the two jobs. |
 
 ### Found in a follow-up check of the hardest mode
 

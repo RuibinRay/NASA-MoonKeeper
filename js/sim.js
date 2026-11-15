@@ -184,6 +184,7 @@ export function step(S, dt) {
   const deficit = F.heatNeed - S.lv.heat * F.eff;
   S.gearStress = clamp(S.gearStress + (deficit > 0.01 ? 0.03 * deficit : -0.08) * dt, 0, 1);
   if (S.gearStress >= 1) { S.gearStress = 0.5; S.pending.push('gearBreak'); }
+  if (deficit <= 0.01 && S.gearStress <= 0) S.gearCard = false;   // the machines are warm (or cool) enough again: the next spell of damage gets a fresh card
   // ---- radiation
   const r = doseRate(S); S.dose += r * dt; S.flow.doseRate = r;
   if (S.zone === 'top') { S.stats.evaHours += dt; if (S.storm && S.t >= S.storm.start && S.t < S.storm.end) S.stats.stormDose += r * dt; }

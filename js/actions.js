@@ -5,7 +5,7 @@ import { drawStation, roomState } from './ui.js';
 import { playMini } from './minigames.js';
 import { installLife } from './lifeui.js';
 import { ripeIn, dump, iceLeft } from './life.js';
-import { MINE } from './config.js';
+import { MINE, PIT } from './config.js';
 
 const FACTS = [
   'Look up! Earth stays in almost the same spot in our sky. The Moon always keeps the same face toward Earth, so from here Earth just hangs there, wobbling a little, and slowly changes shape.',
@@ -58,7 +58,11 @@ export function installActions(G) {
 
   // ---------- vehicles ----------
   G.enterVehicle = (v) => { G.xfer = { kind: 'in', u: 0, from: P.pos.clone() }; P.in = v; G.lastRide = v; P.vel.set(0, 0, 0); G.audio.play('ok'); G.camT = 0; if (G.state === 'play' && !G['_tip' + v]) { G['_tip' + v] = 1; ui.toast(v === 'dig' ? 'Digger: W S to drive, A D to turn. Hold SPACE with the bucket over a pale blue patch to dig. Q tips the bucket into the filler. E to get out.' : v === 'car' ? 'Rover: W S to drive, A D to steer, E to get out. Park on the round pad to recharge.' : 'Hopper: Space to lift off, W to fly forward, A D to turn, C to come down, E to get out. It only charges on its own pad.'); } };
-  G.exitVehicle = () => { const v = P.in, o = G[v]; if (v === 'ship' && o.alt > 0.7) { ui.toast('Land first: hold C to come down.', 'bad'); return; } G.xfer = { kind: 'out', u: 0, from: P.pos.clone().set(o.x, (v === 'ship' ? o.y : world.heightAt(o.x, o.z)) + 1.1, o.z) }; P.in = null; if (v === 'car' || v === 'dig') { o.v = 0; o.dig = 0; } else { o.vx = o.vz = 0; } P.pos.set(o.x + Math.cos(o.yaw) * 3.2, 0, o.z - Math.sin(o.yaw) * 3.2); P.pos.y = world.heightAt(P.pos.x, P.pos.z); G.regoPos.set(P.pos.x + 1, P.pos.y, P.pos.z + 1); G.audio.play('blip'); };
+  // Nobody can stand within RIM of the pit's middle, so the hopper may not be left there (you could never climb back in)
+  const RIM = PIT.r + 7.5, pitDist = (o) => Math.hypot(o.x - PIT.x, o.z - PIT.z);
+  const shipReach = () => Math.hypot(P.pos.x - G.ship.x, P.pos.z - G.ship.z) - Math.max(0, RIM - pitDist(G.ship));   // a hopper parked too close to the pit can still be boarded from the rim
+  G.exitVehicle = () => { const v = P.in, o = G[v]; if (v === 'ship' && o.alt > 0.7) { ui.toast('Land first: hold C to come down.', 'bad'); return; }
+    if (v === 'ship' && pitDist(o) < RIM + 1) { ui.toast('Too close to the edge of the pit to climb out. Fly a little further away from it first.', 'bad'); return; } G.xfer = { kind: 'out', u: 0, from: P.pos.clone().set(o.x, (v === 'ship' ? o.y : world.heightAt(o.x, o.z)) + 1.1, o.z) }; P.in = null; if (v === 'car' || v === 'dig') { o.v = 0; o.dig = 0; } else { o.vx = o.vz = 0; } P.pos.set(o.x + Math.cos(o.yaw) * 3.2, 0, o.z - Math.sin(o.yaw) * 3.2); P.pos.y = world.heightAt(P.pos.x, P.pos.z); G.regoPos.set(P.pos.x + 1, P.pos.y, P.pos.z + 1); G.audio.play('blip'); };
 
   // ---------- jobs: scenes that play by themselves while the clock runs ----------
   const J = {
@@ -86,6 +90,8 @@ export function installActions(G) {
   const nearMount = () => { let bi = -1, bd = 5; MOUNTS.forEach(([x, z], i) => { const d = Math.hypot(x - P.pos.x, z - P.pos.z); if (d < bd) { bd = d; bi = i; } }); return bi; };
   const nearItem = () => { let best = null, bd = 1e9; for (const it of G.items) { if (it.where !== 'ground' || it.zone !== P.zone) continue; const d = Math.hypot(it.x - P.pos.x, it.z - P.pos.z); if (d < (ITEMS[it.type].heavy ? 4.2 : 2.8) && d < bd) { best = it; bd = d; } } return best; };
   const nearDoor = () => P.zone === 'deep' ? ROOMS.find((d) => { const [x, z] = doorSpot(d); return near(x, z, 2.4); }) : null;
+  G.leakCost = (id) => { const h = world.rooms[id] && world.rooms[id].holePos, d = h && P.zone === 'deep' ? Math.hypot(h.x - P.pos.x, h.z - P.pos.z) : 250; return ((d * 1.5) / 6.4 / G.S.m.hourLen + 1) * 55 * K.O2_PER_KPA; };   // 250: from the surface, the elevator and the hall come first
+  const needLift = () => { const g = G.goal; return !!g && (g.id === 'gate' || g.id === 'lift' || (g.zone !== undefined && g.zone !== P.zone)); };   // does the current objective lie through the elevator?
   const nearHole = () => P.zone === 'deep' ? ROOMS.find((d) => G.S.rooms[d.id].hole > 0 && near(world.rooms[d.id].holePos.x, world.rooms[d.id].holePos.z, 4.5)) : null;
 
   // The one thing E does right now (and sometimes a second thing on Q).
@@ -94,7 +100,7 @@ export function installActions(G) {
     if (P.in) { c.e = { label: P.in === 'car' ? 'Get out of the rover' : P.in === 'dig' ? 'Get out of the digger' : 'Get out of the hopper', run: G.exitVehicle };
       if (P.in === 'dig') { if (G.dig.load > 0 && near(MINE.x, MINE.z, 10)) c.q = { label: `Tip ${G.dig.load} scoop${G.dig.load > 1 ? 's' : ''} into the canister filler`, run: G.dumpDig }; else c.q = { label: G.dig.load >= MINE.bucket ? 'Bucket full: drive to the orange filler' : 'Hold SPACE over a pale blue patch to dig', run: () => {} }; }
       return c; }
-    const it = P.carry, st = nearStation(), veh = top ? (near(G.car.x, G.car.z, 5.4) ? 'car' : near(G.ship.x, G.ship.z, 6) && G.ship.alt < 0.7 ? 'ship' : null) : null, m = top ? nearMount() : -1, lift = st && (st.id === 'gate' || st.id === 'lift');
+    const it = P.carry, st = nearStation(), veh = top ? (near(G.car.x, G.car.z, 5.4) ? 'car' : shipReach() < 6 && G.ship.alt < 0.7 ? 'ship' : null) : null, m = top ? nearMount() : -1, lift = st && (st.id === 'gate' || st.id === 'lift');
     if (it) {
       const nm = ITEMS[it.type].name, vn = veh === 'car' ? 'rover' : 'hopper';
       if (it.type === 'panel' && m >= 0 && s.mounts[m] === 0) c.e = { label: 'Install the solar panel on this mount (1 h)', run: () => J.installPanel(m) };
@@ -102,7 +108,7 @@ export function installActions(G) {
       else if (ITEMS[it.type].gives && st && st.id === 'depot') c.e = { label: `Deliver the ${nm} to the depot`, run: J.deliver };
       else if (it.type === 'battery' && st && st.id === 'storage') c.e = { label: 'Plug the battery module into the rack (1 h)', run: J.battery };
       else if (it.type === 'ice' && st && st.id === 'wplant') c.e = { label: 'Load the icy soil into the Water Plant hopper', run: () => { G.removeItem(it); s.wx.ice++; G.audio.play('ok'); ui.toast(`Canister loaded: ${s.wx.ice} in the hopper. Press E here to set up a batch.`, 'good'); } };
-      else if (lift) {   // at the elevator, E always rides (that is what every objective says); a rover parked here moves to Q
+      else if (lift && (!veh || needLift())) {   // at the elevator, E rides when the job is on the other side of it; a rover parked here moves to Q
         c.e = { label: st.id === 'gate' ? `Ride the elevator down (the ${it.type.startsWith('panel') ? 'panel' : 'load'} comes too)` : 'Ride the elevator up', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
         if (veh && G[veh].cargo.length < G[veh].max) c.q = { label: `Load the ${nm} onto the ${vn}`, run: () => G.load(veh) };
       }
@@ -114,18 +120,29 @@ export function installActions(G) {
       return c;
     }
     const li = nearItem(), door = nearDoor(), hole = nearHole(), done = st && st.id === 'bench' ? s.bench.findIndex((b) => b && b.left <= 0) : -1;
+    // A station panel (depot, outpost, a building) and a parked vehicle in reach at once: E goes to whichever you stand closer to for its size, the other to Q
+    const panel = st && !lift && st.id !== 'suit' && G.state === 'play' ? st : null;
+    const stFar = () => { const [x, z] = panel.site ? [panel.site.pos[0] + 2, panel.site.pos[1] + 16] : panel.pos; return Math.hypot(P.pos.x - x, P.pos.z - z) / (panel.site ? 9 : panel.r); };
+    const vehFar = () => (veh === 'car' ? Math.hypot(P.pos.x - G.car.x, P.pos.z - G.car.z) / 5.4 : shipReach() / 6);
+    const panelFirst = !!(panel && veh && stFar() <= vehFar());
+    const drive = veh && { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) };
+    const pull = m >= 0 && s.mounts[m] === 2 ? { label: 'Pull the broken panel off its mount (30 min)', run: () => J.removePanel(m) } : null;
+    const mountFirst = !!(pull && veh && Math.hypot(P.pos.x - MOUNTS[m][0], P.pos.z - MOUNTS[m][1]) / 5 <= vehFar());
     if (hole) c.e = { label: `Patch the hole in the ${hole.name} (1 material, 1 h)`, run: () => J.patch(hole.id) };
     else if (li) c.e = { label: `Pick up the ${ITEMS[li.type].name}`, run: () => G.take(li) };
     else if (top && near(G.dig.x, G.dig.z, 5.5)) c.e = { label: 'Drive the digger', run: () => G.enterVehicle('dig') };
-    else if (veh && !lift) c.e = { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) };
-    else if (m >= 0 && s.mounts[m] === 2) c.e = { label: 'Pull the broken panel off its mount (30 min)', run: () => J.removePanel(m) };
+    else if (veh && !(lift && needLift()) && !panelFirst && !mountFirst) c.e = drive;
+    else if (pull) c.e = pull;
     else if (done >= 0) c.e = { label: 'Take the fixed panel', run: () => J.benchTake(done) };
     else if (door) c.e = { label: s.rooms[door.id].door ? `Lock the ${door.name} door` : `Unlock the ${door.name} door`, run: () => G.toggleDoor(door.id) };
     else if (st && st.id === 'suit') c.e = suitAct();
     else if (lift) c.e = { label: st.id === 'gate' ? 'Ride the elevator down into the cave' : 'Ride the elevator up to the surface', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
     else if (st && G.state === 'play') c.e = { label: st.info ? `Look at the ${st.name}` : st.name, run: () => G.openStation(st) };
-    if (veh && lift) c.q = { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) };
     if (veh && G[veh].cargo.length) { const last = G[veh].cargo[G[veh].cargo.length - 1]; c.q = { label: `Take the ${ITEMS[last.type].name} out (${G[veh].cargo.length} on board)`, run: () => G.take(last) }; }
+    if ((panelFirst || mountFirst) && c.e && c.e.run !== drive.run) c.q = drive;   // the vehicle is never out of reach: step up to it and E drives again
+    else if (pull && veh && c.e === drive && !c.q) c.q = pull;
+    else if (panel && veh && c.e === drive && !c.q) c.q = { label: panel.info ? `Look at the ${panel.name}` : panel.name, run: () => G.openStation(panel) };
+    if (lift && veh && !c.q && c.e) c.q = c.e.label.startsWith('Ride') ? { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) } : { label: 'Ride the elevator', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };   // a rover parked on the elevator never blocks it
     return c;
   };
   G.promptText = () => { const c = G.context(); if (!c.e && !c.q) return null; return (c.e ? `<kbd>E</kbd>${c.e.label}` : '') + (c.q ? `<span class="sep"></span><kbd>Q</kbd>${c.q.label}` : ''); };
@@ -162,7 +179,7 @@ export function installActions(G) {
         { label: s.lv.isru ? 'Switch it OFF' : 'Switch it ON', costs: s.lv.isru ? [] : ['9 kW'], disabled: f.isruDown, run: async () => { s.lv.isru = s.lv.isru ? 0 : 1; ui.toast(`Moon-dust plant ${s.lv.isru ? 'ON' : 'OFF'}.`); } },
       ], note: 'It melts moon soil to free the oxygen locked inside. It uses no water at all, which saves your tanks — but it eats a lot of power.' });
     if (id === 'yard') return ui.panel('Heater Hub', { stats: [['Topside temperature', fmt.temp(F.sun.tempC)], ['Heaters', f.heater ? 'One circuit has failed' : `Level ${s.lv.heat} (machines need ${F.heatNeed})`]],
-      actions: [{ label: 'Fix the heater circuit', costs: ['1 material', '1.5 h topside'], disabled: !f.heater, run: () => J.fix('Fixing the heater circuit', 1.5, 1, { x: -86, z: -52, y: 1 }, ['Finding the burnt wire…', 'Splicing in a new one…', 'Warming up…'], () => { f.heater = false; ui.toast('Heater circuit fixed.', 'good'); doneGoal('yard'); }) }, { label: 'Open the Power Board', run: () => ui.powerBoard() }] });
+      actions: [{ label: 'Fix the heater circuit', costs: ['1 material', '1.5 h topside'], disabled: !f.heater, run: () => J.fix('Fixing the heater circuit', 1.5, 1, { x: -86, z: -52, y: 1 }, ['Finding the burnt wire…', 'Splicing in a new one…', 'Warming up…'], () => { f.heater = false; ui.toast('Heater circuit fixed. You can turn the Topside Heaters back down on the Power Board.', 'good'); note(s, 'Fixed the heater circuit.', 'good'); doneGoal('yard'); }) }, { label: 'Open the Power Board', run: () => ui.powerBoard() }] });
     if (id === 'depot') { const crates = (v) => G[v].cargo.filter((it) => ITEMS[it.type].gives), all = [...(near(G.car.x, G.car.z, 22) ? crates('car') : []), ...(near(G.ship.x, G.ship.z, 26) ? crates('ship') : [])];
       return ui.panel('Cargo Depot', { stats: [['Materials', fmt.mat(s.mat)], ['Tinned meals', Math.floor(s.cans)], ['Water', s.water.toFixed(0) + ' L']], actions: [{ label: `Unload ${all.length} crate${all.length === 1 ? '' : 's'} from the parked rover / hopper`, costs: ['30 min'], disabled: !all.length, run: async () => { await G.job({ title: 'Unloading crates', hours: 0.5, steps: ['Lifting crates off…', 'Stacking them in the depot…'], site: { x: 20, z: 48 }, pose: 'carry' }); for (const it of all) { P.carry = it; J.deliver(); } } }], note: 'Bring crates here from the other stations. Park the rover or hopper close by and unload everything in one go.' }); }
     if (id === 'park') return ui.panel('Charging Pads', { stats: [['Rover', `${pct(s.car.charge)}${s.car.charging ? ' — charging (4 kW)' : ''}`], ['Hopper', `${pct(s.ship.charge)}${s.ship.charging ? ' — charging (7 kW)' : ''}`]], note: 'Park the rover on the small pad and the hopper on the big pad. They charge by themselves, using the station\'s power. The rover goes about 2.5 km on a full charge. The hopper is faster but drinks more.' });
@@ -188,11 +205,11 @@ export function installActions(G) {
       A.unshift({ label: `Collect ${Math.floor(s.eggs)} egg${Math.floor(s.eggs) === 1 ? '' : 's'}`, gains: ['Raw food'], disabled: s.eggs < 1, run: async () => { const n = collectEggs(s); ui.toast(`Collected ${n} eggs. Cook them in the Kitchen!`, 'good'); } });
       note2 = 'Hens eat dry feed made of grass, seeds and plant scraps, packed before the disaster. People cannot eat it. Every time you pick crops, the leaves and peels become more feed. No feed, no eggs. The fish water feeds the plants.'; }
     if (id === 'storage' && ok) { stats.push(['Battery', `${Math.round(s.battery)} of ${Math.round(F.cap)} kWh`], ['Extra modules', `${s.mods} of 6`]); A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'Build battery modules at the Robot-Arm Builder and carry them here. Each adds 120 kWh for the long lunar night.'; }
-    if (id === 'quarters' && ok) { A.unshift({ label: 'Sleep for 8 hours', sub: 'Time races ahead. Machines keep running as you left them. You wake up if something goes wrong.', costs: ['8 h pass'], gains: ['Health'], norec: s.suitOn, run: async () => { if (needNoSuit('sleep')) return; G.sleepLeft = 8; } }); note2 = 'Rest matters. Tired people make mistakes — and in space, small mistakes get big fast.'; }
+    if (id === 'quarters' && ok) { A.unshift({ label: 'Sleep for 8 hours', sub: 'Time races ahead. Machines keep running as you left them. You wake up if something goes wrong.', costs: ['8 h pass'], gains: ['Health'], norec: s.suitOn, run: async () => { if (needNoSuit('sleep')) return; const em = G.alerts().find((a) => a.key); if (em) { ui.toast(`You cannot sleep now: ${em.text.replace(/ — .*/, '')}! Deal with it first.`, 'bad'); return; } G.sleepLeft = 8; } }); note2 = 'Rest matters. Tired people make mistakes — and in space, small mistakes get big fast.'; }
     if (id === 'bathroom') note2 = ok ? 'Shower water and toilet water go straight to the recycler. Nothing is wasted.' : 'While the Bathroom is broken, the recycler gets back less water.';
     if (id === 'water' && ok) { stats.push(['Water tank', `${s.water.toFixed(0)} of ${s.waterCap} L`], ['Recycling', pct(F.rate)], ['Change', `${F.wNet.toFixed(1)} L a day`], ['Plant food', s.nutri === Infinity ? 'endless' : `${s.nutri.toFixed(2)} kg`]);
       A.unshift({ label: 'Run the waste digester', sub: 'Bacteria turn plant scraps and waste into plant food for the farms. It eats hen feed, so the hens get less.', costs: ['1.5 kg of hen feed', '2 h'], gains: ['+0.5 kg of plant food'], disabled: s.feed < 1.5, run: () => J.fix('Running the waste digester', 2, 0, { x: 14, z: 15 }, ['Loading the scraps…', 'Bacteria break them down…', 'Filtering out the plant food…'], () => { s.feed -= 1.5; s.nutri = Math.min(9, s.nutri + 0.5); note(s, 'Made plant food in the digester.', 'good'); ui.toast('The digester made 0.5 kg of plant food.', 'good'); }) });
-      A.push({ label: 'See the life-support loop', sub: 'Where every litre and every breath goes.', run: () => G.loopScreen() }); if (f.leakWater) A.unshift({ label: 'Seal the leaking pipe', costs: ['1 material', '1 h'], run: () => J.fix('Sealing the water pipe', 1, 1, { x: 15, z: 14 }, ['Shutting the valve…', 'Clamping the joint…', 'Turning the water back on…'], () => { f.leakWater = 0; ui.toast('Pipe sealed. No more drips.', 'good'); doneGoal('water'); }) }); A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'Each person needs about 3.8 litres of water a day. A good recycler gives 98% of it back.'; }
+      A.push({ label: 'See the life-support loop', sub: 'Where every litre and every breath goes.', run: () => G.loopScreen() }); if (f.leakWater) A.unshift({ label: 'Seal the leaking pipe', costs: ['1 material', '1 h'], run: () => J.fix('Sealing the water pipe', 1, 1, { x: 15, z: 14 }, ['Shutting the valve…', 'Clamping the joint…', 'Turning the water back on…'], () => { f.leakWater = 0; ui.toast('Pipe sealed. No more drips.', 'good'); note(s, 'Sealed the leaking water pipe.', 'good'); doneGoal('water'); }) }); A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'Each person needs about 3.8 litres of water a day. A good recycler gives 98% of it back.'; }
     return ui.panel(d.name, { stats, actions: A, note: note2, img: `rm_${id}` });
   };
 
@@ -201,15 +218,24 @@ export function installActions(G) {
     const s = G.S, f = s.f, a = [], st = s.storm;
     if (st && s.t < st.start) a.push({ text: `Solar storm arrives in ${fmt.hrs(st.start - s.t)}`, sub: 'Be underground before it hits', go: 'gate' }); else if (st) a.push({ text: `SOLAR STORM — ${fmt.hrs(Math.max(0, st.end - s.t))} left`, sub: P.zone === 'top' ? 'You are exposed! Take the elevator down' : 'You are safe under the rock roof', go: 'gate' });
     const fl = s.flow || {}, draining = fl.net < 0;   // power first: an empty battery weakens every machine at once
-    if (s.battery <= 0.01 && draining) a.push({ text: 'POWER OUT — every machine is running weak', sub: 'Turn machines down on the Power Board (Tab) or fix solar panels' });
+    if (s.battery <= 0.01 && draining) a.push({ text: 'POWER OUT — every machine is running weak', sub: 'Turn machines down on the Power Board (Tab) or fix solar panels', key: 'power-out', wake: '<b>Wake up! The battery is empty.</b> Every machine is running weak. Open the Power Board (Tab) and turn something down.' });
     else if (draining && fl.battHours < 12) a.push({ text: `Battery empty in ${fmt.hrs(Math.max(0.1, Math.round(fl.battHours * 10) / 10))}`, sub: 'Using more power than you make: open the Power Board (Tab)', kind: 'warn' });
+    // life support: a warning a day and a half out, an emergency (which wakes a sleeper) six hours out or when it is gone
+    const left = (d) => (d * 24 < 36 ? fmt.hrs(Math.max(0.1, Math.round(d * 240) / 10)) : `${d.toFixed(1)} days`);
+    for (const [id, name, amt, days, fix, go] of [['o2', 'Oxygen', s.o2, fl.o2Days, 'Turn the Oxygen Maker up (Tab), or fix the Oxygen Room', 'oxygen'], ['water', 'Water', s.water, fl.waterDays, 'Turn the Water Recycler up, or bring icy soil to the Water Plant', 'water'], ['food', 'Food', fl.foodTotal, fl.foodDays, 'Pick ripe crops and cook them in the Kitchen', 'kitchen']]) {
+      if (amt === undefined || days === undefined) continue;
+      if (amt <= 0.01 && days !== Infinity) a.push({ text: `OUT OF ${name.toUpperCase()} — you are losing health`, sub: fix, go, key: id + '-out', wake: `<b>Wake up! There is no ${name.toLowerCase()} left.</b> ${fix}.` });
+      else if (days * 24 < 6) a.push({ text: `${name} runs out in ${left(days)}`, sub: fix, go, key: id + '-low', wake: `<b>Wake up! ${name} runs out in ${left(days)}.</b> ${fix}.` });
+      else if (days < 1.5) a.push({ text: `${name} runs out in ${left(days)}`, sub: fix, go, kind: 'warn' });
+    }
     for (const d of ROOMS) { const stt = roomState(s, d.id); if (stt === 'leak') a.push({ text: `AIR LEAK: ${d.name}`, sub: 'Patch the hole, or lock its door', go: d.id }); else if (stt === 'sealed') a.push({ text: `${d.name}: sealed, no air`, sub: 'Patch the hole to save it', go: d.id, kind: 'warn' }); else if (stt === 'wreck') a.push({ text: `${d.name}: broken`, sub: `Rebuild it (${d.mat} materials)`, go: d.id, kind: 'warn' }); }
     if (s.safeMode > 0) a.push({ text: `Topside safe mode: ${fmt.hrs(s.safeMode)}`, sub: 'No solar or radio', kind: 'warn' });
-    if (f.scrubber && !s.extraKw.backup) a.push({ text: 'Air cleaner broken', sub: `Air quality ${Math.round(s.air * 100)}% · Oxygen Room`, go: 'oxygen' });
+    if (f.scrubber && !s.extraKw.backup) a.push({ text: 'Air cleaner broken', sub: `Air quality ${Math.round(s.air * 100)}% · Oxygen Room`, go: 'oxygen', ...(s.air < 0.55 ? { key: 'air-bad', wake: `<b>Wake up! The air is going stale (${Math.round(s.air * 100)}% clean).</b> Fix the air cleaner in the Oxygen Room, or switch on the backup.` } : {}) });   // below 35% the CO₂ starts to hurt, so this wakes a sleeper first
     if (f.leakWater) a.push({ text: 'Water pipe leaking', sub: 'Water Room', go: 'water' });
-    const nb = s.mounts.filter((x) => x === 2).length; if (nb) a.push({ text: `${nb} solar panel${nb > 1 ? 's' : ''} broken`, sub: 'Solar Field → Fix-It Bench', go: 'solar', kind: 'warn' });
+    const nb = s.mounts.filter((x) => x === 2).length; if (nb) a.push({ text: `${nb} solar panel${nb > 1 ? 's' : ''} broken`, sub: !fl.sun || fl.sun.up ? 'Solar Field → Fix-It Bench' : 'No use until sunrise: they can wait', go: 'solar', kind: 'warn' });
     if (f.commsDown) a.push({ text: 'Dish lost Earth', sub: 'No storm warnings', go: 'dish', kind: 'warn' });
     if (f.isruDown && s.t - s.t0 > 30) a.push({ text: 'Moon-dust oxygen plant broken', sub: '3 materials to repair', go: 'isru', kind: 'warn' });
+    if (s.lv.heat * fl.eff < fl.heatNeed - 0.01) a.push({ text: fl.sun && fl.sun.up ? 'Topside machines are overheating' : 'Topside machines are freezing', sub: `Heaters & Coolers at level ${s.lv.heat}; they need level ${fl.heatNeed} · Power Board (Tab)`, kind: 'warn' });
     if (f.heater) a.push({ text: 'Heater circuit failed', sub: 'Heater Hub', go: 'yard' });
     if (f.mold) a.push({ text: 'Mold on the tomatoes', sub: 'Tomato Farm', go: 'tomato' });
     if (s.dust > 0.4 && s.flow.sun.up) a.push({ text: `Dusty panels (−${Math.round(s.dust * 75)}% power)`, sub: 'Solar Field', go: 'solar', kind: 'warn' });
@@ -229,20 +255,22 @@ export function installActions(G) {
     const s = G.S, F = computeFlows(s), f = s.f, st = s.storm, top = P.zone === 'top'; let t = null, go = null, mood = 'happy';
     const leak = F.leaks[0], wreck = ROOMS.find((d) => s.rooms[d.id].built < 1), sealedHole = ROOMS.find((d) => s.rooms[d.id].hole > 0 && !s.rooms[d.id].door), nb = s.mounts.filter((x) => x === 2).length, empty = s.mounts.filter((x) => x === 0).length;
     const thin = !s.suitOn && (s.here && s.rooms[s.here] ? s.rooms[s.here].p : s.P) < 60;
+    const idleH = roomOk(s, 'control') && !s.helpers.some((h) => h.role === 'farm' || h.role === 'cook') ? s.helpers.find((h) => h.role === 'idle') : null;   // a helper with no job, while nobody farms or cooks
     if (thin) { t = '<b>The air here is too thin and you have no suit on!</b> Leave this room, or run to the Suit Lockers in the airlock.'; go = 'suit'; mood = 'alert'; }
     else if (st && s.t >= st.start && top) { t = '<b>Radiation storm!</b> Take the elevator down NOW. Metres of rock overhead will shield you.'; go = 'gate'; mood = 'alert'; }
-    else if (leak) { t = `<b>Air is escaping from the ${rn(leak)}!</b> Run there and patch the hole — or lock its door to save the rest of the station. Locking it will freeze that room.`; go = leak; mood = 'alert'; }
+    else if (leak) { const drain = G.leakCost(leak); t = s.o2 - drain > 1 ? `<b>Air is escaping from the ${rn(leak)}!</b> Run there and patch the hole — or lock its door to save the rest of the station. Locking it will freeze that room.` : `<b>Air is escaping from the ${rn(leak)}!</b> Lock its door now: about ${drain.toFixed(1)} kg of oxygen would drain before you could patch it, and you have ${s.o2.toFixed(1)} kg. Patch it afterwards, in your suit.`; go = leak; mood = 'alert'; }
     else if (st && s.t < st.start && top) { t = `Storm in ${fmt.hrs(st.start - s.t)}. Finish up and get underground.`; go = 'gate'; mood = 'worried'; }
-    else if (F.eff < 1) { t = '<b>Brownout!</b> The battery is empty. Turn something down on the Power Board, and get more solar panels working.'; mood = 'alert'; }
-    else if (s.o2 < 0.8 || F.o2Days < 0.6) { t = !roomOk(s, 'oxygen') ? '<b>Oxygen is low</b> and the Oxygen Room is not working. Fix that room first!' : s.water > 3 && s.lv.o2gen < 3 ? '<b>Oxygen is low!</b> Turn the Oxygen Maker up on the Power Board. It costs power and water.' : '<b>Oxygen is low!</b> Repair and switch on the Moon-Dust Oxygen Plant topside: it needs no water.'; go = !roomOk(s, 'oxygen') ? 'oxygen' : null; mood = 'alert'; }
+    else if (F.eff < 1) { t = F.sun.up ? '<b>Brownout!</b> The battery is empty. Turn something down on the Power Board, and get more solar panels working.' : '<b>Brownout!</b> The battery is empty, and solar panels make nothing until sunrise. Turn something down on the Power Board.'; mood = 'alert'; }
+    else if (s.o2 < 0.8 || F.o2Days < 0.6) { t = !roomOk(s, 'oxygen') ? '<b>Oxygen is low</b> and the Oxygen Room is not working. Fix that room first!' : s.water > 3 && s.lv.o2gen < 3 ? '<b>Oxygen is low!</b> Turn the Oxygen Maker up on the Power Board. It costs power and water.' : F.sun.up && F.sun.toSunset > 12 ? '<b>Oxygen is low!</b> Repair and switch on the Moon-Dust Oxygen Plant topside: it needs no water.' : s.water <= 3 ? '<b>Oxygen is low</b>, and the Oxygen Maker needs water. Turn the Water Recycler up, or bring icy soil to the Water Plant.' : '<b>Oxygen is low</b> and the Oxygen Maker is at full. The Moon-Dust Oxygen Plant topside would help, but it draws 9 kW: look at the Power Board forecast before you run it in the dark.'; go = !roomOk(s, 'oxygen') ? 'oxygen' : null; mood = 'alert'; }
     else if (f.scrubber && !s.extraKw.backup) { t = 'The air cleaner is broken and the air is going stale. Fix it in the Oxygen Room.'; go = 'oxygen'; mood = 'worried'; }
     else if (s.water < 3 || F.waterDays < 1) { const cans = G.items.some((q) => q.type === 'ice'); t = '<b>Water is low.</b> Turn the Water Recycler up. The Oxygen Maker drinks water too. ' + (s.wx.batch ? 'The Water Plant is already working on a batch.' : s.wx.ice > 0 ? 'There is icy soil in the Water Plant hopper: run a batch.' : cans ? 'Carry the canisters of icy soil to the Water Plant and extract the ice.' : 'Dig more ice at the <b>Polar Ice Mine</b>: follow the pale blue light to the south-west.'); go = s.wx.batch ? null : s.wx.ice > 0 || cans ? 'wplant' : 'icemine'; mood = 'worried'; }
-    else if (F.foodDays < 1) { t = s.raw >= 2 && roomOk(s, 'kitchen') ? 'Food is low — but you have raw food. Cook it in the Kitchen!' : ripeIn(s, 'potato') || ripeIn(s, 'tomato') ? 'Food is low. There are ripe crops to pick!' : s.eggs >= 1 ? 'Food is low. Collect the eggs in the Animal Bay!' : 'Food is low. Turn the Farm lights up, and look for food crates at the other stations.'; go = s.raw >= 2 ? 'kitchen' : ripeIn(s, 'potato') ? 'potato' : ripeIn(s, 'tomato') ? 'tomato' : s.eggs >= 1 ? 'animal' : null; mood = 'worried'; }
+    else if (F.foodDays < 1) { t = s.raw >= 2 && roomOk(s, 'kitchen') ? 'Food is low — but you have raw food. Cook it in the Kitchen!' : ripeIn(s, 'potato') || ripeIn(s, 'tomato') ? 'Food is low. There are ripe crops to pick!' : s.eggs >= 1 ? 'Food is low. Collect the eggs in the Animal Bay!' : 'Food is low. Turn the Farm lights up, and look for food crates at the other stations.'; go = s.raw >= 2 ? 'kitchen' : ripeIn(s, 'potato') ? 'potato' : ripeIn(s, 'tomato') ? 'tomato' : s.eggs >= 1 ? 'animal' : null; if (idleH) t += ` Or let <b>${idleH.name}</b> do it: give ${idleH.kind === 'bot' ? 'it' : 'them'} Farm duty or Cook in the Control Center.`; mood = 'worried'; }
+    else if (F.foodDays < 3 && idleH) { const h = idleH; t = `Food is getting low, and <b>${h.name}</b> is resting. Give ${h.kind === 'bot' ? 'it' : 'them'} a job in the Control Center: <b>Farm duty</b> picks the crops and <b>Cook</b> turns them into meals, while you do other things.${h.kind === 'bot' ? ' A working robot uses 1 kW.' : ''}`; go = 'control'; mood = 'think'; }
     else if (s.lv.heat < F.heatNeed) { t = `Topside is ${fmt.temp(F.sun.tempC)}. Our machines up there need heater level ${F.heatNeed} or they will break.`; mood = 'worried'; }
     else if (s.bench.some((b) => b && b.left <= 0)) { t = 'A panel is fixed and waiting on the Fix-It Bench. Carry it up and install it on an empty mount.'; go = 'bench'; }
     else if (P.carry && P.carry.type === 'panelB') { t = 'Bring that broken panel to the Fix-It Bench in the Workshop, down in the station.'; go = 'bench'; }
     else if (P.carry && P.carry.type === 'panel') { t = 'Carry that panel to an empty mount in the Solar Field and press E.'; go = 'solar'; }
-    else if (nb && F.sun.up && s.mat >= 1) { t = `<b>${nb} solar panel${nb > 1 ? 's are' : ' is'} broken.</b> Pull one off its mount (E), load it on the rover, take it down to the Fix-It Bench, then bring it back. More panels means more power.`; go = 'solar'; }
+    else if (nb && F.sun.up && F.sun.toSunset > 6 && s.mat >= 1) { t = `<b>${nb} solar panel${nb > 1 ? 's are' : ' is'} broken.</b> Pull one off its mount (E), load it on the rover, take it down to the Fix-It Bench, then bring it back. More panels means more power.`; go = 'solar'; }
     else if (sealedHole && s.mat >= 1) { t = `The ${sealedHole.name} is sealed off with a hole in it. Go in, patch the hole, then rebuild the room.`; go = sealedHole.id; }
     else if (wreck && s.mat >= wreck.mat && s.rooms[wreck.id].hole === 0) { t = `The ${wreck.name} is still broken. Rebuild it at its console to get ${wreck.what} back.`; go = wreck.id; }
     else if (f.commsDown) { t = 'The dish is not pointing at Earth. Without it, solar storms arrive with no warning.'; go = 'dish'; }

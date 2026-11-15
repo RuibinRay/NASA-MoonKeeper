@@ -296,3 +296,59 @@ The overview listed "a teacher's page" as the third most useful thing after play
 - **Printed size.** About two sheets, printed on both sides: the lesson on the first, the questions and reference on the second. This is an estimate from the page's layout; it has not been printed.
 - **Way in from the game.** The small print on the title screen ends with a link, "For teachers". It sits on the line that was already there, so the title screen is the same height as before on a computer and on a phone.
 - **Not done.** Nobody has taught with it. The timings are estimates.
+
+### REGO no longer runs at the wall
+
+Reported by the player: "REGO always runs to the wall".
+
+**The cause.** REGO aimed at one fixed point, 1.9 m to your right and 1.3 m behind you, and ran straight at it. In the hall, which is 4.2 m wide, that point is inside the wall whenever you stand in the southern half and face east (or the mirror of that). The game then put REGO back on top of you, and it ran at the wall again, several times a second.
+
+| Standing or walking for 10 seconds | Before | After |
+| --- | --- | --- |
+| Standing by the hall wall: how far REGO ran | 92 m | 1.1 m |
+| Walking 50 m along the wall: how far REGO ran | 112 m | 48 m |
+| Times REGO was inside a wall or a building | not counted (it was put back each time) | 0 |
+
+**What REGO does now** (`js/follow.js`, pure logic):
+
+- **Chooses a place it can reach.** Ten places are tried in order, starting behind your right shoulder, then the left, then closer in. A place is refused if it is in a wall or a wall lies between you and it.
+- **Follows your path when a wall is in the way.** If you go through a door, REGO walks the way you walked, which is always clear, in place of cutting through the wall.
+- **Slides, never enters.** A step that would end in a wall slides along it or is not taken. On the surface this now includes buildings and machines, which REGO used to walk through.
+- **Does not fuss.** Once near you, in sight and not in front of you, it stays where it is until you move away or turn to face it.
+- **Beside a job** it picks a free place next to the work in the same way.
+- **Last resort.** If it is ever found inside a wall, is wedged out of sight, or is more than 32 m behind, it appears beside you once.
+
+`node tools/follow_test.mjs` runs 44 checks on a small test station: by a wall, in a corner, along a wall, through a door, turning on the spot, left behind, found inside a wall, beside a job.
+
+**Checked in the game:** the hall wall standing and walking, in and out of the Control Center through its door, a job on the hall wall, six passes close to surface buildings, standing against a building, and open ground walking, running and zig-zagging: no wall entered, no jump. **Not checked:** the elevator ride and getting in and out of vehicles were not run in the test browser (its fade animation stalls there); the rescued astronauts who follow you on the surface use their own, older code and were not changed.
+
+### Fixes from the rescue-run report (Pilot mission, played to rescue)
+
+A full Pilot mission was played on the live build and written up as 18 points. This is what was done with each.
+
+| # | Point | Now |
+| --- | --- | --- |
+| 1 | No alert when oxygen, water or food runs out | Fixed, by bringing in the unmerged `fix/testing-pass` branch |
+| 2 | "A meteoroid smashed 0 solar panel" | Fixed: with no working panel left, the card and the log say so |
+| 3 | "A heater circuit broke from cold" about 13 times | Fixed: nothing breaks twice; when nothing is left to break there is no card and no log line |
+| 4 | The log never records sealing the water pipe | Fixed (and fixing the heater circuit is logged too) |
+| 5 | A parked vehicle hides a broken solar mount | Fixed: E goes to whichever you stand closer to, Q to the other |
+| 6 | Launch button below the fold at 846 x 726 | Fixed by the merged branch: the button's top is at 634 px |
+| 7 | "Day 8 of 7" | Fixed: "Rescue day" |
+| 8 | The long night is easy with the Topside Heaters off | **Not changed.** See below |
+| 9 | Solar panels do not matter after Day 3 on Pilot | **Not changed.** REGO and the alerts no longer push panels at night (13). See below |
+| 10 | A leak empties the oxygen tank before you can reach it | The leak itself is unchanged. The card shows what the walk and the patch will cost in oxygen, and REGO recommends locking the door when there is not enough |
+| 11 | "Fix it at the Heater Hub" was free if you never went | Choosing it now also turns the heaters to max (+2 kW) until the circuit is fixed |
+| 12 | The end screen read as if you had failed the astronauts you did not rescue | Reworded: they are safe in their shelters and the rescue ship collects them next |
+| 13 | REGO ignores the time of day | Panel advice needs more than 6 h of daylight; the oxygen plant is advised only by day with 12 h left; a brownout at night no longer says "fix panels"; the meteor card at night recommends leaving the panel |
+| 14 | Nothing points you to crew jobs | REGO names a resting helper and the Farm duty and Cook jobs when food is under 3 days |
+| 15 | "Hardly any air was lost" right after the tank emptied | Now "A fast, tight patch: almost no more air escaped while you worked" |
+| 16 | "Leave it: −3.2 kW of solar power" at night | At night it reads "Nothing tonight: panels make no power until sunrise" |
+| 17 | "Frozen Solid" repeats as a full card | One card for one spell of cold, then short notes, plus a standing alert "Topside machines are freezing" with the heater level they need |
+| 18 | The hopper's 7 kW charger runs on Day 1 and cannot be switched off | **Not changed.** It stops by itself after about an hour |
+
+**Left for a decision (8 and 9).** Both are about how the mission is balanced, and a change moves how hard every mode is. With the heaters off, the cold breaks the dish, the panels and a heater circuit, and none of those matters before a rescue that comes at night. Two ways to make the cold matter: let it reach things used at night (the rover and hopper batteries, the Water Plant), or let it cut the power coming from the reactor. For the panels: a later sunset on Pilot, or battery room worth filling. Each needs the mission checks re-run and a person to play it.
+
+**The unmerged branch.** The report listed fixes that existed only on a local branch, `fix/testing-pass`. It was merged here; four places clashed with newer work and both sides were kept: the hop in and out of vehicles with the "too close to the pit" guard, and the "new alert" highlight with the emergencies-first order.
+
+**Checked in the game:** each row marked fixed above was tried by hand in a Pilot mission, by day and by night. `sim_test` still says every mission can be won by a planned player and Commander cannot be won by doing nothing. **Not checked:** a whole mission played start to finish with the fixes in.

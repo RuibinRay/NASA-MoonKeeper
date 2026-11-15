@@ -2,6 +2,7 @@
 import * as THREE from '../lib/three.module.min.js';
 import { World } from './world.js';
 import { Astronaut, Rego, Bolt } from './actors.js';
+import { Follower } from './follow.js';
 import { UI } from './ui.js';
 import { Sound } from './audio.js';
 import { Voice } from './voice.js';
@@ -26,7 +27,7 @@ const G = (window.G = {
   items: [], followers: [], crew: {}, siteNpc: {}, itemSeq: 1,
 });
 G.audio = new Sound(); G.voice = new Voice(() => G.audio.on); G.world = new World(canvas); G.ui = new UI(G);
-G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.astro.lamp.visible = true; G.world.scene.add(G.astro.group, G.rego.group);
+G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.regoFollow = new Follower(); G.astro.lamp.visible = true; G.world.scene.add(G.astro.group, G.rego.group);
 G.lampMounts = [G.astro, G.rego].map((a) => { const m = new THREE.Group(); m.add(a.lamp, a.lamp.target); G.world.scene.add(m); return [m, a.group]; });   // lamps outside the bodies: hiding a body must not change the light count
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
 world.onPart = () => G.audio.play('step');
@@ -433,10 +434,11 @@ function placeVehicles(dt) {
 function updateRego(dt) {
   const R = G.regoPos, fx = Math.sin(P.face), fz = Math.cos(P.face), g = G.rego.group; g.visible = !P.in;
   const js = G.jobbing && G.jobbing.site && G.jobbing.pose === 'work' ? G.jobbing.site : null;
-  if (js) tmp.set(js.x - fx * 0.95 + fz * 1.25, 0, js.z - fz * 0.95 - fx * 1.25); else tmp.set(P.pos.x + fz * 1.9 - fx * 1.3, 0, P.pos.z - fx * 1.9 - fz * 1.3);   // beside the work, or behind your shoulder
-  let dx = tmp.x - R.x, dz = tmp.z - R.z, d = Math.hypot(dx, dz), sp = 0;
-  if (d > 32 || P.in) { R.x = tmp.x; R.z = tmp.z; } else if (d > 0.3) { sp = Math.min(d * 3.2, 12); R.x += (dx / d) * sp * dt; R.z += (dz / d) * sp * dt; }
-  if (P.zone === 'top') topBounds(R, 8); else if (!world.walkable(R.x, R.z)) { R.x = P.pos.x; R.z = P.pos.z; }
+  const zone = P.zone, cols = world.colliders[zone], pit = PIT.r + 7.5;   // REGO may stand where the floor is, clear of machines and buildings, and back from the pit's edge
+  const free = (x, z) => (zone === 'top' ? Math.hypot(x - PIT.x, z - PIT.z) >= pit : world.walkable(x, z)) && !cols.some((c) => c.r && Math.hypot(c.x - x, c.z - z) < c.r + 0.45);
+  let dx = 0, dz = 0, sp = 0;
+  if (P.in || G._regoZone !== zone) { R.x = P.pos.x + fz * 1.9 - fx * 1.3; R.z = P.pos.z - fx * 1.9 - fz * 1.3; if (!free(R.x, R.z)) { R.x = P.pos.x; R.z = P.pos.z; } G.regoFollow.reset(); G._regoZone = zone; }   // riding, or just arrived in a new place: REGO is simply there
+  else { const m = G.regoFollow.update(dt, R, { x: P.pos.x, z: P.pos.z, face: P.face }, free, js); dx = m.dx; dz = m.dz; sp = m.speed; }   // behind your shoulder or beside the work, and never into a wall
   R.y = groundY(P.zone, R.x, R.z); g.position.copy(R);
   const want = sp > 0.8 ? Math.atan2(dx, dz) : js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z); let dy = want - g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); g.rotation.y += dy * Math.min(1, dt * 6);
   let look = (js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z)) - g.rotation.y; look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -1.1, 1.1); G.rego.update(dt, sp, look);
@@ -465,10 +467,10 @@ async function tickSim(dt) {
   const S = G.S; S.zone = P.zone;
   if (!G.simOn || ui.busy || G.paused || G.riding || G.eventBusy || G.jobTick) { computeFlows(S); return; }
   let h = (dt / S.m.hourLen) * G.speedMul * (G.sleepLeft > 0 ? 22 : 1);
-  if (G.sleepLeft > 0) { G.sleepLeft -= h; if (G.alerts().filter((a) => a.kind !== 'warn').length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
-    const blackout = S.battery <= 0.01 && G._sleepBatt > 0.01;   // a blackout always wakes you, even if a low-battery warning was already showing
-    if (blackout) { G.sleepLeft = 0; G.audio.play('alarm'); ui.bubble('<b>Wake up! The battery is empty.</b> Every machine is running weak. Open the Power Board (Tab) and turn something down.', 'alert', 12); }
-    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!blackout) ui.toast('You wake up rested.', 'good'); } }
+  if (G.sleepLeft > 0) { G.sleepLeft -= h; const al = G.alerts(); if (al.filter((a) => a.kind !== 'warn').length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
+    const alarm = G._sleepKeys && al.find((a) => a.key && !G._sleepKeys.includes(a.key));   // a new emergency (power out, air/water/food nearly gone) always wakes you, even if a warning was already showing
+    if (alarm) { G.sleepLeft = 0; G.audio.play('alarm'); ui.bubble(alarm.wake, 'alert', 12); }
+    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!alarm) ui.toast('You wake up rested.', 'good'); } }
   G.simAdvance(h);
   const st = S.storm;
   if (st && S.t >= st.start) { if (!st.begun) { st.begun = true; G.sleepLeft = 0; G.audio.play('alarm'); if (P.zone === 'top') { ui.bubble('<b>The storm is here!</b> Elevator. Now. The rock roof will shield you.', 'alert', 12); G.pointTo('gate'); } } ui.banner(P.zone === 'top' ? 'RADIATION STORM — GET UNDERGROUND!' : 'Solar storm raging topside — you are shielded down here', P.zone !== 'top'); }
@@ -511,7 +513,7 @@ function frame(now, manual) {
       G._danger = G.state !== 'play' ? 0 : clamp(urgent * 0.45 + (S.flow.eff < 1 ? 0.35 : 0) + (S.health < 50 ? 0.4 : 0) + (st && S.t >= st.start ? 0.5 : 0), 0, 1); }
     G.audio.update(dt, { indoors: !!G.inside, suit: S ? !!S.suitOn : true, power: S ? S.flow.eff : 1, vehicle: P.in, speed: P.in === 'car' ? G.car.v : P.in === 'dig' ? G.dig.v : P.in === 'ship' ? Math.hypot(G.ship.vx, G.ship.vz) : Math.hypot(P.vel.x, P.vel.z), thrust: G.ship.dyn ? G.ship.dyn.thr : 0, digging: !!G.dig.dig, danger: G._danger || 0 }); }
   world.render();
-  if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { G._sleepAlerts = G.alerts().filter((a) => a.kind !== 'warn').length; G._sleepBatt = G.S.battery; } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepBatt = undefined; }
+  if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { const al = G.alerts(); G._sleepAlerts = al.filter((a) => a.kind !== 'warn').length; G._sleepKeys = al.filter((a) => a.key).map((a) => a.key); } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepKeys = undefined; }
 }
 requestAnimationFrame(frame);
 setTimeout(() => world.warm(), 400);   // build the shaders while the title screen is up
@@ -548,7 +550,7 @@ const showMission = (on) => { $('#mission').classList.toggle('hidden', !on); $('
 $('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour'); $('#btn-games').onclick = () => { G.audio.init(); ui.guide('games'); };
 $('#btn-launch').onclick = () => start(mode, $('#skip-tut').checked);
 document.querySelectorAll('.pillar').forEach((p) => p.insertAdjacentHTML('afterbegin', `<i>${IC[p.dataset.ic] || ''}</i>`));
-if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = () => { G.audio.init(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
+if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = async () => { if (G._starting) return; G._starting = true; G.audio.init(); if (!world.warmMs) b.textContent = 'Loading…'; await world.warm(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
 async function start(modeKey, skip, seed) {
   G.audio.init(); G.audio.play('ok'); G.clearSave();
   G.S = createSim(modeKey, seed || ((Math.random() * 2 ** 31) >>> 0)); G.applyVoice(); installActions(G); installEvents(G);
