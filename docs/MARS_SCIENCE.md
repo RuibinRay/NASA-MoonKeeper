@@ -71,9 +71,13 @@ MOLA files: NASA Planetary Data System, Geosciences Node — https://pds-geoscie
 | 2007 storm | tau above 5.5; 99% of direct sunlight blocked; Opportunity fell from about 700 to 128 Wh a day | Observed | https://www.jpl.nasa.gov/news/nasa-mars-rovers-braving-severe-dust-storms |
 | How fast a storm arrives | Clear to tau 4.9 in three sols | Observed | https://www.nasa.gov/wp-content/uploads/2024/01/mars-surface-power-generation-challenges-and-considerations.pdf |
 | Dust settling on panels | InSight: about 5,000 Wh a sol at landing, about 500 Wh by May 2022 | Observed | https://www.jpl.nasa.gov/news/nasas-insight-still-hunting-marsquakes-as-power-levels-diminish/ |
-| Sunlight reaching the ground through dust | `exp(−0.21 × tau / mu^0.7)` of the sunlight above the air | Game (a simple fit in the spirit of Appelbaum & Flood 1990; not checked against their tables in this pass) | — |
+| Sunlight reaching the ground through dust | Read from a published table: the share of the sunlight above the air that reaches level ground, for 8 dust levels and 4 Sun heights, with straight lines in between. Examples: 81% of the light is kept at dust 0.5 with the Sun overhead, 46% at dust 3, 29% at dust 5 | Proposed (a NASA calculation by J. Pollack from the dust the Viking landers measured; not a measurement on the ground) | Appelbaum and Landis, "Solar radiation on Mars: Update 1991", NASA TM-105216, Table III — https://ntrs.nasa.gov/citations/19910023732 ; first version: Appelbaum and Flood 1989, NASA TM-102299 — https://ntrs.nasa.gov/citations/19890018252 |
+| How that table is used | Global light on level ground = light above the air × cosine of the Sun's distance from overhead × f ÷ (1 − 0.1) | Proposed | Equation 19 of the 1991 update |
+| Past the table | Above dust 6 (the 2018 storm reached 10.8) each further step dims the light by the same share as the last step in the table | Game | — |
+| What the old formula got wrong | Until this was checked the game used `exp(−0.21 × tau / mu^0.7)`. Against the table it was within 5% with the Sun high, 8 to 21% too bright with the Sun 60° from overhead, and far too dark with a low Sun in a storm | — | Replaced |
 | Panel dust build-up | 0.2% of output lost per sol in clear air, faster in dusty air | Game (same order as InSight's decline) | InSight row above |
 | The "science demo" dust control | Clear (tau 0.45), dusty (1.5), regional storm (4) | Game | Values sit inside the observed range above |
+| Winter at the outpost | With clean panels and a clear sky the solar field and the one fission unit cannot carry the whole base through a winter night at 39.5°N | Game (a result of the game's own numbers: found by running a whole Mars year) | `tools/mars_survive_test.mjs` |
 
 ## 5. Power, air, water, food
 
@@ -125,8 +129,14 @@ MOLA files: NASA Planetary Data System, Geosciences Node — https://pds-geoscie
 | Marsquake from a meteorite | InSight felt a magnitude 4 quake from the 24 Dec 2021 impact | Observed | https://www.jpl.nasa.gov/news/nasas-insight-lander-detects-stunning-meteoroid-impact-on-mars |
 | The seismometer by the base | A dome on the ground, 270 m out | Game (the instrument is Demonstrated: InSight) | — |
 | Terraced crater, heat shield and parachute, far craters, dust streaks | Placed for play | Game | — |
-| Phobos | Rises in the west, sets in the east, about every 11 hours, low in the south from this latitude | Not verified in this pass | See the list below |
-| Dust-devil tracks, ice clouds | Dark winding tracks; thin clouds brightest at twilight | Not verified in this pass | See the list below |
+| Phobos's orbit | Once round Mars in 7 h 39 min (0.31891 days), about 6,000 km above the ground | Observed | Mars Fact Sheet; https://science.nasa.gov/mars/moons/facts/ |
+| Phobos in the sky | Goes round faster than Mars turns, so it rises in the west and sets in the east, twice a sol | Observed | https://science.nasa.gov/photojournal/two-moons-and-the-pleiades-from-mars ; https://science.nasa.gov/image-article/apod-2017-july-21-phobos-moon-over-mars/ |
+| Phobos's timing in the game | Rises every 11.1 hours and takes about 4.2 hours to cross; from 39.5°N it stays under 33° high, in the south | Game (worked out from the orbit above; NASA pages give no figure for the gap, and say "about 5½ hours" for the crossing) | Derived |
+| Dust-devil tracks | Dark tracks where a whirlwind has lifted pale dust off darker ground, photographed in Arcadia Planitia | Observed | https://science.nasa.gov/photojournal/pj-dust-devil-tracks-27 |
+| Clouds | Thin water-ice clouds by day. The bright clouds seen at twilight by Curiosity (2019, 2021) are higher and are probably frozen carbon dioxide; the game draws both the same way | Observed | https://www.jpl.nasa.gov/news/nasas-curiosity-rover-captures-shining-clouds-on-mars/ |
+| Terraced craters and ice | Scientists measured the depth of terraces in craters, with radar, to find a layer of ice tens of metres thick under Arcadia Planitia | Observed | Bramson et al. 2015 — https://arxiv.org/abs/1509.03210 |
+| Heat shield, backshell, parachute | Landers drop them, and they have been photographed where they fell: Opportunity visited its own heat shield (2004); the Ingenuity helicopter photographed Perseverance's backshell and parachute (19 April 2022) | Observed | https://science.nasa.gov/photojournal/opportunitys-heat-shield-scene/ ; https://www.jpl.nasa.gov/news/nasas-mars-helicopter-spots-gear-that-helped-perseverance-rover-land/ |
+| Earth seen from Mars | A bright "star" near the Sun: Spirit photographed it an hour before sunrise (2004), Curiosity 80 minutes after sunset (2014) | Observed | https://science.nasa.gov/photojournal/you-are-here-earth-as-seen-from-mars/ ; https://science.nasa.gov/photojournal/bright-evening-star-seen-from-mars-is-earth/ |
 
 ## 8b. The survival mission
 
@@ -143,6 +153,6 @@ MOLA files: NASA Planetary Data System, Geosciences Node — https://pds-geoscie
 - Some NASA pages say Olympus Mons is "over 40 km" from base to summit; MOLA gives 21.3 km above the datum. The game uses the MOLA value.
 - No opened NASA page gave the percentage of sunlight lost in the **2018** storm; the 99% figure is from 2007.
 - The exact touchdown points of Curiosity and Perseverance were not found on a page that opened, so the game does not show them.
-- The dust-to-sunlight formula has not been checked against the Appelbaum & Flood tables; it is labelled Game.
-- Scenery details written from general knowledge, with no source opened in this pass: that Phobos rises in the west and crosses the sky about every 11 hours (its real period is about 7.7 hours; the 33° height in the south is our own geometry); that dust devils leave dark tracks and that thin ice clouds are seen at twilight; that terraced craters are used with radar to measure buried ice; that landers drop their heat shield and parachute within sight of where they land.
+- The dust-to-sunlight numbers were checked on 15 Nov 2026 and replaced by NASA's table (section 4). Only four Sun heights of that table (overhead, 30°, 60° and 80° from overhead) are used, with straight lines between them.
+- Scenery checked on 15 Nov 2026 (section 8a). Still not found on a NASA page: a figure for how often Phobos rises (the game's 11.1 hours is worked out from its orbit) and for how long it takes to cross the sky (NASA pages say about 5½ hours; the geometry gives about 4¼ at the equator, which the game uses); and the latitude beyond which Phobos cannot be seen. The dust-devil tracks beside the outpost's own latitude: tracks in Amazonis Planitia, further south, are bright, not dark, because the dust there is thick; the Arcadia picture cited is at 57°N.
 - Several journal pages were read as abstracts only (Piqueux 2019, Dundas 2021 and 2023, Mellon 2009, Bramson 2015, Morgan 2021).

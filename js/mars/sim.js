@@ -66,11 +66,23 @@ export function marsSun(S, t = S.t) {
   const hour = frac * 24, rise = 12 - (dayH / MARS.SOL_H) * 12, set = 12 + (dayH / MARS.SOL_H) * 12;                                                 // in Mars clock hours (24 to a sol)
   return { sol, frac, hour, ls, H, dec: dec / RAD, e, u, n, elev, up, rAU, top, dayH, rise, set, factor: clamp(elev / 6, 0, 1) };
 }
-// Sunlight reaching level ground through the dust (W/m²). tau is the dust's optical depth: about 0.3 to 0.6 on a clear
-// day, 2 to 5 in a regional storm, above 10 in the planet-wide storm of 2018. A simple game estimate in the
-// spirit of Appelbaum & Flood, "Solar radiation on Mars" (1990), not checked against their tables: dust dims the Sun's direct beam fast, but much of
-// that light still arrives as glow from the whole sky.
-export const skyFactor = (tau, mu) => (mu <= 0 ? 0 : Math.exp((-0.21 * tau) / Math.pow(Math.max(mu, 0.04), 0.7)));
+// Sunlight reaching level ground through the dust, as a share of the sunlight above the air. tau is the dust's
+// optical depth: about 0.5 on a clear day, 4 to 6 in a regional storm, 10.8 at the peak of the 2018 planet-wide storm.
+// The numbers are NASA's: the "normalized net flux function" of Appelbaum and Landis, "Solar radiation on Mars: Update
+// 1991" (NASA TM-105216), Table III, for ground that reflects a tenth of the light. It is a calculation (J. Pollack's,
+// from the dust the Viking landers measured), not a measurement on the ground. Dust dims the Sun's direct beam fast,
+// but much of that light still arrives as a glow from the whole sky, most of all when the Sun is low.
+const AF_TAU = [0, 0.1, 0.5, 1, 2, 3, 4, 5, 6], AF_MU = [1, 0.866, 0.5, 0.1736];   // dust levels; cosine of the Sun's distance from overhead (0, 30, 60 and 80 degrees)
+const AF = [[0.9, 0.9, 0.9, 0.9], [0.883, 0.879, 0.855, 0.757], [0.813, 0.793, 0.701, 0.462], [0.728, 0.694, 0.557, 0.324], [0.578, 0.532, 0.377, 0.217], [0.457, 0.411, 0.273, 0.162], [0.363, 0.321, 0.208, 0.127], [0.289, 0.253, 0.162, 0.101], [0.229, 0.2, 0.128, 0.081]];
+const afRow = (r, mu) => { const m = clamp(mu, AF_MU[3], 1); let k = 0; while (k < 2 && m < AF_MU[k + 1]) k++; const u = (AF_MU[k] - m) / (AF_MU[k] - AF_MU[k + 1]); return AF[r][k] * (1 - u) + AF[r][k + 1] * u; };
+// Between the table's rows and columns the value is read off a straight line; past its last row (dust 6) each further
+// step of dust dims the light by the same share as the step before; with the Sun lower than 80 degrees from overhead the 80-degree column is used.
+export function skyFactor(tau, mu) {
+  if (mu <= 0) return 0; const t = Math.max(0, tau), last = AF_TAU.length - 1;
+  if (t >= AF_TAU[last]) { const a = afRow(last - 1, mu), b = afRow(last, mu); return (b * Math.pow(b / a, t - AF_TAU[last])) / 0.9; }
+  let r = 0; while (t > AF_TAU[r + 1]) r++; const u = (t - AF_TAU[r]) / (AF_TAU[r + 1] - AF_TAU[r]);
+  return (afRow(r, mu) * (1 - u) + afRow(r + 1, mu) * u) / 0.9;   // the table counts the light the ground keeps (nine tenths): divide to get the light that arrives
+}
 export const directFactor = (tau, mu) => (mu <= 0 ? 0 : Math.exp(-tau / Math.max(mu, 0.04)));   // the share that still comes straight from the Sun's disc (what casts sharp shadows)
 export const groundLight = (S, sn = marsSun(S)) => sn.top * Math.max(0, sn.u) * skyFactor(S.tau, sn.u);
 

@@ -47,6 +47,11 @@ ok(sitePressure() > MARS.P_MEAN && sitePressure() < 1100, 'air is thicker at the
 // ---------- 3. dust and power ----------
 ok(skyFactor(0.45, 0.8) > skyFactor(1.5, 0.8) && skyFactor(1.5, 0.8) > skyFactor(4, 0.8) && skyFactor(4, 0.8) > skyFactor(10.8, 0.8), 'more dust, less sunlight on the ground');
 ok(skyFactor(0.45, 0.8) > 0.85, 'a clear sky passes most of the light');
+for (const [tau, mu, f] of [[1, 1, 0.728], [0.5, 0.866, 0.793], [2, 0.5, 0.377], [3, 0.5, 0.273], [5, 0.1736, 0.101], [6, 1, 0.229], [0.1, 0.1736, 0.757]]) ok(near(skyFactor(tau, mu) * 0.9, f, 0.0015), `dust ${tau}, Sun at cosine ${mu}: the value in NASA's table (${f})`, skyFactor(tau, mu) * 0.9);
+ok(skyFactor(0, 0.5) === 1 && skyFactor(0, 1) === 1, 'no dust, no loss');
+ok(skyFactor(1.5, 0.7) < skyFactor(1, 0.7) && skyFactor(1.5, 0.7) > skyFactor(2, 0.7), 'between the table\'s rows the value lies between them');
+ok(skyFactor(10.8, 0.9) < skyFactor(6, 0.9) * 0.5 && skyFactor(10.8, 0.9) > 0.02, 'past the table (the 2018 storm) the light keeps falling, but not to nothing', skyFactor(10.8, 0.9));
+ok(skyFactor(5, 0.1736) * 0.1736 > directFactor(5, 0.1736) * 0.1736 * 1e6, 'with a low Sun in a storm, almost all the light left is sky glow, as the table says');
 ok(directFactor(5.5, 0.9) < 0.01, 'at tau 5.5 under 1% of the direct beam is left (2007 storm: 99% blocked)', directFactor(5.5, 0.9));
 ok(skyFactor(5.5, 0.9) > directFactor(5.5, 0.9) * 10, 'but the dusty sky still glows: Opportunity kept about a fifth of its power');
 ok(skyFactor(1, 0.2) < skyFactor(1, 0.9), 'a low Sun shines through more dust');

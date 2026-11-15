@@ -97,7 +97,7 @@ js/mars/world.js      Mars: the 3D ground, sky, dust, real skyline and the outpo
 js/mars/game.js       Mars: what E does, the building panels, HUD, alerts, REGO's advice, the maps, saving (its own save, apart from the Moon's)
 tools/build_mars.mjs  downloads the MOLA files from NASA's Planetary Data System and builds `js/mars/mola.js` (`--check` fails if it is out of date)
 js/mars/map.js        Mars: the corner map and the Map window (the outpost, the region and the planet from NASA data, "Why here?")
-tools/mars_test.mjs   161 checks on the Mars data, the Sun and dust model, every building's effect, the layout, the yellow guide line's routes, the Map's readings, and the scenery
+tools/mars_test.mjs   172 checks on the Mars data, the Sun and dust model, every building's effect, the layout, the yellow guide line's routes, the Map's readings, and the scenery
 js/mars/training.js   Mars: training, eleven short steps each finished by doing the thing (walk, open a building, switch it off, see what dust does, mend, drive)
 tools/mars_training_test.mjs  40 checks: the training walked through with a stand-in player, step by step
 js/mars/survive.js    Mars: the survival mission's rules: the storm, the breakdowns, repairs, winning and losing (pure logic)
