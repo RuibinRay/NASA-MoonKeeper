@@ -18,10 +18,12 @@ export function installEvents(G) {
   const breachCard = async (id, title, art, real, how) => {
     const s = G.S, remote = roomOk(s, 'control'), lp = G.leakPlan(id), drain = lp.drain, canPatch = lp.patch, rd = ROOMS.find((d) => d.id === id), crops = id === 'potato' || id === 'tomato' ? tt(' The plants in there will die.') : id === 'animal' ? tt(' The hens will hide in their safety pod and stop laying.') : '';
     const i = await ui.card({ art, title, real, body: tt`${how} <b>Air is rushing out of the ${rn(id)}!</b> The tanks are pouring air in to keep the pressure up, so your oxygen is draining fast.<br><br>Every room is a bubble of air behind a bulkhead door. What do you do?`,
-      learn: tt('In space there is no air outside, so the air inside pushes out through any hole. Real stations are built in sealed sections for exactly this reason: lose one room, save the rest.'), advice: canPatch ? 1 : 0, adviceText: canPatch ? (lp.vital ? tt`Patch it. ${rd.what[0].toUpperCase() + rd.what.slice(1)} is in that room, and locking the door would freeze it. The walk and the patch will cost about ${drain.toFixed(1)} kg of oxygen; you have ${s.o2.toFixed(1)} kg.` : tt`You have air to spare: the walk and the patch will cost about ${drain.toFixed(1)} kg of oxygen. Run and patch it — but if oxygen drops below 1 kg, lock the door.`) : s.mat < 1 ? tt('Lock it. You have no material for a patch.') : tt`Lock it. About ${drain.toFixed(1)} kg of oxygen would drain before you could patch it, and you have ${s.o2.toFixed(1)} kg.`,
+      learn: tt('In space there is no air outside, so the air inside pushes out through any hole. Real stations are built in sealed sections for exactly this reason: lose one room, save the rest.'), advice: canPatch ? 1 : 0, adviceText: canPatch ? (lp.vital ? tt`Patch it. ${rd.what[0].toUpperCase() + rd.what.slice(1)} is in that room, and locking the door would freeze it. The walk, the patch and refilling the room will cost about ${drain.toFixed(1)} kg of oxygen; you have ${s.o2.toFixed(1)} kg.` + (s.o2 - drain < 1 ? ' ' + tt('That leaves very little: turn the Oxygen Maker up as soon as the patch holds.') : '') : tt`You have air to spare: the walk, the patch and refilling the room will cost about ${drain.toFixed(1)} kg of oxygen. Run and patch it — but if oxygen drops below 1 kg, lock the door.`) : s.mat < 1 ? tt('Lock it. You have no material for a patch.') : tt`Lock it. About ${drain.toFixed(1)} kg of oxygen would drain before you could patch it, and you have ${s.o2.toFixed(1)} kg.`,
       choices: [{ label: remote ? tt('Lock that door from here') : tt('Run and lock that door by hand'), sub: remote ? tt('The Control Center can shut any bulkhead.') : tt('The Control Center is broken, so use the switch beside the door.'), costs: [tt`The ${rn(id)} loses its air and freezes: you lose ${rd.what} until it is rebuilt (${rd.mat + 1} materials).${crops}`], gains: [tt('The rest of the station keeps its air')] },
-        { label: tt('Run there and patch the hole'), sub: tt('Press E under the hole. You can still lock the door on the way if it gets too close.'), costs: [tt('1 material'), tt`About ${drain.toFixed(1)} kg of oxygen drains on the way (you have ${s.o2.toFixed(1)} kg)`], gains: [tt('Nothing in the room is lost')], disabled: s.mat < 1 }] });
-    if (i === 0 && remote) G.toggleDoor(id); G.pointTo(i === 0 && !remote ? { zone: 'deep', x: ROOMS.find((d) => d.id === id).door + 2.6, z: ROOMS.find((d) => d.id === id).side * 3.6, name: tt`the ${rn(id)} door switch`, id } : { zone: 'deep', x: G.world.rooms[id].holePos.x, z: G.world.rooms[id].holePos.z, name: tt`the hole in the ${rn(id)}`, id });
+        { label: tt('Run there and patch the hole'), sub: tt('Press E under the hole. You can still lock the door on the way if it gets too close.'), costs: [tt('1 material'), tt`About ${drain.toFixed(1)} kg of oxygen is lost on the way, while you patch, and refilling the room (you have ${s.o2.toFixed(1)} kg)`], gains: [tt('Nothing in the room is lost')], disabled: s.mat < 1 }] });
+    if (i === 0 && remote) G.toggleDoor(id); const spot = i === 0 && !remote ? { zone: 'deep', x: ROOMS.find((d) => d.id === id).door + 2.6, z: ROOMS.find((d) => d.id === id).side * 3.6, name: tt`the ${rn(id)} door switch`, id } : { zone: 'deep', x: G.world.rooms[id].holePos.x, z: G.world.rooms[id].holePos.z, name: tt`the hole in the ${rn(id)}`, id };
+    if (i === 0 && remote) G.pointTo(spot);   // locked from here: the hole can be patched later, so it is not an open job
+    else G.chooseJob(spot, () => G.S.rooms[id].hole === 0 || !G.S.rooms[id].door, i === 0 ? tt`You chose to lock the ${rn(id)} door by hand. The switch is beside the door: press E there.` : tt`You chose to patch the hole in the ${rn(id)}. Stand under it and press E.`);
   };
 
   const E = {
@@ -72,7 +74,7 @@ export function installEvents(G) {
       s.f.leakWater = 0.14; note(s, tt('A moonquake cracked a water pipe.'), 'bad');
       const i = await ui.card({ art: 'ev2_quake', title: tt('Moonquake!'), real, body: tt('The ground shook for minutes. A pipe joint in the Water Room cracked and <b>water is spraying out</b>: about 3.4 litres lost every day until it is sealed.'), learn, advice: s.mat >= 1 ? 0 : 1, adviceText: s.mat >= 1 ? tt('Seal it. Water is hard to replace up there.') : tt('No materials? Closing the valve may be wiser.'),
         choices: [{ label: tt('Go and seal the pipe'), sub: tt('In the Water Room.'), costs: [tt('1 material'), '1 h'], disabled: s.mat < 1 }, { label: tt('Shut the valve to that tank'), sub: tt('Stops the leak at once, but the water in that pipe is lost.'), costs: [tt('Lose 25% of your water now')], gains: [tt('No material needed')] }] });
-      if (i === 0) G.pointTo('water'); else { s.water *= 0.75; s.f.leakWater = 0; note(s, tt('Shut the valve: lost 25% of the water.')); }
+      if (i === 0) G.chooseJob('water', () => !G.S.f.leakWater, tt('You chose to seal the leaking water pipe. Press E in the Water Room.')); else { s.water *= 0.75; s.f.leakWater = 0; note(s, tt('Shut the valve: lost 25% of the water.')); }
     },
     async fire() {
       const s = G.S; G.done.fire = true; note(s, tt('Fire in the Kitchen.'), 'bad');
@@ -85,7 +87,7 @@ export function installEvents(G) {
       const s = G.S; G.done.co2 = true; s.f.scrubber = true; note(s, tt('The air cleaner failed.'), 'bad');
       const i = await ui.card({ art: 'ev2_co2', title: tt('Air Cleaner Failure'), body: tt('The machine that removes CO₂ (the gas you breathe out) has stopped. In about half a day the air will make you dizzy, then sick. Oxygen alone is not enough: stale air has to be cleaned too.'), learn: tt('On the Apollo 13 mission in 1970, the crew built a new air filter from a hose, plastic bags, a card and duct tape — a square filter in a round hole.'), advice: s.mat > 0 ? 0 : 1, adviceText: s.mat > 0 ? tt('Build the filter. We will read you the steps.') : tt('No materials? Run the backup for now.'),
         choices: [{ label: tt('Build a new filter'), sub: tt('In the Oxygen Room. Mission Control reads you the steps.'), costs: [tt('1 material'), '1 h'], disabled: s.mat < 1 }, { label: tt('Switch on the backup air cleaner'), sub: tt('Works at once, but it is power-hungry.'), costs: [tt('+3 kW until you fix the main one')] }] });
-      if (i === 0) G.pointTo('oxygen'); else { s.extraKw.backup = 3; note(s, tt('Running the backup air cleaner (+3 kW).')); }
+      if (i === 0) G.chooseJob('oxygen', () => !G.S.f.scrubber, tt('You chose to build a new air filter. Press E in the Oxygen Room.')); else { s.extraKw.backup = 3; note(s, tt('Running the backup air cleaner (+3 kW).')); }
     },
     async mold() {
       const s = G.S; G.done.mold = true; s.f.mold = true; note(s, tt('Mold on the tomatoes.'), 'bad');
@@ -97,19 +99,19 @@ export function installEvents(G) {
       const s = G.S, room = roomOk(s, 'potato') ? 'potato' : 'tomato'; G.done.pump = true; s.f.pump = room; note(s, tt`The farm pump failed in the ${rn(room)}.`, 'bad');
       const i = await ui.card({ art: 'rm_' + room, title: tt('The Farm Pump Has Stopped'), body: tt`The pump that carries water and plant food to the racks in the ${rn(room)} has seized. The roots are starting to dry.`, learn: tt('Hydroponic plants have no soil to hold water. It is clean, fast and light to launch — but if the pump stops, roots dry out in hours. Growing without soil never forgives a broken machine.'),
         choices: [{ label: tt('Go and fix it'), costs: [tt('1 material'), '1 h'], disabled: s.mat < 1 }, { label: tt('Not now'), costs: [tt('The plants in that farm wilt')] }] });
-      if (i === 0) G.pointTo(room);
+      if (i === 0) G.chooseJob(room, () => !G.S.f.pump, tt`You chose to fix the farm pump. Press E in the ${rn(room)}: the roots are drying out.`);
     },
     async led() {
       const s = G.S, room = roomOk(s, 'tomato') ? 'tomato' : 'potato'; G.done.led = true; s.f.led = room; note(s, tt`Lamps failed in the ${rn(room)}.`, 'bad');
       const i = await ui.card({ art: 'rm_' + room, title: tt('Half the Lamps Went Dark'), body: tt`A power surge burned out half the grow lamps in the ${rn(room)}. Underground, lamps are the only sunshine the plants will ever see.`, learn: tt('A leaf is a tiny solar panel. Half the light means about half the growth — and for light-hungry crops like wheat, even less.'),
         choices: [{ label: tt('Go and replace them'), costs: [tt('1 material'), '1 h'], disabled: s.mat < 1 }, { label: tt('Not now'), costs: [tt('Crops there grow at half speed')] }] });
-      if (i === 0) G.pointTo(room);
+      if (i === 0) G.chooseJob(room, () => !G.S.f.led, tt`You chose to replace the dead lamps. Press E in the ${rn(room)}.`);
     },
     async seal() {
       const s = G.S; G.done.seal = true; s.wx.seal = 0.6; note(s, tt('A door seal is leaking at the Water Plant.'), 'bad');
       const i = await ui.card({ art: 'rm_surface', title: tt('A Seal Is Leaking at the Water Plant'), body: tt('Moon dust has worn the door seal of the extraction chamber. Now some of the water vapour escapes into space before the cold trap can catch it.'), learn: tt('Moon dust is not like beach sand. With no wind or water to round it off, every grain is sharp, like crushed glass. It scratches visors, jams joints and chews through seals.'),
         choices: [{ label: tt('Go and service it'), costs: [tt('1 material'), '1 h'], disabled: s.mat < 1 }, { label: tt('Not now'), costs: [tt('Every batch gives 40% less water')] }] });
-      if (i === 0) G.pointTo('wplant');
+      if (i === 0) G.chooseJob('wplant', () => G.S.wx.seal >= 0.9, tt('You chose to service the Water Plant seal. Press E at the Water Plant topside.'));
     },
     async drift() { const s = G.S; G.done.drift = true; s.f.commsDown = true; note(s, tt('The dish drifted off Earth.'), 'bad');
       const i = await ui.card({ art: 'ev2_comms', title: tt('Signal Lost'), body: tt('The dish motor slipped and the beam slid off Earth. Earth has not moved — it hardly ever does in our sky — but the dish must point at it almost perfectly.'), learn: tt('Your signal takes 1.3 seconds to reach Earth and the reply takes 1.3 more. On Mars the wait is 4 to 24 minutes each way.'), choices: [{ label: tt('Go and aim the dish again'), costs: [tt('1 h topside')] }, { label: tt('Leave it for now'), costs: [tt('No storm warnings')], gains: [tt('Saves 2 kW')] }] }); if (i === 0) G.pointTo('dish'); },
@@ -122,7 +124,7 @@ export function installEvents(G) {
           { label: tt('Run the heaters at max instead'), costs: [tt`${plus} for as long as it is broken`].concat(lowBatt ? [tt`The battery would be empty in about ${emptyIn}`] : []) },
           { label: tt('Leave the heaters where they are'), costs: [tt('Topside machines get colder: the rover and hopper drain, and more can break')], gains: [tt('No extra power')] }] });
       if (i === 1 || (i === 0 && !lowBatt)) s.lv.heat = 3;
-      if (i === 0) { G.pointTo('yard'); ui.toast(lowBatt ? tt('The battery is too low to run the heaters at max, so they stay where they are. Fix the circuit quickly.') : tt('REGO has turned the Topside Heaters to max until the circuit is fixed.')); } },
+      if (i === 0) { G.chooseJob('yard', () => !G.S.f.heater, tt('You chose to fix the heater circuit. Press E at the Heater Hub topside.')); ui.toast(lowBatt ? tt('The battery is too low to run the heaters at max, so they stay where they are. Fix the circuit quickly.') : tt('REGO has turned the Topside Heaters to max until the circuit is fixed.')); } },
     async distress() { const s = G.S; G.done.distress = true; note(s, tt('Picked up distress beacons from three other stations.'));
       // distances from you when you are on the surface (events wait while you drive, so this can fire at an outpost), else from the top of the elevator
       const from = P.zone === 'top' ? [P.pos.x, P.pos.z] : STATIONS.find((q) => q.id === 'gate').pos, away = (q) => Math.round(Math.hypot(q.pos[0] - from[0], q.pos[1] - from[1]));
@@ -150,6 +152,10 @@ export function installEvents(G) {
     return right;
   };
   G.scheduleNext = () => { const s = G.S, g = s.m.gap; G.nextEventAt = s.t + (g[0] + rng() * (g[1] - g[0])) * 24; };
+  // A new emergency waits while the player still has two jobs open from the last ones, for an hour after arriving somewhere new
+  // (the first job there comes first), and for good once oxygen or water is gone: piling faults on a lost run teaches nothing.
+  G.openJobs = () => { const s = G.S, f = s.f; return (s.flow.leaks || []).length + (f.pump ? 1 : 0) + (f.led ? 1 : 0) + (f.mold ? 1 : 0) + (f.scrubber && !s.extraKw.backup ? 1 : 0) + (f.leakWater ? 1 : 0) + (f.heater ? 1 : 0); };
+  G.eventMustWait = () => { const s = G.S; if (s.o2 <= 0.01 || s.water <= 0.01 || s.health < 25) return 'lost'; if (G.openJobs() >= 2) return 'busy'; if (G._arriveT !== undefined && s.t - G._arriveT < 1) return 'arrived'; return null; };
   G.fireEvent = async (forced) => {
     const s = G.S, up = s.flow.sun.up; let type = forced;
     if (!type) {
@@ -184,6 +190,6 @@ export function installEvents(G) {
       if (!st.safe) { const hit = []; if (rng() < st.pFry && !s.f.commsDown) { s.f.commsDown = true; hit.push(tt('the dish')); } if (rng() < st.pFry && breakPanels(1)) hit.push(tt('a solar panel')); msg += hit.length ? tt`The gamble failed: radiation knocked out ${hit.join(tt(' and '))}.` : tt('The gamble paid off: every machine survived.'); if (hit.length) note(s, tt`The storm knocked out ${hit.join(tt(' and '))}.`, 'bad'); } else msg += tt('Safe mode kept every machine alive.');
       note(s, tt('Solar storm ended.')); ui.bubble(msg, st.safe ? 'happy' : 'think', 14); ui.banner(null);
     }
-    if (p.includes('gearBreak')) await E.gearBreak();
+    if (p.includes('gearBreak')) { await E.gearBreak(); if (G.nextEventAt !== undefined) G.nextEventAt = Math.max(G.nextEventAt, s.t + 4); }   // that card was an emergency too: give the player a few hours before the next one
   };
 }

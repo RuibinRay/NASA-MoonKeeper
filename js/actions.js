@@ -42,6 +42,12 @@ export function installActions(G) {
   G.toggleDoor = (id) => { const r = G.S.rooms[id]; r.door = r.door ? 0 : 1; G.audio.play('click');
     if (!r.door) { ui.toast(r.hole > 0 ? tt`${rn(id)} door locked. The leak cannot empty the station now — but that room will lose its air and freeze.` : tt`${rn(id)} door locked.`, r.hole > 0 ? 'good' : ''); note(G.S, tt`Locked the ${rn(id)} door.`); }
     else ui.toast(r.hole > 0 ? tt`${rn(id)} door open — air is rushing out through the hole!` : r.p < 60 ? tt`${rn(id)} door open. Fresh air is flowing in from the tanks.` : tt`${rn(id)} door open.`, r.hole > 0 ? 'bad' : ''); };
+  // E in a doorway. Locking a room that is not leaking asks first: players press E to "carry on" and shut rooms by accident.
+  // A leaking room locks at once (that is an emergency), and unlocking never needs asking.
+  G.doorByHand = async (id) => { const r = G.S.rooms[id]; if (!r.door || r.hole > 0) return G.toggleDoor(id);
+    const i = await ui.card({ title: tt`Lock the ${rn(id)} door?`, body: tt`This room is not leaking. A bulkhead door is for emergencies: locked, it stops a leak in the ${rn(id)} from emptying the rest of the station.`,
+      choices: [{ label: tt('Leave it open') }, { label: tt('Lock it anyway'), sub: tt('You can unlock it here with E, or from the Control Center.') }] });
+    if (i === 1) G.toggleDoor(id); };
 
   // ---------- spacesuit: off indoors (quicker work, cooking, sleep), on before you step out into the cave ----------
   G.toggleSuit = async () => { const s = G.S, on = s.suitOn;
@@ -91,7 +97,11 @@ export function installActions(G) {
   const nearMount = () => { let bi = -1, bd = 5; MOUNTS.forEach(([x, z], i) => { const d = Math.hypot(x - P.pos.x, z - P.pos.z); if (d < bd) { bd = d; bi = i; } }); return bi; };
   const nearItem = () => { let best = null, bd = 1e9; for (const it of G.items) { if (it.where !== 'ground' || it.zone !== P.zone) continue; const d = Math.hypot(it.x - P.pos.x, it.z - P.pos.z); if (d < (ITEMS[it.type].heavy ? 4.2 : 2.8) && d < bd) { best = it; bd = d; } } return best; };
   const nearDoor = () => P.zone === 'deep' ? ROOMS.find((d) => { const [x, z] = doorSpot(d); return near(x, z, 2.4); }) : null;
-  G.leakCost = (id) => { const h = world.rooms[id] && world.rooms[id].holePos, d = h && P.zone === 'deep' ? Math.hypot(h.x - P.pos.x, h.z - P.pos.z) : 250; return (((d * 1.5) / 6.4 / G.S.m.hourLen) * (G.speedMul || 1) + 1) * 55 * K.O2_PER_KPA; };   // 250: from the surface, the elevator and the hall come first; at ×2 or ×4 the walk costs that many more game hours
+  // Oxygen lost if you run and patch: the tanks top the hall up at most 55 kPa an hour while the hole is open, through the walk (a real path is
+  // about 1.8 times the straight line) and the whole patch job, and then the empty room has to be filled again (it holds about a fifth of the hall's air).
+  G.leakCost = (id) => { const h = world.rooms[id] && world.rooms[id].holePos, d = h && P.zone === 'deep' ? Math.hypot(h.x - P.pos.x, h.z - P.pos.z) : 250;   // 250: from the surface, the elevator and the hall come first
+    const walkH = ((d * 1.8) / 6.4 / G.S.m.hourLen) * (G.speedMul || 1), jobH = jobHours(G.S, 1), refill = K.AIR_KPA * 0.22 * K.O2_PER_KPA;   // at ×2 or ×4 the walk costs that many more game hours
+    return (walkH + jobH) * 55 * K.O2_PER_KPA + refill; };
   G.leakPlan = (id) => { const s = G.S, drain = G.leakCost(id), vital = id === 'water' || id === 'oxygen'; return { drain, vital, patch: s.mat >= 1 && s.o2 - drain > (vital ? 0.3 : 1) }; };
   const needLift = () => { const g = G.goal; return !!g && (g.id === 'gate' || g.id === 'lift' || (g.zone !== undefined && g.zone !== P.zone)); };   // does the current objective lie through the elevator?
   const nearHole = () => P.zone === 'deep' ? ROOMS.find((d) => G.S.rooms[d.id].hole > 0 && near(world.rooms[d.id].holePos.x, world.rooms[d.id].holePos.z, 4.5)) : null;
@@ -117,6 +127,7 @@ export function installActions(G) {
       else if (veh) c.e = G[veh].cargo.length < G[veh].max ? { label: tt`Load the ${nm} onto the ${vn}`, run: () => G.load(veh) } : { label: tt`The ${vn} is full — put the ${nm} down`, run: () => G.drop() };
       else c.e = { label: tt`Put down the ${nm}`, put: true, run: () => G.drop() };
       if (st && st.id === 'suit' && c.e.put) { c.q = c.e; c.e = suitAct(); }
+      else if (c.e.put && st && !lift && G.state === 'play') c.q = { label: st.info ? tt`Look at the ${st.name}` : st.name, run: () => G.openStation(st) };   // carrying something into a room: its panel (and the repair in it) stays on Q
       if (lift && c.e.run !== undefined && !c.e.ride) c.q = { label: tt('Ride the elevator'), ride: true, run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
       else if (lift && veh && G[veh].cargo.length < G[veh].max) c.q = { label: tt`Load the ${nm} onto the ${vn}`, run: () => G.load(veh) };
       return c;
@@ -131,12 +142,12 @@ export function installActions(G) {
     const pull = m >= 0 && s.mounts[m] === 2 ? { label: tt('Pull the broken panel off its mount (30 min)'), run: () => J.removePanel(m) } : null;
     const mountFirst = !!(pull && veh && Math.hypot(P.pos.x - MOUNTS[m][0], P.pos.z - MOUNTS[m][1]) / 5 <= vehFar());
     if (hole) c.e = { label: tt`Patch the hole in the ${hole.name} (1 material, 1 h)`, run: () => J.patch(hole.id) };
-    else if (li) c.e = { label: tt`Pick up the ${ITEMS[li.type].name}`, run: () => G.take(li) };
+    else if (li) c.e = { label: tt`Pick up the ${ITEMS[li.type].name}`, pick: true, run: () => G.take(li) };
     else if (top && near(G.dig.x, G.dig.z, 5.5)) c.e = { label: tt('Drive the digger'), run: () => G.enterVehicle('dig') };
     else if (veh && !(lift && needLift()) && !panelFirst && !mountFirst) c.e = drive;
     else if (pull) c.e = pull;
     else if (done >= 0) c.e = { label: tt('Take the fixed panel'), run: () => J.benchTake(done) };
-    else if (door) c.e = { label: s.rooms[door.id].door ? tt`Lock the ${door.name} door` : tt`Unlock the ${door.name} door`, run: () => G.toggleDoor(door.id) };
+    else if (door) c.e = { label: s.rooms[door.id].door ? tt`Lock the ${door.name} door` : tt`Unlock the ${door.name} door`, run: () => G.doorByHand(door.id) };
     else if (st && st.id === 'suit') c.e = suitAct();
     else if (lift) c.e = { label: st.id === 'gate' ? tt('Ride the elevator down into the cave') : s.storm && s.t >= s.storm.start && s.t < s.storm.end ? tt('Ride the elevator up INTO THE SOLAR STORM (radiation!)') : tt('Ride the elevator up to the surface'), ride: true, run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
     else if (st && G.state === 'play') c.e = { label: st.info ? tt`Look at the ${st.name}` : st.name, run: () => G.openStation(st) };
@@ -145,6 +156,7 @@ export function installActions(G) {
     if (veh && G[veh].cargo.length && (!lift || needLift())) { const last = G[veh].cargo[G[veh].cargo.length - 1]; c.q = { label: tt`Take the ${ITEMS[last.type].name} out (${G[veh].cargo.length} on board)`, run: () => G.take(last) }; }
     if ((panelFirst || mountFirst) && c.e && c.e.run !== drive.run) c.q = drive;   // the vehicle is never out of reach: step up to it and E drives again
     else if (pull && veh && c.e === drive && !c.q) c.q = pull;
+    else if (li && c.e && c.e.pick && panel && !c.q) c.q = { label: panel.info ? tt`Look at the ${panel.name}` : panel.name, run: () => G.openStation(panel) };   // something lying on the floor must not hide the room's panel
     else if (panel && veh && c.e === drive && !c.q) c.q = { label: panel.info ? tt`Look at the ${panel.name}` : panel.name, run: () => G.openStation(panel) };
     if (lift && veh && !c.q && c.e) { const unload = G[veh].cargo.length ? tt(' (unload it away from the elevator)') : '';   // a rover parked on the elevator never blocks it, loaded or not
       c.q = c.e.ride ? { label: (veh === 'car' ? tt('Drive the rover') : tt('Fly the hopper')) + unload, run: () => G.enterVehicle(veh) } : { label: tt('Ride the elevator'), ride: true, run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') }; }
@@ -228,7 +240,7 @@ export function installActions(G) {
     if (st && s.t < st.start) a.push({ text: tt`Solar storm arrives in ${fmt.hrs(st.start - s.t)}`, sub: tt('Be underground before it hits'), go: 'gate' }); else if (st) a.push({ text: tt`SOLAR STORM — ${fmt.hrs(Math.max(0, st.end - s.t))} left`, sub: P.zone === 'top' ? tt('You are exposed! Take the elevator down') : tt('You are safe under the rock roof'), go: 'gate' });
     const fl = s.flow || {}, draining = fl.net < 0;   // power first: an empty battery weakens every machine at once
     if (s.battery <= 0.01 && draining) a.push({ text: tt('POWER OUT — every machine is running weak'), sub: tt('Turn machines down on the Power Board (Tab) or fix solar panels'), key: 'power-out', wake: tt('<b>Wake up! The battery is empty.</b> Every machine is running weak. Open the Power Board (Tab) and turn something down.') });
-    else if (draining && fl.battHours < 12) a.push({ text: tt`Battery empty in ${fmt.hrs(Math.max(0.1, Math.round(fl.battHours * 10) / 10))}`, sub: tt('Using more power than you make: open the Power Board (Tab)'), kind: 'warn' });
+    else if (draining && (fl.battHours < 12 || (fl.sun && !fl.sun.up && fl.battHours < 24))) a.push({ text: tt`Battery empty in ${fmt.hrs(Math.max(0.1, Math.round(fl.battHours * 10) / 10))}`, sub: tt('Using more power than you make: open the Power Board (Tab)'), kind: 'warn' });   // at night no sunshine comes to save it, so warn a day ahead
     // life support: a warning a day and a half out, an emergency (which wakes a sleeper) six hours out or when it is gone
     const left = (d) => (d * 24 < 36 ? fmt.hrs(Math.max(0.1, Math.round(d * 240) / 10)) : tt`${d.toFixed(1)} days`);
     const toRescue = s.hours === Infinity ? 0 : (s.hours - (s.t - s.t0)) / 24;   // 0 in Unlimited: no ship is coming, so nothing can run out "before rescue"
@@ -239,7 +251,7 @@ export function installActions(G) {
       else if (days < 1.5) a.push({ text: tt`${name} runs out in ${left(days)}`, sub: fix, go, kind: 'warn' });
       else if (days < toRescue) a.push({ text: tt`${name} will run out before rescue`, sub: tt`In ${left(days)}; the ship is ${left(toRescue)} away`, go, kind: 'warn' });
     }
-    for (const d of ROOMS) { const stt = roomState(s, d.id); if (stt === 'leak') a.push({ text: tt`AIR LEAK: ${d.name}`, sub: tt('Patch the hole, or lock its door'), go: d.id }); else if (stt === 'sealed') a.push({ text: tt`${d.name}: sealed, no air`, sub: tt('Patch the hole to save it'), go: d.id, kind: 'warn' }); else if (stt === 'wreck') a.push({ text: tt`${d.name}: broken`, sub: tt`Rebuild it (${d.mat} materials)`, go: d.id, kind: 'warn' }); }
+    for (const d of ROOMS) { const stt = roomState(s, d.id); if (stt === 'leak') a.push({ text: tt`AIR LEAK: ${d.name}`, sub: tt('Patch the hole, or lock its door'), go: d.id }); else if (stt === 'sealed') a.push({ text: tt`${d.name}: sealed, no air`, sub: tt('Patch the hole to save it'), go: d.id, kind: 'warn' }); else if (stt === 'wreck') a.push({ text: tt`${d.name}: broken`, sub: tt`Rebuild it (${d.mat} materials)`, go: d.id, kind: 'warn' }); else if (!s.rooms[d.id].door && G.state === 'play') a.push({ text: tt`${d.name} door is locked`, sub: tt('Nothing is leaking there: unlock it at the door (E)'), go: d.id, kind: 'warn' }); }   // a locked door on a healthy room is easy to forget
     if (s.safeMode > 0) a.push({ text: tt`Topside safe mode: ${fmt.hrs(s.safeMode)}`, sub: tt('No solar or radio'), kind: 'warn' });
     if (f.scrubber && !s.extraKw.backup) a.push({ text: tt('Air cleaner broken'), sub: tt`Air quality ${Math.round(s.air * 100)}% · Oxygen Room`, go: 'oxygen', ...(s.air < 0.55 ? { key: 'air-bad', wake: tt`<b>Wake up! The air is going stale (${Math.round(s.air * 100)}% clean).</b> Fix the air cleaner in the Oxygen Room, or switch on the backup.` } : {}) });   // below 35% the CO₂ starts to hurt, so this wakes a sleeper first
     if (f.leakWater) a.push({ text: tt('Water pipe leaking'), sub: tt('Water Room'), go: 'water' });
@@ -278,9 +290,15 @@ export function installActions(G) {
     else if (leak) { const lp = G.leakPlan(leak), drain = lp.drain; t = lp.patch ? (lp.vital ? tt`<b>Air is escaping from the ${rn(leak)}!</b> Run there and patch the hole: ${ROOMS.find((d) => d.id === leak).what} is in there, and locking the door would freeze it.` : tt`<b>Air is escaping from the ${rn(leak)}!</b> Run there and patch the hole — or lock its door to save the rest of the station. Locking it will freeze that room.`) : tt`<b>Air is escaping from the ${rn(leak)}!</b> Lock its door now: about ${drain.toFixed(1)} kg of oxygen would drain before you could patch it, and you have ${s.o2.toFixed(1)} kg. Patch it afterwards, in your suit.`; go = leak; mood = 'alert'; }
     else if (st && s.t < st.start && top) { t = tt`Storm in ${fmt.hrs(st.start - s.t)}. Finish up and get underground.`; go = 'gate'; mood = 'worried'; }
     else if (F.eff < 1) { t = F.sun.up ? tt('<b>Brownout!</b> The battery is empty. Turn something down on the Power Board, and get more solar panels working.') : tt('<b>Brownout!</b> The battery is empty, and solar panels make nothing until sunrise. Turn something down on the Power Board.'); mood = 'alert'; }
-    else if (s.o2 < 0.8 || F.o2Days < 0.6 || F.o2Days < daysLeft) { const low = s.o2 < 0.8 || F.o2Days < 0.6, head = low ? ('<b>' + tt('Oxygen is low!') + '</b>') : tt`<b>Oxygen will run out before rescue:</b> in ${soon(F.o2Days)}, and the ship is ${soon(daysLeft)} away.`;
+    // Oxygen: only while it is still falling (or barely rising). Once it climbs again, saying "turn the Oxygen Maker up" repeats what the player did.
+    else if ((s.o2 < 0.8 && F.o2Net < 0.05) || F.o2Days < 0.6 || F.o2Days < daysLeft) { const low = s.o2 < 0.8 || F.o2Days < 0.6, head = low ? ('<b>' + tt('Oxygen is low!') + '</b>') : tt`<b>Oxygen will run out before rescue:</b> in ${soon(F.o2Days)}, and the ship is ${soon(daysLeft)} away.`;
       t = head + ' ' + (!machineOk(s, 'oxygen') ? tt('The Oxygen Room is not working. Fix that room first!') : s.water > 3 && s.lv.o2gen < 3 ? (F.net < 0 && F.battHours < 8 ? tt('The battery is nearly empty too: on the Power Board, turn other machines down first, then the Oxygen Maker up.') : tt('Turn the Oxygen Maker up on the Power Board. It costs power and water.')) : F.sun.up && F.sun.toSunset > 12 ? tt('Repair and switch on the Moon-Dust Oxygen Plant topside: it needs no water.') : s.water <= 3 ? tt('The Oxygen Maker needs water: turn the Water Recycler up, or bring icy soil to the Water Plant.') : tt('The Oxygen Maker is at full. The Moon-Dust Oxygen Plant topside would help, but it draws 9 kW: look at the Power Board forecast before you run it in the dark.')); go = !roomOk(s, 'oxygen') ? 'oxygen' : null; mood = low ? 'alert' : 'worried'; }
+    else if (F.net < 0 && F.battHours < (F.sun.up ? 12 : 24)) {   // the battery will be flat soon, and at night no sunshine comes to the rescue
+      const spare = [s.lv.comms > 0 && tt('the Earth Link'), s.lv.isru > 0 && tt('the Moon-Dust Oxygen Plant'), s.lv.farm > 0 && F.foodDays > 2 && tt('the Farm lights'), s.lv.heat > F.heatNeed && tt`the Topside Heaters (they need level ${F.heatNeed})`, !s.chargeOff && (s.car.charging || s.ship.charging) && tt('the rover and hopper chargers')].filter(Boolean);
+      t = (F.sun.up ? tt`<b>The battery will be empty in ${fmt.hrs(F.battHours)}.</b>` : tt`<b>The battery will be empty in ${fmt.hrs(F.battHours)}</b>, and the Sun will not rise for ${fmt.days(F.sun.toSunrise / 24)}.`) + ' ' + tt('When it runs out, every machine runs weak.') + ' ' + (spare.length ? tt`Open the Power Board (Tab) and turn down what you can spare: ${spare.join(', ')}.` : tt('Everything you can spare is already off: keep what is left for air, water and heat.')) + (s.o2 < 0.8 && F.o2Net >= 0.05 ? ' ' + tt('Keep the Oxygen Maker where it is: oxygen is climbing again.') : '');
+      mood = 'worried'; }
     else if (f.scrubber && !s.extraKw.backup) { t = tt('The air cleaner is broken and the air is going stale. Fix it in the Oxygen Room.'); go = 'oxygen'; mood = 'worried'; }
+    else if (f.pump) { t = tt`The water pump in the ${rn(f.pump)} has stopped. Hydroponic roots have no soil to hold water: fix it before they dry out.`; go = f.pump; mood = 'worried'; }   // roots dry out in hours: before panels and rebuilding
     else if (s.water < 3 || F.waterDays < 1 || F.waterDays < daysLeft || f.leakWater) { const cans = G.items.some((q) => q.type === 'ice'), wr = s.rooms.water, wd = ROOMS.find((d) => d.id === 'water'), need = wd.mat + (wr.hole > 0 ? 1 : 0);
       const head = s.water < 3 || F.waterDays < 1 ? ('<b>' + tt('Water is low.') + '</b>') : F.waterDays < daysLeft ? tt`<b>Water will run out before rescue:</b> in ${soon(F.waterDays)}, and the ship is ${soon(daysLeft)} away.` : ('<b>' + tt('A water pipe is leaking.') + '</b>');
       if (!machineOk(s, 'water')) { t = tt`${head} The Water Recycler is out, so every litre you use is lost: ${wr.hole > 0 ? tt('patch the hole in the Water Room and rebuild it') : wr.built < 1 ? tt('rebuild the Water Room') : tt('get air back into the Water Room')}.${wr.built < 1 && s.mat < need ? tt` That takes ${need} materials and you have ${fmt.mat(s.mat)}: fetch crates from another station.` : ''}`; go = 'water'; mood = 'worried'; }
@@ -298,7 +316,6 @@ export function installActions(G) {
     else if (wreck && s.mat >= wreck.mat && s.rooms[wreck.id].hole === 0) { t = tt`The ${wreck.name} is still broken. Rebuild it at its console to get ${wreck.what} back.`; go = wreck.id; }
     else if (f.commsDown) { t = tt('The dish is not pointing at Earth. Without it, solar storms arrive with no warning.'); go = 'dish'; }
     else if (s.mat < 3 && s.mat !== Infinity && s.rescued.length + G.followers.length < 3) { const site = SITES.find((q) => !s.rescued.includes(q.id) && !G.followers.some((fl) => fl.site.id === q.id)); t = tt`We are nearly out of materials. <b>${site.name}</b> has crates — and an astronaut who needs rescuing. Follow the ${['teal', 'purple', 'green'][SITES.indexOf(site)]} light. Take the rover or the hopper.`; go = site.id; mood = 'think'; }
-    else if (f.pump) { t = tt`The water pump in the ${rn(f.pump)} has stopped. Hydroponic roots have no soil to hold water: fix it before they dry out.`; go = f.pump; mood = 'worried'; }
     else if (s.nutri <= 0) { t = tt('<b>The plant food has run out</b>, so crops are crawling. Run the waste digester in the Water Room, or plant peas and soybeans: they make their own nitrogen.'); go = 'water'; mood = 'worried'; }
     else if (ripeIn(s, 'potato') || ripeIn(s, 'tomato')) { const id = ripeIn(s, 'potato') ? 'potato' : 'tomato'; t = tt`Ripe crops in the ${rn(id)}! Pick them: a ripe rack stops growing. Staples need cooking; salad is ready to eat.`; go = id; }
     else if (s.wx.ice > 0 && !s.wx.batch && top) { t = tt`There ${s.wx.ice === 1 ? tt('is a canister') : tt`are ${s.wx.ice} canisters`} of icy soil in the Water Plant hopper. Set up a batch: gentle heat in a vacuum turns the ice straight to vapour.`; go = 'wplant'; mood = 'think'; }
@@ -311,6 +328,9 @@ export function installActions(G) {
     else if (roomOk(s, 'control') && s.helpers.some((h) => h.role !== 'idle' && !hasWork(s, h.role))) { const h = s.helpers.find((q) => q.role !== 'idle' && !hasWork(s, q.role)); t = (h.kind === 'bot' ? tt`<b>${h.name}</b> has nothing to do: ${h.role === 'farm' ? tt('no farm and no Animal Bay is working') : tt('the Kitchen is not working')}. Give it another job in the Control Center.` : tt`<b>${h.name}</b> has nothing to do: ${h.role === 'farm' ? tt('no farm and no Animal Bay is working') : tt('the Kitchen is not working')}. Give them another job in the Control Center.`); go = 'control'; mood = 'think'; }
     else if (s.helpers.every((h) => h.role === 'idle') && (F.net > 2 || humans(s).length)) { t = tt('Your helpers are all resting. Give them jobs in the Control Center — robots cost electricity, people cost food.'); go = 'control'; mood = 'think'; }
     else if (f.isruDown && s.mat >= 5) { t = tt('When you can spare 3 materials, repair the Moon-Dust Oxygen Plant topside. It makes oxygen without using water.'); go = 'isru'; }
+    // A job the player chose on a card stays the one REGO points at, unless something worse is happening right now.
+    // When air, water, food or power is running short, that advice comes first, but the line still leads to the chosen job if the advice has no place of its own.
+    const cj = G.chosenJob && G.chosenJob(); if (cj && mood !== 'alert') { const short = F.eff < 1 || (F.net < 0 && F.battHours < (F.sun.up ? 12 : 24)) || F.o2Days < 1 || F.waterDays < 1 || F.foodDays < 1; if (!short) { t = cj.say; go = cj.t; mood = 'think'; } else if (!go) go = cj.t; }
     if (!t) t = tt`All systems look steady. Did you know? ${FACTS[G.factI++ % FACTS.length]}`;
     if (short) return t; ui.bubble(t, mood, 13); if (go) { G.pointTo(go); if (G.goal) G.goal.sticky = true; }   // sticky: stays until "Stop guiding" is clicked
   };
