@@ -8,7 +8,7 @@ import { Astronaut } from '../actors.js';
 import { WHO } from '../ui.js';
 import { MARS, LOADS, PLANT, createMars, marsFlows, marsStep, marsClock, marsSerialize, marsDeserialize } from './sim.js';
 import * as T from './terrain.js';
-import { SITE, GLOBAL, REGION } from './mola.js';
+import { makeMarsMap } from './map.js';
 
 const $ = (s) => document.querySelector(s), clamp = (x, a, b) => Math.max(a, Math.min(b, x)), SAVE = 'mk2-mars-save';
 const el = (tag, cls, html) => { const d = document.createElement(tag); d.className = cls; if (html) d.innerHTML = html; return d; };
@@ -50,7 +50,7 @@ const INFO = {
   thermal: { name: tt('Thermal Control Facility'), does: tt('A heat pump warms the rooms. Its tall radiators shed waste heat to the sky.'), needs: tt('Power'), gives: tt('Warm rooms'), cls: 'prop',
     note: tt('A day at the Viking 1 site ran from −89°C before dawn to −31°C in the afternoon. The thin air carries heat away slowly, so machines can overheat even in that cold.') },
 };
-const SHORT = { cmd: tt('Command'), living: tt('Living'), lifesupport: tt('Life Support'), water: tt('Water'), power: tt('Power'), greenhouse: tt('Greenhouse'), lab: tt('Lab'), medical: tt('Medical'), garage: tt('Garage'), airlock: tt('Airlock'), comms: tt('Comms'), storage: tt('Storage'), isru: tt('ISRU'), thermal: tt('Thermal') }, ABOVE = { lifesupport: 1, medical: 1, lab: 1, thermal: 1 };
+const SHORT = { cmd: tt('Command'), living: tt('Living'), lifesupport: tt('Life Support'), water: tt('Water'), power: tt('Power'), greenhouse: tt('Greenhouse'), lab: tt('Lab'), medical: tt('Medical'), garage: tt('Garage'), airlock: tt('Airlock'), comms: tt('Comms'), storage: tt('Storage'), isru: tt('ISRU'), thermal: tt('Thermal') };
 const TOUR = ['cmd', 'power', 'lifesupport', 'isru', 'water', 'greenhouse', 'thermal', 'living', 'medical', 'lab', 'garage', 'storage', 'comms', 'airlock'];
 // ---- the crew: three people who live and work here with you ----
 const CREW = [
@@ -75,12 +75,9 @@ const POI = [
   { id: 'seis', name: tt('Seismometer'), x: T.SEIS.x + 2, z: T.SEIS.z + 1, r: 13, cls: 'demo', text: tt('<b>The seismometer.</b> Under the dome, it listens for marsquakes. It stands far from the base so that footsteps and machines do not drown out the ground\'s own tremors. NASA\'s InSight lander did this on Mars: in December 2021 it felt a magnitude 4 quake from a meteorite strike.') },
   { id: 'old', name: tt('Old Crater'), x: T.OLD_CRATER.x, z: T.OLD_CRATER.z, r: 100, cls: 'game', text: tt('<b>An old crater.</b> Its rim has been worn soft over hundreds of millions of years by wind, dust and frost. Compare it with the sharp young one.') },
 ];
-const RAMP = [[-8000, 38, 30, 105], [-5000, 40, 90, 190], [-3000, 60, 160, 172], [-1000, 92, 172, 96], [1000, 204, 192, 84], [3000, 212, 132, 62], [6000, 178, 72, 52], [10000, 150, 112, 104], [21000, 255, 255, 255]];
-const ramp = (m) => { let i = 1; while (i < RAMP.length - 1 && m > RAMP[i][0]) i++; const a = RAMP[i - 1], b = RAMP[i], k = clamp((m - a[0]) / (b[0] - a[0]), 0, 1); return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k]; };
-const PLACES = [[SITE.lat, SITE.lon, tt('Our outpost'), 1], [18.65, 226.2, tt('Olympus Mons')], [-14.01, 301.41, tt('Valles Marineris')], [18.41, 77.69, tt('Jezero (Perseverance)')], [-4.5, 137.4, tt('Gale (Curiosity)')], [4.502, 135.623, tt('InSight')], [47.67, 134.28, tt('Viking 2')], [68.22, 234.25, tt('Phoenix')]];
 
 export function installMars(G, deps) {
-  const P = G.player, cam = G.cam, world = G.world, ui = G.ui; let S = null, hudT = 0, saveT = 0, nagT = 0, passing = false, relief = null; const labels = {}, v3 = new THREE.Vector3();
+  const P = G.player, cam = G.cam, world = G.world, ui = G.ui; let S = null, hudT = 0, saveT = 0, nagT = 0, passing = false; const labels = {}, v3 = new THREE.Vector3();
   const near = (x, z, r) => Math.hypot(P.pos.x - x, P.pos.z - z) < r;
   let inRoom = false, camOut = 9; const crew = [];
   const where = (id) => (id === 'car' ? { id, x: G.car.x, z: G.car.z, name: tt('My Rover') } : T.B[id] ? { id, x: T.B[id].door[0], z: T.B[id].door[1], name: INFO[id].name } : POI.find((p) => p.id === id));
@@ -241,67 +238,8 @@ export function installMars(G, deps) {
     if (first && id !== 'cmd') { const left = TOUR.filter((b) => !S.seen[b]).length; ui.toast(left === 1 ? tt`${INFO[id].name} visited. 1 building still to see.` : left ? tt`${INFO[id].name} visited. ${left} buildings still to see.` : tt('You have visited all 14 buildings!'), 'good'); }
   }
 
-  // ---------- maps ----------
-  const buildRelief = () => { const n = 400, cv = document.createElement('canvas'); cv.width = cv.height = n; const c = cv.getContext('2d'), im = c.createImageData(n, n), d = im.data, s = 1600 / n;
-    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const x = (i + 0.5) * s - 800, z = (j + 0.5) * s - 800, h = T.heightAt(x, z), sh = clamp(0.78 + (T.heightAt(x - 3, z - 3) - T.heightAt(x + 3, z + 3)) * 0.16, 0.35, 1.25), dm = T.duneMask(x, z), k = (j * n + i) * 4; let r = 168 + h * 2.2, g = 104 + h * 1.5, b = 70 + h;
-      r = r * (1 - dm * 0.45); g = g * (1 - dm * 0.45); b = b * (1 - dm * 0.35); d[k] = clamp(r * sh, 0, 255); d[k + 1] = clamp(g * sh, 0, 255); d[k + 2] = clamp(b * sh, 0, 255); d[k + 3] = 255; }
-    c.putImageData(im, 0, 0); return cv; };
-  // The outpost and the ground around it. span = metres from the middle of the picture to its edge.
-  function drawMars(c, W, H, span, cx, cz, big) {
-    const sc = W / (2 * span), X = (x) => (x - cx) * sc + W / 2, Z = (z) => (z - cz) * sc + H / 2; relief = relief || buildRelief();
-    c.fillStyle = '#5a3524'; c.fillRect(0, 0, W, H); c.imageSmoothingEnabled = true; { const k = 400 / 1600, x0 = cx - span, z0 = cz - span, x1 = Math.max(x0, -800), z1 = Math.max(z0, -800), x2 = Math.min(cx + span, 800), z2 = Math.min(cz + span, 800); if (x2 > x1 && z2 > z1) c.drawImage(relief, (x1 + 800) * k, (z1 + 800) * k, (x2 - x1) * k, (z2 - z1) * k, X(x1), Z(z1), (x2 - x1) * sc, (z2 - z1) * sc); }
-    c.strokeStyle = 'rgba(255,220,190,.35)'; c.lineWidth = 1.5; c.beginPath(); c.arc(X(0), Z(0), T.PLAY_R * sc, 0, 6.283); c.stroke();
-    { const ic = T.ICE_CRATER; c.fillStyle = '#dcecf8'; c.beginPath(); c.arc(X(ic.x), Z(ic.z), Math.max(2.5, ic.r * 0.55 * sc), 0, 6.283); c.fill(); }
-    c.fillStyle = '#2b2a29'; c.beginPath(); c.arc(X(T.PAD.x), Z(T.PAD.z), T.PAD.r * sc, 0, 6.283); c.fill(); c.fillStyle = '#f2ede6'; c.beginPath(); c.arc(X(T.PAD.x), Z(T.PAD.z), Math.max(2, 3.6 * sc), 0, 6.283); c.fill();
-    c.fillStyle = '#1c2f6e'; for (let r = 0; r < T.SOLAR.rows; r++) for (let k = 0; k < T.SOLAR.cols; k++) { const [x, z] = T.panelAt(r, k); c.fillRect(X(x - 4.2), Z(z - 2.1), Math.max(1.5, 8.4 * sc), Math.max(1, 4.2 * sc)); }
-    c.strokeStyle = '#d9c9b4'; c.lineWidth = Math.max(1, 2.6 * sc); for (const [a, b, d, e] of T.TUNNELS) { c.beginPath(); c.moveTo(X(a), Z(b)); c.lineTo(X(d), Z(e)); c.stroke(); }
-    c.fillStyle = '#ffd257'; c.beginPath(); c.arc(X(T.REACTOR.x), Z(T.REACTOR.z), Math.max(2.5, 2.4 * sc), 0, 6.283); c.fill(); c.fillStyle = '#ff9a3d'; c.fillRect(X(T.DRILL.x) - 2, Z(T.DRILL.z) - 2, 4, 4);
-    c.textAlign = 'center'; c.textBaseline = 'middle';
-    for (const b of T.BUILDINGS) { const x = X(b.x), z = Z(b.z), off = S && LOADS[b.id] && !S.on[b.id], r = Math.max(2.5, (b.r || 6) * sc); c.fillStyle = off ? '#ff5a4a' : '#f4efe8'; c.strokeStyle = '#2a160e'; c.lineWidth = 1;
-      if (b.long) { const lx = Math.abs(b.long[0]) * sc + r, lz = Math.abs(b.long[1]) * sc + r; c.beginPath(); c.roundRect(x - lx, z - lz, lx * 2, lz * 2, r * 0.8); c.fill(); c.stroke(); } else if (b.id === 'garage') { c.fillRect(x - 8.5 * sc, z - 5.5 * sc, 17 * sc, 11 * sc); c.strokeRect(x - 8.5 * sc, z - 5.5 * sc, 17 * sc, 11 * sc); } else { c.beginPath(); c.arc(x, z, r, 0, 6.283); c.fill(); c.stroke(); }
-      if (big && sc > 1.2) { c.font = '600 11px Inter,sans-serif'; c.fillStyle = '#fff'; c.strokeStyle = 'rgba(20,8,4,.85)'; c.lineWidth = 3; const n = SHORT[b.id], ty = z + (ABOVE[b.id] ? -1 : 1) * ((b.long ? Math.abs(b.long[1]) * sc : 0) + r + 9); c.strokeText(n, x, ty); c.fillText(n, x, ty); } }
-    if (big) { c.font = '600 11px Inter,sans-serif'; for (const p of POI) if (S && S.seen[p.id] && !(sc > 1.2 && p.id === 'drill')) { c.fillStyle = '#ffe2b5'; c.strokeStyle = 'rgba(20,8,4,.85)'; c.lineWidth = 3; c.strokeText(p.name, X(p.x), Z(p.z) - 10); c.fillText(p.name, X(p.x), Z(p.z) - 10); } }
-    c.fillStyle = '#49e6ff'; c.strokeStyle = '#06222b'; c.lineWidth = 1; c.fillRect(X(G.car.x) - 4, Z(G.car.z) - 3, 8, 6); c.strokeRect(X(G.car.x) - 4, Z(G.car.z) - 3, 8, 6);
-    if (G.goal) { c.strokeStyle = '#ffb347'; c.lineWidth = 2; c.setLineDash([5, 5]); c.beginPath(); c.moveTo(X(P.pos.x), Z(P.pos.z)); c.lineTo(X(G.goal.x), Z(G.goal.z)); c.stroke(); c.setLineDash([]); c.beginPath(); c.arc(X(G.goal.x), Z(G.goal.z), 7, 0, 6.283); c.stroke(); }
-    c.save(); c.translate(X(P.pos.x), Z(P.pos.z)); c.rotate(-cam.yaw); c.fillStyle = '#fff'; c.strokeStyle = '#0b0e12'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -11); c.lineTo(8, 9); c.lineTo(0, 4); c.lineTo(-8, 9); c.closePath(); c.fill(); c.stroke(); c.restore();
-    if (big) { const L = span > 400 ? 200 : 50, px = L * sc, y = H - 16; c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.moveTo(16, y - 5); c.lineTo(16, y); c.lineTo(16 + px, y); c.lineTo(16 + px, y - 5); c.stroke(); c.fillStyle = '#fff'; c.font = '600 11px Inter,sans-serif'; c.fillText(L + ' m', 16 + px / 2, y - 10); }
-    c.fillStyle = '#ffe9d6'; c.font = '600 12px Inter,sans-serif'; c.fillText('N', W / 2, 10);
-  }
-  // The region, straight from NASA's MOLA elevation data: 192 km across, shaded as if lit from the north-west.
-  function drawRegion(c, W) {
-    const n = REGION.n, cv = document.createElement('canvas'); cv.width = cv.height = n; const cc = cv.getContext('2d'), im = cc.createImageData(n, n), d = im.data, at = (i, j) => REGION.data[clamp(j, 0, n - 1) * n + clamp(i, 0, n - 1)];
-    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const h = at(i, j), sh = clamp(0.82 + (at(i - 1, j - 1) - at(i + 1, j + 1)) * 0.0035, 0.3, 1.35), k2 = clamp((h - REGION.min) / (REGION.max - REGION.min), 0, 1), k = (j * n + i) * 4; d[k] = clamp((120 + 110 * k2) * sh, 0, 255); d[k + 1] = clamp((72 + 96 * k2) * sh, 0, 255); d[k + 2] = clamp((50 + 78 * k2) * sh, 0, 255); d[k + 3] = 255; }
-    cc.putImageData(im, 0, 0); c.imageSmoothingEnabled = true; c.drawImage(cv, 0, 0, W, W);
-    const px = W / REGION.km; c.strokeStyle = '#49e6ff'; c.lineWidth = 2; c.beginPath(); c.arc(W / 2, W / 2, 8, 0, 6.283); c.stroke(); c.fillStyle = '#49e6ff'; c.beginPath(); c.arc(W / 2, W / 2, 2, 0, 6.283); c.fill();
-    c.font = '600 12px Inter,sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = 'rgba(20,8,4,.85)'; c.fillStyle = '#fff'; const t1 = tt('Our outpost'); c.strokeText(t1, W / 2 + 13, W / 2); c.fillText(t1, W / 2 + 13, W / 2);
-    c.textAlign = 'center'; c.strokeStyle = '#fff'; c.lineWidth = 2; const y = W - 16, L = 50 * px; c.beginPath(); c.moveTo(16, y - 5); c.lineTo(16, y); c.lineTo(16 + L, y); c.lineTo(16 + L, y - 5); c.stroke(); c.fillText('50 km', 16 + L / 2, y - 10); c.fillText('N', W / 2, 10);
-  }
-  // The whole planet from MOLA: blue is low, red and white are high.
-  function drawPlanet(c, W, H) {
-    const cv = document.createElement('canvas'); cv.width = GLOBAL.w; cv.height = GLOBAL.h; const cc = cv.getContext('2d'), im = cc.createImageData(GLOBAL.w, GLOBAL.h), d = im.data;
-    for (let i = 0; i < GLOBAL.w * GLOBAL.h; i++) { const [r, g, b] = ramp(GLOBAL.min + GLOBAL.step * GLOBAL.data[i]); d[i * 4] = r; d[i * 4 + 1] = g; d[i * 4 + 2] = b; d[i * 4 + 3] = 255; }
-    cc.putImageData(im, 0, 0); c.imageSmoothingEnabled = true; c.drawImage(cv, 0, 0, W, H); c.font = '600 11px Inter,sans-serif'; c.textBaseline = 'middle';
-    for (const [lat, lon, name, us] of PLACES) { const x = (lon / 360) * W, y = ((90 - lat) / 180) * H; c.fillStyle = us ? '#49e6ff' : '#fff'; c.strokeStyle = '#0b0e12'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, us ? 6 : 3.5, 0, 6.283); c.fill(); c.stroke(); c.lineWidth = 3; c.strokeStyle = 'rgba(10,6,4,.85)'; c.textAlign = x > W - 150 ? 'right' : 'left'; const tx = x + (x > W - 150 ? -9 : 9); c.strokeText(name, tx, y); c.fillText(name, tx, y); }
-  }
-  const WHY = () => `<p>${tt`The outpost stands at <b>${SITE.lat}°N, ${SITE.lon}°E</b>, on a flat bay of <b>Arcadia Planitia</b> among the small hills of the <b>Erebus Montes</b>. Four things decided it:`}</p>
-    <div class="stat"><span>${tt`<b>Ice to drink and breathe.</b> Radar and fresh craters show sheets of water ice under Arcadia Planitia, in places only centimetres down.`}</span><b>${pill('obs')}</b></div>
-    <div class="stat"><span>${tt`<b>Thick air to land in.</b> The ground here is ${Math.abs(SITE.elev).toLocaleString()} m below Mars's reference level (measured by NASA's MOLA laser), so there is more air above to slow a lander.`}</span><b>${pill('obs')}</b></div>
-    <div class="stat"><span>${tt('<b>Flat, with few big rocks.</b> The plain tilts less than 1 m in every 100 m. The hills on the skyline are 16 km away.')}</span><b>${pill('obs')}</b></div>
-    <div class="stat"><span>${tt('<b>Sun and warmth.</b> Far enough from the pole for solar panels to work all year. A published study of landing sites for large ships shortlisted places beside this one for the same reasons.')}</span><b>${pill('prop')}</b></div>
-    <div class="learn">${tt('What is real and what is made up? The planet map, the region map, the tilt of the ground and the outline of the hills on the horizon are NASA elevation data. NASA\'s best whole-planet map has one height every 463 m, so the rocks, ripples and small craters you walk among are made for the game, modelled on what orbiters and landers see on plains like this. Every number and its source is in docs/MARS_SCIENCE.md.')}</div>`;
-  function bigMap(start) {
-    const TABS = [['base', tt('The outpost')], ['area', tt('The whole area')], ['region', tt('The region (NASA data)')], ['planet', tt('The planet (NASA data)')], ['why', tt('Why here?')]]; let view = start || 'base';
-    const render = (w) => { clearInterval(ui._tick); const tabs = `<div class="tabs">${TABS.map(([k, v]) => `<button data-v="${k}" class="${k === view ? 'on' : ''}">${v}</button>`).join('')}</div>`, body = w.querySelector('.win-b');
-      if (view === 'why') body.innerHTML = tabs + WHY();
-      else if (view === 'planet') { body.innerHTML = `${tabs}<canvas id="bm" width="1000" height="500" style="width:100%;border-radius:12px;border:1px solid var(--line)"></canvas><div class="learn">${tt`Mars, flattened into a map. The colours are heights measured by the MOLA laser on NASA's Mars Global Surveyor: blue is low, red is high, white is the top of the great volcanoes. The north is low and smooth; the south is high and cratered. Nobody knows for certain why.`} ${pill('obs')}</div>`; drawPlanet(body.querySelector('#bm').getContext('2d'), 1000, 500); }
-      else if (view === 'region') { body.innerHTML = `${tabs}<div class="grid2"><canvas id="bm" width="640" height="640" style="width:100%;border-radius:12px;border:1px solid var(--line)"></canvas><div><div class="stat"><span>${tt('Across')}</span><b>${REGION.km} km</b></div><div class="stat"><span>${tt('Lowest · highest')}</span><b>${REGION.min.toLocaleString()} m · ${REGION.max.toLocaleString()} m</b></div><div class="stat"><span>${tt('Our outpost')}</span><b>${SITE.elev.toLocaleString()} m</b></div><div class="stat"><span>${tt('The map you can walk')}</span><b>${tt('1.6 km: smaller than the blue dot')}</b></div><div class="learn">${tt('Real ground, from the MOLA laser: one height every 463 m. The smooth plain is Arcadia Planitia. The knobs and ridges are the Erebus Montes: old highland hills that the plains lavas flowed around. Their outline is the skyline you see from the base.')} ${pill('obs')}</div></div></div>`; drawRegion(body.querySelector('#bm').getContext('2d'), 640); }
-      else { const places = [...TOUR.map((id) => [id, INFO[id].name]), ['car', tt('My Rover')], ...POI.filter((p) => S.seen[p.id]).map((p) => [p.id, p.name])];
-        body.innerHTML = `${tabs}<div class="grid2"><canvas id="bm" width="720" height="720" style="width:100%;border-radius:12px;border:1px solid var(--line)"></canvas><div><h4 class="h4">${tt('Show me the way to…')}</h4><div class="places">${places.map(([id, n]) => `<button class="mini-b" data-go="${id}">${n}</button>`).join('')}</div><div class="learn">${tt`White shapes are buildings (red = switched off). Blue is the solar field, the yellow dot the fission unit, the dark circle the landing pad. Places you find are added to the map: ${POI.filter((p) => S.seen[p.id]).length} of ${POI.length} so far.`}</div></div></div>`;
-        const c = body.querySelector('#bm').getContext('2d'), paint = () => (view === 'base' ? drawMars(c, 720, 720, 125, 10, 36, true) : drawMars(c, 720, 720, 820, 0, 0, true)); paint(); ui._tick = setInterval(paint, 400);
-        body.querySelectorAll('[data-go]').forEach((b) => (b.onclick = () => { G.pointTo(b.dataset.go); ui.close(); })); }
-      body.querySelectorAll('.tabs button').forEach((b) => (b.onclick = () => { view = b.dataset.v; render(w); })); };
-    return ui.window({ title: tt('Map of Mars'), html: '', wide: true, onMount: render });
-  }
+  // ---------- maps: the corner map and the Map window live in js/mars/map.js ----------
+  const MAP = makeMarsMap({ G, ui, pill, INFO, SHORT, POI, TOUR, state: () => S, crew: () => crew, inRoom: () => inRoom }), bigMap = (start) => MAP.open(start);
   const facts = () => ui.window({ title: tt('Mars facts'), wide: true, html: [[tt('Gravity'), tt`${MARS.GRAVITY} m/s²: 38% of Earth's. You weigh more than twice what you did on the Moon.`, 'obs'], [tt('A day (a sol)'), tt('24 hours 39 minutes 35 seconds'), 'obs'], [tt('A year'), tt('687 Earth days, or 668.6 sols'), 'obs'], [tt('Air'), tt('95% carbon dioxide, at 6.36 mb on average: under 1% of Earth\'s pressure'), 'obs'], [tt('Temperature'), tt('about −59°C on average'), 'obs'], [tt('Sunlight'), tt('586 W/m² above the air: 43% of what Earth gets'), 'obs'], [tt('Sky'), tt('butterscotch by day, blue around the setting Sun: the fine dust sends blue light forward'), 'obs'], [tt('Dust storms'), tt('In June 2018 one covered the whole planet and ended the Opportunity rover\'s mission'), 'obs'], [tt('Radiation'), tt('0.67 mSv a day on the surface, measured by Curiosity'), 'obs'], [tt('Radio time to Earth'), tt('3 to 22 minutes each way'), 'obs'], [tt('Oxygen from the air'), tt('MOXIE made 122 g on the Perseverance rover'), 'demo'], [tt('Fission power'), tt('a 10 kW unit is a NASA design; a small one was tested on Earth in 2018'), 'prop'], [tt('This outpost'), tt('its buildings, crew and stores'), 'game']].map(([a, b, k]) => `<div class="stat"><span>${a}</span><b>${b} ${pill(k)}</b></div>`).join('') + `<div class="learn">${tt('Sources for every number: docs/MARS_SCIENCE.md in the project. A full Mars Science Center comes in a later update.')}</div>` });
 
   // ---------- HUD ----------
@@ -331,7 +269,7 @@ export function installMars(G, deps) {
     const al = G.alerts().sort((x, y) => (x.key ? 0 : 1) - (y.key ? 0 : 1)), ak = al.map((x) => x.text + x.sub).join('|');
     if (ak !== hud.al) { hud.al = ak; const box = $('#alerts'); box.innerHTML = ''; al.slice(0, 5).forEach((x) => { const d = el('div', 'alert ' + (x.kind || ''), `${x.text}<small>${x.sub || ''}</small>`); d.onclick = () => x.go && G.pointTo(x.go); box.appendChild(d); }); }
     ui.banner(S.tau > 2.5 ? tt('DUST STORM · the solar field is making very little power') : null, true);
-    drawMars(ui.mm, 340, 340, 150, P.pos.x, P.pos.z, false);
+    MAP.mini(ui.mm, 340, 340);
   }
   function goal() {
     const g = G.goal; $('#goal-x').classList.toggle('hidden', !g); world.guideForce = !!g; if (!g) { world.setTarget(null); ui.objective(null); return; }
@@ -343,7 +281,7 @@ export function installMars(G, deps) {
   // ---------- one frame ----------
   function frame(dt) {
     G.inside = inRoom; G.inCrater = false; S.suitOn = !inRoom; S.zone = inRoom ? 'in' : 'top';   // indoors the sim counts the lower radiation dose
-    deps.updatePlayer(dt); if (inRoom) T.keepInRoom(P.pos); deps.placeVehicles(dt); deps.updateRego(dt); if (inRoom) { T.keepInRoom(G.regoPos, 1); G.rego.group.position.copy(G.regoPos); } updateCrew(dt); deps.updateCamera(dt);
+    deps.updatePlayer(dt); MAP.tick(); if (inRoom) T.keepInRoom(P.pos); deps.placeVehicles(dt); deps.updateRego(dt); if (inRoom) { T.keepInRoom(G.regoPos, 1); G.rego.group.position.copy(G.regoPos); } updateCrew(dt); deps.updateCamera(dt);
     const run = G.simOn && !ui.busy && !G.paused && !passing; if (run) marsStep(S, (dt / S.m.hourLen) * G.speedMul); else if (!passing) S.flow = marsFlows(S);
     // the rover: it charges on its pad, and warns you before you drive too far to get back
     { const c = G.car, home = Math.hypot(c.x - T.ROVER_PAD.x, c.z - T.ROVER_PAD.z); S.car.charging = S.on.garage && home < 4.6 && Math.abs(c.v) < 0.6 && S.car.charge < 1;
@@ -383,6 +321,6 @@ export function installMars(G, deps) {
     else { ui.bubble(tt('<b>Welcome to Mars!</b> This is Arcadia Planitia: a cold, flat plain with ice under the soil. The sky is butterscotch because fine dust hangs in the thin air. Follow the <b>yellow line</b> on the ground to the <b>Command Habitat</b> and press <b>E</b> at its door. Press <b>H</b> whenever you want my advice, and <b>M</b> for the map.'), 'joy', 20); G.pointTo('cmd'); }
   }
   const key = (k) => { if (k === 'Tab') panel('power'); else if (k === 'm') bigMap(); else if (k === 'h') G.advise(); else if (k === 'n') facts(); else if (k === 'v') deps.toggleView(); else if (k === 'p') deps.togglePause(); };
-  return { start, frame, key, hasSave: () => { try { return !!localStorage.getItem(SAVE); } catch (e) { return false; } }, panel, bigMap, drawMars };
+  return { start, frame, key, hasSave: () => { try { return !!localStorage.getItem(SAVE); } catch (e) { return false; } }, panel, bigMap, map: MAP };
 }
 export const marsHasSave = () => { try { return !!localStorage.getItem(SAVE); } catch (e) { return false; } };
