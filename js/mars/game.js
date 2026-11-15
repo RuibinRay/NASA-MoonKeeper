@@ -236,6 +236,7 @@ export function installMars(G, deps) {
   }
   const toggle = (id) => ({ label: S.on[id] ? tt`Switch the ${INFO[id].name} off` : tt`Switch the ${INFO[id].name} on`, sub: S.on[id] ? tt`Saves ${kw(LOADS[id])}. Everything it does stops.` : tt`Uses ${kw(LOADS[id])}.`, norec: S.on[id], run: async () => { if (S.on[id] && !(await sureOff(id))) return; S.on[id] = !S.on[id]; S.flow = marsFlows(S); G.audio.play(S.on[id] ? 'ok' : 'blip'); ui.toast(S.on[id] ? tt`${INFO[id].name}: on.` : tt`${INFO[id].name}: off.`, S.on[id] ? 'good' : ''); } });
   async function panel(id) {
+    const closeRec = id === 'power' && TRAIN.active() && TRAIN.steps[TRAIN.step] === 'power';   // training: opening it was the step, so REGO points at Close to carry on
     TRAIN.note('panel', id);
     const I = INFO[id], F = (S.flow = marsFlows(S)), sn = F.sun, first = seen(id), perSol = MARS.SOL_H, st = [[tt('What it does'), I.does], [tt('It needs'), I.needs], [tt('It gives'), I.gives]], act = [];
     if (LOADS[id]) st.push([tt('Power'), S.on[id] ? (F.eff < 1 ? tt`${kw(F.use[id])} wanted · only ${Math.round(F.eff * 100)}% arriving` : kw(F.use[id])) : tt('switched off')]);
@@ -260,7 +261,7 @@ export function installMars(G, deps) {
     if ((id === 'airlock' || id === 'cmd') && !inRoom) act.unshift({ label: tt('Go inside the Command Habitat'), sub: tt('Through the airlock. Indoors your suit comes off.'), norec: !!S.seen.room, run: goInside });
     if (SCI[id]) act.push({ label: tt('Try it in the Mars Science Center'), sub: tt('Move the sliders and see the sum behind this building.'), norec: true, run: () => openScience(SCI[id]) });
     MIS.panel(id, st, act); st.push([tt('What kind of fact is this?'), pill(I.cls)]);
-    await ui.panel(I.name, { stats: st, actions: act, note: I.note, img: `mars/mr_${id}` });
+    await ui.panel(I.name, { stats: st, actions: act, note: I.note, img: `mars/mr_${id}`, closeRec });
     if (first && id !== 'cmd' && !MIS.on()) { const left = TOUR.filter((b) => !S.seen[b]).length; ui.toast(left === 1 ? tt`${INFO[id].name} visited. 1 building still to see.` : left ? tt`${INFO[id].name} visited. ${left} buildings still to see.` : tt('You have visited all 14 buildings!'), 'good'); }
   }
 

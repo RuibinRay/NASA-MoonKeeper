@@ -28,6 +28,7 @@ export const IC = {
   arm: P('<path d="M5 20h8M9 20V9l7-4 2 4"/><circle cx="9" cy="9" r="1.5"/><path d="M17 9l2 3M18 9l-2 3"/>'),
   door: P('<rect x="6" y="3" width="12" height="18" rx="1"/><circle cx="15" cy="12" r="1"/>'),
   lock: P('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
+  unlock: P('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.8"/>'),
   heart: P('<path d="M12 20s-8-5-8-11a4 4 0 0 1 8-2 4 4 0 0 1 8 2c0 6-8 11-8 11z"/>'),
   car: P('<path d="M3 15v-4l3-5h9l4 5h2v4z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>'),
   ship: P('<path d="M4 14l8-9 8 9-3 3H7z"/><path d="M9 17l-2 4M15 17l2 4"/>'),
