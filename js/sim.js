@@ -36,6 +36,7 @@ export function createSim(modeKey = 'pilot', seed = (Date.now() >>> 0)) {
   };
   for (const r of ROOMS) S.rooms[r.id] = { p: K.AIR_KPA, hole: 0, door: 1, built: 1, frozen: false, cold: 0 };
   computeFlows(S);
+  S.lv.heat = S.flow.heatNeed; computeFlows(S);   // the Topside Heaters start at the level the machines need at this hour, not one above it
   return S;
 }
 

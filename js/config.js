@@ -50,7 +50,7 @@ export const SYS = {
               blurb: tt('Radio dish to Mission Control. Level 1: early storm warnings. Level 2: longer warnings.') },
 };
 
-// hourLen = real seconds per game hour. gap = game days between surprise events. holes = how many rooms the surprise events may hole in one mission.
+// hourLen = real seconds per game hour. gap = game days between surprise events (events.js makes each wait a quarter longer). holes = how many rooms the surprise events may hole in one mission.
 export const MODES = {
   cadet:     { key: 'cadet', name: tt('Cadet'), ages: tt('Ages 7–10'), tag: tt('4 days · a gentle mission'), days: 4, sunsetDay: 1.7, hourLen: 9, drain: 0.85, reactor: 6,
                ok: 4, broken: 4, batteryCap: 420, o2: 3.4, water: 28, cans: 16, meals: 4, feed: 5, mat: 16, nutri: 2.0, ice: 3, gap: [0.42, 0.62], holes: 1, stormMul: 0.65, mgEase: 1.35, wreck: ['tomato', 'bathroom'] },

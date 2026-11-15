@@ -228,7 +228,7 @@ const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const jobShots = (sp) => {
   const zone = P.zone, deep = zone === 'deep', room = deep ? world.roomAt(P.pos.x, P.pos.z) : null, inD = deep && world.indoors(P.pos.x, P.pos.z), cols = deep ? world.colliders[zone] : world.colliders[zone].concat([G.car, G.ship, G.dig].map((v) => ({ x: v.x, z: v.z, r: 3.4 })));   // a parked rover or hopper blocks the view too
   const d0 = Math.hypot(sp.x - P.pos.x, sp.z - P.pos.z), f = d0 > 0.01 ? Math.min(0.45, 1.2 / d0) : 0, cx = P.pos.x + (sp.x - P.pos.x) * f, cz = P.pos.z + (sp.z - P.pos.z) * f;   // look between the worker and the work
-  const free = (x, z, pad) => (!deep || (world.walkable(x, z) && world.roomAt(x, z) === room && world.indoors(x, z) === inD)) && !cols.some((c) => Math.hypot(c.x - x, c.z - z) < c.r + pad);
+  const free = (x, z, pad) => (!deep || (world.walkable(x, z) && world.roomAt(x, z) === room && world.indoors(x, z) === inD)) && !cols.some((c) => c.r > 0 && Math.hypot(c.x - x, c.z - z) < c.r + pad);
   const back = P.face + Math.PI, out = [];
   for (const d of deep ? [5.2, 4.1, 3.2] : [7, 5.5, 4.2]) for (const a of [0.85, -0.85, 1.45, -1.45, 0.35, -0.35, 2.2, -2.2]) {
     const yaw = back + a, x = cx + Math.sin(yaw) * d, z = cz + Math.cos(yaw) * d;
@@ -267,7 +267,10 @@ addEventListener('keydown', (e) => {
   if (e.key === 'Tab') e.preventDefault(); if (G.state === 'title') return; if (ui.key(e)) return;
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; G.keys[k] = true; if (k === ' ') e.preventDefault();
   if (G.state !== 'play' && G.state !== 'tutorial') return; if (G.jobTick || G.riding) return;
-  if (k === 'e' || k === 'Enter') G.doAction('e'); else if (k === 'q') G.doAction('q');
+  if (e.repeat) return;   // a held key acts once. Without this, holding E picked a thing up and put it down again many times a second, and rode the elevator down and straight back up
+  // E also turns the pages of a dialogue. One press too many, just as the last line closes, must not act in the world (it used to put down whatever you were carrying)
+  const afterTalk = performance.now() - (ui._dlgAt || -1e9) < 350;
+  if (k === 'e' || k === 'Enter') { if (!afterTalk) G.doAction('e'); } else if (k === 'q') G.doAction('q');
   else if (G.planet === 'mars') G.mars.key(k);
   else if (k === 'Tab') { if (G.state === 'play') ui.powerBoard(); } else if (k === 'm') ui.bigMap(); else if (k === 'h') { if (G.state === 'play') G.advise(); }
   else if (k === 'n') ui.guide(); else if (k === 'l') { if (G.state === 'play') G.loopScreen(); } else if (k === 't') { if (G.state === 'play' && G.S) ui.dayNight(); } else if (k === 'v') toggleView(); else if (k === 'p') togglePause();
@@ -280,8 +283,14 @@ canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clie
 addEventListener('pointerup', () => (drag = null));
 addEventListener('pointermove', (e) => { if (ui.busy || G.jobTick) return; let dx = 0, dy = 0; if (document.pointerLockElement === canvas) { dx = e.movementX; dy = e.movementY; } else if (drag && e.pointerId === drag.id) { dx = (e.clientX - drag.x) * 1.6; dy = (e.clientY - drag.y) * 1.6; drag.x = e.clientX; drag.y = e.clientY; } if (dx || dy) G.camT = performance.now(); cam.yaw -= dx * 0.0026; cam.pitch = clamp(cam.pitch + dy * 0.0026, cam.fp ? -1.35 : -0.95, cam.fp ? 1.2 : 1.25); });
 canvas.addEventListener('wheel', (e) => { cam.dist = clamp(cam.dist + Math.sign(e.deltaY) * 0.8, 3.5, 22); }, { passive: true });
-function toggleView() { cam.fp = !cam.fp; cam.pitch = clamp(cam.pitch, -0.9, 1.1); ui.toast(cam.fp ? tt('First-person view. Look up to find Earth!') : tt('Third-person view.')); }
+// Earth can only be seen from the surface: down in the cave and in the station the first-person line says what is really there.
+function toggleView() { cam.fp = !cam.fp; cam.pitch = clamp(cam.pitch, -0.9, 1.1); ui.toast(!cam.fp ? tt('Third-person view.') : P.zone === 'top' ? tt('First-person view. Look up to find Earth!') : G.inside ? tt('First-person view. Now you see the station through your own eyes.') : tt('First-person view. Look up at the rock roof of the cave.')); }
 function togglePause() { if (G.state !== 'play') return; G.paused = !G.paused; ui.banner(G.paused ? tt('PAUSED — press P to continue') : null, true); }
+// Looking away should not cost game time. When the tab is hidden or the window loses focus during play, pause just as the P key does.
+// Not while a card, a panel, a dialogue or a job is open (those stop the clock already, or are over in seconds), and never start again
+// without the player. Moon only for now: Mars has its own clock and has not been tried with this.
+function autoPause() { if (G.state === 'play' && G.planet !== 'mars' && !G.paused && !ui.busy && !G.inJob) togglePause(); }
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); }); addEventListener('blur', autoPause);
 $('#b-power').onclick = () => G.state === 'play' && !ui.busy && ui.powerBoard(); $('#b-map').onclick = () => !ui.busy && G.S && ui.bigMap(); $('#b-ask').onclick = () => G.state === 'play' && !ui.busy && G.advise(); $('#b-data').onclick = () => !ui.busy && ui.guide(); $('#clock').onclick = () => G.S && G.state === 'play' && !ui.busy && ui.dayNight();
 $('#b-view').onclick = toggleView; $('#b-pause').onclick = togglePause;
 G.setSpeed = (v) => { G.speedMul = v; $('#speed-l').textContent = '×' + v; };
@@ -402,6 +411,7 @@ function homeNeed(S, k, v, extra = 0) {
   return { home, need: (k === 'car' ? home / 2600 : home / 4200 + home / 25 / 420 + 0.02) + K.FROST_DRAIN * frost * 2 };
 }
 const pct = (x) => Math.max(0, Math.round(x * 100)) + '%';
+G.homeNeed = homeNeed;   // the HUD shows it beside the rover's and the hopper's charge
 function rangeCheck(S, car, ship) {
   const last = G._rng || (G._rng = { car: S.car.charge, ship: S.ship.charge, in: null });
   for (const [k, v] of [['car', car], ['ship', ship]]) {
