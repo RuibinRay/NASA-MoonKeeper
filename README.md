@@ -49,8 +49,9 @@ js/actions.js         what E does everywhere, room panels, alerts, REGO's advice
 js/events.js          surprise events (real-dated storms, moonquakes, impacts, air leaks…)
 js/story.js           comic pages, training, meteor-shower scene, endings
 js/sim.js             the survival simulation (pure logic; `node tools/sim_test.mjs` checks balance)
-js/life.js            crops, plant health, plant food, Water Plant, experiment, research (pure logic; `node tools/life_test.mjs` runs 70 checks)
+js/life.js            crops, plant health, plant food, Water Plant, experiment, research (pure logic; `node tools/life_test.mjs` runs 71 checks)
 js/lifeui.js          farm, Water Plant, life-support loop, research and experiment screens
+docs/GAME_OVERVIEW.md  what the game is, what it teaches, how to play, the data behind it, test results, what to improve
 docs/ROADMAP.md       what is built, what comes next, and which real data each plan uses
 js/world.js           3D world (surface base, other stations, the cave, the red-walled station, vehicles)
 js/actors.js          astronaut, REGO, BOLT robots

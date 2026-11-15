@@ -122,7 +122,7 @@ Every claim below carries the **status of its evidence**, because "a lab has don
 | Splitting water really costs about 55 kWh per kg of hydrogen: roughly 6 kWh per litre of water, or 7 kWh per kg of oxygen. (The game's Oxygen Maker is sized for play, not to this number.) | **LAB** | [Technical targets for proton exchange membrane electrolysis](https://www.energy.gov/eere/fuelcells/technical-targets-proton-exchange-membrane-electrolysis) | US Department of Energy |
 | Space Station air holds about 3,900 ppm of CO₂ on average — more than plants need, which is why extra people help the crops in the game. | **FLOWN** | [Carbon dioxide technical brief (OCHMO-TB-004)](https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-004-carbon-dioxide.pdf) | NASA OCHMO |
 
-**How the game uses these numbers** (calculations live in `js/life.js` and are checked by `node tools/life_test.mjs`, 70 checks):
+**How the game uses these numbers** (calculations live in `js/life.js` and are checked by `node tools/life_test.mjs`, 71 checks):
 
 | In the game | Real number behind it | Game simplification |
 |---|---|---|
