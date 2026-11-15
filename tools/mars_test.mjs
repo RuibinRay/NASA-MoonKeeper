@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE, GLOBAL, REGION, SKYLINE } from '../js/mars/mola.js';
-import { MARS, LOADS, PLANT, createMars, marsSun, marsFlows, marsStep, skyFactor, directFactor, airTemp, lightMinutes, sitePressure, marsSerialize, marsDeserialize } from '../js/mars/sim.js';
+import { MARS, LOADS, PLANT, createMars, marsSun, marsFlows, marsStep, skyFactor, directFactor, airTemp, lightMinutes, sitePressure, marsSerialize, marsDeserialize, earthElongation } from '../js/mars/sim.js';
 import * as T from '../js/mars/terrain.js';
 import { SYSTEMS, SYS_OF, regionHeight, planetHeight, fromLatLon, skylinePeak, zoomAt, clampView, compass, ramp } from '../js/mars/map.js';
 
@@ -132,6 +132,25 @@ ok(T.BUILDINGS.every((b) => SYSTEMS[SYS_OF[b.id]]), 'every building has a colour
   let v = v0; for (let i = 0; i < 40; i++) v = zoomAt(v, 0.8, 0.5, 0.5); ok(v.span === 40, 'you cannot zoom in closer than 40 m'); for (let i = 0; i < 40; i++) v = zoomAt(v, 1.25, 0.1, 0.9); ok(v.span === 830 && Math.abs(v.cx) <= 415 && Math.abs(v.cz) <= 415, 'or out past the whole map');
   const far = clampView({ cx: 5000, cz: -5000, span: 100 }); ok(far.cx <= 780 && far.cz >= -780, 'dragging cannot lose the map off the edge'); }
 { const [r, g, b] = ramp(-8000), [r2, g2, b2] = ramp(21000); ok(b > r && r2 === 255 && g2 === 255 && b2 === 255, 'on the planet map the lowest ground is blue and the highest white'); }
+
+// ---------- 8. scenery: the terraced crater, the new places, the far craters, Earth in the sky ----------
+{ const c = T.TERRACE_CRATER, at = (q) => T.heightAt(c.x + q * c.r, c.z);
+  ok(at(0.2) < at(0.62) - 2.5, 'the terraced crater has a deep middle below its bench', at(0.62) - at(0.2));
+  ok(Math.abs(at(0.56) - at(0.68)) < 0.9, 'a bench that is nearly level', at(0.68) - at(0.56));
+  ok(at(1) > at(0.62) + 2.5, 'and a wall above the bench up to the rim', at(1) - at(0.62));
+  ok(Math.hypot(c.x, c.z) + c.r < T.PLAY_R, 'the terraced crater is inside the map'); }
+for (const [name, x, z] of [['heat shield', T.SHIELD.x + 6, T.SHIELD.z - 4], ['seismometer', T.SEIS.x + 2, T.SEIS.z + 1], ['terraced crater rim', T.TERRACE_CRATER.x + T.TERRACE_CRATER.r * 0.6, T.TERRACE_CRATER.z]])
+  ok(clear(x, z, 0.5) && Math.hypot(x, z) < T.PLAY_R - 20 && T.slopeAt(x, z) < 0.45, `you can stand at the ${name}`, T.slopeAt(x, z));
+ok(!clear(T.SEIS.x, T.SEIS.z, 0) && !clear(T.SHIELD.x, T.SHIELD.z, 0), 'you cannot walk through the seismometer or the heat shield');
+ok(Math.hypot(T.SEIS.x - T.B.cmd.x, T.SEIS.z - T.B.cmd.z) > 200, 'the seismometer stands well away from the base, where footsteps would shake it');
+ok(T.rockField().every((r) => Math.hypot(r.x - T.SEIS.x, r.z - T.SEIS.z) >= 7), 'no rock lies on the seismometer');
+ok(T.FAR_CRATERS.length >= 10 && T.FAR_CRATERS.every((c) => Math.hypot(c.x, c.z) - c.r * 2.4 >= 860), 'the far craters all lie beyond the map you can walk', T.FAR_CRATERS.length);
+{ const ic = T.ICE_CRATER; ok(T.streak(ic.x + T.WIND[0] * ic.r * 2, ic.z + T.WIND[1] * ic.r * 2) > 0.5, 'pale dust lies downwind of the young crater'); ok(T.streak(ic.x - T.WIND[0] * ic.r * 2, ic.z - T.WIND[1] * ic.r * 2) === 0, 'and not upwind of it'); ok(T.streak(ic.x + T.WIND[0] * ic.r * 7, ic.z + T.WIND[1] * ic.r * 7) === 0, 'and the streak ends'); }
+{ let lo = 1e9, hi = -1e9, far = 0, farT = 0, flips = 0, prev = 0; for (let d = 0; d < 780; d += 1) { const e = earthElongation(S0, d * 24), lm = lightMinutes(S0, d * 24); lo = Math.min(lo, e); hi = Math.max(hi, e); if (lm > far) { far = lm; farT = d; } if (prev && Math.sign(e) !== Math.sign(prev)) flips++; prev = e; }
+  ok(hi < 41.2 && hi > 40.5 && lo > -41.2 && lo < -40.5, 'Earth never strays more than 41° from the Sun in Mars\'s sky', `${lo.toFixed(1)}…${hi.toFixed(1)}`);
+  ok(Math.abs(earthElongation(S0, farT * 24)) < 3, 'when Earth is furthest away it stands beside the Sun (the radio blackout)', earthElongation(S0, farT * 24));
+  ok(flips === 2, 'it changes from morning star to evening star and back once in 780 days', flips); }
+{ const g = fs.readFileSync(path.join(ROOT, 'js/mars/game.js'), 'utf8'); ok(['terrace', 'shield', 'seis'].every((id) => g.includes(`{ id: '${id}', name: tt(`)), 'the three new places can be found and have their texts'); }
 
 console.log(`${pass} checks passed${fail ? ', ' + fail + ' FAILED' : ''}`);
 process.exitCode = fail ? 1 : 0;
