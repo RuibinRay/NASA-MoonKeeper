@@ -4,6 +4,8 @@
 import * as THREE from '../../lib/three.module.min.js';
 import { tt } from '../i18n.js';
 import { IC } from '../icons.js';
+import { Astronaut } from '../actors.js';
+import { WHO } from '../ui.js';
 import { MARS, LOADS, PLANT, createMars, marsFlows, marsStep, marsClock, marsSerialize, marsDeserialize } from './sim.js';
 import * as T from './terrain.js';
 import { SITE, GLOBAL, REGION } from './mola.js';
@@ -50,6 +52,15 @@ const INFO = {
 };
 const SHORT = { cmd: tt('Command'), living: tt('Living'), lifesupport: tt('Life Support'), water: tt('Water'), power: tt('Power'), greenhouse: tt('Greenhouse'), lab: tt('Lab'), medical: tt('Medical'), garage: tt('Garage'), airlock: tt('Airlock'), comms: tt('Comms'), storage: tt('Storage'), isru: tt('ISRU'), thermal: tt('Thermal') }, ABOVE = { lifesupport: 1, medical: 1, lab: 1, thermal: 1 };
 const TOUR = ['cmd', 'power', 'lifesupport', 'isru', 'water', 'greenhouse', 'thermal', 'living', 'medical', 'lab', 'garage', 'storage', 'comms', 'airlock'];
+// ---- the crew: three people who live and work here with you ----
+const CREW = [
+  { id: 'mateo', name: tt('Mateo Rivas · habitat engineer'), short: tt('Mateo'), color: 0x1fb5a8, home: 'room' },
+  { id: 'noor', name: tt('Dr. Noor Haddad · life support and medicine'), short: tt('Noor'), color: 0x9a5cff, home: 'room' },
+  { id: 'lena', name: tt('Dr. Lena Park · geologist'), short: tt('Lena'), color: 0x3fbf5a, home: 'out' },
+];
+for (const c of CREW) WHO[c.id] = { name: c.name, img: 'mars/c_' + c.id };   // their faces in the talk box: assets/img/mars/c_<id>.jpg
+const LENA_WALK = [[60.5, 44.5], [71.5, 44], [70.5, 35.5], [61, 36]];        // round the ice well, where she takes her samples
+const turn = (a, b, k) => { const d = Math.atan2(Math.sin(b - a), Math.cos(b - a)); return a + d * Math.min(1, k); };
 // ---- places to find ----
 const POI = [
   { id: 'solar', name: tt('Solar Field'), x: 10, z: 104, r: 34, cls: 'prop', text: tt('<b>The Solar Field.</b> 35 tables of panels that turn to follow the Sun from east to west. Watch them go brown as dust settles.') },
@@ -68,6 +79,7 @@ const PLACES = [[SITE.lat, SITE.lon, tt('Our outpost'), 1], [18.65, 226.2, tt('O
 export function installMars(G, deps) {
   const P = G.player, cam = G.cam, world = G.world, ui = G.ui; let S = null, hudT = 0, saveT = 0, nagT = 0, passing = false, relief = null; const labels = {}, v3 = new THREE.Vector3();
   const near = (x, z, r) => Math.hypot(P.pos.x - x, P.pos.z - z) < r;
+  let inRoom = false, camOut = 9; const crew = [];
   const where = (id) => (id === 'car' ? { id, x: G.car.x, z: G.car.z, name: tt('My Rover') } : T.B[id] ? { id, x: T.B[id].door[0], z: T.B[id].door[1], name: INFO[id].name } : POI.find((p) => p.id === id));
 
   // ---------- time ----------
@@ -94,6 +106,7 @@ export function installMars(G, deps) {
     const al = G.alerts(), hot = al.find((a) => a.key) || al[0]; nagT = 0;
     if (hot) { const why = { power: tt('<b>The power is out.</b> Go to the Power Station: brush the dust off the panels, or switch off something that is not keeping the crew alive.'), o2: tt('<b>We are using oxygen faster than we make it.</b> Check the ISRU Facility is on and has power.'), water: tt('<b>The water is going down.</b> Check the Water Plant and the Life Support Module: one melts new ice, the other cleans used water.'), co2: tt('<b>The air indoors is going stale.</b> The Life Support Module scrubs out carbon dioxide. Switch it back on.'), cold: tt('<b>The rooms are cooling.</b> The Thermal Control Facility needs to be on, and it needs power.') }[hot.key];
       ui.bubble(why || `<b>${hot.text}.</b> ${hot.sub || ''}`, 'worried', 12); G.pointTo(hot.go); return; }
+    if (S.seen.cmd && !S.seen.room && !inRoom) { ui.bubble(tt('Your crew is indoors. Walk to the <b>Airlock</b> and press <b>Q</b> to go inside the <b>Command Habitat</b> and meet them.'), 'happy', 12); G.pointTo('airlock'); return; }
     const b = TOUR.find((id) => !S.seen[id]); if (b) { ui.bubble(tt`Everything is running. Let us look at the <b>${INFO[b].name}</b>: ${INFO[b].does} Follow the yellow line on the ground and press <b>E</b> at its door.`, 'happy', 12); G.pointTo(b); return; }
     const p = POI.find((q) => !S.seen[q.id]); if (p) { ui.bubble(tt`You know the whole base now. Take the rover and find the <b>${p.name}</b>. It is ${Math.round(Math.hypot(p.x - P.pos.x, p.z - P.pos.z))} m away. Watch the rover's battery.`, 'happy', 12); G.pointTo(p.id); return; }
     ui.bubble(tt('You have seen every building and every place on this map. Try the dust control at the Power Station to see what a storm does to the base. Survival, the story and flights between the Moon and Mars come in the next updates.'), 'joy', 14);
@@ -104,12 +117,90 @@ export function installMars(G, deps) {
   const enterCar = () => { G.xfer = { kind: 'in', u: 0, from: P.pos.clone() }; P.in = 'car'; P.vel.set(0, 0, 0); G.audio.play('ok'); G.camT = 0; if (!G._tipMcar) { G._tipMcar = 1; ui.toast(tt('Rover: W S to drive, A D to steer, E to get out. Park on the round pad by the garage to recharge.')); } };
   const exitCar = () => { const o = G.car; G.xfer = { kind: 'out', u: 0, from: P.pos.clone().set(o.x, world.heightAt(o.x, o.z) + 1.1, o.z) }; P.in = null; o.v = 0; P.pos.set(o.x + Math.cos(o.yaw) * 3.2, 0, o.z - Math.sin(o.yaw) * 3.2); P.pos.y = world.heightAt(P.pos.x, P.pos.z); G.regoPos.set(P.pos.x + 1, P.pos.y, P.pos.z + 1); G.audio.play('blip'); };
 
+  // ---------- the crew ----------
+  function makeCrew() {
+    if (crew.length) return;
+    for (const c of CREW) { const a = new Astronaut(c.color), spot = T.ROOM_SPOTS[c.id], n = { ...c, a, inside: c.home === 'room', x: spot[0], z: spot[1], yaw: 0, leg: 0, wait: 3, sp: 0, col: { x: 0, z: 0, r: 0 }, colIn: { x: 0, z: 0, r: 0 } };
+      if (!n.inside) { n.x = LENA_WALK[0][0]; n.z = LENA_WALK[0][1]; } a.group.visible = false; world.scene.add(a.group); world.mars.colliders.push(n.col); world.mars.roomColliders.push(n.colIn); crew.push(n); }
+  }
+  function updateCrew(dt) {
+    const storm = S.tau > 2.5, dark = !S.flow.sun.up;
+    for (const n of crew) {
+      const d = Math.hypot(P.pos.x - n.x, P.pos.z - n.z), here = n.inside === inRoom, close = here && d < 4.2 && !P.in;
+      // Lena works outside by day and comes in for storms and for the night. She changes place while you are not near.
+      if (n.home === 'out') { const want = storm || dark; if (want !== n.inside && (!here || d > 45)) { n.inside = want; const s = want ? T.ROOM_SPOTS.lena : LENA_WALK[n.leg % LENA_WALK.length]; n.x = s[0]; n.z = s[1]; n.wait = 3; } }
+      let pose = 'walk', opt = null; n.sp = 0;
+      if (close) { n.yaw = turn(n.yaw, Math.atan2(P.pos.x - n.x, P.pos.z - n.z), dt * 6); if (d < 3 && !ui.busy) pose = 'wave'; }
+      else if (n.inside) { const out = n.id === 'mateo' ? 1.6 : 0, fx = T.ROOM.x + (n.x - T.ROOM.x) * out, fz = T.ROOM.z + (n.z - T.ROOM.z) * out; n.yaw = turn(n.yaw, Math.atan2(fx - n.x, fz - n.z), dt * 3); if (n.id === 'mateo') { pose = 'work'; opt = { aim: -0.2 }; } }   // Mateo at his console, the others turned to the table
+      else if (n.wait > 0) { n.wait -= dt; pose = 'work'; opt = { tool: 'pick', aim: -0.9 }; }                                                                                         // taking a sample
+      else { const [tx, tz] = LENA_WALK[n.leg % LENA_WALK.length], dx = tx - n.x, dz = tz - n.z, l = Math.hypot(dx, dz); if (l < 0.3) { n.leg++; n.wait = 5 + (n.leg % 3) * 2; } else { n.sp = 1.9; n.x += (dx / l) * n.sp * dt; n.z += (dz / l) * n.sp * dt; n.yaw = turn(n.yaw, Math.atan2(dx, dz), dt * 5); } }
+      n.col.x = n.colIn.x = n.x; n.col.z = n.colIn.z = n.z; n.col.r = n.inside ? 0 : 0.5; n.colIn.r = n.inside ? 0.5 : 0;
+      const g = n.a.group; g.visible = here; if (!here) continue;
+      g.position.set(n.x, n.inside ? T.ROOM.y : T.heightAt(n.x, n.z), n.z); g.rotation.y = n.yaw; n.a.setSuit(!n.inside); n.a.update(dt, n.sp, false, pose, opt);
+    }
+  }
+  // What each of them says is worked out from the outpost's numbers at that moment.
+  async function talk(n) {
+    const F = (S.flow = marsFlows(S)), perSol = MARS.SOL_H, pct = Math.round((S.battery / S.batteryCap) * 100), says = (text) => ui.say([{ who: n.id, text }]), bye = (label) => ({ label, norec: true, run: () => {} }); G.audio.play('radio');
+    if (n.id === 'mateo') {
+      await says(F.eff < 1 ? tt`Commander, the batteries are flat. We make ${kw(F.supply)} and the base wants ${kw(F.demand)}, so every machine is running slow. Something has to go off.`
+        : S.tau > 2 ? tt`This dust is eating our power. The solar field gives ${kw(F.solar)}; under a clear sky it would give ${kw(F.solarClear)} right now. The fission unit's ${kw(F.reactor)} is carrying us. The battery is at ${pct}%.`
+        : S.panelDust > 0.15 ? tt`Dust has taken ${Math.round(S.panelDust * 100)}% of our solar power. An hour with two brushes and the panels are as good as new.`
+        : tt`Power is healthy, Commander: ${kw(F.supply)} made, ${kw(F.demand)} used, battery at ${pct}%. Dust on the panels: ${Math.round(S.panelDust * 100)}%.`);
+      const spare = Object.keys(LOADS).filter((k) => S.on[k] && !['cmd', 'lifesupport', 'thermal', 'isru', 'water', 'comms', 'living', 'medical'].includes(k)).sort((a, b) => LOADS[b] - LOADS[a]).slice(0, 3);
+      return ui.panel(n.name, { stats: [[tt('Power made'), kw(F.supply)], [tt('Power used'), kw(F.demand)], [tt('Battery'), F.net < 0 ? tt`${pct}% · ${hrs(F.battHours)} left` : `${pct}%`], [tt('Dust on the panels'), tt`${Math.round(S.panelDust * 100)}% of their power lost`]], actions: [
+        { label: tt('Let us brush the solar panels together'), sub: tt('Two people: one hour outside instead of two.'), disabled: S.panelDust < 0.04, norec: S.panelDust < 0.1, run: async () => { await pass(1, tt('Brushing the solar panels with Mateo…')); S.panelDust = 0.02; S.flow = marsFlows(S); await says(tt`Clean glass. The field is making ${kw(S.flow.solar)} now.`); } },
+        { label: tt('What can we switch off to save power?'), norec: F.net >= 0, run: () => says(spare.length ? tt`Never life support, the heat pump or the oxygen plant. Start with these: ${spare.map((k) => `${INFO[k].name} (${kw(LOADS[k])})`).join(', ')}. Each one has its switch at its door.` : tt('Everything we can spare is already off. What is left keeps us alive.')) },
+        { label: tt('Point me to the Power Station'), norec: true, run: () => { G.pointTo('power'); ui.toast(tt('The guide beam points to the Power Station.')); } }, bye(tt('Carry on, Mateo'))],
+        note: tt('Mateo keeps the power, the heat and the walls working. Engineers on a real Mars crew would have to fix everything themselves: the nearest spare part is months away.') });
+    }
+    if (n.id === 'noor') {
+      const o2h = F.o2Net < 0 ? S.o2 / -F.o2Net : Infinity, stop = S.o2 / Math.max(F.o2Use, 1e-6);
+      await says(S.co2 > 1.5 ? tt`The air in here is going stale: ${S.co2.toFixed(1)}% carbon dioxide. The scrubbers in the Life Support Module must come back on.`
+        : F.o2Net < 0 ? tt`Commander, we are breathing oxygen faster than we make it. At this rate the tanks last ${hrs(o2h)}.`
+        : tt`The air is good. There are ${S.o2.toFixed(1)} kg of oxygen in the tanks, going up by ${(F.o2Net * perSol).toFixed(1)} kg a sol. The crew is at ${Math.round(S.health)}% health.`);
+      return ui.panel(n.name, { stats: [[tt('Oxygen in the tanks'), `${S.o2.toFixed(1)} / ${S.o2Cap} kg`], [tt('Carbon dioxide indoors'), `${S.co2.toFixed(2)}%`], [tt('Water'), tt`${S.water.toFixed(0)} L · ${F.wNet >= 0 ? '+' : ''}${(F.wNet * perSol).toFixed(1)} L a sol`], [tt('Crew health'), `${Math.round(S.health)}%`], [tt('Your radiation dose so far'), `${S.dose.toFixed(2)} mSv`]], actions: [
+        { label: tt('How long would the oxygen last if the plant stopped?'), run: () => says(tt`${hrs(stop)} for the ${S.crew} of us. Each person breathes ${MARS.O2_PP} kg a day, and there are ${S.o2.toFixed(1)} kg in the tanks. That is the number I watch.`) },
+        { label: tt('Is it safer in here than outside?'), run: () => says(tt`Yes. Outside, the Curiosity rover measured ${MARS.RAD_OUT} millisieverts a day. In here, under a roof with soil on it, the game counts about ${MARS.RAD_IN}. If the Sun throws a storm of particles at us, this is where we all come.`) },
+        { label: tt('Point me to the Life Support Module'), norec: true, run: () => { G.pointTo('lifesupport'); ui.toast(tt('The guide beam points to the Life Support Module.')); } }, bye(tt('Thank you, Noor'))],
+        note: tt('Noor is the crew\'s doctor and looks after the air and the water. On Mars a radio question takes up to 22 minutes to reach Earth, so the crew must be able to treat itself.') });
+    }
+    const far = Math.round(Math.hypot(T.ICE_CRATER.x - P.pos.x, T.ICE_CRATER.z - P.pos.z));
+    await says(n.inside ? (S.tau > 2.5 ? tt`No fieldwork in this. With the dust at ${S.tau.toFixed(1)} I could not see my own boots. I am sorting samples until it clears.` : tt('Too dark to work outside. I am labelling today\'s samples.'))
+      : tt`Look at the ground, Commander: the cracks make shapes like paving stones. Ice just under the soil shrinks and swells with the seasons and cracks it. It is ${Math.round(F.tempC)}°C out here, by the way.`);
+    return ui.panel(n.name, { stats: [[tt('Air temperature'), `${Math.round(F.tempC)}°C`], [tt('Air pressure'), tt`${(F.pressure / 100).toFixed(1)} mb (Earth: 1013)`], [tt('Dust in the sky'), S.tau.toFixed(2)], [tt('Places found'), `${POI.filter((p) => S.seen[p.id]).length} / ${POI.length}`]], actions: [
+      { label: tt('Where is the young ice crater?'), norec: !!S.seen.ice, run: async () => { G.pointTo('ice'); await says(tt`About ${far} m from here. A meteorite dug down to the ice for us. Take the rover, and watch its battery.`); } },
+      { label: tt('What is the drill doing?'), run: () => says(tt`Its hot tip melts the buried ice and a pump lifts the water: about ${PLANT.WATER_L_SOL} litres a sol while the Water Plant has power. A heated drill like this is a NASA idea. Nobody has tried it on Mars yet.`) },
+      { label: tt('Why did we land here?'), norec: true, run: () => bigMap('why') }, bye(tt('Good luck, Lena'))],
+      note: tt('Lena reads the rocks. Ground cracked into polygons is one of the signs that told scientists there was ice under these plains: the Phoenix lander set down on ground like it in 2008 and dug up ice.') });
+  }
+
+  // ---------- going indoors and out again ----------
+  async function goInside() {
+    if (inRoom || P.in) return; await ui.fade(true); G.audio.play('hiss'); camOut = cam.dist; inRoom = true; world.mars.setInside(true); if (G.goal && (G.goal.id === 'cmd' || G.goal.id === 'airlock')) G.goal = null;   // you have arrived
+    P.pos.set(T.ROOM.door[0], T.ROOM.y, T.ROOM.door[1] - 1.2); P.vel.set(0, 0, 0); P.face = Math.PI; cam.yaw = 0.5; cam.pitch = 0.24; cam.dist = 6.5; G.regoPos.set(P.pos.x + 1.3, T.ROOM.y, P.pos.z - 0.4); G.astro.setSuit(false);
+    $('#suit').className = 'glass'; $('#suit').textContent = tt('INDOORS'); for (const id in labels) labels[id].el.classList.add('hidden'); hudT = 1; await ui.fade(false);
+    seen('room', tt('<b>Inside the Command Habitat.</b> The outpost makes the air in here, so your suit is off. Talk to your crew with <b>E</b>, look at the table in the middle, and leave by the hatch with the green lamp.'), 'joy');
+  }
+  async function goOutside() {
+    if (!inRoom) return; await ui.fade(true); G.audio.play('hiss'); inRoom = false; world.mars.setInside(false);
+    P.pos.set(T.ROOM.out[0], 0, T.ROOM.out[1]); P.pos.y = world.heightAt(P.pos.x, P.pos.z); P.vel.set(0, 0, 0); P.face = 0; cam.yaw = 2.3; cam.pitch = 0.16; cam.dist = camOut; G.regoPos.set(P.pos.x + 1.6, P.pos.y, P.pos.z + 1); G.astro.setSuit(true);
+    $('#suit').className = 'glass on'; $('#suit').textContent = tt('SUIT ON'); hudT = 1; await ui.fade(false);
+  }
+
   // ---------- what E and Q do here ----------
   G.context = () => {
     const c = {}; if (P.in === 'car') { c.e = { label: tt('Get out of the rover'), run: exitCar }; return c; }
+    if (inRoom) { const n = crew.find((q) => q.inside && near(q.x, q.z, 2.5)), k = T.ROOM_CONSOLES.find((q) => near(q.at[0], q.at[1], 2.3));
+      if (n) c.e = { label: tt`Talk to ${n.short}`, run: () => talk(n) };
+      else if (near(T.ROOM.door[0], T.ROOM.door[1], 2.2)) c.e = { label: tt('Go outside through the airlock'), run: goOutside };
+      else if (near(T.ROOM.x, T.ROOM.z, 3.3)) c.e = { label: tt('Look at the outpost table'), run: () => panel('cmd') };
+      else if (k) c.e = { label: tt('Open the map of Mars'), run: () => bigMap() };
+      return c; }
+    { const n = crew.find((q) => !q.inside && near(q.x, q.z, 3.2)); if (n) { c.e = { label: tt`Talk to ${n.short}`, run: () => talk(n) }; return c; } }
     let best = null, bd = 6.5; for (const b of T.BUILDINGS) { const d = Math.hypot(P.pos.x - b.door[0], P.pos.z - b.door[1]); if (d < bd) { bd = d; best = b.id; } }
     const drive = near(G.car.x, G.car.z, 5) ? { label: tt('Drive the rover'), run: enterCar } : null;
-    if (best) { c.e = { label: INFO[best].name, run: () => panel(best) }; if (drive) c.q = drive; }
+    if (best) { c.e = { label: INFO[best].name, run: () => panel(best) }; if (drive) c.q = drive; else if (best === 'airlock' || best === 'cmd') c.q = { label: tt('Go inside'), run: goInside }; }
     else if (drive) c.e = drive;
     else { const p = POI.find((q) => S.seen[q.id] && near(q.x, q.z, Math.min(q.r, 14))); if (p) c.e = { label: p.name, run: () => (p.id === 'solar' ? panel('power') : place(p)) }; }
     return c;
@@ -118,7 +209,7 @@ export function installMars(G, deps) {
   G.doAction = async (k) => { if (ui.busy || passing || G.acting) return; const c = G.context()[k]; if (!c) return; G.acting = true; try { await c.run(); } finally { G.acting = false; } };
 
   // ---------- panels ----------
-  const place = (p) => ui.window({ title: p.name, html: `<p>${p.text}</p><div class="stat"><span>${tt('What kind of fact is this?')}</span><b>${pill(p.cls)}</b></div>` });
+  const place = (p) => ui.window({ title: p.name, img: `mars/mr_${p.id}`, html: `<p>${p.text}</p><div class="stat"><span>${tt('What kind of fact is this?')}</span><b>${pill(p.cls)}</b></div>` });
   const toggle = (id) => ({ label: S.on[id] ? tt`Switch the ${INFO[id].name} off` : tt`Switch the ${INFO[id].name} on`, sub: S.on[id] ? tt`Saves ${kw(LOADS[id])}. Everything it does stops.` : tt`Uses ${kw(LOADS[id])}.`, norec: S.on[id], run: () => { S.on[id] = !S.on[id]; S.flow = marsFlows(S); G.audio.play(S.on[id] ? 'ok' : 'blip'); ui.toast(S.on[id] ? tt`${INFO[id].name}: on.` : tt`${INFO[id].name}: off.`, S.on[id] ? 'good' : ''); } });
   async function panel(id) {
     const I = INFO[id], F = (S.flow = marsFlows(S)), sn = F.sun, first = seen(id), perSol = MARS.SOL_H, st = [[tt('What it does'), I.does], [tt('It needs'), I.needs], [tt('It gives'), I.gives]], act = [];
@@ -135,14 +226,15 @@ export function installMars(G, deps) {
     else if (id === 'lab') { if (S.on.lab) st.push([tt('Air temperature'), `${Math.round(F.tempC)}°C`], [tt('Air pressure'), tt`${(F.pressure / 100).toFixed(1)} mb (Earth: 1013)`], [tt('Wind'), `${S.wind.toFixed(1)} m/s`], [tt('Dust in the sky'), S.tau.toFixed(2)], [tt('Sun'), sn.up ? tt`${Math.round(sn.elev)}° up` : tt('below the horizon')], [tt('Season'), (sn.ls < 90 ? tt`Ls ${Math.round(sn.ls)}° (northern spring)` : sn.ls < 180 ? tt`Ls ${Math.round(sn.ls)}° (northern summer)` : sn.ls < 270 ? tt`Ls ${Math.round(sn.ls)}° (northern autumn)` : tt`Ls ${Math.round(sn.ls)}° (northern winter)`)]); else st.push([tt('Weather mast'), tt('no readings: the lab is off')]); }
     else if (id === 'medical') st.push([tt('Crew health'), `${Math.round(S.health)}%`], [tt('Radiation dose so far'), `${S.dose.toFixed(2)} mSv`], [tt('Dose rate outdoors'), tt`${MARS.RAD_OUT} mSv a day`], [tt('Time spent outside'), hrs(S.stats.evaHours)]);
     else if (id === 'garage') { st.push([tt('Rover battery'), `${Math.round(S.car.charge * 100)}%${S.car.charging ? ' · ' + tt('charging') : ''}`], [tt('Driven so far'), `${S.stats.km.toFixed(2)} km`]); act.push({ label: tt('Show me the rover'), run: () => G.pointTo('car') }); }
-    else if (id === 'airlock') st.push([tt('Outside'), tt`${(F.pressure / 100).toFixed(1)} mb · ${Math.round(F.tempC)}°C · 95% carbon dioxide`], [tt('Inside'), tt`about 700 mb · ${Math.round(S.habTemp)}°C`], [tt('Rooms you can walk into'), tt('not built yet: they come with the survival update')]);
+    else if (id === 'airlock') st.push([tt('Outside'), tt`${(F.pressure / 100).toFixed(1)} mb · ${Math.round(F.tempC)}°C · 95% carbon dioxide`], [tt('Inside'), tt`about 700 mb · ${Math.round(S.habTemp)}°C`], [tt('Rooms you can walk into'), tt('the Command Habitat: your crew is in there')]);
     else if (id === 'comms') st.push([tt('Radio time to Earth'), S.on.comms ? tt`${F.lightMin.toFixed(1)} minutes each way` : tt('no link: the tower is off')], [tt('A question and its answer'), S.on.comms ? tt`at least ${(F.lightMin * 2).toFixed(0)} minutes` : '—']);
     else if (id === 'storage') st.push([tt('Oxygen'), `${S.o2.toFixed(1)} / ${S.o2Cap} kg`], [tt('Water'), `${S.water.toFixed(0)} / ${S.waterCap} L`], [tt('Food'), `${S.food.toFixed(0)} kg`], [tt('Spare parts'), String(S.mat)], [tt('If switched off'), tt('the food warms up and slowly spoils')]);
     else if (id === 'isru') st.push([tt('Oxygen made'), tt`${(F.o2Make * 1000).toFixed(0)} g an hour · ${(F.o2Make * perSol).toFixed(1)} kg a sol`], [tt('The crew breathe'), tt`${(F.o2Use * perSol).toFixed(1)} kg a sol`], [tt('In the tanks'), `${S.o2.toFixed(1)} / ${S.o2Cap} kg`], [tt('MOXIE on Perseverance made'), tt('up to 12 g an hour')]);
     else if (id === 'thermal') st.push([tt('Outside'), `${Math.round(F.tempC)}°C`], [tt('Rooms'), `${Math.round(S.habTemp)}°C`], [tt('Today'), tt`${MARS.T_MIN}°C before dawn to ${MARS.T_MAX}°C in the afternoon`]);
     if (LOADS[id]) act.push(id === 'cmd' ? { label: tt('The Command Habitat cannot be switched off'), sub: tt('Its computers run every other building.'), disabled: true } : toggle(id));
+    if ((id === 'airlock' || id === 'cmd') && !inRoom) act.unshift({ label: tt('Go inside the Command Habitat'), sub: tt('Through the airlock. Indoors your suit comes off.'), norec: !!S.seen.room, run: goInside });
     st.push([tt('What kind of fact is this?'), pill(I.cls)]);
-    await ui.panel(I.name, { stats: st, actions: act, note: I.note });
+    await ui.panel(I.name, { stats: st, actions: act, note: I.note, img: `mars/mr_${id}` });
     if (first && id !== 'cmd') { const left = TOUR.filter((b) => !S.seen[b]).length; ui.toast(left === 1 ? tt`${INFO[id].name} visited. 1 building still to see.` : left ? tt`${INFO[id].name} visited. ${left} buildings still to see.` : tt('You have visited all 14 buildings!'), 'good'); }
   }
 
@@ -215,7 +307,7 @@ export function installMars(G, deps) {
     // names over the buildings and the places you have found
     const w = innerWidth, h = innerHeight, c3 = world.camera, tid = G.goal && G.goal.id;
     for (const id in labels) { const q = labels[id], dist = Math.hypot(q.x - P.pos.x, q.z - P.pos.z), goal = tid === id; v3.set(q.x, world.heightAt(q.x, q.z) + q.up, q.z).project(c3);
-      const show = (!q.poi || S.seen[id]) && v3.z < 1 && Math.abs(v3.x) < 1.1 && (goal || dist < (q.poi ? 120 : 48)); q.el.classList.toggle('hidden', !show); if (!show) continue;
+      const show = !inRoom && (!q.poi || S.seen[id]) && v3.z < 1 && Math.abs(v3.x) < 1.1 && (goal || dist < (q.poi ? 120 : 48)); q.el.classList.toggle('hidden', !show); if (!show) continue;
       q.el.style.transform = `translate(${((v3.x + 1) / 2) * w}px,${((1 - v3.y) / 2) * h}px) translate(-50%,-100%)`; const txt = `${q.name}<small>${dist.toFixed(0)} m</small>`; if (q.el.dataset.t !== txt) { q.el.dataset.t = txt; q.el.innerHTML = txt; } q.el.classList.toggle('goal', goal); q.el.classList.toggle('bad', !goal && !!LOADS[id] && !S.on[id]); }
     hudT += dt; if (hudT < 0.2) return; hudT = 0;
     const F = S.flow, sn = F.sun, bp = S.battery / S.batteryCap, ck = marsClock(S), perSol = MARS.SOL_H, toSol = (d) => (d * 24) / MARS.SOL_H;
@@ -226,7 +318,7 @@ export function installMars(G, deps) {
     gauge('food', S.food.toFixed(0) + ' kg', Math.min(1, S.food / 600), sols(toSol(F.foodDays)), S.food < 5 ? 2 : toSol(F.foodDays) < 20 ? 1 : 0);
     gauge('rad', S.dose.toFixed(2) + ' mSv', S.dose / 50, tt`${MARS.RAD_OUT} mSv a day outdoors`, 0);
     gauge('mat', String(S.mat), Math.min(1, S.mat / 20), tt('spare parts'), 0);
-    $('#c-day').textContent = tt`Sol ${ck.sol}`; $('#c-time').textContent = ck.text; $('#c-zone').textContent = tt`ARCADIA ${Math.round(F.tempC)}°C`;
+    $('#c-day').textContent = tt`Sol ${ck.sol}`; $('#c-time').textContent = ck.text; $('#c-zone').textContent = inRoom ? tt`INDOORS ${Math.round(S.habTemp)}°C` : tt`ARCADIA ${Math.round(F.tempC)}°C`;
     const eh = (mh) => (mh * MARS.SOL_H) / 24; $('#c-sun').innerHTML = sn.up && sn.hour < sn.set ? IC.sun + tt` sunset in ${hrs(eh(sn.set - sn.hour))}` : IC.moon + tt` sunrise in ${hrs(eh((sn.rise - sn.hour + 24) % 24))}`;
     $('#c-rescue').innerHTML = IC.dish + ' ' + (S.on.comms ? tt`Earth: ${F.lightMin.toFixed(1)} min by radio` : tt('no link to Earth'));
     const key = Math.round(sn.rise * 10) + ':' + Math.round(sn.set * 10); if (hud.k !== key) { hud.k = key; const a = (sn.rise / 24) * 100, b = (sn.set / 24) * 100; $('#tl-fill').style.background = `linear-gradient(90deg,#1b1420 0%,#1b1420 ${a - 2}%,#7fa8d8 ${a}%,#e2b98a ${a + 4}%,#e8c79a ${b - 4}%,#7fa8d8 ${b}%,#1b1420 ${b + 2}%,#1b1420 100%)`; $('#th-svg').innerHTML = ''; $('#tl-storm').style.display = 'none'; $('#th-now').style.display = 'none'; $('#clock').title = tt('One sol, midnight to midnight. A sol is 24 hours 39 minutes long.'); }
@@ -241,34 +333,35 @@ export function installMars(G, deps) {
   function goal() {
     const g = G.goal; $('#goal-x').classList.toggle('hidden', !g); world.guideForce = !!g; if (!g) { world.setTarget(null); ui.objective(null); return; }
     if (g.id === 'car') { g.x = G.car.x; g.z = G.car.z; } const d = Math.hypot(g.x - P.pos.x, g.z - P.pos.z);
-    if (d < (P.in ? 12 : 6)) { G.goal = null; return; } world.setTarget(g); ui.objective(`<i class="dot"></i><b>${g.name}</b> ${d.toFixed(0)} m${g.text ? ' · ' + g.text : ''}`);
+    if (d < (P.in ? 12 : 6) && !inRoom) { G.goal = null; return; } world.setTarget(inRoom ? { ...g, x: T.ROOM.door[0], z: T.ROOM.door[1] } : g);   // indoors the yellow line leads to the hatch: everything it points at is outside
+    ui.objective(`<i class="dot"></i><b>${g.name}</b> ${d.toFixed(0)} m${g.text ? ' · ' + g.text : ''}`);
   }
 
   // ---------- one frame ----------
   function frame(dt) {
-    G.inside = false; G.inCrater = false; S.suitOn = true; S.zone = 'top';
-    deps.updatePlayer(dt); deps.placeVehicles(dt); deps.updateRego(dt); deps.updateCamera(dt);
+    G.inside = inRoom; G.inCrater = false; S.suitOn = !inRoom; S.zone = inRoom ? 'in' : 'top';   // indoors the sim counts the lower radiation dose
+    deps.updatePlayer(dt); if (inRoom) T.keepInRoom(P.pos); deps.placeVehicles(dt); deps.updateRego(dt); if (inRoom) { T.keepInRoom(G.regoPos, 1); G.rego.group.position.copy(G.regoPos); } updateCrew(dt); deps.updateCamera(dt);
     const run = G.simOn && !ui.busy && !G.paused && !passing; if (run) marsStep(S, (dt / S.m.hourLen) * G.speedMul); else if (!passing) S.flow = marsFlows(S);
     // the rover: it charges on its pad, and warns you before you drive too far to get back
     { const c = G.car, home = Math.hypot(c.x - T.ROVER_PAD.x, c.z - T.ROVER_PAD.z); S.car.charging = S.on.garage && home < 4.6 && Math.abs(c.v) < 0.6 && S.car.charge < 1;
       if (P.in === 'car' && home > 60 && S.car.charge > 0 && S.car.charge < (home / 2600) * 1.3 + 0.05) G.warn('mrange', tt`<b>Turn back now!</b> The rover has ${Math.round(S.car.charge * 100)}% left, and the garage is ${Math.round(home)} m away.`, 'alert', 30000);
       if (P.in === 'car' && S.car.charge <= 0) G.warn('mflat', tt('<b>The rover\'s battery is flat.</b> It can still crawl. Head for the round pad by the garage.'), 'worried', 40000); }
     // places found
-    if (run && !P.in || run && P.in === 'car') for (const p of POI) if (!S.seen[p.id] && near(p.x, p.z, p.r)) { seen(p.id, p.text, p.id === 'ice' ? 'joy' : 'happy'); ui.toast(tt`Found: ${p.name}. It is on your map now.`, 'good'); }
+    if (run && !inRoom) for (const p of POI) if (!S.seen[p.id] && near(p.x, p.z, p.r)) { seen(p.id, p.text, p.id === 'ice' ? 'joy' : 'happy'); ui.toast(tt`Found: ${p.name}. It is on your map now.`, 'good'); }
     if (run) { nagT += dt; if (nagT > 70 && $('#rego').classList.contains('hidden') && !G.goal && G.alerts().some((a) => a.key)) G.advise(); saveT += dt; if (saveT > 20) { saveT = 0; G.save(); } }
     goal();
     world.update(dt, S, P.pos, { player: P.pos, carOn: P.in === 'car' });
-    G._danger = clamp(G.alerts().filter((a) => a.key).length * 0.45, 0, 1); G.audio.update(dt, { indoors: false, suit: true, power: S.flow.eff, vehicle: P.in, speed: P.in === 'car' ? G.car.v : Math.hypot(P.vel.x, P.vel.z), thrust: 0, digging: false, danger: G._danger });
+    G._danger = clamp(G.alerts().filter((a) => a.key).length * 0.45, 0, 1); G.audio.update(dt, { indoors: inRoom, suit: !inRoom, power: S.flow.eff, vehicle: P.in, speed: P.in === 'car' ? G.car.v : Math.hypot(P.vel.x, P.vel.z), thrust: 0, digging: false, danger: G._danger });
     world.render(); hud(dt); ui.prompt(!ui.busy && !passing ? G.promptText() : null);
   }
 
   // ---------- saving: Mars has its own save, apart from the Moon's ----------
-  G.save = () => { try { if (!S || passing) return false; localStorage.setItem(SAVE, JSON.stringify({ v: 1, S: marsSerialize(S), car: { x: G.car.x, z: G.car.z, yaw: G.car.yaw }, p: { x: P.pos.x, z: P.pos.z, in: P.in } })); return true; } catch (e) { return false; } };
+  G.save = () => { try { if (!S || passing) return false; localStorage.setItem(SAVE, JSON.stringify({ v: 1, S: marsSerialize(S), car: { x: G.car.x, z: G.car.z, yaw: G.car.yaw }, p: inRoom ? { x: T.ROOM.out[0], z: T.ROOM.out[1], in: null } : { x: P.pos.x, z: P.pos.z, in: P.in } })); return true; } catch (e) { return false; } };
   G.clearSave = () => { try { localStorage.removeItem(SAVE); } catch (e) {} };
 
   async function start({ load = false } = {}) {
     let o = null; if (load) { try { o = JSON.parse(localStorage.getItem(SAVE)); } catch (e) { o = null; } }
-    await world.setPlanet('mars');
+    await world.setPlanet('mars'); makeCrew(); inRoom = false; world.mars.setInside(false); G.astro.setSuit(true);
     S = G.S = o ? marsDeserialize(o.S) : createMars((Math.random() * 2 ** 31) >>> 0); G.planet = 'mars'; G.grav = MARS.GRAVITY; document.body.classList.add('mars'); G.applyVoice?.();
     G.edgeText = tt('That is the edge of this map. The plain goes on for hundreds of kilometres: look at the Region tab of the Map.');
     const car = o ? o.car : { x: T.ROVER_PAD.x, z: T.ROVER_PAD.z, yaw: Math.PI }; Object.assign(G.car, car, { v: 0, cargo: [] }); G.car.dyn = null;

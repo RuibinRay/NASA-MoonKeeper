@@ -47,11 +47,12 @@ export class MarsWorld {
   constructor(world) {
     this.w = world; this.group = new THREE.Group(); this.group.name = 'mars'; this.t = 0; this.sunDir = new V3(0.3, 0.8, 0.2); this.colliders = T.colliders();
     this.lamps = {}; this.spin = []; this.windows = []; this.panels = []; this.night = 0;
-    T.buildGrid(); this._mats(); this._ground(); this._rocks(); this._sky(); this._skyline(); this._dust(); this._station(); this._marks();
+    T.buildGrid(); this._mats(); this._ground(); this._rocks(); this._sky(); this._skyline(); this._dust(); this._station(); this._marks(); this._interior();
   }
-  heightAt(x, z) { return T.heightAt(x, z); }
+  heightAt(x, z) { return this.inside ? T.ROOM.y : T.heightAt(x, z); }   // indoors, the floor of the room is the ground
   // Corner points of the yellow guide line: round the buildings, with more room when you are in the rover.
-  route(px, pz, tx, tz) { const R = this._route, key = `${Math.round(px / 1.5)},${Math.round(pz / 1.5)},${Math.round(tx)},${Math.round(tz)},${this.carOn ? 1 : 0}`; if (R && R.key === key) { R.pts[0] = [px, pz]; return R.pts; } const pts = T.routeAround(this.colliders, px, pz, tx, tz, this.carOn ? 2.4 : 1.1); this._route = { key, pts }; return pts; }
+  // Indoors it goes round the table and the consoles instead.
+  route(px, pz, tx, tz) { const R = this._route, key = `${Math.round(px / 1.5)},${Math.round(pz / 1.5)},${Math.round(tx)},${Math.round(tz)},${this.carOn ? 1 : 0},${this.inside ? 1 : 0}`; if (R && R.key === key) { R.pts[0] = [px, pz]; return R.pts; } const pts = T.routeAround(this.inside ? this.roomColliders : this.colliders, px, pz, tx, tz, this.carOn ? 2.4 : this.inside ? 0.6 : 1.1); this._route = { key, pts }; return pts; }
 
   _mats() {
     const M = (this.M = {});
@@ -249,6 +250,55 @@ export class MarsWorld {
   _marks() { this.beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 60, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false })); this.beacon.visible = false; this.group.add(this.beacon); }
   setTarget(t) { if (!t) { this.beacon.visible = false; return; } this.beacon.visible = true; this.beacon.position.set(t.x, T.heightAt(t.x, t.z) + 30, t.z); }
 
+  // ---------- inside the Command Habitat ----------
+  // One round room: consoles along the north wall, a table with a model of the plain, lockers, a ladder to the floor
+  // above, and the hatch to the airlock on the south side. The wall and ceiling are drawn on their inner faces only,
+  // so the camera can stand outside them and still see in. A dark shell all round hides the world outside.
+  _interior() {
+    const R = T.ROOM, PI = Math.PI, g = (this.room = new THREE.Group()); g.position.set(R.x, R.y, R.z); g.visible = false; this.group.add(g); this.inside = false; this.roomColliders = T.roomColliders();
+    const c = (r, gg, b) => new THREE.Color().setRGB(...lin(r, gg, b)), mk = (o) => std({ fog: false, ...o }), rw = R.r + 0.3;
+    const wall = mk({ color: c(0.88, 0.86, 0.82), roughness: 0.82, side: THREE.BackSide }), band = mk({ color: c(0.86, 0.42, 0.16), roughness: 0.6, side: THREE.BackSide }), skirt = mk({ color: c(0.3, 0.3, 0.31), roughness: 0.8, side: THREE.BackSide });
+    const floor = mk({ color: c(0.2, 0.2, 0.215), roughness: 0.92 }), ceil = mk({ color: c(0.8, 0.78, 0.74), roughness: 0.9 }), white = mk({ color: c(0.86, 0.84, 0.8), roughness: 0.75 }), cream = mk({ color: c(0.78, 0.72, 0.64), roughness: 0.8 });
+    const trim = mk({ color: c(0.86, 0.42, 0.16), roughness: 0.6 }), metal = mk({ color: c(0.62, 0.63, 0.66), roughness: 0.35, metalness: 0.8 }), dark = mk({ color: c(0.15, 0.15, 0.16), roughness: 0.7 }), soil = mk({ color: c(0.56, 0.32, 0.2), roughness: 1 }), leaf = mk({ color: c(0.22, 0.56, 0.24), roughness: 0.9 });
+    this.roomScreen = mk({ color: 0x06090c, emissive: c(1, 0.7, 0.34), emissiveIntensity: 0.9 }); this.roomGlow = mk({ color: 0x1a1612, emissive: c(1, 0.9, 0.74), emissiveIntensity: 1.6 });
+    this.roomLamp = mk({ color: 0x101010, emissive: 0x4dff88, emissiveIntensity: 2.2 }); this.portMat = mk({ color: 0x050505, emissive: c(0.86, 0.7, 0.54), emissiveIntensity: 1.2 });
+    const add = (m, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, to = g) => { m.castShadow = m.receiveShadow = false; return this.put(to, m, x, y, z, rx, ry, rz); };
+    const at = (deg, rad) => [Math.cos((deg * PI) / 180) * rad, Math.sin((deg * PI) / 180) * rad], inward = (deg) => Math.atan2(-Math.cos((deg * PI) / 180), -Math.sin((deg * PI) / 180));   // the turn that makes a thing on the wall look at the middle
+    const flat = (geo, m, up) => { const k = new THREE.Mesh(geo, m); k.rotation.x = up ? -PI / 2 : PI / 2; return k; };
+    add(new THREE.Mesh(new THREE.SphereGeometry(30, 20, 12), new THREE.MeshBasicMaterial({ color: 0x0b0806, side: THREE.BackSide, fog: false })), 0, 4, 0);
+    // floor, wall, ceiling
+    g.add(Object.assign(flat(new THREE.CircleGeometry(rw, 48), floor, true), { receiveShadow: false })); { const k = flat(new THREE.RingGeometry(3.05, 3.17, 56), new THREE.MeshBasicMaterial({ color: 0xffb347, fog: false }), true); k.position.y = 0.012; g.add(k); }
+    { const k = flat(new THREE.CircleGeometry(rw, 48), ceil, false); k.position.y = 3.6; g.add(k); }
+    add(this.cyl(rw, rw, 3.6, wall, 48, true), 0, 1.8, 0); add(this.cyl(rw - 0.03, rw - 0.03, 0.24, band, 48, true), 0, 3.1, 0); add(this.cyl(rw - 0.03, rw - 0.03, 0.32, skirt, 48, true), 0, 0.16, 0);
+    for (let i = 0; i < 8; i++) { const [x, z] = at(22.5 + i * 45, rw - 0.12); add(this.box(0.32, 3.6, 0.2, metal), x, 1.8, z, 0, inward(22.5 + i * 45)); }
+    add(new THREE.Mesh(new THREE.TorusGeometry(4.4, 0.07, 8, 56), this.roomGlow), 0, 3.5, 0, PI / 2); add(new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.05, 8, 32), this.roomGlow), 0, 3.5, 0, PI / 2);
+    // round windows: they show the colour of the sky outside
+    for (const deg of [0, 180, 255, 285]) { const [x, z] = at(deg, rw - 0.06), [fx, fz] = at(deg, rw - 0.1); add(new THREE.Mesh(new THREE.CircleGeometry(0.55, 24), this.portMat), x, 2.15, z, 0, inward(deg)); add(new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.07, 8, 24), trim), fx, 2.15, fz, 0, inward(deg)); }
+    // the table in the middle, with a model of the plain and the outpost on it
+    add(this.cyl(0.55, 0.75, 0.86, metal, 20), 0, 0.43, 0); add(this.cyl(1.55, 1.55, 0.1, white, 32), 0, 0.91, 0); add(this.cyl(1.32, 1.32, 0.05, soil, 32), 0, 0.985, 0);
+    { const m = new THREE.Group(); m.position.y = 1.01; g.add(m); const s = this.sph(0.15, white, 12, 8); s.scale.y = 0.7; add(s, 0, 0.03, 0, 0, 0, 0, m); add(this.box(0.34, 0.07, 0.12, white), -0.42, 0.035, -0.05, 0, 0, 0, m); add(this.box(0.3, 0.06, 0.1, mk({ color: 0x110811, emissive: c(1, 0.36, 0.8), emissiveIntensity: 1.1 })), 0.45, 0.03, -0.6, 0, 0.2, 0, m);
+      add(this.box(0.5, 0.015, 0.34, mk({ color: c(0.07, 0.11, 0.26), roughness: 0.3, metalness: 0.5 })), 0.12, 0.012, 0.82, 0, 0, 0, m); add(this.box(0.1, 0.07, 0.1, white), 0, 0.035, 0.3, 0, 0, 0, m); add(this.cyl(0.012, 0.012, 0.3, metal, 6), -0.95, 0.15, -0.55, 0, 0, 0, m); }
+    this.roomHolo = new THREE.Group(); this.roomHolo.position.y = 1.07; g.add(this.roomHolo); add(new THREE.Mesh(new THREE.TorusGeometry(1.43, 0.018, 6, 48), this.roomScreen), 0, 0, 0, PI / 2, 0, 0, this.roomHolo); for (let i = 0; i < 3; i++) { const [x, z] = at(i * 120, 1.43); add(this.sph(0.045, this.roomScreen, 8, 6), x, 0, z, 0, 0, 0, this.roomHolo); }
+    for (let i = 0; i < 4; i++) { const [x, z] = at(45 + i * 90, 2.5); add(this.cyl(0.07, 0.2, 0.5, metal, 10), x, 0.25, z); add(this.cyl(0.3, 0.3, 0.07, trim, 16), x, 0.53, z); }
+    // consoles along the north wall
+    for (const k of T.ROOM_CONSOLES) { const q = new THREE.Group(); q.position.set(k.at[0] - R.x, 0, k.at[1] - R.z); q.rotation.y = inward(k.deg); g.add(q);
+      add(this.box(1.95, 0.86, 0.78, white), 0, 0.43, 0, 0, 0, 0, q); add(this.box(1.95, 0.05, 0.84, cream), 0, 0.885, 0.02, 0, 0, 0, q); add(this.box(1.5, 0.03, 0.3, dark), 0, 0.925, 0.2, 0, 0, 0, q);
+      add(this.box(1.7, 0.72, 0.06, dark), 0, 1.33, -0.24, -0.3, 0, 0, q); add(this.box(1.56, 0.6, 0.02, this.roomScreen), 0, 1.335, -0.2, -0.3, 0, 0, q); }
+    for (const deg of [240, 300]) { const [x, z] = at(deg, 4.9); add(this.cyl(0.07, 0.22, 0.48, metal, 10), x, 0.24, z); add(this.cyl(0.28, 0.28, 0.07, dark, 16), x, 0.51, z); }
+    // the hatch to the airlock (south), with a lamp that is green while the outpost has power
+    add(this.box(2.1, 2.7, 0.22, trim), 0, 1.35, rw - 0.02); add(this.box(1.6, 2.3, 0.14, cream), 0, 1.2, rw - 0.16); add(new THREE.Mesh(new THREE.CircleGeometry(0.34, 20), this.portMat), 0, 1.65, rw - 0.235, 0, PI); add(new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.05, 8, 20), metal), 0, 1.05, rw - 0.24);
+    add(this.sph(0.13, this.roomLamp, 10, 8), 0, 2.86, rw - 0.2);
+    // a ladder to the floor above, lockers, and something green
+    { const [x, z] = at(180, 6.75); for (const s of [-1, 1]) add(this.cyl(0.04, 0.04, 3.6, metal, 6), x, 1.8, z + s * 0.26); for (let i = 0; i < 9; i++) add(this.box(0.05, 0.05, 0.52, metal), x, 0.35 + i * 0.38, z); const h = flat(new THREE.CircleGeometry(0.62, 20), dark, false); h.position.set(x + 0.45, 3.59, z); g.add(h); }
+    for (const p of T.ROOM_SPOTS.lockers) { const deg = (Math.atan2(p[1] - R.z, p[0] - R.x) * 180) / PI, q = new THREE.Group(); q.position.set(p[0] - R.x, 0, p[1] - R.z); q.rotation.y = inward(deg); g.add(q); add(this.box(1.3, 2.1, 0.6, cream), 0, 1.05, 0, 0, 0, 0, q); add(this.box(0.04, 1.9, 0.02, dark), 0, 1.05, 0.31, 0, 0, 0, q); for (const s of [-1, 1]) add(this.box(0.06, 0.3, 0.05, trim), s * 0.12, 1.15, 0.33, 0, 0, 0, q); }
+    { const p = T.ROOM_SPOTS.plant, x = p[0] - R.x, z = p[1] - R.z; add(this.cyl(0.3, 0.22, 0.45, trim, 14), x, 0.225, z); const l = this.sph(0.42, leaf, 10, 8); l.scale.y = 1.25; add(l, x, 0.9, z); add(this.sph(0.26, leaf, 8, 6), x + 0.22, 1.25, z - 0.1); }
+    this.roomLights = [[3.4, 3.3, 2.2], [-3.4, 3.3, -2.2]].map(([x, y, z]) => { const l = new THREE.PointLight(0xffe6c8, 0, 22, 1.5); l.position.set(x, y, z); g.add(l); return l; });
+    // everything that stands against the wall, and which way from the middle it is: see update()
+    this.roomWall = g.children.filter((o) => Math.hypot(o.position.x, o.position.z) > 5.4).map((o) => { const d = Math.hypot(o.position.x, o.position.z); return { o, x: o.position.x / d, z: o.position.z / d }; });
+  }
+  // Going indoors and coming out again: which floor you stand on, and what you bump into.
+  setInside(on) { this.inside = !!on; this.room.visible = this.inside; this.w.colliders.top = this.inside ? this.roomColliders : this.colliders; }
+
   // ---------- every frame ----------
   update(dt, S, focus, ctx = {}) {
     this.carOn = !!ctx.carOn; this.t += dt; const t = this.t, w = this.w, F = S ? S.flow : null, sn = F ? F.sun : { e: 0.3, u: 0.8, n: -0.3, elev: 50, hour: 12 }, tau = F ? F.tau : 0.45, cam = w.camera.position;
@@ -288,6 +338,15 @@ export class MarsWorld {
       const p = this.devil.geometry.attributes.position; if (D.on > 0) { D.on -= dt; const wd = S ? S.windDir : 4; D.x += Math.cos(wd) * 4 * dt; D.z += Math.sin(wd) * 4 * dt; const y0 = T.heightAt(D.x, D.z), fade = clamp(Math.min(D.on, 26 - D.on) / 4, 0, 1); this.devil.material.opacity = 0.34 * fade;
         for (const [hf, a0, rr, i] of this.devilSeed) { const h = ((hf + t * 0.12 * rr) % 1), r = (1.2 + h * 5.5) * rr, a = a0 + t * (3.2 - h * 1.6); p.setXYZ(i, D.x + Math.cos(a) * r + Math.sin(h * 5 + t) * 1.2, y0 + h * 42, D.z + Math.sin(a) * r); } p.needsUpdate = true; this.devil.visible = true; } else this.devil.visible = false; }
     if (this.beacon.visible) this.beacon.material.opacity = 0.1 + 0.06 * Math.sin(t * 3);
+    // indoors: the room's own lamps, and none of the weather. With the power out, the lamps go dim and orange.
+    this.air.visible = !this.inside;
+    if (this.inside) { const ok = !F || F.eff >= 1; sl.intensity = 0; sl.castShadow = false; w.hemi.color.setRGB(...lin(1, 0.95, 0.88)); w.hemi.groundColor.setRGB(...lin(0.42, 0.4, 0.38)); w.hemi.intensity = ok ? 1.25 : 0.22;
+      fog.near = 5000; fog.far = 9000; this.devil.visible = false; this.beacon.visible = false; w.car.visible = false; for (const l of this.lights) l.intensity = 0;
+      for (const l of this.roomLights) { l.intensity = ok ? 24 : 9; l.color.setHex(ok ? 0xffe6c8 : 0xff7a3c); }
+      this.roomGlow.emissiveIntensity = ok ? 1.6 : 0.2; this.roomLamp.emissive.setHex(ok ? 0x4dff88 : 0xffa424); this.roomScreen.emissiveIntensity = ok ? 0.9 + 0.12 * Math.sin(t * 2.3) : 0.1; this.roomHolo.rotation.y += dt * 0.4;
+      this.portMat.emissive.setRGB(...hor); this.portMat.emissiveIntensity = 0.6 + 1.1 * day;
+      // the camera may stand outside the wall and look in: whatever is fixed to the wall on its side would be in the way
+      const cx = cam.x - T.ROOM.x, cz = cam.z - T.ROOM.z, cd = Math.hypot(cx, cz), out = cd > T.ROOM.r - 0.25; for (const q of this.roomWall) q.o.visible = !(out && (q.x * cx + q.z * cz) / cd > 0.42); }
   }
 }
 const TMP = new V3();
