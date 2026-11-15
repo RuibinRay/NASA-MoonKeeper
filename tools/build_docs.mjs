@@ -55,6 +55,7 @@ ${old.map(row).join('\n')}
 | **Spacesuit on outside, off indoors.** The cave and the surface have no air, so you suit up in the airlock before leaving; indoors you work, cook and sleep without it. | A spacesuit is a one-person spacecraft: it holds air pressure, controls temperature and blocks sunlight. Inside a sealed, heated habitat (like the International Space Station, kept near 22°C) crews wear ordinary clothes. (Game simplification: suiting up takes 15 game minutes; real suit-up and airlock cycles take hours.) |
 | **Surface base and underground station.** Domes, labs, garage, water plant and mine on the surface; food, beds and the Control Center under the rock. | Rock overhead is the best shield against radiation and meteoroids, so the places where people spend most hours go underground. Water ice exists in permanently shadowed craters near the lunar poles, and can be split into oxygen and hydrogen. Peppers, lettuce and radishes have been grown on the ISS. |
 | **Lava tube station at 17°C.** | LRO Diviner measured about 17°C in shaded pit areas, against 127°C / −173°C on the open surface. |
+| **Day-and-night thermometer.** The clock's day bar carries a line for the temperature outside and one for the cave. Clicking the clock, or pressing T, opens a page with a whole lunar day. | The hottest and coldest figures (127°C and −173°C) and the 17°C pit are measurements from orbit. (Game simplification: the line between them is a simple model, not the measured curve hour by hour. By day it follows the height of the Sun; after sunset it starts near −120°C and settles toward −173°C.) |
 | **Radio delay.** Mission Control answers after 1.3 s; aiming the dish uses a 2.6 s echo. | Light-speed over 384,400 km. |
 | **Crops, hens, fish.** | Crops have been grown on the ISS (lettuce 33 days, radishes 27 days); plants sprouted in real Apollo soil but grew slowly (OSD-476). Quail eggs have hatched and fish have lived on space stations. Hens on the Moon are our imagination. Section 3b has the detail. |
 | **Low-gravity hops, Earth fixed in the sky, Earth's phases.** | Gravity 1.62 m/s²; the Moon is tidally locked; Earth's phase follows the real Sun direction for the base's coordinates (8.3355°N, 33.222°E). |
@@ -68,7 +69,7 @@ Every claim below carries the **status of its evidence**, because "a lab has don
 |---|---|---|---|
 ${life.map(rowS).join('\n')}
 
-**How the game uses these numbers** (calculations live in \`js/life.js\` and are checked by \`node tools/life_test.mjs\`, 70 checks):
+**How the game uses these numbers** (calculations live in \`js/life.js\` and are checked by \`node tools/life_test.mjs\`, 71 checks):
 
 | In the game | Real number behind it | Game simplification |
 |---|---|---|

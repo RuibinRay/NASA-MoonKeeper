@@ -5,7 +5,8 @@
   "styles": {
     "cartoon": "Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
     "comic": "Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
-    "texture": "Seamless tileable game texture, flat orthographic top-down view, even soft lighting with no strong shadows, no perspective, fills the whole frame edge to edge. No text, no letters, no logos, no watermark."
+    "texture": "Seamless tileable game texture, flat orthographic top-down view, even soft lighting with no strong shadows, no perspective, fills the whole frame edge to edge. No text, no letters, no logos, no watermark.",
+    "comic_in": "Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark."
   },
   "jobs": [
     {
@@ -122,49 +123,49 @@
     },
     {
       "id": "cm03",
-      "style": "comic",
+      "style": "comic_in",
       "aspect_ratio": "3:2",
       "refs": [
         "c_rookie_sheet",
         "c_okoro",
         "c_rego_sheet"
       ],
-      "prompt": "Inside an underground Moon station that looks like the inside of a space station: bright RED padded wall panels with white trim, a round bulkhead door, floor lights. The engineer with blue shoulder stripes, helmet off, proudly shows the young astronaut hero a farm room glowing with pink grow lights: rows of leafy potato plants and tomato vines with red tomatoes, and a small coop with three brown hens. The helper robot watches a hen curiously."
+      "prompt": "Inside an underground Moon station that looks like the inside of a space station: matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents on every wall, a closed round orange-framed bulkhead door, floor lights. The engineer with blue shoulder stripes, helmet off, proudly shows the young astronaut hero a farm room glowing with pink grow lights: rows of leafy potato plants and tomato vines with red tomatoes, and a small coop with three brown hens. The helper robot watches a hen curiously."
     },
     {
       "id": "cm04",
-      "style": "comic",
+      "style": "comic_in",
       "aspect_ratio": "3:2",
       "refs": [
         "c_rookie_sheet",
         "c_vasquez",
         "c_rego_sheet"
       ],
-      "prompt": "Inside a red-walled control center with a huge glowing map screen of the Moon base. The commander with red shoulder stripes, helmet off, points forward with a confident smile, like a coach starting practice. The young astronaut hero in white suit with orange bands stands ready, the helper robot salutes beside them."
+      "prompt": "Inside a white-walled underground control center. One whole wall is a huge glowing screen showing a floor-plan map of the underground station: one long corridor with rooms on both sides, drawn in green. The commander with red shoulder stripes, helmet off, points forward with a confident smile, like a coach starting practice. The young astronaut hero in white suit with orange bands stands ready, the helper robot salutes beside them. White composite wall panels fill the rest of the background."
     },
     {
       "id": "cm05",
-      "style": "comic",
+      "style": "comic_in",
       "aspect_ratio": "3:2",
       "refs": [
         "c_ingrid",
         "c_kenji",
         "c_anika"
       ],
-      "prompt": "A huge wall screen in a red-walled control center, split into three video-call windows. In each window an alarmed astronaut from a different Moon station speaks urgently and points upward: a woman with a blonde braid and teal stripes, a man with round glasses and purple stripes, a woman with a dark ponytail and green stripes. Red alarm lights flash around the screen."
+      "prompt": "A huge wall screen in a white-walled underground control center, split into three video-call windows side by side. In each window an alarmed astronaut from a different Moon station speaks urgently and points upward, each one indoors in front of the plain interior wall of their own station: a woman with a blonde braid and teal stripes, a man with round glasses and purple stripes, a woman with a dark ponytail and green stripes. Red alarm lamps flash on the white composite wall panels around the screen. In the foreground the dark backs of two control desks with small glowing monitors."
     },
     {
       "id": "cm06",
-      "style": "comic",
+      "style": "comic_in",
       "aspect_ratio": "3:2",
       "refs": [
         "c_rego_sheet"
       ],
-      "prompt": "Close-up of a round green radar screen showing a big swarm of bright dots rushing toward a small outline of the Moon base. The small helper robot stares at it with wide worried cyan eyes, one little hand on the console. Red alarm glow."
+      "prompt": "Close-up of a round green radar screen set into a white composite wall panel, showing a big swarm of bright dots rushing toward a small outline of the Moon base. The small helper robot stares at it with wide worried cyan eyes, one little hand on the console. A red alarm lamp glows on the wall. Behind the robot there is only the white panelled wall."
     },
     {
       "id": "cm07",
-      "style": "comic",
+      "style": "comic_in",
       "aspect_ratio": "3:2",
       "refs": [
         "c_rookie_sheet",
@@ -172,7 +173,7 @@
         "c_okoro",
         "c_rego_sheet"
       ],
-      "prompt": "In a red-walled station corridor: the commander with red shoulder stripes and the engineer with blue shoulder stripes, helmets on, run toward an elevator door. The commander looks back and holds up a hand in a stay-here gesture toward the young astronaut hero in the white suit with orange bands, who stands with the small helper robot. Urgent motion lines."
+      "prompt": "In a white-walled underground station corridor with white composite wall panels on both sides, orange door frames and a dark metal deck floor: the commander with red shoulder stripes and the engineer with blue shoulder stripes, helmets on, run toward an elevator door at the end of the corridor. The commander looks back and holds up a hand in a stay-here gesture toward the young astronaut hero in the white suit with orange bands, who stands with the small helper robot. Urgent motion lines."
     },
     {
       "id": "cm08",
@@ -189,33 +190,33 @@
     },
     {
       "id": "cm10",
-      "style": "comic",
+      "style": "comic_in",
       "aspect_ratio": "3:2",
       "refs": [
         "c_rookie_sheet",
         "c_rego_sheet"
       ],
-      "prompt": "A dark red-walled control center lit only by red emergency lights. A huge map screen of the Moon base is covered in red warning triangles. Seen from behind, the young astronaut hero in the white suit with orange bands and the small helper robot stand small in front of the screen. The robot's cyan eyes look up at the astronaut with worry."
+      "prompt": "A dark underground control center lit only by red emergency lamps, which tint its white wall panels dark red-grey. A huge screen showing a floor-plan map of the station, one long corridor with rooms on both sides, is covered in red warning triangles. Seen from behind, the young astronaut hero in the white suit with orange bands and the small helper robot stand small in front of the screen. The robot looks up at the astronaut with worried cyan eyes. Solid panelled walls on the left and right of the screen."
     },
     {
       "id": "cm11",
-      "style": "comic",
+      "style": "comic_in",
       "aspect_ratio": "3:2",
       "refs": [
         "c_flight",
         "c_rookie_sheet"
       ],
-      "prompt": "A big screen shows the mission control flight director, a kind serious woman with silver-streaked hair and a headset, speaking calmly and holding up a hand in reassurance. In the foreground, seen from behind, the young astronaut hero in the white suit with orange bands listens. Soft blue light from the screen in a dim red-walled room."
+      "prompt": "A big wall screen in a dim white-walled underground room shows the mission control flight director, a kind serious woman with silver-streaked hair and a headset, speaking calmly and holding up a hand in reassurance, with rows of blue computer screens behind her. In the foreground, seen from behind, the young astronaut hero in the white suit with orange bands listens. Soft blue light from the screen falls on white composite wall panels."
     },
     {
       "id": "cm12",
-      "style": "comic",
+      "style": "comic_in",
       "aspect_ratio": "3:2",
       "refs": [
         "c_rookie_sheet",
         "c_rego_sheet"
       ],
-      "prompt": "Hopeful close panel: the young astronaut hero in the white suit with orange bands and gold visor kneels and rests one gloved hand on the head of the small helper robot. The robot's cyan eyes are brave and determined, one little fist raised. Behind them a single ceiling light flickers back on in the red-walled station. Warm light, new courage."
+      "prompt": "Hopeful close panel, indoors in the white-walled underground station corridor with a dark metal deck floor: the young astronaut hero in the white suit with orange bands and gold visor kneels and rests one gloved hand on the head of the small helper robot. The robot looks brave and determined with cyan eyes, one little fist raised. Above them a single ceiling light flickers back on, throwing warm light on the white composite wall panels. New courage."
     },
     {
       "id": "title2",

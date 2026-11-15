@@ -16,10 +16,12 @@
 
 <!-- HUD (in-game) -->
 <div id="hud" class="hidden">
+  <div id="fps" class="hidden"></div>
+  <div id="flight" class="glass hidden"></div>
   <div id="top">
     <div id="clock" class="glass">
       <div id="clock-main"><b id="c-day">Day 1</b><span id="c-time">08:00</span><span id="c-zone">TOPSIDE</span></div>
-      <div id="timeline"><div id="tl-fill"></div><div id="tl-storm"></div><div id="tl-now"></div></div>
+      <div id="timeline"><div id="tl-fill"></div><svg id="th-svg" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"></svg><div id="tl-storm"></div><div id="tl-now"></div><div id="th-now"></div></div>
       <div id="clock-sub"><span id="c-sun"></span><span id="c-rescue"></span></div>
     </div>
     <div id="gauges"></div>
@@ -75,6 +77,7 @@
     <div class="title-links">
       <button id="btn-codex" class="ghost">How to Play</button>
       <button id="btn-tour" class="ghost">Station tour</button>
+      <button id="btn-games" class="ghost">Try the job games</button>
       <button id="btn-how" class="ghost">Real or made up?</button>
       <button id="btn-settings" class="ghost">Settings</button>
     </div>

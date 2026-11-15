@@ -1,4 +1,4 @@
-// MOONKEEPER 2 — the 3D world: a wide lunar surface (base, solar field, other stations) and the red-walled station inside the lava tube.
+// MOONKEEPER 2 — the 3D world: a wide lunar surface (base, solar field, other stations) and the white-panelled station inside the lava tube.
 import * as THREE from '../lib/three.module.min.js';
 import { K, STATIONS, SITES, PIT, TUBE, HALL, AIRLOCK, BASE, MINE, ROOMS, ROOM_H, MOUNTS, CAR_PAD, SHIP_PAD, BENCH, FAB, FAB_OUT, roomRect, roomSpot, doorSpot } from './config.js';
 
@@ -25,11 +25,40 @@ export class World {
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x000000);
     this.camera = new THREE.PerspectiveCamera(62, 1, 0.25, 7000);
     this.top = new THREE.Group(); this.deep = new THREE.Group(); this.deep.position.y = TUBE.y; this.scene.add(this.top, this.deep);
-    this.colliders = { top: [], deep: [] }; this.walk = []; this.t = 0; this.zone = 'top'; this.sunDir = new V3(0, 1, 0); this.lamps = [];
+    this.colliders = { top: [], deep: [] }; this.walk = []; this.t = 0; this.zone = 'top'; this.sunDir = new V3(0, 1, 0); this.lamps = []; this.topLamps = []; this.lampPool = [];
     this._mats(); this._lights(); this._sky(); this._terrain(); this._topside(); this._base(); this._sites(); this._mine(); this._vehicles(); this._tube(); this._station(); this._markers(); this._fx(); this._guide();
     this.setZone('top'); this.resize(); window.addEventListener('resize', () => this.resize());
   }
   resize() { const w = window.innerWidth, h = window.innerHeight; this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
+
+  // ---------- graphics quality ----------
+  // high: everything. medium: lighter shadows, fewer lamps and pixels. low: no shadows, fewest lamps.
+  setQuality(q) {
+    const Q = { high: { px: 1.75, shadow: 2048, soft: true, every: 1, lamps: 10 }, medium: { px: 1.25, shadow: 1024, soft: false, every: 2, lamps: 6 }, low: { px: 1, shadow: 0, soft: false, every: 1, lamps: 3 } }[q]; if (!Q) return;
+    this.quality = q; this.Q = Q; const r = this.renderer, sh = this.sunLight.shadow, roots = [this.scene, this.top, this.deep];
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, Q.px)); this.resize();
+    const type = Q.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap, on = Q.shadow > 0;
+    if (r.shadowMap.enabled !== on || r.shadowMap.type !== type) { r.shadowMap.enabled = on; r.shadowMap.type = type; for (const root of roots) root.traverse((o) => { if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.needsUpdate = true; }); }
+    if (on && sh.mapSize.x !== Q.shadow) { sh.mapSize.set(Q.shadow, Q.shadow); if (sh.map) { sh.map.dispose(); sh.map = null; } }
+    sh.autoUpdate = Q.every === 1; sh.needsUpdate = true;
+    if (!this.smallCasters) { this.smallCasters = []; this.top.updateMatrixWorld(true); const sc = new THREE.Vector3();   // parts too small for their shadow to matter
+      this.top.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && o.castShadow && o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); o.getWorldScale(sc); if (o.geometry.boundingSphere.radius * Math.max(sc.x, sc.y, sc.z) < 0.45) this.smallCasters.push(o); } }); }
+    for (const o of this.smallCasters) o.castShadow = q === 'high';
+    while (this.lampPool.length < Q.lamps) { const l = new THREE.PointLight(0xffffff, 0, 55, 1.2); l.visible = false; this.top.add(l); this.lampPool.push({ l, lamp: null }); }
+    while (this.lampPool.length > Q.lamps) this.top.remove(this.lampPool.pop().l);
+  }
+  // Surface lamps at night: a few real lights stand in for the nearest lamps, so the number of lights
+  // the shaders handle never changes while you travel. By day the Sun drowns the lamps out, so they are off.
+  _lampPool(dt, on, p) {
+    const pool = this.lampPool; if (!pool.length) return;
+    if (!on) { for (const q of pool) { q.l.visible = false; q.l.intensity = 0; q.lamp = null; } this._lpT = 0; return; }
+    this._lpT = (this._lpT || 0) - dt;
+    if (this._lpT <= 0 && p) { this._lpT = 0.4;
+      const near = this.topLamps.map((L) => [Math.hypot(L.x - p.x, L.z - p.z), L]).sort((a, b) => a[0] - b[0]).slice(0, pool.length).map((a) => a[1]);
+      for (const q of pool) if (q.lamp && !near.includes(q.lamp)) q.lamp = null;
+      for (const L of near) if (!pool.some((q) => q.lamp === L)) { const q = pool.find((x) => !x.lamp); if (q) { q.lamp = L; q.l.position.set(L.x, L.y, L.z); q.l.color.setHex(L.color); q.l.distance = L.dist; q.l.intensity = 0; } } }
+    for (const q of pool) { q.l.visible = true; q.l.intensity += ((q.lamp ? q.lamp.base * 1.5 : 0) - q.l.intensity) * Math.min(1, dt * 3); }
+  }
 
   _mats() {
     const rnd = seeded(7), L = new THREE.TextureLoader();
@@ -60,7 +89,7 @@ export class World {
       warm: glow(0xffc27a, 2.2), cyan: glow(0x49e6ff, 2.2), amber: glow(0xffa424, 2.5), redG: glow(0xff3b30, 2.5), greenG: glow(0x4dff88, 2.2), pink: glow(0xff4fd8, 1.6), whiteG: glow(0xffffff, 1.6),
     };
     this.M.door = std({ color: 0xff7a1a, roughness: 0.6 }); this.wallTint = new THREE.Color(0xffffff);
-    swap(this.M.wall, ['assets/tex/wall3.jpg', 'assets/tex/wall.jpg'], 0, (t, i) => { if (i) return; this.wallTint.set(0xd4463a); this.M.wall.color.copy(this.wallTint); for (const R of Object.values(this.rooms || {})) { R.wall.map = t; R.wall.needsUpdate = true; } });
+    swap(this.M.wall, ['assets/tex/wall3.jpg', 'assets/tex/wall.jpg'], 0, (t, i) => { if (i) return; this.wallTint.set(0xf3f0ea); this.M.wall.color.copy(this.wallTint); for (const R of Object.values(this.rooms || {})) { R.wall.map = t; R.wall.needsUpdate = true; } });
     swap(this.M.floor, ['assets/tex/floor3.jpg', 'assets/tex/floor.jpg']); swap(this.M.ceil, 'assets/tex/ceil3.jpg', 0, () => this.M.ceil.color.set(0xffffff));
     swap(this.M.door, 'assets/tex/door3.jpg', 0, (t) => { t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; this.M.door.color.set(0xffffff); this.M.door.roughness = 0.5; this.M.door.metalness = 0.25; }); swap(this.M.rego, 'assets/tex/rego.jpg', 170);
     this.panelClean = new THREE.Color(0xffffff); this.panelDusty = new THREE.Color(0x9a9690);
@@ -70,7 +99,9 @@ export class World {
     this.earthLight = new THREE.DirectionalLight(0x9dbcf7, 0.2); this.hemi = new THREE.HemisphereLight(0x10141c, 0xaeacaa, 0.6);
     this.scene.add(this.sunLight, this.sunLight.target, this.earthLight, this.earthLight.target, this.hemi);
   }
-  lamp(group, x, y, z, color, intensity, dist = 55) { const l = new THREE.PointLight(color, intensity, dist, 1.2); l.position.set(x, y, z); group.add(l); this.lamps.push({ l, base: intensity, top: group === this.top }); return l; }
+  lamp(group, x, y, z, color, intensity, dist = 55) {
+    if (group === this.top) { this.topLamps.push({ x, y, z, color, base: intensity, dist }); return null; }   // surface lamps share a pool of lights: see _lampPool
+    const l = new THREE.PointLight(color, intensity, dist, 1.2); l.position.set(x, y, z); group.add(l); this.lamps.push({ l, base: intensity, top: group === this.top }); return l; }
   _sky() {
     const sky = this.sky = new THREE.Group(); this.scene.add(sky);
     const rnd = seeded(99), n = 2200, pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
@@ -122,7 +153,8 @@ export class World {
     for (let i = 0; i < p.count; i++) {
       let x = p.getX(i), z = p.getZ(i), y = this.heightAt(x, z); const dp = Math.hypot(x - PIT.x, z - PIT.z);
       if (dp < PIT.r) { if (dp > PIT.r - step * 1.6) { const k = (PIT.r - 0.3) / Math.max(dp, 0.01); x = PIT.x + (x - PIT.x) * k; z = PIT.z + (z - PIT.z) * k; p.setX(i, x); p.setZ(i, z); } y = -105; }
-      p.setY(i, y); const tone = (0.78 + fbm(x * 0.02 + 40, z * 0.02) * 0.4 - (dp < PIT.r ? 0.55 : 0)) * (0.2 + 0.8 * smooth(MINE.r * 0.82, MINE.r * 1.02, Math.hypot(x - MINE.x, z - MINE.z)));   // the mine's floor never sees the Sun colors.set([tone, tone * 0.985, tone * 0.96], i * 3);
+      p.setY(i, y); const tone = (0.78 + fbm(x * 0.02 + 40, z * 0.02) * 0.4 - (dp < PIT.r ? 0.55 : 0)) * (0.2 + 0.8 * smooth(MINE.r * 0.82, MINE.r * 1.02, Math.hypot(x - MINE.x, z - MINE.z)));   // the mine's floor never sees the Sun
+      colors.set([tone, tone * 0.985, tone * 0.96], i * 3);
     }
     g.setAttribute('color', new THREE.BufferAttribute(colors, 3)); g.computeVertexNormals();
     const mesh = new THREE.Mesh(g, this.M.rego); mesh.receiveShadow = true; this.top.add(mesh);
@@ -368,11 +400,15 @@ export class World {
     this.carLamp = new THREE.SpotLight(0xfff2dc, 0, 90, 0.5, 0.6, 1); this.carLamp.position.set(0, 1.6, 2.5); this.carLamp.target.position.set(0, 0, 22); body.add(this.carLamp, this.carLamp.target);
     this.carCargo = new THREE.Group(); this.carCargo.position.set(0, 1.5, -1.15); body.add(this.carCargo);
     const ship = this.ship = new THREE.Group(); this.scene.add(ship);
-    this.put(ship, this.box(3.2, 2.0, 4.6, M.white), 0, 1.9, 0); this.put(ship, this.box(3.26, 0.35, 4.66, M.teal), 0, 1.5, 0); this.put(ship, this.sph(1.25, M.glass.clone(), 18, 12), 0, 2.3, 2.0); this.put(ship, this.box(2.6, 0.12, 2.2, M.grey), 0, 2.98, -1.0);
-    this.shipJets = []; for (const [px, pz] of [[-1.9, 1.7], [1.9, 1.7], [-1.9, -1.7], [1.9, -1.7]]) { this.put(ship, this.cyl(0.07, 0.07, 1.5, M.metal, 6), px * 1.05, 0.7, pz * 1.05, 0, 0, px > 0 ? -0.3 : 0.3); this.put(ship, this.cyl(0.5, 0.5, 0.12, M.foil, 10), px * 1.2, 0.06, pz * 1.05); this.put(ship, this.cyl(0.32, 0.42, 0.6, M.dark, 10), px, 1.0, pz); const f = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.6, 10), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); f.rotation.x = Math.PI; f.position.set(px, 0.0, pz); ship.add(f); this.shipJets.push(f); }
-    this.shipLed = this.put(ship, this.box(1.1, 0.14, 0.05, M.greenG.clone()), 0, 1.95, -2.33);
-    this.shipLamp = new THREE.SpotLight(0xdff2ff, 0, 120, 0.55, 0.6, 1); this.shipLamp.position.set(0, 1.5, 2.6); this.shipLamp.target.position.set(0, -6, 20); ship.add(this.shipLamp, this.shipLamp.target);
-    this.shipCargo = new THREE.Group(); this.shipCargo.position.set(0, 3.05, -1.0); ship.add(this.shipCargo);
+    const sb = this.shipBody = new THREE.Group(); ship.add(sb);   // everything but the legs and feet: it dips on the legs when the hopper lands
+    this.put(sb, this.box(3.2, 2.0, 4.6, M.white), 0, 1.9, 0); this.put(sb, this.box(3.26, 0.35, 4.66, M.teal), 0, 1.5, 0); this.put(sb, this.sph(1.25, M.glass.clone(), 18, 12), 0, 2.3, 2.0); this.put(sb, this.box(2.6, 0.12, 2.2, M.grey), 0, 2.98, -1.0);
+    this.shipJets = []; this.shipLegs = []; for (const [px, pz] of [[-1.9, 1.7], [1.9, 1.7], [-1.9, -1.7], [1.9, -1.7]]) { const leg = this.put(ship, this.cyl(0.07, 0.07, 1, M.metal, 6), px * 1.05, 0.7, pz * 1.05), pad = this.put(ship, this.cyl(0.5, 0.5, 0.12, M.foil, 10), px * 1.2, 0.06, pz * 1.05); this.shipLegs.push({ leg, pad, hip: new V3(px * 0.93, 1.4, pz * 1.05), foot: new V3(px * 1.17, 0.12, pz * 1.05) }); this.put(sb, this.cyl(0.32, 0.42, 0.6, M.dark, 10), px, 1.0, pz); const f = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.6, 10), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); f.rotation.x = Math.PI; f.position.set(px, 0.0, pz); sb.add(f); this.shipJets.push(f); }
+    this.shipLed = this.put(sb, this.box(1.1, 0.14, 0.05, M.greenG.clone()), 0, 1.95, -2.33);
+    this.shipLamp = new THREE.SpotLight(0xdff2ff, 0, 120, 0.55, 0.6, 1); this.shipLamp.position.set(0, 1.5, 2.6); this.shipLamp.target.position.set(0, -6, 20); sb.add(this.shipLamp, this.shipLamp.target);
+    this.shipCargo = new THREE.Group(); this.shipCargo.position.set(0, 3.05, -1.0); sb.add(this.shipCargo);
+    // landing ring: drawn on the ground straight below the hopper while it flies
+    const retM = this.shipRetM = new THREE.MeshBasicMaterial({ color: 0x5fe3a1, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide }); const ret = this.shipRet = new THREE.Group(); ret.visible = false; this.top.add(ret);
+    this.put(ret, new THREE.Mesh(new THREE.RingGeometry(2.5, 2.8, 40), retM), 0, 0, 0, -Math.PI / 2); this.put(ret, new THREE.Mesh(new THREE.RingGeometry(0.25, 0.4, 20), retM), 0, 0, 0, -Math.PI / 2); for (let k = 0; k < 4; k++) this.put(ret, new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.9), retM), Math.sin(k * Math.PI / 2) * 3.4, 0, Math.cos(k * Math.PI / 2) * 3.4, -Math.PI / 2, 0, k * Math.PI / 2);
   }
 
   // ---------- the lava tube (now the shell around the station) ----------
@@ -405,9 +441,9 @@ export class World {
     this.deepHemi = new THREE.HemisphereLight(0xfff4ec, 0x8a7f78, 1.5); D.add(this.deepHemi); this.skyBounce = new THREE.PointLight(0xfff0d8, 0, 110, 1.3); this.skyBounce.position.set(skyX + 3, 7, -2); D.add(this.skyBounce);
   }
 
-  // ---------- the station: red-walled rooms joined to one hall by bulkhead doors ----------
+  // ---------- the station: white-panelled rooms joined to one hall by bulkhead doors ----------
   _station() {
-    const D = this.deep, M = this.M, DH = 4.2; this.rooms = {};
+    const D = this.deep, M = this.M, DH = 4.2; this.rooms = {}; this.doorSigns = {}; this.floorGlow = glow(0x49e6ff, 2.2); this.spinners = []; this.bubbles = []; this.blinkers = []; this.flowRings = [];
     // Walls are drawn on the inside only, so the camera can sit outside a room and still see in.
     const P = (w, h, mat, tile = 4) => { const g = new THREE.PlaneGeometry(w, h), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * w) / tile, (uv.getY(i) * h) / tile); return new THREE.Mesh(g, mat); };
     const floor = (g, x0, x1, z0, z1) => { const m = P(x1 - x0, z1 - z0, M.floor); m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, 0.03, (z0 + z1) / 2); m.receiveShadow = true; g.add(m); };
@@ -423,11 +459,11 @@ export class World {
     // structure you can read: a rib every 6 m (never across a doorway), a portal frame round every door, services overhead, status light at the floor
     const nearDoor = (x, side) => ROOMS.some((q) => q.side === side && Math.abs(x - q.door) < 2.9), fix = (m) => { m.castShadow = false; return m; };
     for (let x = HALL.x0 + 3; x < HALL.x1; x += 6) { for (const side of [-1, 1]) if (!nearDoor(x, side)) this.put(hall, fix(this.box(0.22, HALL.h, 0.16, M.metal)), x, HALL.h / 2, side * (HALL.z1 - 0.08)); this.put(hall, fix(this.box(0.22, 0.14, HALL.z1 * 2, M.metal)), x, HALL.h - 0.07, 0); }
-    for (const q of ROOMS) { const z = q.side * (HALL.z1 - 0.07); for (const dx of [-2.12, 2.12]) this.put(hall, fix(this.box(0.24, DH, 0.2, M.orange)), q.door + dx, DH / 2, z); this.put(hall, fix(this.box(4.48, 0.24, 0.2, M.orange)), q.door, DH + 0.12, z); this.put(hall, fix(this.box(1.5, 0.1, 0.06, M.cyan)), q.door, DH + 0.12, q.side * (HALL.z1 - 0.19)); }
+    for (const q of ROOMS) { const z = q.side * (HALL.z1 - 0.07); for (const dx of [-2.12, 2.12]) this.put(hall, fix(this.box(0.24, DH, 0.2, M.orange)), q.door + dx, DH / 2, z); this.put(hall, fix(this.box(4.48, 0.24, 0.2, M.orange)), q.door, DH + 0.12, z); this.doorSigns[q.id] = glow(0x49e6ff, 2.2); this.put(hall, fix(this.box(1.5, 0.1, 0.06, this.doorSigns[q.id])), q.door, DH + 0.12, q.side * (HALL.z1 - 0.19)); }
     const run = HALL.x1 - HALL.x0, mid = (HALL.x0 + HALL.x1) / 2;
     for (const [z, r, mat] of [[-1.9, 0.09, M.metal], [-1.62, 0.06, M.tankW], [1.85, 0.11, M.white]]) this.put(hall, fix(this.cyl(r, r, run, mat, 8)), mid, HALL.h - 0.32, z, 0, 0, Math.PI / 2);
     this.put(hall, fix(this.box(run, 0.05, 0.42, M.dark)), mid, HALL.h - 0.5, 1.2);
-    for (const side of [-1, 1]) this.put(hall, fix(this.box(run, 0.05, 0.05, M.cyan)), mid, 0.12, side * (HALL.z1 - 0.05));
+    for (const side of [-1, 1]) this.put(hall, fix(this.box(run, 0.05, 0.05, this.floorGlow)), mid, 0.12, side * (HALL.z1 - 0.05));
     this.walk.push({ x0: HALL.x0 - 1, x1: HALL.x1 - 0.6, z0: HALL.z0 + 0.5, z1: HALL.z1 - 0.5 });
     // airlock: the station's front door, with the suit lockers
     const A = AIRLOCK, ab = new THREE.Group(); D.add(ab); floor(ab, A.x0, A.x1, A.z0, A.z1); ceil(ab, A.x0, A.x1, A.z0, A.z1, A.h);
@@ -482,6 +518,43 @@ export class World {
     for (const z of [-2.7, 2.7]) this.put(sh, this.sph(0.26, M.cyan), A.x0 - 0.2, 4.6, z);
     [[-73.5, 7.2, 0, M.white], [-73.5, 7.2, 1.3, M.orange], [-75.6, 8.4, 0, M.orange], [-73.2, 9.6, 0, M.white]].forEach(([cx, cz, cy, m]) => { this.put(sh, this.box(1.8, 1.3, 1.8, m), cx, cy + 0.65, cz); if (!cy) this.solid('deep', cx, cz, 1.3); });   // cargo waiting by the airlock
     this._props();
+  }
+  // Moving parts. Each one is tied to its room, so it slows in a power cut and stops when the room is wrecked or frozen.
+  _machines(id, g, c, zB, zD) {
+    const M = this.M, quiet = (m) => { m.castShadow = false; m.receiveShadow = false; return m; };
+    const rotor = (x, y, z, r, blades, mat) => { const o = new THREE.Group(); o.position.set(x, y, z); g.add(o); for (let k = 0; k < blades; k++) { const b = quiet(this.box(0.03, r, r * 0.3, mat)); b.position.y = r / 2; const arm = new THREE.Group(); arm.rotation.x = (k / blades) * Math.PI * 2; arm.add(b); o.add(arm); } this.put(o, quiet(this.cyl(r * 0.18, r * 0.18, 0.06, M.dark, 10)), 0, 0, 0, 0, 0, Math.PI / 2); return o; };
+    // every room breathes: a small fan in front of its wall vent (the farms have a big one of their own)
+    if (id !== 'potato' && id !== 'tomato') this.spinners.push({ room: id, o: rotor(c.x1 - 0.13, ROOM_H - 1.3, c.cz + c.D * 0.3, 0.3, 3, M.metal), rate: 11, v: 0 });
+    if (id === 'oxygen') {             // bubbles rise in the two tubes while the Oxygen Maker splits water
+      const mz = c.cz + 2.5; for (const dx of [-1, 1]) for (let k = 0; k < 4; k++) this.bubbles.push({ m: this.put(g, quiet(this.sph(0.035, M.whiteG, 6, 5)), c.cx + dx + (k % 2 ? 0.06 : -0.06), 2.7, mz + (k > 1 ? 0.05 : -0.05)), y0: 2.66, y1: 3.34, ph: k / 4 + (dx > 0 ? 0.13 : 0) });
+    }
+    if (id === 'water') {              // the recycler pump: a flywheel on the end of the motor
+      const fw = rotor(c.x0 + 0.95, 0.75, 12, 0.24, 4, M.orange); this.put(fw, quiet(new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.03, 6, 16), M.metal)), 0, 0, 0, 0, Math.PI / 2); this.spinners.push({ room: id, o: fw, rate: 7, v: 0, sys: 'recycler' });
+    }
+    if (id === 'control') {            // the computers are busy: rows of small lights on every rack
+      const mats = [0, 1, 2].map(() => glow(0x4dff88, 1.6)); mats.forEach((m, i) => this.blinkers.push({ room: id, m, ph: i * 2.1, sp: 2.3 + i * 1.7 }));
+      for (const [x, e] of [[c.x0 + 0.33, 1], [c.x1 - 0.33, -1]]) for (let k = 0; k < 3; k++) for (let j = 0; j < 4; j++) this.put(g, quiet(this.box(0.02, 0.05, 0.16, mats[(k + j) % 3])), x + e * 0.29, 0.75 + j * 0.42, -21 + k * 1.6 + 0.25);
+    }
+    if (id === 'kitchen') {            // steam rises from the pot into the hood while a meal cooks; a light on the water dispenser shows the tank
+      const steamM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.32, depthWrite: false });
+      for (let k = 0; k < 5; k++) this.bubbles.push({ kind: 'steam', sp: 0.6, grow: 1.6, m: this.put(g, quiet(this.sph(0.09, steamM, 6, 5)), c.cx - 2 + (k % 2 ? 0.12 : -0.1), 1.7, c.z0 + 1.1 + (k % 3) * 0.08 - 0.08), y0: 1.68, y1: 2.12, ph: k / 5 });
+      this.dispLed = glow(0x4dff88, 1.6); this.put(g, quiet(this.box(0.04, 0.08, 0.08, this.dispLed)), c.x0 + 0.72, 1.0, zD(5.5));
+    }
+    if (id === 'quarters') {           // an air-quality gauge on the wall, and a night light on each ladder
+      this.put(g, quiet(this.box(0.03, 1.3, 0.42, M.dark)), c.x1 - 0.07, 2.44, 10.9);
+      this.airBars = [0, 1, 2, 3, 4].map((k) => { const m = glow(0x4dff88, 1.5); this.put(g, quiet(this.box(0.04, 0.16, 0.26, m)), c.x1 - 0.1, 2.0 + k * 0.22, 10.9); return m; });
+      this.nightM = glow(0xffb070, 0.4); for (let i = 0; i < 3; i++) this.put(g, quiet(this.box(0.5, 0.05, 0.05, this.nightM)), c.x0 + 3.5 + i * 6, 3.12, c.z1 - 5.0);
+    }
+    if (id === 'bathroom') {           // rings slide along the used-water pipe toward the recycler: this water is not thrown away
+      for (let k = 0; k < 4; k++) this.flowRings.push({ m: this.put(g, quiet(new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.02, 6, 14), M.cyan)), c.cx, 0.35, c.z1 - 0.25, 0, Math.PI / 2), x0: c.cx - (c.W - 1) / 2 + 0.2, x1: c.cx + (c.W - 1) / 2 - 0.4, ph: k / 4 });
+    }
+    if (id === 'animal') {             // air bubbles in the fish tank while its pump has power
+      const tx = c.x1 - 3.6, tz = c.z0 + 7; for (let k = 0; k < 5; k++) this.bubbles.push({ kind: 'tank', sp: 0.3, grow: 0.5, m: this.put(g, quiet(this.sph(0.05, M.whiteG, 6, 5)), tx + 1.85 + (k % 2 ? 0.07 : -0.07), 0.8, tz + 0.6), y0: 0.75, y1: 2.25, ph: k / 5 });
+    }
+    if (id === 'storage') {            // the battery racks show charge moving: a light runs along the cable tray
+      const mats = [0, 1, 2].map(() => glow(0xffa424, 1.2)); mats.forEach((m, i) => this.blinkers.push({ room: id, m, ph: i * 2.094, sp: 4, chase: true }));
+      for (let k = 0; k < 9; k++) this.put(g, quiet(this.box(0.16, 0.03, 0.05, mats[k % 3])), c.x0 + 1.4 + k * ((c.W - 2.8) / 8), ROOM_H - 0.71, zB(1.2));
+    }
   }
   // One little plant of each crop. Leaves share the rack's own leaf material (so sick racks can turn brown); "fruits" appear late.
   _plant(kind, leaf, fruit, rnd) {
@@ -586,14 +659,14 @@ export class World {
       for (const x of [c.x0 + 0.08, c.x1 - 0.08]) for (let k = 1; k <= 3; k++) B(0.16, ROOM_H, 0.2, M.metal, x, ROOM_H / 2, c.z0 + (c.D * k) / 4);
       C(0.2, c.W - 0.5, M.metal, c.cx, ROOM_H - 0.4, zB(0.45), 0, PI2); B(c.W - 0.5, 0.06, 0.45, M.dark, c.cx, ROOM_H - 0.75, zB(1.2));
       B(0.08, 0.7, 1.3, M.dark, c.x1 - 0.05, ROOM_H - 1.3, c.cz + c.D * 0.3);
-      for (const x of [c.x0 + 0.06, c.x1 - 0.06]) B(0.05, 0.05, c.D - 0.4, M.cyan, x, 0.1, c.cz);
+      for (const x of [c.x0 + 0.06, c.x1 - 0.06]) B(0.05, 0.05, c.D - 0.4, this.floorGlow, x, 0.1, c.cz);
       B(0.95, 0.65, 0.05, M.dark, c.door - 3.2, 1.7, zD(0.05)); B(0.8, 0.5, 0.02, M.screen, c.door - 3.2, 1.7, zD(0.09));
 
       if (id === 'workshop') {
         B(0.08, 2.2, 6, M.dark, c.x0 + 0.06, 2.3, -14); for (let i = 0; i < 6; i++) B(0.06, 0.45 + (i % 3) * 0.15, 0.12, i % 2 ? M.orange : M.metal, c.x0 + 0.13, 1.9 + (i % 3) * 0.42, -16.4 + i * 0.95);   // tool wall
         for (const y of [0.5, 1.4, 2.3]) B(7, 0.06, 0.55, M.metal, -51.2, y, zD(0.33)); for (const x of [-54.6, -47.8]) B(0.08, 2.6, 0.55, M.metal, x, 1.3, zD(0.33));                                   // parts shelves
         for (let i = 0; i < 8; i++) B(0.62, 0.4, 0.42, [M.orange, M.blue, M.white, M.yellow][i % 4], -54.1 + i * 0.83, (i % 2 ? 1.4 : 0.5) + 0.23, zD(0.33));
-        B(0.25, 0.3, c.D - 1, M.yellow, BENCH[0], ROOM_H - 0.95, c.cz); B(0.6, 0.4, 0.6, M.dark, BENCH[0], ROOM_H - 1.3, BENCH[1] - 2.6); C(0.03, 1.5, M.metal, BENCH[0], ROOM_H - 2.25, BENCH[1] - 2.6); B(0.18, 0.25, 0.1, M.orange, BENCH[0], ROOM_H - 3.1, BENCH[1] - 2.6);   // overhead hoist
+        B(0.25, 0.3, c.D - 1, M.yellow, BENCH[0], ROOM_H - 0.95, c.cz); { const h = this.hoist = new THREE.Group(); h.position.set(BENCH[0], 0, BENCH[1] - 2.6); g.add(h); this.put(h, quiet(this.box(0.6, 0.4, 0.6, M.dark)), 0, ROOM_H - 1.3, 0); const hk = this.hoistHook = new THREE.Group(); hk.position.y = ROOM_H - 1.5; h.add(hk); this.put(hk, quiet(this.cyl(0.03, 0.03, 1.5, M.metal, 10)), 0, -0.75, 0); this.put(hk, quiet(this.box(0.18, 0.25, 0.1, M.orange)), 0, -1.6, 0); }   // overhead hoist: a trolley on the rail, with a hook that swings
         B(0.7, 0.9, 1.4, M.grey, c.x1 - 0.45, 0.45, -15); B(0.04, 0.06, 1.2, M.orange, c.x1 - 0.82, 0.55, -15); B(0.04, 1.4, 2.4, M.screen, c.x1 - 0.05, 2.7, -15);                                   // parts cart, plan screen
       }
       if (id === 'control') {
@@ -652,9 +725,10 @@ export class World {
         B(4.4, 0.2, 1.4, M.white, tx, 3.0, tz); for (const ex of [-2.1, 2.1]) for (const ez of [-0.9, 0.9]) B(0.07, 3, 0.07, M.metal, tx + ex, 1.5, tz + ez); for (let i = 0; i < 5; i++) S(0.3, i % 2 ? M.green : M.greenD, tx - 1.7 + i * 0.85, 3.3, tz);   // plants fed by the fish water
       }
       if (id === 'potato' || id === 'tomato') {
-        const fz = c.cz; B(0.06, 1.7, 1.7, M.dark, c.x1 - 0.04, 4.2, fz); T(0.72, 0.07, M.metal, c.x1 - 0.12, 4.2, fz, 0, PI2); B(0.04, 1.3, 0.14, M.metal, c.x1 - 0.13, 4.2, fz); B(0.04, 0.14, 1.3, M.metal, c.x1 - 0.13, 4.2, fz);   // ventilation fan
+        const fz = c.cz; B(0.06, 1.7, 1.7, M.dark, c.x1 - 0.04, 4.2, fz); T(0.72, 0.07, M.metal, c.x1 - 0.12, 4.2, fz, 0, PI2); const rotor = new THREE.Group(); rotor.position.set(c.x1 - 0.13, 4.2, fz); g.add(rotor); this.put(rotor, quiet(this.box(0.04, 1.3, 0.14, M.metal))); this.put(rotor, quiet(this.box(0.04, 0.14, 1.3, M.metal))); this.spinners.push({ room: id, o: rotor, rate: 5, v: 0 });   // ventilation fan
         const nx = c.x1 - 0.95, nz = zD(0.95); C(0.6, 1.6, M.tankW, nx, 0.8, nz, 0, 0, 16); C(0.63, 0.1, M.white, nx, 1.65, nz, 0, 0, 16); C(0.05, 1.4, M.tankW, nx - 0.4, 2.4, nz); hard(nx, nz, 0.85);                                  // nutrient tank
       }
+      this._machines(id, g, c, zB, zD);
       R[id].props.add(g);
     }
   }
@@ -687,26 +761,24 @@ export class World {
   stationPos(id) { const s = STATIONS.find((q) => q.id === id) || (() => { const t = SITES.find((q) => q.id === id); return { zone: 'top', pos: [t.pos[0] + 2, t.pos[1] + 16] }; })(); return this.at(s.zone, s.pos[0], s.pos[1]); }
   // Where the orange guide beam stands: { zone, x, z, id }
   setTarget(t) { this.target = t; if (!t) { this.beacon.visible = false; return; } const p = this.at(t.zone, t.x, t.z); this.beacon.position.set(p.x, p.y + 30, p.z); }
-  setZone(z) { this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; this.earth.visible = this.sunSprite.visible = z === 'top'; }
-  // Compile every shader and upload every texture while the title screen is up, so the first frame on the surface,
-  // in the cave, in first person or in a vehicle does not freeze for seconds. Safe to call again: it runs once.
-  warmup() {
+  // Builds the shaders for both zones, by day and by night, and uploads every texture, so the first elevator ride,
+  // the first nightfall and the first look around cost nothing in play. Runs once, in the background.
+  warm() {
     if (this._warm) return this._warm;
-    const r = this.renderer, s = this.scene, cam = this.camera, z0 = this.zone, sh0 = this.sunLight.castShadow, forced = [];
-    const PASSES = [['top', true], ['top', false], ['deep', false]];   // the sun casts shadows by day; at night and underground it does not, and that is a different set of shaders
-    const setPass = ([z, sh]) => { this.setZone(z); this.sunLight.castShadow = sh; showAll(); };
-    const showAll = () => s.traverse((o) => { if (!o.isLight && !o.visible && o !== this.top && o !== this.deep) { forced.push(o); o.visible = true; } });   // lights stay as they are: their count is part of every shader
-    const breathe = () => new Promise((res) => (window.requestIdleCallback ? requestIdleCallback(() => res(), { timeout: 400 }) : setTimeout(res, 30)));
+    const R = this.renderer, wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const state = (zone, night) => { const z0 = this.zone, sh = this.sunLight.castShadow, vis = this.lampPool.map((q) => q.l.visible), cv = this.car.visible, sv = this.ship.visible, dv = this.dig.visible;
+      this.setZone(zone); this.car.visible = this.ship.visible = this.dig.visible = zone === 'top'; this.sunLight.castShadow = zone === 'top' && !night && (!this.Q || this.Q.shadow > 0); for (const q of this.lampPool) q.l.visible = zone === 'top' && night;
+      let p; try { p = R.compileAsync ? R.compileAsync(this.scene, this.camera) : (R.compile(this.scene, this.camera), null); } catch (e) { p = null; }
+      this.setZone(z0); this.sunLight.castShadow = sh; this.lampPool.forEach((q, i) => (q.l.visible = vis[i])); this.car.visible = cv; this.ship.visible = sv; this.dig.visible = dv; return p; };
     return (this._warm = (async () => {
-      try {
-        for (const p of PASSES) { setPass(p); if (r.compileAsync) await r.compileAsync(s, cam); else r.compile(s, cam); }   // in the background, without blocking
-        const tex = new Set(); s.traverse((o) => { for (const m of [].concat(o.material || [])) for (const k in m) if (m[k] && m[k].isTexture) tex.add(m[k]); });
-        await breathe(); for (const t of tex) r.initTexture(t);
-        for (const p of PASSES) { await breathe(); setPass(p); r.render(s, cam); }   // the canvas sits behind the opaque title screen, so nobody sees these frames
-      } catch (e) { console.warn('warmup skipped', e); }
-      finally { for (const o of forced) o.visible = false; this.sunLight.castShadow = sh0; this.setZone(z0); this.warmDone = true; }
+      const t0 = performance.now(), seen = new Set();
+      for (const [zone, night] of [['top', false], ['deep', false], ['top', true]]) { try { await state(zone, night); } catch (e) {} await wait(30); }
+      for (const root of [this.top, this.deep, this.scene]) root.traverse((o) => { if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) for (const k of ['map', 'normalMap', 'roughnessMap', 'emissiveMap', 'alphaMap', 'bumpMap']) if (m[k] && m[k].image) seen.add(m[k]); });
+      let n = 0; for (const tx of seen) { try { R.initTexture(tx); } catch (e) {} if (++n % 4 === 0) await wait(0); }
+      this.warmMs = Math.round(performance.now() - t0); return this.warmMs;
     })());
   }
+  setZone(z) { this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; const show = z === 'top' ? this.top : this.deep, hide = z === 'top' ? this.deep : this.top; if (hide.parent) this.scene.remove(hide); if (!show.parent) this.scene.add(show); this.earth.visible = this.sunSprite.visible = z === 'top'; }
   // Press one tyre print into the dust at (x, z), pointing along yaw.
   track(x, z, yaw) { const m = (this._tm || (this._tm = new THREE.Matrix4())).makeRotationY(yaw); m.setPosition(x, this.heightAt(x, z) + 0.045, z); this.tracks.setMatrixAt(this.trackI++ % 900, m); this.tracks.instanceMatrix.needsUpdate = true; }
   // Kick up n grains of dust at (x, z). dx, dz = which way it is thrown; they fly as far as their speed takes them and drop straight back.
@@ -781,11 +853,13 @@ export class World {
     const earthLit = (1 - this.sunDir.dot(EARTH_DIR)) / 2; this.earthLit = earthLit;
     this.sunLight.intensity = topZ ? 3.4 * sn.factor : 0; const f = focus || this.camera.position;
     this.sunLight.target.position.set(Math.round(f.x / 4) * 4, topZ ? f.y : 0, Math.round(f.z / 4) * 4);
-    this.sunLight.position.copy(this.sunLight.target.position).addScaledVector(this.sunDir.clone().setY(Math.max(this.sunDir.y, 0.06)).normalize(), 300); this.sunLight.castShadow = topZ && sn.factor > 0.02;
+    this.sunLight.position.copy(this.sunLight.target.position).addScaledVector(this.sunDir.clone().setY(Math.max(this.sunDir.y, 0.06)).normalize(), 300); this.sunLight.castShadow = topZ && sn.factor > 0.02 && (!this.Q || this.Q.shadow > 0);
     this.earthLight.intensity = topZ ? (night ? 0.25 + 1.25 * earthLit : 0.1) : 0; this.earthLight.target.position.copy(f); this.earthLight.position.copy(f).addScaledVector(EARTH_DIR, 200);
     this.hemi.intensity = topZ ? 0.3 + 0.6 * sn.factor : 0; this.starMat.color.setScalar(topZ ? (night ? 1 : 0.5) : 0.8);
     const dim = S && S.flow.eff < 1 ? 0.35 : 1;
-    for (const L of this.lamps) L.l.intensity = L.top ? (topZ ? L.base * (night ? 1.5 : 0.25) : 0) : (topZ ? 0 : L.base * dim);
+    for (const L of this.lamps) L.l.intensity = topZ ? 0 : L.base * dim;
+    this._lampPool(dt, topZ && night, ctx.player);
+    if (this.Q && this.Q.every > 1) { this._sf = (this._sf || 0) + 1; if (this._sf % this.Q.every === 0) this.sunLight.shadow.needsUpdate = true; }   // lighter settings redraw the shadow map every other frame
     const inside = !!ctx.inside; this.shell.visible = !topZ && !inside; this.deepHemi.intensity = topZ ? 0 : (inside ? 1.5 : 1.05) * (0.45 + 0.55 * dim); this.skyBounce.intensity = topZ ? 0 : 140 * sn.factor;
     if (!topZ) { const near = ctx.player && Math.hypot(ctx.player.x - AIRLOCK.x0, ctx.player.z) < 6; this.odOpen = (this.odOpen || 0) + ((near ? 1 : 0) - (this.odOpen || 0)) * Math.min(1, dt * 6); this.outerDoor.scale.y = Math.max(0.03, 1 - this.odOpen); this.outerDoor.position.y = 4.15 - 2.05 * this.outerDoor.scale.y; this.suitHook.visible = !!S && !S.suitOn; }
     // solar mounts
@@ -824,7 +898,7 @@ export class World {
       this.carLed.material.emissive.setHex(S.car.charge > 0.5 ? 0x4dff88 : S.car.charge > 0.2 ? 0xffa424 : 0xff3b30); this.shipLed.material.emissive.setHex(S.ship.charge > 0.5 ? 0x4dff88 : S.ship.charge > 0.2 ? 0xffa424 : 0xff3b30);
     }
     this.car.visible = this.ship.visible = topZ; this.carLamp.intensity = ctx.carOn && night ? 40 : 0; this.shipLamp.intensity = ctx.shipOn && night ? 50 : 0;
-    for (const j of this.shipJets) { j.material.opacity = ctx.shipFly ? 0.55 + Math.random() * 0.3 : 0; j.scale.y = 0.8 + Math.random() * 0.5; }
+    { const th = ctx.shipThrust || 0; for (const j of this.shipJets) { j.material.opacity = th > 0.03 ? Math.min(0.95, 0.3 + 0.5 * th + Math.random() * 0.15) : 0; j.scale.y = 0.45 + 1.5 * th + Math.random() * 0.25; j.scale.x = j.scale.z = 0.8 + 0.35 * th; } }   // longer and brighter with more thrust
     for (const s of SITES) { const o = this.sites[s.id], done = S && S.rescued.includes(s.id); o.beam.material.opacity = (done ? 0.05 : 0.14) + 0.05 * Math.sin(t * 2); o.b.material.emissiveIntensity = 1.5 + Math.sin(t * 4) * 1.2; }
     // ---- the station
     if (S && !topZ) {
@@ -832,11 +906,34 @@ export class World {
       for (const id in this.rooms) {
         const R = this.rooms[id], r = S.rooms[id], d = R.def, wreck = r.built < 1, near = Math.hypot(px - d.door, pz - d.side * 4.5) < 4.6;
         R.wall.color.copy(this.wallTint).lerp(this.iceTint || (this.iceTint = new THREE.Color(0x7f9fc4)), r.frozen ? 0.65 : clamp(1 - r.p / K.AIR_KPA, 0, 1) * 0.35);
-        R.light.emissive.setHex(r.hole > 0 ? 0xff3b30 : 0xffffff); R.light.emissiveIntensity = (r.hole > 0 ? 1.2 + Math.sin(t * 9) : wreck ? 0.12 : 1.6) * (0.4 + 0.6 * dim);
+        R.light.emissive.setHex(r.hole > 0 ? 0xff3b30 : 0xffffff); R.light.emissiveIntensity = (r.hole > 0 ? 1.2 + Math.sin(t * 9) : wreck ? 0.12 : 1.6) * (dim < 1 ? 0.34 + (Math.sin(t * 23 + d.door) > 0.93 ? -0.2 : 0) : 1);
         const n = R.props.children.length, show = wreck ? Math.floor(n * clamp((r.built - 0.3) / 0.7, 0, 1) * 0.85) : n; for (let i = 0; i < n; i++) R.props.children[i].visible = i < show;
         R.debris.visible = wreck; R.debris.scale.setScalar(wreck ? clamp(1.3 - r.built, 0.3, 1) : 1); R.hole.visible = r.hole > 0; R.jet.visible = r.hole > 0 && r.p > 4; R.jet.material.opacity = 0.12 + 0.3 * (r.p / K.AIR_KPA) * (0.6 + 0.4 * Math.sin(t * 30));
         R.open += ((r.door || near ? 1 : 0) - R.open) * Math.min(1, dt * 6); R.door.scale.y = Math.max(0.03, 1 - R.open); R.door.position.y = 4.15 - 2.05 * R.door.scale.y; R.swLed.material.emissive.setHex(r.door ? 0x4dff88 : 0xff3b30);
       }
+      // status light over each door: cyan fine, red flashing for a leak, pale blue for a frozen room, amber for a wreck
+      const brown = S.flow.eff < 1, leak = S.flow.leaks.length > 0;
+      for (const id in this.doorSigns) { const r = S.rooms[id], m = this.doorSigns[id], st = r.hole > 0 && r.door ? 3 : r.frozen ? 2 : r.built < 1 ? 1 : 0;
+        m.emissive.setHex([0x49e6ff, 0xffa424, 0x9fc8ff, 0xff3b30][st]); m.emissiveIntensity = st === 3 ? 1.6 + 1.4 * Math.sin(t * 10) : st === 2 ? 1.2 + 0.5 * Math.sin(t * 2) : 2.2; }
+      // floor guide lights: steady cyan; in a power cut they turn amber and pulse, so the way out still shows
+      this.floorGlow.emissive.setHex(brown ? 0xffa424 : 0x49e6ff); this.floorGlow.emissiveIntensity = brown ? 1.5 + 0.9 * Math.sin(t * 3) : 2.2;
+      // hall ceiling lights: in a power cut only every third stays on; a leak anywhere makes them pulse red
+      this.hallLights.forEach((h, i) => { const m = h.material; m.emissive.setHex(leak ? 0xff5a4a : 0xffffff); m.emissiveIntensity = (brown ? (i % 3 === 0 ? 0.55 : 0.06) : 1.6) * (leak ? 0.75 + 0.25 * Math.sin(t * 6) : 1); });
+      // machines: each eases toward the speed its room can give it, so a power cut makes them wind down
+      const power = (id) => { const r = S.rooms[id]; return r.built >= 1 && !r.frozen && r.p > 55 ? S.flow.eff : 0; };
+      for (const q of this.spinners) { const want = power(q.room) * (q.sys === 'recycler' ? (S.lv.recycler > 0 ? 0.4 + 0.3 * S.lv.recycler : 0) : 1) * q.rate; q.v += (want - q.v) * Math.min(1, dt * 1.2); q.o.rotation.x += q.v * dt; }
+      const runOf = { o2: power('oxygen') * (S.flow.o2Elec > 0 ? 0.4 + 0.3 * S.lv.o2gen : 0), steam: ctx.cooking ? power('kitchen') : 0, tank: S.fish ? power('animal') : 0 };
+      for (const q of this.bubbles) { const run = runOf[q.kind || 'o2']; q.m.visible = run > 0.02; if (q.m.visible) { const k = (t * (q.sp || 0.45) * run + q.ph) % 1; q.m.position.y = q.y0 + (q.y1 - q.y0) * k; q.m.scale.setScalar(0.6 + (q.grow || 0.8) * k); } }
+      // Workshop hoist: travels along its rail while the Fix-It Bench is working, and stops where it is when the work or the power stops
+      if (this.hoist) { const busy = S.bench.some((b) => b && b.left > 0) ? power('workshop') : 0; this.hoistV = (this.hoistV || 0) + (busy - (this.hoistV || 0)) * Math.min(1, dt * 1.5); this.hoistT = (this.hoistT || 0) + dt * this.hoistV; this.hoist.position.z = BENCH[1] - 2.6 + Math.sin(this.hoistT * 0.7) * 1.5; this.hoistHook.rotation.x = Math.sin(this.hoistT * 2.1) * 0.12 * this.hoistV; }
+      // Kitchen: the light on the water dispenser follows the tank
+      if (this.dispLed) { this.dispLed.emissive.setHex(S.water > 6 ? 0x4dff88 : S.water > 2 ? 0xffa424 : 0xff3b30); this.dispLed.emissiveIntensity = power('kitchen') > 0 ? (S.water > 2 ? 1.6 : 1.2 + Math.sin(t * 8)) : 0; }
+      // Bunk Room: five bars of air quality (they flash while the air cleaner is broken), and night lights that breathe while you sleep
+      if (this.airBars) { const pw = power('quarters'), n = Math.ceil(clamp(S.air, 0, 1) * 5), hex = S.air > 0.6 ? 0x4dff88 : S.air > 0.35 ? 0xffa424 : 0xff3b30, blink = S.f.scrubber && Math.sin(t * 6) < 0; this.airBars.forEach((m, k) => { m.emissive.setHex(hex); m.emissiveIntensity = pw > 0 && k < n && !blink ? 1.5 : 0.04; }); this.nightM.emissiveIntensity = pw > 0 ? (ctx.sleeping ? 0.55 + 0.3 * Math.sin(t * 1.2) : 0.4) : 0; if (ctx.sleeping) this.rooms.quarters.light.emissiveIntensity *= 0.18; }
+      // Bathroom: used water flows to the recycler at the rate the recycler is cleaning it
+      { const flow = power('bathroom') * S.flow.rate; for (const q of this.flowRings) { q.m.visible = flow > 0.02; if (q.m.visible) q.m.position.x = q.x0 + (q.x1 - q.x0) * ((t * 0.22 * flow + q.ph) % 1); } }
+      for (const q of this.blinkers) { const p = power(q.room); q.m.emissiveIntensity = p <= 0 ? 0 : q.chase ? (S.flow.net >= 0 || S.battery > 1 ? 0.25 + 1.6 * Math.max(0, Math.sin(t * q.sp * (S.flow.net >= 0 ? 1 : -1) + q.ph)) : 0.1) : (Math.sin(t * q.sp + q.ph) > -0.2 ? 1.7 : 0.15) * p; }
+      if (this.holoMoon) this.holoMoon.rotation.y = t * 0.25;
       const b = S.battery / S.flow.cap; this.battBars.forEach((bar, i) => { bar.scale.y = b > i / 4 - 0.02 ? clamp((b - i / 4) * 4, 0.12, 1) : 0.08; bar.material.emissive.setHex(b < 0.15 ? 0xff3b30 : b < 0.35 ? 0xffa424 : 0x4dff88); });
       this.modSlots.forEach((m, i) => { if (m.visible) m.visible = i < S.mods; });
       const o = S.o2 / S.o2Cap; this.o2Tanks.forEach((tk, i) => tk.material.emissive.setRGB(0, 0.3 * clamp(o * 3 - i, 0, 1), 0.12 * clamp(o * 3 - i, 0, 1))); this.o2Glow.material.emissive.setHex(S.flow.o2Elec > 0 ? 0x49e6ff : 0x333333);

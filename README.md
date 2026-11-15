@@ -20,7 +20,9 @@ With REGO the robot you must keep the **power on** and the **air in** until resc
 | **E** | do the thing shown at the bottom of the screen |
 | Space · Q (in the digger) | dig · tip the bucket into the filler |
 | **Q** | second action (take cargo out of a vehicle) |
-| Tab · M · H · N · L | Power Board · Map · ask REGO · Space Guide · Life-support loop |
+| Tab · M · H · N · L · T | Power Board · Map · ask REGO · Space Guide · Life-support loop · Day and night |
+| In the hopper | Space up · C down (it slows itself near the ground) · a ring below shows where it will land |
+| Settings (gear button) | Guide mode · job games · questions after emergencies · sound · music · graphics detail (Auto, High, Medium, Low) · frame-rate counter |
 | V · P | first/third person · pause |
 
 ## What you do
@@ -48,17 +50,18 @@ js/main.js            game loop, player, rover, hopper, carrying, build scenes, 
 js/actions.js         what E does everywhere, room panels, alerts, REGO's advice
 js/events.js          surprise events (real-dated storms, moonquakes, impacts, air leaks…)
 js/story.js           comic pages, training, meteor-shower scene, endings
-js/sim.js             the survival simulation (pure logic; `node tools/sim_test.mjs` checks balance)
-js/life.js            crops, plant health, plant food, Water Plant, experiment, research (pure logic; `node tools/life_test.mjs` runs 70 checks)
+js/sim.js             the survival simulation (pure logic; `node tools/sim_test.mjs` checks that every mission can be won)
+js/life.js            crops, plant health, plant food, Water Plant, experiment, research (pure logic; `node tools/life_test.mjs` runs 71 checks)
 js/lifeui.js          farm, Water Plant, life-support loop, research and experiment screens
+docs/GAME_OVERVIEW.md  what the game is, what it teaches, how to play, the data behind it, test results, what to improve
 docs/ROADMAP.md       what is built, what comes next, and which real data each plan uses
-js/world.js           3D world (surface base, other stations, the cave, the red-walled station, vehicles)
+js/world.js           3D world (surface base, other stations, the cave, the white-panelled station, vehicles)
 js/actors.js          astronaut, REGO, BOLT robots
 js/ui.js, icons.js    interface and hand-drawn icons
 js/minigames.js       dish aiming, air-filter build, fire fighting
 js/nasa-events.js     generated data module (see docs)
 docs/SCIENCE_AND_SOURCES.md   every real number, dataset and source — kept out of the game on purpose
-tools/                data download/build scripts, art generation, local server
+tools/                data download/build scripts, art generation, local server, checks (`comment_scan.mjs` finds code hidden inside a comment)
 assets/img, assets/tex        what the game loads   ·   assets/art   full-size art originals (git-ignored)
 ```
 

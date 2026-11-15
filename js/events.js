@@ -1,5 +1,6 @@
 // MOONKEEPER 2 — surprise events. Every solar storm, moonquake and meteoroid strike uses the date of a real recorded event.
 import { STORMS, QUAKES, IMPACTS, METEORITES } from './nasa-events.js';
+import { QUIZ } from './quiz.js';
 import { K, SITES, ROOMS, MOUNTS, FAB_OUT, fmt } from './config.js';
 import { computeFlows, startStorm, runDustShield, note, roomOk } from './sim.js';
 import { playMini } from './minigames.js';
@@ -101,7 +102,7 @@ export function installEvents(G) {
       if (i === 0) G.pointTo('wplant');
     },
     async drift() { const s = G.S; G.done.drift = true; s.f.commsDown = true; note(s, 'The dish drifted off Earth.', 'bad');
-      const i = await ui.card({ art: 'ev2_comms', title: 'Signal Lost', body: 'The dish motor slipped and the beam slid off Earth. Earth has not moved — it never does in our sky — but the dish must point at it almost perfectly.', learn: 'Your signal takes 1.3 seconds to reach Earth and the reply takes 1.3 more. On Mars the wait is 4 to 24 minutes each way.', choices: [{ label: 'Go and aim the dish again', costs: ['1 h topside'] }, { label: 'Leave it for now', costs: ['No storm warnings'], gains: ['Saves 2 kW'] }] }); if (i === 0) G.pointTo('dish'); },
+      const i = await ui.card({ art: 'ev2_comms', title: 'Signal Lost', body: 'The dish motor slipped and the beam slid off Earth. Earth has not moved — it hardly ever does in our sky — but the dish must point at it almost perfectly.', learn: 'Your signal takes 1.3 seconds to reach Earth and the reply takes 1.3 more. On Mars the wait is 4 to 24 minutes each way.', choices: [{ label: 'Go and aim the dish again', costs: ['1 h topside'] }, { label: 'Leave it for now', costs: ['No storm warnings'], gains: ['Saves 2 kW'] }] }); if (i === 0) G.pointTo('dish'); },
     async freeze() { const s = G.S; G.done.freeze = true; s.f.heater = true; note(s, 'A heater circuit failed in the cold.', 'bad');
       const i = await ui.card({ art: 'ev2_freeze', title: 'Heater Circuit Failure', body: `It is <b>${fmt.temp(s.flow.sun.tempC)}</b> topside. One heater circuit just died, so the machines up there now need one more heater level to stay alive.`, learn: 'With no air to hold heat, the lunar surface drops to about −173°C at night. Machines left unheated can crack.', advice: s.mat > 1 ? 0 : 1, adviceText: s.mat > 1 ? 'Fix the circuit. Extra heat all night is expensive.' : 'Save your materials. Turn the heaters up.',
         choices: [{ label: 'Fix it at the Heater Hub', costs: ['1 material', '1.5 h topside in the dark'], disabled: s.mat < 1 }, { label: 'Run the heaters at max instead', costs: ['+2 kW for as long as it is broken'] }] }); if (i === 0) G.pointTo('yard'); else s.lv.heat = 3; },
@@ -113,6 +114,15 @@ export function installEvents(G) {
       await ui.card({ art: 'ev2_freeze', title: cold ? 'Frozen Solid' : 'Cooked', body: `Topside is <b>${fmt.temp(s.flow.sun.tempC)}</b> and the ${cold ? 'heaters' : 'coolers'} were set too low for too long. <b>${what} has broken.</b> Keep the Topside Heaters &amp; Coolers at the level the machines need, or more will follow.`, learn: 'The Moon has no air to spread heat around, so the surface swings from 127°C in sunlight to −173°C at night.', choices: [{ label: 'Understood' }] }); },
   };
 
+  // After an emergency is settled: one short question about why it happened, asked once per kind in a mission.
+  // A right answer earns a research point. A wrong one costs nothing: the card explains, and the game goes on.
+  G.askQuestion = async (type) => {
+    const q = QUIZ[type], s = G.S; if (!q || G.quiz === false || G.done['q_' + type] || s.over) return null; G.done['q_' + type] = true;
+    const order = [0, 1, 2].sort(() => Math.random() - 0.5), i = await ui.card({ good: true, title: 'Quick question', body: q.q, choices: order.map((k) => ({ label: q.a[k] })) }), right = order[i] === 0;
+    s.stats.asked = (s.stats.asked || 0) + 1; if (right) { s.stats.right = (s.stats.right || 0) + 1; s.sci += 1; note(s, 'Answered a question correctly: +1 research.', 'good'); }
+    await ui.card({ good: true, title: right ? 'That is right!' : 'Not quite', body: (right ? '' : `The answer is: <b>${q.a[0]}</b>.<br><br>`) + q.why, choices: [{ label: 'Carry on', gains: right ? ['+1 research'] : [] }] });
+    return right;
+  };
   G.scheduleNext = () => { const s = G.S, g = s.m.gap; G.nextEventAt = s.t + (g[0] + rng() * (g[1] - g[0])) * 24; };
   G.fireEvent = async (forced) => {
     const s = G.S, up = s.flow.sun.up; let type = forced;
@@ -122,7 +132,7 @@ export function installEvents(G) {
       else { const c = []; if (!s.storm) c.push(['storm', G.done.bigStorm ? 2 : 3.2]); c.push(['meteor', 2.4], ['quake', 1.8], ['breach', 1.2]); if (up || s.flow.sun.nightHours < 20) c.push(['dust', 1.8]); if (!G.done.fire && roomOk(s, 'kitchen')) c.push(['fire', 1]); if (!G.done.co2 && !s.f.scrubber && roomOk(s, 'oxygen')) c.push(['co2', 1.1]); if (roomOk(s, 'tomato') && !G.done.mold) c.push(['mold', 1.1]); if (!G.done.pump && (roomOk(s, 'potato') || roomOk(s, 'tomato'))) c.push(['pump', 1]); if (!G.done.led && (roomOk(s, 'potato') || roomOk(s, 'tomato'))) c.push(['led', 0.8]); if (!G.done.seal && s.wx.runs > 0) c.push(['seal', 1.2]); if (s.flow.commsOn && !G.done.drift) c.push(['drift', 0.8]); if (!up && !G.done.freeze) c.push(['freeze', 1.6]);
         const list = c.filter((x) => x[0] !== G.lastEvent); let tot = list.reduce((a, b) => a + b[1], 0), r = rng() * tot; for (const [k, w] of list) { r -= w; if (r <= 0) { type = k; break; } } type = type || 'meteor'; }
     }
-    G.lastEvent = type; s.stats.events++; G.sleepLeft = 0; await E[type](); G.scheduleNext(); G.save?.();
+    G.lastEvent = type; s.stats.events++; G.sleepLeft = 0; await E[type](); await G.askQuestion(type); G.scheduleNext(); G.save?.(true);   // the emergency is settled: save its outcome
   };
   // things the simulation asks the game to handle
   G.processPending = async () => {

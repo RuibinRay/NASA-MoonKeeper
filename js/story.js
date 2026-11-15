@@ -133,6 +133,7 @@ export function ending(G) {
     why.push(S.rescued.length ? `You rescued <b>${S.rescued.length}</b> astronaut${S.rescued.length > 1 ? 's' : ''} from the other stations. They ate your food — and did their share of the work.` : 'You did not reach the other stations this time. Three astronauts are still waiting for the rescue ship.');
     why.push(S.dose < 40 ? `You took only ${S.dose.toFixed(1)} mSv of radiation — you used the rock roof well.` : `You took ${S.dose.toFixed(0)} mSv of radiation. Less time topside during storms would lower it.`);
     if (S.stats.brownHours > 2) why.push(`The station spent ${S.stats.brownHours.toFixed(0)} hours in brownout with an empty battery. More panels and battery modules before sunset would prevent that.`);
+    { const asked = S.stats.asked || 0, right = S.stats.right || 0; if (asked) why.push(`After the emergencies you answered <b>${right} of ${asked}</b> question${asked > 1 ? 's' : ''} right${right === asked && asked > 1 ? ': every one.' : '.'}`); }
     return { win: true, img: 'win2', title: 'RESCUED — YOU ARE A MOONKEEPER', sub: 'The rescue ship is down. As you walk to the landing pad, REGO rolls beside you with both arms in the air. Commander Vasquez and Engineer Okoro would be proud.', why,
       science: 'Everything you juggled is real. Future Moon crews must keep the air in, trade power between air, water, food and heat, hide from solar storms, and survive two-week nights. Lava tubes like this one are among the places scientists are studying for shelter.' };
   }

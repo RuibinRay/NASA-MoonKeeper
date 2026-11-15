@@ -1,6 +1,7 @@
 // Headless balance check for MOONKEEPER 2: runs rough player strategies through the sim (no random events).
 import { createSim, applyDisaster, step, computeFlows, harvest, collectEggs, cookBatch, spend, roomOk } from '../js/sim.js';
 import { ROOMS } from '../js/config.js';
+import { runPlanned, PLANS } from './planned_player.mjs';
 const run = (mode, strat, maxDays = 14) => {
   const S = createSim(mode, 42); applyDisaster(S); S.zone = 'deep'; let last = S.t, lastFix = S.t, minB = 1e9;
   const ctx = { nextPanelAt: S.t + 5, nextRoomAt: S.t + 14 };
@@ -22,4 +23,13 @@ const sensible = (S, c) => {
   if (S.dust > 0.4) S.dust = 0.05;
   S.helpers[0].role = S.battery > 80 ? 'farm' : 'idle';
 };
-for (const mode of ['cadet', 'pilot', 'commander', 'unlimited']) { console.log(mode.padEnd(10), 'lazy    ', run(mode, lazy)); console.log(mode.padEnd(10), 'sensible', run(mode, sensible)); }
+let fails = 0; const lazyWon = {};
+for (const mode of ['cadet', 'pilot', 'commander', 'unlimited']) { const l = run(mode, lazy); lazyWon[mode] = l.startsWith('WIN'); console.log(mode.padEnd(10), 'lazy    ', l); console.log(mode.padEnd(10), 'sensible', run(mode, sensible)); }
+// The planned player pays game time for every trip (see planned_player.mjs). Travel x1.5 stands for a good player.
+console.log('\nPlanned player, travel x1.5:');
+for (const mode of ['cadet', 'pilot', 'commander']) { let won = 0;
+  for (const plan of PLANS) { const r = runPlanned(mode, 1.5, plan); if (r.win) won++; console.log(mode.padEnd(10), plan.padEnd(8), r.text); }
+  if (!won) { fails++; console.log(`FAIL  ${mode}: no plan wins. The mode may be impossible for a real player.`); } }
+if (lazyWon.commander) { fails++; console.log('FAIL  Commander can be won by doing nothing.'); }
+console.log(fails ? `\n${fails} balance problem${fails > 1 ? 's' : ''}.` : '\nEvery mission can be won by a planned player, and Commander cannot be won by doing nothing.');
+process.exitCode = fails ? 1 : 0;

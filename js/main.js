@@ -5,7 +5,7 @@ import { Astronaut, Rego, Bolt } from './actors.js';
 import { UI } from './ui.js';
 import { Sound } from './audio.js';
 import { IC } from './icons.js';
-import { playProcedure } from './minigames.js';
+import { playProcedure, playMini } from './minigames.js';
 import { jobEffect } from './jobfx.js';
 import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, BASE, MINE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, fmt } from './config.js';
 import { createSim, step, computeFlows, applyDisaster, jobHours, addHelper, serialize, deserialize } from './sim.js';
@@ -14,7 +14,7 @@ import { patchAt, scoop } from './life.js';
 import { installEvents } from './events.js';
 import { comicIntro, tutorial, disaster, ending } from './story.js';
 
-const V3 = THREE.Vector3, $ = (s) => document.querySelector(s), clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const V3 = THREE.Vector3, $ = (s) => document.querySelector(s), clamp = (x, a, b) => Math.max(a, Math.min(b, x)), UP = new V3(0, 1, 0), TMP = new V3();
 const canvas = $('#view'), params = new URLSearchParams(location.search);
 const G = (window.G = {
   state: 'title', keys: {}, S: null, simOn: false, speedMul: 1, sleepLeft: 0, shake: 0, paused: false, npcs: [], goal: null, nagT: 0, stepT: 0, saveT: 0,
@@ -24,7 +24,8 @@ const G = (window.G = {
   items: [], followers: [], crew: {}, siteNpc: {}, itemSeq: 1,
 });
 G.audio = new Sound(); G.world = new World(canvas); G.ui = new UI(G);
-G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.world.scene.add(G.astro.group, G.rego.group);
+G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.astro.lamp.visible = true; G.world.scene.add(G.astro.group, G.rego.group);
+G.lampMounts = [G.astro, G.rego].map((a) => { const m = new THREE.Group(); m.add(a.lamp, a.lamp.target); G.world.scene.add(m); return [m, a.group]; });   // lamps outside the bodies: hiding a body must not change the light count
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
 G.dig = { x: MINE.x - 10, z: MINE.z + 9, yaw: 2.3, v: 0, load: 0, prog: 0, boom: 0, dig: 0, dry: 0 };   // the digger at the Polar Ice Mine
 const groundY = (zone, x, z) => (zone === 'top' ? world.heightAt(x, z) : TUBE.y);
@@ -62,11 +63,11 @@ function placeItems() {
 }
 
 // ---------- NPCs: mentors (training), survivors at other stations, followers, crew in the station ----------
-G.addNpc = (who, color, x, z, zone = 'top') => { const a = new Astronaut(color, { lamp: false }), n = { a, who, x, z, zone }; world.scene.add(a.group); G.npcs.push(n); return n; };
+G.addNpc = (who, color, x, z, zone = 'top') => { const a = new Astronaut(color), n = { a, who, x, z, zone }; world.scene.add(a.group); G.npcs.push(n); return n; };
 G.moveNpc = (n, x, z, zone) => { n.x = x; n.z = z; if (zone) n.zone = zone; };
 G.clearNpcs = () => { for (const n of G.npcs) world.scene.remove(n.a.group); G.npcs = []; };
 const SITE_COL = { ingrid: 0x1fb5a8, kenji: 0x9a5cff, anika: 0x3fbf5a, vasquez: 0xd8322a, okoro: 0x2a62d8 };
-G.spawnSurvivors = () => { for (const s of SITES) if (!G.S.rescued.includes(s.id) && !G.siteNpc[s.id] && !G.followers.some((f) => f.site.id === s.id)) { const a = new Astronaut(SITE_COL[s.who], { lamp: false }); world.scene.add(a.group); G.siteNpc[s.id] = { a, x: s.pos[0] + 5, z: s.pos[1] + 14 }; } };
+G.spawnSurvivors = () => { for (const s of SITES) if (!G.S.rescued.includes(s.id) && !G.siteNpc[s.id] && !G.followers.some((f) => f.site.id === s.id)) { const a = new Astronaut(SITE_COL[s.who]); world.scene.add(a.group); G.siteNpc[s.id] = { a, x: s.pos[0] + 5, z: s.pos[1] + 14 }; } };
 G.follow = (site) => { const n = G.siteNpc[site.id]; if (!n) return; delete G.siteNpc[site.id]; G.followers.push({ site, a: n.a, x: n.x, z: n.z }); };
 function updateActors(dt) {
   for (const n of G.npcs) { const a = n.a.group; a.visible = n.zone === P.zone; a.position.set(n.x, groundY(n.zone, n.x, n.z), n.z); a.rotation.y = Math.atan2(P.pos.x - n.x, P.pos.z - n.z); n.a.setSuit(!(n.zone === 'deep' && world.indoors(n.x, n.z))); n.a.update(dt, 0, false, Math.hypot(P.pos.x - n.x, P.pos.z - n.z) < 14 && G.goal ? 'wave' : 'walk'); }
@@ -76,7 +77,7 @@ function updateActors(dt) {
   // crew inside the station walk around the room that matches their job
   const S = G.S; if (!S) return; const roomOf = { idle: 'quarters', farm: 'potato', cook: 'kitchen', clean: null, build: 'workshop' };
   for (const h of S.helpers) {
-    let c = G.crew[h.id]; if (!c) { const actor = h.kind === 'bot' ? new Bolt() : new Astronaut(SITE_COL[h.id] || 0x888888, { lamp: false }); actor.setSuit?.(false); world.scene.add(actor.group); c = G.crew[h.id] = { actor, x: -58 + Math.random() * 6, z: -1.5 + Math.random() * 3, tx: -56, tz: 0, t: 0, role: null }; }
+    let c = G.crew[h.id]; if (!c) { const actor = h.kind === 'bot' ? new Bolt() : new Astronaut(SITE_COL[h.id] || 0x888888); actor.setSuit?.(false); world.scene.add(actor.group); c = G.crew[h.id] = { actor, x: -58 + Math.random() * 6, z: -1.5 + Math.random() * 3, tx: -56, tz: 0, t: 0, role: null }; }
     const g = c.actor.group; g.visible = P.zone === 'deep'; if (!g.visible) continue;
     const rid = h.kind === 'bot' && h.role === 'idle' ? null : roomOf[h.role], def = rid && ROOMS.find((r) => r.id === rid), q = def ? roomRect(def) : { x0: -60, x1: -34, z0: -3.8, z1: 3.8 };
     if (c.role !== h.role) { c.role = h.role; c.x = (q.x0 + q.x1) / 2; c.z = (q.z0 + q.z1) / 2; c.t = 0; }
@@ -162,11 +163,15 @@ const stagesFor = (o) => {
   if (tier >= 2 || all.length === 1) return all; if (tier === 0) return [all[core]];
   const other = core > 0 ? core - 1 : 1; return all.filter((q, i) => i === core || i === other);
 };
+G.playMini = (kind, opts) => playMini(G, kind, opts);   // the Space Guide's practice page uses this
 G.minis = (() => { try { return localStorage.getItem('mk-minis') !== '0'; } catch (e) { return true; } })();
 G.setMinis = (on) => { G.minis = !!on; try { localStorage.setItem('mk-minis', G.minis ? '1' : '0'); } catch (e) {} };
-G.job = async (o) => {
+G.minisAll = (() => { try { return localStorage.getItem('mk-minis-all') === '1'; } catch (e) { return false; } })();
+G.setMinisAll = (on) => { G.minisAll = !!on; try { localStorage.setItem('mk-minis-all', G.minisAll ? '1' : '0'); } catch (e) {} };
+G.job = async (o) => { G.inJob = (G.inJob || 0) + 1; try { return await doJob(o); } finally { G.inJob--; } };
+const doJob = async (o) => {
   let fx = null;
-  if (G.minis && o.mini !== false) {
+  if (G.minis && o.mini !== false && (G.minisAll || o.hours >= 1 || typeof o.mini === 'string')) {   // quick jobs (suit, unloading, replanting) skip the game unless "every job" is switched on
     ui.prompt(null); const r = await playProcedure(G, stagesFor(o).map(([k, opt]) => [k, { loseText: 'Done the slow way', ...opt }]));
     const q = !r.win || (/Picking/i.test(o.title) && r.stars <= 1) ? 'poor' : r.stars >= 3 ? 'great' : 'ok';   // harvest never fails on time, so one star counts as a poor harvest
     fx = G.S ? jobEffect(o.title, o.tag, q) : null;
@@ -177,6 +182,20 @@ G.job = async (o) => {
   const out = await runJob(o);
   if (fx && G.S) setTimeout(() => { fx[0](G.S); ui.toast(fx[1], fx[2] === 'great' ? 'good' : 'bad'); }, 0);   // after the caller has applied the job's own result
   return out;
+};
+// Job camera. Instead of circling (which put the camera inside panels and behind racks), pick spots with a clear
+// view of both the worker and the work: over a shoulder first, then from the side. Returns the best two, well apart.
+const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+const jobShots = (sp) => {
+  const zone = P.zone, deep = zone === 'deep', room = deep ? world.roomAt(P.pos.x, P.pos.z) : null, inD = deep && world.indoors(P.pos.x, P.pos.z), cols = world.colliders[zone];
+  const d0 = Math.hypot(sp.x - P.pos.x, sp.z - P.pos.z), f = d0 > 0.01 ? Math.min(0.45, 1.2 / d0) : 0, cx = P.pos.x + (sp.x - P.pos.x) * f, cz = P.pos.z + (sp.z - P.pos.z) * f;   // look between the worker and the work
+  const free = (x, z, pad) => (!deep || (world.walkable(x, z) && world.roomAt(x, z) === room && world.indoors(x, z) === inD)) && !cols.some((c) => Math.hypot(c.x - x, c.z - z) < c.r + pad);
+  const back = P.face + Math.PI, out = [];
+  for (const d of deep ? [5.2, 4.1, 3.2] : [7, 5.5, 4.2]) for (const a of [0.85, -0.85, 1.45, -1.45, 0.35, -0.35, 2.2, -2.2]) {
+    const yaw = back + a, x = cx + Math.sin(yaw) * d, z = cz + Math.cos(yaw) * d;
+    if (free(x, z, 0.5) && free(cx + (x - cx) * 0.5, cz + (z - cz) * 0.5, 0.1) && free(cx + (x - cx) * 0.78, cz + (z - cz) * 0.78, 0.2)) out.push({ yaw, d }); }
+  const A = out[0] || { yaw: back + 0.85, d: 3 }, B = out.find((s) => Math.abs(wrapA(s.yaw - A.yaw)) > 0.9) || { yaw: A.yaw + (out.length ? 0.45 : -1.7), d: A.d * 0.82 };
+  return { A, B, f };
 };
 const runJob = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'work', tag, sparks = true, tool }) => new Promise((res) => {
   const S = G.S, real = clamp(3.5 + hours * 1.5, 4.5, 13), hrs = G.simOn ? jobHours(S, hours) * (G.inside && !S.suitOn ? 0.75 : 1) : 0;   // no big gloves indoors: a quarter faster
@@ -192,7 +211,11 @@ const runJob = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'wo
     t += dt; const tw = walk ? walk.t : 0, k = Math.min(1, Math.max(0, t - tw) / real); if (hrs && t > tw) G.simAdvance((hrs * dt) / real);
     if (walk && t < tw) { const u = t / tw, e = u * u * (3 - 2 * u); P.pos.x = walk.x0 + (walk.x1 - walk.x0) * e; P.pos.z = walk.z0 + (walk.z1 - walk.z0) * e; P.vel.set(0, 0, 0); J.pose = 'walk'; J.speed = 5.5 * Math.sin(u * Math.PI) + 1; G.stepT += dt * J.speed; if (G.stepT > 4.2) { G.stepT = 0; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x, P.pos.z, 4, 0, 0, 0.9, 0.8); } }
     else { if (walk) { walk = null; world.sparks(lit ? sp : null); } J.pose = pose; J.speed = 0; const d = Math.hypot(sp.x - P.pos.x, sp.z - P.pos.z); P.face = d > 0.3 ? Math.atan2(sp.x - P.pos.x, sp.z - P.pos.z) : P.face; J.aim = Math.atan2(workY - (P.pos.y + 1.5), Math.max(0.7, d)); G.rego.workAim = Math.atan2(workY - (G.regoPos.y + 0.65), Math.max(0.6, Math.hypot(sp.x - G.regoPos.x, sp.z - G.regoPos.z))); }
-    cam.yaw += dt * 0.42; cam.pitch += (0.42 - cam.pitch) * dt * 2; cam.dist += (9 - cam.dist) * dt * 2; if (Math.random() < dt * (tool === 'weld' ? 9 : 3) && pose === 'work' && t > tw) G.audio.play('step');
+    if (t < tw) { cam.pitch += (0.34 - cam.pitch) * dt * 2; cam.dist += (7 - cam.dist) * dt * 2; }   // walking over: just settle
+    else { const sh = J.shots || (J.shots = jobShots(sp)), s = k < 0.55 ? sh.A : sh.B, deepZ = P.zone === 'deep', ez = Math.min(1, dt * (k < 0.55 ? 2.2 : 1.5));   // second angle for the second half
+      cam.yaw += wrapA(s.yaw + Math.sin(t * 0.33) * 0.1 - cam.yaw) * ez; cam.pitch += ((J.high ? 0.03 : deepZ ? 0.3 : 0.36) - cam.pitch) * dt * 2; cam.dist += (s.d * (1 - 0.1 * k) - cam.dist) * ez;   // a slow drift and push-in, never a spin
+      J.fk = Math.min(1, (J.fk || 0) + dt * 1.6); J.focus = J.fk * sh.f; J.high = workY - P.pos.y > 3; J.lift = J.high ? (workY - P.pos.y - 1.75) * 0.3 * J.fk : -0.3 * J.fk; }   // work overhead: look up at it from low down
+      if (Math.random() < dt * (tool === 'weld' ? 9 : 3) && pose === 'work' && t > tw) G.audio.play('step');   // tool sounds while working
     ui.job(title, k, t < tw ? 'Walking over…' : steps[Math.min(steps.length - 1, Math.floor(k * steps.length))], hrs ? `${fmt.hrs(Math.max(0, hrs * (1 - k)))} to go` : ''); onStep?.(k);
     if (k >= 1) { G.jobTick = null; G.jobbing = null; world.sparks(null); G.rego.work = false; G.rego.workAim = undefined; ui.job(null); cam.pitch = pitch0; cam.dist = dist0; S.stats.jobs++; G.audio.play('ok'); res(); }
   };
@@ -205,7 +228,7 @@ addEventListener('keydown', (e) => {
   if (G.state !== 'play' && G.state !== 'tutorial') return; if (G.jobTick || G.riding) return;
   if (k === 'e' || k === 'Enter') G.doAction('e'); else if (k === 'q') G.doAction('q');
   else if (k === 'Tab') { if (G.state === 'play') ui.powerBoard(); } else if (k === 'm') ui.bigMap(); else if (k === 'h') { if (G.state === 'play') G.advise(); }
-  else if (k === 'n') ui.guide(); else if (k === 'l') { if (G.state === 'play') G.loopScreen(); } else if (k === 'v') toggleView(); else if (k === 'p') togglePause();
+  else if (k === 'n') ui.guide(); else if (k === 'l') { if (G.state === 'play') G.loopScreen(); } else if (k === 't') { if (G.state === 'play' && G.S) ui.dayNight(); } else if (k === 'v') toggleView(); else if (k === 'p') togglePause();
 });
 addEventListener('keyup', (e) => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; G.keys[k] = false; });
 addEventListener('blur', () => (G.keys = {}));
@@ -217,13 +240,37 @@ addEventListener('pointermove', (e) => { if (ui.busy || G.jobTick) return; let d
 canvas.addEventListener('wheel', (e) => { cam.dist = clamp(cam.dist + Math.sign(e.deltaY) * 0.8, 3.5, 22); }, { passive: true });
 function toggleView() { cam.fp = !cam.fp; cam.pitch = clamp(cam.pitch, -0.9, 1.1); ui.toast(cam.fp ? 'First-person view. Look up to find Earth!' : 'Third-person view.'); }
 function togglePause() { if (G.state !== 'play') return; G.paused = !G.paused; ui.banner(G.paused ? 'PAUSED — press P to continue' : null, true); }
-$('#b-power').onclick = () => G.state === 'play' && !ui.busy && ui.powerBoard(); $('#b-map').onclick = () => !ui.busy && G.S && ui.bigMap(); $('#b-ask').onclick = () => G.state === 'play' && !ui.busy && G.advise(); $('#b-data').onclick = () => !ui.busy && ui.guide();
+$('#b-power').onclick = () => G.state === 'play' && !ui.busy && ui.powerBoard(); $('#b-map').onclick = () => !ui.busy && G.S && ui.bigMap(); $('#b-ask').onclick = () => G.state === 'play' && !ui.busy && G.advise(); $('#b-data').onclick = () => !ui.busy && ui.guide(); $('#clock').onclick = () => G.S && G.state === 'play' && !ui.busy && ui.dayNight();
 $('#b-view').onclick = toggleView; $('#b-pause').onclick = togglePause;
 $('#b-speed').onclick = () => { G.speedMul = G.speedMul === 1 ? 2 : G.speedMul === 2 ? 4 : 1; $('#speed-l').textContent = '×' + G.speedMul; };
 $('#b-sound').onclick = () => { $('#b-sound').innerHTML = G.audio.toggle() ? IC.sound : IC.mute; };
 // Guide mode: a yellow line on the ground to the next place, and REGO marks the button to press in panels. On by default; Settings turns it off.
 G.guide = (() => { try { return localStorage.getItem('mk-guide') !== '0'; } catch (e) { return true; } })(); world.guideOn = G.guide;
+// ---------- graphics quality: auto, high, medium or low ----------
+const stored = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }, store = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+G.quality = stored('mk-quality', 'auto'); G._autoQ = stored('mk-quality-auto', 'high'); G.qLevel = () => (G.quality === 'auto' ? G._autoQ : G.quality);
+G.setQuality = (q) => { G.quality = q; store('mk-quality', q); world.setQuality(G.qLevel()); fpsN = fpsT = fpsLow = 0; fpsTry = null; };
+G.showFps = stored('mk-fps', '0') === '1'; G.setShowFps = (on) => { G.showFps = !!on; store('mk-fps', on ? '1' : '0'); $('#fps').classList.toggle('hidden', !on); };
+let fpsLast = 0, fpsN = 0, fpsT = 0, fpsLow = 0, fpsTry = null, fpsStop = false;
+// Counts real frames during steady play. On Auto, two slow readings in a row lower the detail one step.
+// If a step down does not help (a screen or power setting is capping the rate), it is undone and Auto leaves the detail alone.
+function fpsTick(now) {
+  const d = now - fpsLast; fpsLast = now;
+  if (d <= 0 || d > 250 || document.hidden || G.state !== 'play' || G.paused || ui.busy || G.riding) { fpsN = fpsT = 0; return; }
+  fpsN++; fpsT += d; if (fpsT < 2000) return;
+  const fps = (fpsN * 1000) / fpsT; fpsN = fpsT = 0; G.fps = fps; if (G.showFps) $('#fps').textContent = Math.round(fps) + ' fps · ' + G.qLevel();
+  if (G.quality !== 'auto' || fpsStop) return;
+  if (fpsTry) { if (++fpsTry.n < 2) return; const helped = fps >= 40 || fps >= fpsTry.before * 1.12;
+    if (!helped && G._autoQ !== 'low') { G._autoQ = 'low'; fpsTry.n = 0; world.setQuality('low'); return; }   // medium did not help: try low once
+    if (!helped) { G._autoQ = fpsTry.from; fpsStop = true; world.setQuality(G._autoQ); }                      // nothing helps: something else caps the rate, so put the detail back
+    store('mk-quality-auto', G._autoQ); fpsTry = null; fpsLow = 0; return; }
+  fpsLow = fps < 40 ? fpsLow + 1 : 0;
+  if (fpsLow >= 2 && G._autoQ !== 'low') { fpsTry = { from: G._autoQ, before: fps, n: 0 }; G._autoQ = G._autoQ === 'high' ? 'medium' : 'low'; fpsLow = 0; world.setQuality(G._autoQ); ui.toast('Graphics detail lowered to keep the game smooth. You can change this in Settings.'); }
+}
+world.setQuality(G.qLevel()); G._fpsTick = fpsTick;   // test hook
 G.setGuide = (on) => { G.guide = !!on; world.guideOn = G.guide; try { localStorage.setItem('mk-guide', G.guide ? '1' : '0'); } catch (e) {} };
+G.quiz = stored('mk-quiz', '1') === '1'; G.setQuiz = (on) => { G.quiz = !!on; store('mk-quiz', on ? '1' : '0'); };
+G.audio.music = stored('mk-music', '1') === '1'; G.setMusic = (on) => { G.audio.setMusic(on); store('mk-music', on ? '1' : '0'); };
 G.setSound = (on) => { if (G.audio.on !== !!on) G.audio.toggle(); $('#b-sound').innerHTML = G.audio.on ? IC.sound : IC.mute; };
 $('#goal-x').onclick = () => { G.goal = null; world.setTarget(null); ui.objective(null); $('#goal-x').classList.add('hidden'); G.audio?.play('click'); };
 $('#b-set').innerHTML = IC.gear; $('#b-set').onclick = () => !ui.busy && ui.settings(); $('#btn-settings').onclick = () => ui.settings();
@@ -231,7 +278,7 @@ const stickEl = $('#stick'), knob = stickEl.querySelector('i');
 const stickMove = (e) => { const r = stickEl.getBoundingClientRect(), x = (e.clientX - r.left - 59) / 59, y = (e.clientY - r.top - 59) / 59, l = Math.max(1, Math.hypot(x, y)); G.stick.x = x / l; G.stick.y = -y / l; knob.style.transform = `translate(${(x / l) * 34}px,${(y / l) * 34}px)`; };
 stickEl.onpointerdown = (e) => { stickEl.setPointerCapture(e.pointerId); stickMove(e); G.touch = true; }; stickEl.onpointermove = (e) => e.buttons && stickMove(e); stickEl.onpointerup = stickEl.onpointercancel = () => { G.stick.x = G.stick.y = 0; knob.style.transform = ''; };
 $('#t-use').onclick = () => G.doAction('e'); $('#t-alt').onclick = () => G.doAction('q'); const hold = (b, key) => { b.onpointerdown = () => (G.keys[key] = true); b.onpointerup = b.onpointerleave = () => (G.keys[key] = false); }; hold($('#t-jump'), ' '); hold($('#t-down'), 'c');
-if ('ontouchstart' in window) { $('#touch').classList.remove('hidden'); G.touch = true; }
+if ('ontouchstart' in window) { $('#touch').classList.remove('hidden'); G.touch = true; $('#dlg-next').textContent = 'Tap anywhere ▸'; }
 
 // ---------- per-frame updates ----------
 const tmp = new V3();
@@ -258,7 +305,7 @@ function updatePlayer(dt) {
   if (free && k[' '] && P.ground && !heavy) { P.vy = 3.4; P.ground = false; G.audio.play('step'); }   // real lunar gravity
   if (!P.ground) { P.vy -= K.GRAVITY * dt; P.pos.y += P.vy * dt; if (P.pos.y <= gy) { P.pos.y = gy; P.vy = 0; P.ground = true; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x, P.pos.z, 14, P.vel.x * 0.2, P.vel.z * 0.2, 1.5, 2.6); } } else P.pos.y = gy;
   const sp = Math.hypot(P.vel.x, P.vel.z); if (sp > 0.4 && !G.jobTick) { let d = Math.atan2(P.vel.x, P.vel.z) - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 9); }
-  const g = G.astro.group; g.position.copy(P.pos); g.rotation.set(0, P.face, 0); G.astro.show(!cam.fp); G.astro.update(dt, G.jobbing && G.jobbing.speed ? G.jobbing.speed : sp, !P.ground, G.jobbing ? G.jobbing.pose : heavy ? 'drag' : P.carry ? 'carry' : 'walk', G.jobbing);
+  const g = G.astro.group; g.position.copy(P.pos); g.rotation.set(0, P.face, 0); g.visible = !cam.fp; G.astro.update(dt, G.jobbing && G.jobbing.speed ? G.jobbing.speed : sp, !P.ground, G.jobbing ? G.jobbing.pose : heavy ? 'drag' : P.carry ? 'carry' : 'walk', G.jobbing);
   if (sp > 1.5 && P.ground) { G.stepT += dt * sp; if (G.stepT > 4.2) { G.stepT = 0; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x - Math.sin(P.face) * 0.3, P.pos.z - Math.cos(P.face) * 0.3, 4, -P.vel.x * 0.12, -P.vel.z * 0.12, 0.9, 0.8); } }
 }
 function updateVehicle(dt, free) {
@@ -285,13 +332,14 @@ function updateVehicle(dt, free) {
   } else {
     const s = G.ship, dead = S.ship.charge <= 0, up = free && !dead ? (k[' '] ? 1 : 0) - (k.c || k.Control ? 1 : 0) : dead ? -0.6 : 0, fly = s.alt > 0.25;
     s.yaw += st * dt * 1.7; const a = dead || !fly ? 0 : thr * 16; s.vx += Math.sin(s.yaw) * a * dt; s.vz += Math.cos(s.yaw) * a * dt; const drag = fly ? 0.55 : 6; s.vx *= 1 - Math.min(1, drag * dt); s.vz *= 1 - Math.min(1, drag * dt);
-    const sp = Math.hypot(s.vx, s.vz); if (sp > 30) { s.vx *= 30 / sp; s.vz *= 30 / sp; } s.vy += (up * 8 - s.vy) * Math.min(1, dt * 2.5);
+    const sp = Math.hypot(s.vx, s.vz); if (sp > 30) { s.vx *= 30 / sp; s.vz *= 30 / sp; } const vy0 = s.vy, alt0 = s.alt; s.vy += ((up < 0 ? -Math.min(8, 0.7 + s.alt * 0.55) : up * 8) - s.vy) * Math.min(1, dt * (up < 0 && s.alt < 12 ? 5 : 2.5));   // coming down, the hopper slows by itself in the last metres
     const p = { x: s.x + s.vx * dt, z: s.z + s.vz * dt }; if (topBounds(p, -999)) { s.vx = s.vz = 0; } s.x = p.x; s.z = p.z;
-    const inPit = Math.hypot(s.x - PIT.x, s.z - PIT.z) < PIT.r + 4, gnd = inPit ? 6 : world.heightAt(s.x, s.z); s.y = clamp(s.y + s.vy * dt, gnd, gnd + 80); if (s.y <= gnd + 0.001 && s.vy < 0) s.vy = 0; s.alt = s.y - gnd;
+    const inPit = Math.hypot(s.x - PIT.x, s.z - PIT.z) < PIT.r + 4, gnd = inPit ? 6 : world.heightAt(s.x, s.z); s.y = clamp(s.y + s.vy * dt, gnd, gnd + 80); if (s.y <= gnd + 0.001 && s.vy < 0) s.vy = 0; s.alt = s.y - gnd; if (alt0 > 0.05 && s.alt <= 0.05) s.hit = clamp(-vy0 * 0.9, 0.5, 2.6);
+    s.thr = dead ? 0 : fly || up > 0 ? clamp(0.4 + Math.max(0, up) * 0.6 + Math.abs(thr) * 0.25 - (up < 0 ? 0.2 : 0), 0, 1.25) : 0; s.steer = st; s.gnd = gnd; s.inPit = inPit;
     S.ship.charge = Math.max(0, S.ship.charge - ((sp * dt) / 4200 + (fly ? dt / 420 : 0)) * perk); S.stats.km += (sp * dt) / 1000;
     P.pos.set(s.x, s.y, s.z); P.face = s.yaw;
   }
-  G.astro.show(false); G.astro.update(dt, 0, false, 'sit');
+  G.astro.group.visible = false; G.astro.update(dt, 0, false, 'sit');
   if ((thr || st) && (!G.camT || performance.now() - G.camT > 1500)) { let d = P.face + Math.PI - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); cam.yaw += d * Math.min(1, dt * 2.2); }
 }
 function placeVehicles(dt) {
@@ -327,12 +375,32 @@ function placeVehicles(dt) {
     world.digBoom.rotation.x = -0.6 + dg.boom * 0.85 + bite; world.digStick.rotation.x = 1.3 - dg.boom * 1.02 + dg.prog * 0.45; world.digBucket.rotation.x = 0.6 - dg.boom * 0.8 + dg.prog * 0.9;
     world.digLoad.visible = dg.load > 0; if (dg.load > 0) world.digLoad.scale.set(1, 0.5 + (0.5 * dg.load) / MINE.bucket, 1); }
   // deep cold steals battery charge from anything parked on the crater floor
-  if (S) { const th = S.t, dh = Math.max(0, th - (G._mT ?? th)); G._mT = th; if (dh > 0 && dh < 5) for (const [k2, v] of [['car', c], ['ship', s]]) if (Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9) S[k2].charge = Math.max(0, S[k2].charge - MINE.drain * dh); }
-  sg.position.set(s.x, s.y, s.z); sg.rotation.set(clamp(-Math.hypot(s.vx, s.vz) * 0.01, -0.3, 0), s.yaw, 0, 'YXZ');
+  if (S) { const th = S.t, dh = Math.max(0, th - (G._mT ?? th)); G._mT = th; if (dh > 0 && dh < 5) for (const [k2, v] of [['car', c], ['ship', s]]) if (Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9) { S[k2].charge = Math.max(0, S[k2].charge - MINE.drain * dh);
+      // what it takes to reach its pad: the rover uses a full charge in 2.6 km, the hopper in 4.2 km plus a little for every second in the air
+      const pad = k2 === 'car' ? CAR_PAD : SHIP_PAD, home = Math.hypot(v.x - pad[0], v.z - pad[1]), need = k2 === 'car' ? home / 2600 : home / 4200 + home / 25 / 420, name = k2 === 'car' ? 'rover' : 'hopper';
+      if (G.state === 'play' && S[k2].charge > 0 && S[k2].charge < need * 1.25 + 0.04) G.warn('cold-' + k2, `<b>Time to go!</b> The cold has drained the ${name} to <b>${Math.round(S[k2].charge * 100)}%</b>. That is only just enough to get home. Take what you have and leave now.`, 'alert', 45000); } }
+  // --- the hopper on its legs. Like the rover's springs, this is for the eye only: it never changes where the hopper goes.
+  const H = s.dyn || (s.dyn = { dy: 0, dv: 0, roll: 0, thr: 0, dust: 0, hud: 0 }), flying = P.in === 'ship'; if (!flying) { s.thr = 0; s.steer = 0; }
+  if (s.hit) { H.dv -= s.hit; if (P.zone === 'top') for (const [ex, ez] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) world.puff(s.x + ex * 2.3, s.z + ez * 1.8, 5, ex * 2.4, ez * 2.4, 0.7, 0.8); G.audio.play('thud'); s.hit = 0; }   // feet down: the body dips and dust jumps from each pad
+  H.dv += ((0 - H.dy) * 45 - H.dv * 5.5) * dt; H.dy = clamp(H.dy + H.dv * dt, -0.32, 0.12);   // soft and slow, as things settle in one-sixth gravity
+  H.thr += ((s.thr || 0) - H.thr) * Math.min(1, dt * 6); H.roll += ((flying && s.alt > 0.3 ? -(s.steer || 0) * 0.16 : 0) - H.roll) * Math.min(1, dt * 3);
+  sg.position.set(s.x, s.y, s.z); sg.rotation.set(clamp(-Math.hypot(s.vx, s.vz) * 0.01, -0.3, 0), s.yaw, H.roll, 'YXZ');
+  const ext = Math.min(s.alt, 0.35); world.shipBody.position.y = H.dy;   // in the air the legs hang 35 cm lower; as the feet touch they take the weight
+  for (const L of world.shipLegs) { const hx = L.hip.x, hy = L.hip.y + H.dy, hz = L.hip.z, fx2 = L.foot.x, fy = L.foot.y - ext, fz2 = L.foot.z, dx = fx2 - hx, dy = fy - hy, dz = fz2 - hz, len = Math.hypot(dx, dy, dz);
+    L.pad.position.y = 0.06 - ext; L.leg.position.set((hx + fx2) / 2, (hy + fy) / 2, (hz + fz2) / 2); L.leg.scale.y = len; L.leg.quaternion.setFromUnitVectors(UP, TMP.set(dx / len, dy / len, dz / len)); }
+  // dust blown flat and outward by the jets when the hopper is low (no air on the Moon, so it does not billow)
+  if (P.zone === 'top' && H.thr > 0.2 && s.alt < 7) { H.dust += dt * (1 - s.alt / 7) * H.thr * 24; while (H.dust > 1) { H.dust -= 1; const a = Math.random() * 6.283, r = 1.2 + Math.random() * 1.4; world.puff(s.x + Math.cos(a) * r, s.z + Math.sin(a) * r, 2, Math.cos(a) * 3.4, Math.sin(a) * 3.4, 0.45, 0.6); } }
+  // landing ring on the ground below, and the flight readout
+  { const show = flying && P.zone === 'top' && s.alt > 0.6, ret = world.shipRet; ret.visible = show; const el = $('#flight');
+    if (show || flying) { const g0 = world.heightAt(s.x, s.z), hs = [[-2.2, 1.8], [2.2, 1.8], [-2.2, -1.8], [2.2, -1.8]].map(([ax, az]) => world.heightAt(s.x + ax, s.z + az)), rough = Math.max(...hs) - Math.min(...hs) > 0.7, state = s.inPit ? 2 : rough ? 1 : 0;
+      ret.position.set(s.x, g0 + 0.07, s.z); ret.rotation.y = s.yaw; ret.scale.setScalar(1 + Math.min(s.alt, 40) * 0.035); world.shipRetM.color.setHex([0x5fe3a1, 0xffb347, 0xff5a4a][state]); world.shipRetM.opacity = 0.55 + 0.3 * Math.sin(performance.now() * 0.006);
+      H.hud -= dt; if (H.hud <= 0) { H.hud = 0.12; const vs = s.vy, sp = Math.hypot(s.vx, s.vz); el.classList.remove('hidden');
+        el.innerHTML = `<span>ALT <b>${s.alt.toFixed(s.alt < 10 ? 1 : 0)} m</b></span><span>${vs < -0.05 ? '▼' : vs > 0.05 ? '▲' : '•'} <b>${Math.abs(vs).toFixed(1)} m/s</b></span><span>SPEED <b>${sp.toFixed(0)} m/s</b></span><span class="${['ok', 'warn', 'bad'][state]}">${s.alt < 0.6 ? 'On the ground' : ['Clear to land', 'Bumpy ground below', 'Over the pit'][state]}</span>`; } }
+    else if (!el.classList.contains('hidden')) el.classList.add('hidden'); }
   if (S) { const park = (v, pad, r, slow) => Math.hypot(v.x - pad[0], v.z - pad[1]) < r && slow; S.car.charging = park(c, CAR_PAD, 4.5, Math.abs(c.v) < 0.6) && S.car.charge < 1; S.ship.charging = park(s, SHIP_PAD, 5.5, s.alt < 0.4) && S.ship.charge < 1; }
 }
 function updateRego(dt) {
-  const R = G.regoPos, fx = Math.sin(P.face), fz = Math.cos(P.face), g = G.rego.group; G.rego.show(!P.in);
+  const R = G.regoPos, fx = Math.sin(P.face), fz = Math.cos(P.face), g = G.rego.group; g.visible = !P.in;
   const js = G.jobbing && G.jobbing.site && G.jobbing.pose === 'work' ? G.jobbing.site : null;
   if (js) tmp.set(js.x - fx * 0.95 + fz * 1.25, 0, js.z - fz * 0.95 - fx * 1.25); else tmp.set(P.pos.x + fz * 1.9 - fx * 1.3, 0, P.pos.z - fx * 1.9 - fz * 1.3);   // beside the work, or behind your shoulder
   let dx = tmp.x - R.x, dz = tmp.z - R.z, d = Math.hypot(dx, dz), sp = 0;
@@ -341,13 +409,14 @@ function updateRego(dt) {
   R.y = groundY(P.zone, R.x, R.z); g.position.copy(R);
   const want = sp > 0.8 ? Math.atan2(dx, dz) : js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z); let dy = want - g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); g.rotation.y += dy * Math.min(1, dt * 6);
   let look = (js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z)) - g.rotation.y; look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -1.1, 1.1); G.rego.update(dt, sp, look);
-  const dark = P.zone === 'deep' ? !G.inside || (G.S && G.S.flow.eff < 1) : G.inCrater || (G.S && !G.S.flow.sun.up); G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = (dark || js) && !P.in ? (js ? 9 : 5) : 0;   // REGO lights the work
+  const dark = P.zone === 'deep' ? !G.inside || (G.S && G.S.flow.eff < 1) : G.inCrater || (G.S && !G.S.flow.sun.up); for (const [m, g] of G.lampMounts) { m.position.copy(g.position); m.quaternion.copy(g.quaternion); } G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = (dark || js) && !P.in ? (js ? 9 : 5) : 0;   // REGO lights the work
 }
 function updateCamera(dt) {
   const c = world.camera; G.shake *= Math.pow(0.25, dt); const veh = P.in === 'car' ? 5 : P.in === 'ship' ? 8 : P.in === 'dig' ? 7 : 0;
   if (cam.fp && !P.in) { c.position.set(P.pos.x, P.pos.y + 1.78, P.pos.z); c.rotation.set(-cam.pitch, cam.yaw, 0, 'YXZ'); }
   else {
     const pp = Math.max(cam.pitch, 0.06), cp = Math.cos(pp), dist = cam.dist + veh; tmp.set(P.pos.x, P.pos.y + (P.in ? 2.6 : 1.75), P.pos.z);
+    if (G.jobbing && G.jobbing.site && G.jobbing.focus) { const f = G.jobbing.focus, s = G.jobbing.site; tmp.x += (s.x - P.pos.x) * f; tmp.z += (s.z - P.pos.z) * f; tmp.y += G.jobbing.lift || 0; }
     c.position.set(tmp.x + Math.sin(cam.yaw) * cp * dist, tmp.y + Math.sin(pp) * dist, tmp.z + Math.cos(cam.yaw) * cp * dist);
     if (P.zone === 'top') c.position.y = Math.max(c.position.y, world.heightAt(c.position.x, c.position.z) + 0.6);
     else { c.position.z = clamp(c.position.z, -TUBE.halfWidth + 3, TUBE.halfWidth - 3); c.position.x = clamp(c.position.x, -TUBE.halfLen + 2, TUBE.halfLen - 2); c.position.y = clamp(c.position.y, TUBE.y + 0.6, TUBE.y + 26); }
@@ -365,7 +434,7 @@ async function tickSim(dt) {
   const S = G.S; S.zone = P.zone;
   if (!G.simOn || ui.busy || G.paused || G.riding || G.eventBusy || G.jobTick) { computeFlows(S); return; }
   let h = (dt / S.m.hourLen) * G.speedMul * (G.sleepLeft > 0 ? 22 : 1);
-  if (G.sleepLeft > 0) { G.sleepLeft -= h; const al = G.alerts(); if (al.length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
+  if (G.sleepLeft > 0) { G.sleepLeft -= h; const al = G.alerts(); if (al.filter((a) => a.kind !== 'warn').length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
     const alarm = G._sleepKeys && al.find((a) => a.key && !G._sleepKeys.includes(a.key));   // a new emergency (power out, air/water/food nearly gone) always wakes you, even if a warning was already showing
     if (alarm) { G.sleepLeft = 0; G.audio.play('alarm'); ui.bubble(alarm.wake, 'alert', 12); }
     if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!alarm) ui.toast('You wake up rested.', 'good'); } }
@@ -382,7 +451,7 @@ async function tickSim(dt) {
   if (S.t >= G.nextEventAt && (S.hours === Infinity || S.hours - (S.t - S.t0) > 5) && !P.in) { G.eventBusy = true; await G.fireEvent(); G.eventBusy = false; }
   G.nagT += dt; const F = S.flow, serious = G.alerts().some((a) => a.kind !== 'warn') || F.eff < 1 || F.o2Days < 0.8 || F.waterDays < 1 || F.foodDays < 1 || S.lv.heat < F.heatNeed;
   if (G.nagT > (serious ? (S.mode === 'cadet' ? 22 : 32) : 85) && $('#rego').classList.contains('hidden') && G.sleepLeft <= 0 && !G.goal?.cb) { G.nagT = 0; const keep = G.goal; G.advise(); if (!serious) G.goal = keep; }
-  G.saveT += dt; if (G.saveT > 20 && G.state === 'play') { G.saveT = 0; G.save(); }
+  G.saveT += dt; if (G.saveT > 20 && G.state === 'play' && G.save()) G.saveT = 0;   // if now is a bad moment, try again next frame
 }
 async function endGame() {
   if (G.state === 'over') return; G.state = 'over'; G.simOn = false; ui.banner(null); ui.objective(null); G.audio.play(G.S.over.win ? 'win' : 'bad'); G.clearSave();
@@ -392,7 +461,7 @@ async function endGame() {
 
 let last = performance.now(), ccT = 0;
 function frame(now, manual) {
-  if (!manual) requestAnimationFrame(frame); const dt = clamp((now - last) / 1000, 0, 0.05); last = now; if (G.state === 'title') return;
+  if (!manual) { requestAnimationFrame(frame); fpsTick(now); } const dt = clamp((now - last) / 1000, 0, 0.05); last = now; if (G.state === 'title') return;
   if (G.jobTick) G.jobTick(dt);
   G.inside = P.zone === 'deep' && world.indoors(P.pos.x, P.pos.z); G.inCrater = P.zone === 'top' && Math.hypot(P.pos.x - MINE.x, P.pos.z - MINE.z) < MINE.r * 0.9;
   if (G.inCrater && G.state === 'play' && !G._tipMine) { G._tipMine = 1; ui.bubble('The <b>Polar Ice Mine</b>. This crater floor never sees the Sun, so it stays near −230°C: cold enough to keep ice frozen for billions of years. Get in the <b>digger</b>, hold <b>SPACE</b> over a pale blue patch, then tip the bucket into the orange filler. Do not park here long: the cold drains batteries.', 'think', 16); }
@@ -401,16 +470,21 @@ function frame(now, manual) {
   updatePlayer(dt); if (G.S) placeVehicles(dt); updateRego(dt); updateActors(dt); if (G.cineTick) G.cineTick(dt); else updateCamera(dt);
   if (G.S) { tickSim(dt); updateRad(dt); if (G.state !== 'over') updateGoal(); }
   placeItems();
-  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook' });
+  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook', sleeping: G.sleepLeft > 0, shipThrust: G.ship.dyn ? G.ship.dyn.thr : 0 });
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
+  // sound follows where you are: the station hums with its power, the helmet muffles the world, music darkens with danger
+  { const S = G.S; G._dgT = (G._dgT || 0) - dt; if (S && G._dgT <= 0) { G._dgT = 0.5; const st = S.storm, urgent = G.state === 'play' ? G.alerts().filter((a) => a.kind !== 'warn').length : 0;
+      G._danger = G.state !== 'play' ? 0 : clamp(urgent * 0.45 + (S.flow.eff < 1 ? 0.35 : 0) + (S.health < 50 ? 0.4 : 0) + (st && S.t >= st.start ? 0.5 : 0), 0, 1); }
+    G.audio.update(dt, { indoors: !!G.inside, suit: S ? !!S.suitOn : true, power: S ? S.flow.eff : 1, vehicle: P.in, speed: P.in === 'car' ? G.car.v : P.in === 'dig' ? G.dig.v : P.in === 'ship' ? Math.hypot(G.ship.vx, G.ship.vz) : Math.hypot(P.vel.x, P.vel.z), thrust: G.ship.dyn ? G.ship.dyn.thr : 0, digging: !!G.dig.dig, danger: G._danger || 0 }); }
   world.render();
-  if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { const al = G.alerts(); G._sleepAlerts = al.length; G._sleepKeys = al.filter((a) => a.key).map((a) => a.key); } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepKeys = undefined; }
+  if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { const al = G.alerts(); G._sleepAlerts = al.filter((a) => a.kind !== 'warn').length; G._sleepKeys = al.filter((a) => a.key).map((a) => a.key); } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepKeys = undefined; }
 }
 requestAnimationFrame(frame);
+setTimeout(() => world.warm(), 400);   // build the shaders while the title screen is up
 G.frame = (now) => frame(now, true);   // test hook: step the loop by hand
 
 // ---------- saving ----------
-G.save = () => { try { const S = G.S; if (!S || S.over) return; const o = { S: serialize(S), items: G.items.map((i) => ({ id: i.id, type: i.type, zone: i.zone, x: i.x, z: i.z, where: i.where, rot: i.rot })), car: { ...G.car, cargo: G.car.cargo.map((i) => i.id) }, dig: { x: G.dig.x, z: G.dig.z, yaw: G.dig.yaw, load: G.dig.load }, ship: { ...G.ship, cargo: G.ship.cargo.map((i) => i.id) }, p: { x: P.pos.x, z: P.pos.z, zone: P.zone, carry: P.carry ? P.carry.id : 0 }, fol: G.followers.map((f) => f.site.id), done: G.done, next: G.nextEventAt, seq: G.itemSeq }; localStorage.setItem('mk2-save', JSON.stringify(o)); } catch (e) { /* storage may be blocked */ } };
+G.save = (force) => { try { const S = G.S; if (!S || S.over) return false; if (G.inJob || G.riding || (G.eventBusy && !force)) return false; const o = { S: serialize(S), items: G.items.map((i) => ({ id: i.id, type: i.type, zone: i.zone, x: i.x, z: i.z, where: i.where, rot: i.rot })), car: { ...G.car, cargo: G.car.cargo.map((i) => i.id) }, dig: { x: G.dig.x, z: G.dig.z, yaw: G.dig.yaw, load: G.dig.load }, ship: { ...G.ship, cargo: G.ship.cargo.map((i) => i.id) }, p: { x: P.pos.x, z: P.pos.z, zone: P.zone, carry: P.carry ? P.carry.id : 0 }, fol: G.followers.map((f) => f.site.id), done: G.done, next: G.nextEventAt, seq: G.itemSeq }; localStorage.setItem('mk2-save', JSON.stringify(o)); return true; } catch (e) { return false; /* storage may be blocked */ } };
 G.clearSave = () => { try { localStorage.removeItem('mk2-save'); } catch (e) {} };
 G.hasSave = () => { try { return !!localStorage.getItem('mk2-save'); } catch (e) { return false; } };
 function loadGame() {
@@ -437,14 +511,13 @@ const drawModes = () => {
 };
 drawModes(); $('#btn-codex').onclick = () => ui.guide('how'); $('#btn-how').onclick = () => ui.guide('truth');
 const showMission = (on) => { $('#mission').classList.toggle('hidden', !on); $('#title').classList.toggle('hidden', on); };
-$('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour');
+$('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour'); $('#btn-games').onclick = () => { G.audio.init(); ui.guide('games'); };
 $('#btn-launch').onclick = () => start(mode, $('#skip-tut').checked);
 document.querySelectorAll('.pillar').forEach((p) => p.insertAdjacentHTML('afterbegin', `<i>${IC[p.dataset.ic] || ''}</i>`));
-if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = async () => { if (G._starting) return; G._starting = true; G.audio.init(); if (!world.warmDone) b.textContent = 'Loading…'; await world.warmup(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
-setTimeout(() => world.warmup(), 600);   // shaders and textures get ready while the title screen is up
+if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = async () => { if (G._starting) return; G._starting = true; G.audio.init(); if (!world.warmMs) b.textContent = 'Loading…'; await world.warm(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
 async function start(modeKey, skip, seed) {
   if (G._starting) return; G._starting = true; G.audio.init();   // sound must start inside the click, before any waiting
-  if (!world.warmDone) $('#btn-launch').textContent = 'Loading…'; await world.warmup();   // usually already done; a very quick click just waits a moment
+  if (!world.warmMs) $('#btn-launch').textContent = 'Loading…'; await world.warm();   // usually already done; a very quick click just waits a moment
   G.audio.play('ok'); G.clearSave();
   G.S = createSim(modeKey, seed || ((Math.random() * 2 ** 31) >>> 0)); installActions(G); installEvents(G);
   P.pos.set(SPAWN.x, world.heightAt(SPAWN.x, SPAWN.z), SPAWN.z); G.regoPos.set(SPAWN.x + 2, P.pos.y, SPAWN.z + 1.5); world.setZone('top'); G.ship.y = world.heightAt(G.ship.x, G.ship.z);

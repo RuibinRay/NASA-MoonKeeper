@@ -40,6 +40,7 @@ ok('lower pressure, lower sublimation temperature', subTemp(1) < subTemp(10) && 
   ok('water from rock: chemistry caps the yield', ilm.water > 0.5 && ilm.water <= maxIlm * 0.8 + 1e-9, `${ilm.water.toFixed(2)} L of at most ${maxIlm.toFixed(2)} L`);
   ok('water from rock costs far more energy per litre than ice', ilm.kwh / ilm.water > 8 * (good.kwh / good.water), `${(ilm.kwh / ilm.water).toFixed(0)} vs ${(good.kwh / good.water).toFixed(1)} kWh per litre`);
   ok('water from rock does nothing below 1,000 °C', planBatch(S, { mode: 'ilm', kw: 4, hours: 3 }).water === 0);
+  ok('a run that makes no water earns no research', (() => { const T = sim(); const sci0 = T.sci; startBatch(T, { mode: 'ilm', kw: 4, hours: 3 }); run(T, 3.5); return !T.wx.batch && T.wx.last && T.wx.last.water === 0 && T.sci === sci0 && !T.wx.tried.ilm; })());
 }
 console.log('--- water plant in the running simulation');
 {
