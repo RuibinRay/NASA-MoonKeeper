@@ -168,7 +168,8 @@ G.job = async (o) => {
   let fx = null;
   if (G.minis && o.mini !== false) {
     ui.prompt(null); const r = await playProcedure(G, stagesFor(o).map(([k, opt]) => [k, { loseText: 'Done the slow way', ...opt }]));
-    const q = !r.win || (/Picking/i.test(o.title) && r.stars <= 1) ? 'poor' : r.stars >= 3 ? 'great' : 'ok';   // harvest never fails on time, so one star counts as a poor harvest fx = G.S ? jobEffect(o.title, o.tag, q) : null;
+    const q = !r.win || (/Picking/i.test(o.title) && r.stars <= 1) ? 'poor' : r.stars >= 3 ? 'great' : 'ok';   // harvest never fails on time, so one star counts as a poor harvest
+    fx = G.S ? jobEffect(o.title, o.tag, q) : null;
     if (q === 'poor') { o = { ...o, hours: o.hours * 1.3 }; ui.toast('That was fiddly, so the job takes 30% longer.'); }
     else if (q === 'great') { o = { ...o, hours: o.hours * 0.85 }; ui.toast('Clean work! The job goes 15% faster.', 'good'); }
     if (fx) fx.push(q);
@@ -278,7 +279,8 @@ function updateVehicle(dt, free) {
     const c = G.car, max = S.car.charge > 0 ? 15 : 2.2; c.v += (thr * max - c.v) * Math.min(1, dt * 1.5); if (Math.abs(thr) < 0.05) c.v *= 1 - Math.min(1, dt * 1.2);
     c.st = st; c.yaw += st * dt * 1.6 * clamp(c.v / 5, -1, 1); const p = { x: c.x + Math.sin(c.yaw) * c.v * dt, z: c.z + Math.cos(c.yaw) * c.v * dt }, bx = p.x, bz = p.z; pushOut(p, 'top', 2.2); topBounds(p, 12); if (p.x !== bx || p.z !== bz) c.v *= 0.6;
     const moved = Math.hypot(p.x - c.x, p.z - c.z); c.x = p.x; c.z = p.z;
-    if (Math.abs(c.v) > 3 && Math.random() < dt * 22) { const sx = Math.sin(c.yaw), cz = Math.cos(c.yaw), side = Math.random() < 0.5 ? -1.3 : 1.3, back = c.v > 0 ? -2.1 : 2.1; world.puff(c.x + sx * back + cz * side, c.z + cz * back - sx * side, 2, -sx * c.v * 0.28, -cz * c.v * 0.28, 1.2 + Math.abs(c.v) * 0.12, 0.9); }   // rooster tails behind the wheels S.car.charge = Math.max(0, S.car.charge - (moved / 2600) * perk); S.stats.km += moved / 1000;
+    if (Math.abs(c.v) > 3 && Math.random() < dt * 22) { const sx = Math.sin(c.yaw), cz = Math.cos(c.yaw), side = Math.random() < 0.5 ? -1.3 : 1.3, back = c.v > 0 ? -2.1 : 2.1; world.puff(c.x + sx * back + cz * side, c.z + cz * back - sx * side, 2, -sx * c.v * 0.28, -cz * c.v * 0.28, 1.2 + Math.abs(c.v) * 0.12, 0.9); }   // rooster tails behind the wheels
+    S.car.charge = Math.max(0, S.car.charge - (moved / 2600) * perk); S.stats.km += moved / 1000;
     P.pos.set(c.x, world.heightAt(c.x, c.z), c.z); P.face = c.yaw;
   } else {
     const s = G.ship, dead = S.ship.charge <= 0, up = free && !dead ? (k[' '] ? 1 : 0) - (k.c || k.Control ? 1 : 0) : dead ? -0.6 : 0, fly = s.alt > 0.25;
@@ -363,10 +365,10 @@ async function tickSim(dt) {
   const S = G.S; S.zone = P.zone;
   if (!G.simOn || ui.busy || G.paused || G.riding || G.eventBusy || G.jobTick) { computeFlows(S); return; }
   let h = (dt / S.m.hourLen) * G.speedMul * (G.sleepLeft > 0 ? 22 : 1);
-  if (G.sleepLeft > 0) { G.sleepLeft -= h; if (G.alerts().length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
-    const blackout = S.battery <= 0.01 && G._sleepBatt > 0.01;   // a blackout always wakes you, even if a low-battery warning was already showing
-    if (blackout) { G.sleepLeft = 0; G.audio.play('alarm'); ui.bubble('<b>Wake up! The battery is empty.</b> Every machine is running weak. Open the Power Board (Tab) and turn something down.', 'alert', 12); }
-    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!blackout) ui.toast('You wake up rested.', 'good'); } }
+  if (G.sleepLeft > 0) { G.sleepLeft -= h; const al = G.alerts(); if (al.length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
+    const alarm = G._sleepKeys && al.find((a) => a.key && !G._sleepKeys.includes(a.key));   // a new emergency (power out, air/water/food nearly gone) always wakes you, even if a warning was already showing
+    if (alarm) { G.sleepLeft = 0; G.audio.play('alarm'); ui.bubble(alarm.wake, 'alert', 12); }
+    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!alarm) ui.toast('You wake up rested.', 'good'); } }
   G.simAdvance(h);
   const st = S.storm;
   if (st && S.t >= st.start) { if (!st.begun) { st.begun = true; G.sleepLeft = 0; G.audio.play('alarm'); if (P.zone === 'top') { ui.bubble('<b>The storm is here!</b> Elevator. Now. The rock roof will shield you.', 'alert', 12); G.pointTo('gate'); } } ui.banner(P.zone === 'top' ? 'RADIATION STORM — GET UNDERGROUND!' : 'Solar storm raging topside — you are shielded down here', P.zone !== 'top'); }
@@ -402,7 +404,7 @@ function frame(now, manual) {
   world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook' });
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
   world.render();
-  if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { G._sleepAlerts = G.alerts().length; G._sleepBatt = G.S.battery; } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepBatt = undefined; }
+  if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { const al = G.alerts(); G._sleepAlerts = al.length; G._sleepKeys = al.filter((a) => a.key).map((a) => a.key); } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepKeys = undefined; }
 }
 requestAnimationFrame(frame);
 G.frame = (now) => frame(now, true);   // test hook: step the loop by hand
