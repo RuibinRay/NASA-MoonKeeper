@@ -50,7 +50,7 @@ function placeItems() {
         if (P.zone === 'top' && d.run > 0.55) { d.run = 0; world.scuff(d.tx, d.tz, d.yaw); world.puff(d.tx, d.tz, 3, -P.vel.x * 0.15, -P.vel.z * 0.15, 0.8, 1.4); }
       }
       else { m.position.set(P.pos.x + fx * 0.75, P.pos.y + 0.75, P.pos.z + fz * 0.75); m.rotation.set(0, P.face, 0); m.scale.setScalar(0.7); } }
-    else { const v = G[it.where], i = v.cargo.indexOf(it), s = Math.sin(v.yaw), c = Math.cos(v.yaw), by = (it.where === 'car' ? 1.55 : 3.1) + (it.where === 'ship' ? v.y : world.heightAt(v.x, v.z)); m.visible = P.zone === 'top';
+    else { const v = G[it.where], i = v.cargo.indexOf(it), s = Math.sin(v.yaw), c = Math.cos(v.yaw), by = (it.where === 'car' ? 1.55 + (v.bob || 0) : 3.1) + (it.where === 'ship' ? v.y : world.heightAt(v.x, v.z)); m.visible = P.zone === 'top';
       const back = it.where === 'car' ? -1.15 : -1.0; let ox = 0, oz = back, oy = 0;
       if (heavy(it)) { oy = v.cargo.filter((q, k) => k < i && heavy(q)).length * 0.16; m.scale.setScalar(0.5); } else { const k = v.cargo.filter((q, kk) => kk < i && !heavy(q)).length; ox = (k % 2 ? 0.55 : -0.55); oz = back + (k > 1 ? 0.55 : -0.45); oy = v.cargo.some(heavy) ? 0.35 : 0; m.scale.setScalar(0.7); }
       m.position.set(v.x + s * oz + c * ox, by + oy, v.z + c * oz - s * ox); m.rotation.set(0, v.yaw + (heavy(it) ? Math.PI / 2 : 0), 0); }
@@ -210,7 +210,7 @@ function updateVehicle(dt, free) {
   const S = G.S, k = G.keys, thr = free ? (k.w || k.ArrowUp ? 1 : 0) - (k.s || k.ArrowDown ? 1 : 0) + G.stick.y : 0, st = free ? (k.a || k.ArrowLeft ? 1 : 0) - (k.d || k.ArrowRight ? 1 : 0) - G.stick.x : 0, perk = S.perks.pilot ? 0.7 : 1;
   if (P.in === 'car') {
     const c = G.car, max = S.car.charge > 0 ? 15 : 2.2; c.v += (thr * max - c.v) * Math.min(1, dt * 1.5); if (Math.abs(thr) < 0.05) c.v *= 1 - Math.min(1, dt * 1.2);
-    c.yaw += st * dt * 1.6 * clamp(c.v / 5, -1, 1); const p = { x: c.x + Math.sin(c.yaw) * c.v * dt, z: c.z + Math.cos(c.yaw) * c.v * dt }, bx = p.x, bz = p.z; pushOut(p, 'top', 2.2); topBounds(p, 12); if (p.x !== bx || p.z !== bz) c.v *= 0.6;
+    c.st = st; c.yaw += st * dt * 1.6 * clamp(c.v / 5, -1, 1); const p = { x: c.x + Math.sin(c.yaw) * c.v * dt, z: c.z + Math.cos(c.yaw) * c.v * dt }, bx = p.x, bz = p.z; pushOut(p, 'top', 2.2); topBounds(p, 12); if (p.x !== bx || p.z !== bz) c.v *= 0.6;
     const moved = Math.hypot(p.x - c.x, p.z - c.z); c.x = p.x; c.z = p.z;
     if (Math.abs(c.v) > 3 && Math.random() < dt * 22) { const sx = Math.sin(c.yaw), cz = Math.cos(c.yaw), side = Math.random() < 0.5 ? -1.3 : 1.3, back = c.v > 0 ? -2.1 : 2.1; world.puff(c.x + sx * back + cz * side, c.z + cz * back - sx * side, 2, -sx * c.v * 0.28, -cz * c.v * 0.28, 1.2 + Math.abs(c.v) * 0.12, 0.9); }   // rooster tails behind the wheels S.car.charge = Math.max(0, S.car.charge - (moved / 2600) * perk); S.stats.km += moved / 1000;
     P.pos.set(c.x, world.heightAt(c.x, c.z), c.z); P.face = c.yaw;
@@ -229,7 +229,28 @@ function updateVehicle(dt, free) {
 function placeVehicles(dt) {
   const S = G.S, c = G.car, s = G.ship, cg = world.car, sg = world.ship;
   const h = world.heightAt(c.x, c.z), fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), hf = world.heightAt(c.x + fx * 2.3, c.z + fz * 2.3), hb = world.heightAt(c.x - fx * 2.3, c.z - fz * 2.3), hl = world.heightAt(c.x + fz * 1.4, c.z - fx * 1.4), hr = world.heightAt(c.x - fz * 1.4, c.z + fx * 1.4);
-  cg.position.set(c.x, h, c.z); cg.rotation.set(-Math.atan2(hf - hb, 4.6), c.yaw, Math.atan2(hr - hl, 2.8), 'YXZ'); for (const w of world.carWheels) w.rotation.x += (c.v * dt) / 0.62;
+  cg.position.set(c.x, h, c.z); cg.rotation.set(-Math.atan2(hf - hb, 4.6), c.yaw, Math.atan2(hr - hl, 2.8), 'YXZ');
+  // --- how the rover moves on its springs. Everything here is for the eye only: it never changes where the rover goes.
+  const D = c.dyn || (c.dyn = { steer: 0, bob: 0, bobV: 0, roll: 0, rollV: 0, pitch: 0, pitchV: 0, ax: 0, axV: 0, az: 0, azV: 0, pv: c.v, pyaw: c.yaw, trk: 0, px: c.x, pz: c.z });
+  const k1 = Math.max(dt, 1e-3), driving = P.in === 'car', sp = Math.abs(c.v), acc = clamp((c.v - D.pv) / k1, -14, 14); let dyaw = c.yaw - D.pyaw; dyaw = Math.atan2(Math.sin(dyaw), Math.cos(dyaw)); const lat = clamp((dyaw / k1) * c.v, -14, 14); D.pv = c.v; D.pyaw = c.yaw;
+  D.steer += ((driving ? c.st || 0 : 0) - D.steer) * Math.min(1, dt * 7);
+  let front = 0, rear = 0, all = 0;
+  for (const w of world.carWheels) {
+    const wx = c.x + fz * w.x + fx * w.z, wz = c.z - fx * w.x + fz * w.z, plane = h + ((hf - hb) / 4.6) * w.z + ((hl - hr) / 2.8) * w.x;
+    const rough = Math.sin(wx * 2.1 + wz * 1.3) * Math.sin(wx * 0.9 - wz * 2.7) * 0.075 * Math.min(1, sp / 4);                 // small stones and ruts under each tyre
+    const want = clamp(world.heightAt(wx, wz) - plane + rough, -0.26, 0.3); w.y += (want - w.y) * Math.min(1, dt * 16); w.sus.position.y = 0.62 + w.y;
+    w.steer.rotation.y = w.z > 0.5 ? D.steer * 0.5 : w.z < -0.5 ? -D.steer * 0.28 : 0; w.tire.rotation.x += (c.v * dt) / 0.62;
+    all += w.y / 6; if (w.z > 0.5) front += w.y / 2; else if (w.z < -0.5) rear += w.y / 2;
+  }
+  // soft, slow springs: in one-sixth gravity a rover wallows and floats where an Earth car would thump
+  const spring = (pos, vel, target, kk, damp) => { const v = vel + ((target - pos) * kk - vel * damp) * dt; return [pos + v * dt, v]; };
+  [D.bob, D.bobV] = spring(D.bob, D.bobV, all * 0.9, 42, 4.2); [D.pitch, D.pitchV] = spring(D.pitch, D.pitchV, clamp(-acc * 0.011, -0.075, 0.075) + (rear - front) * 0.16, 30, 4);
+  [D.roll, D.rollV] = spring(D.roll, D.rollV, clamp(lat * 0.011, -0.11, 0.11), 30, 4);
+  [D.ax, D.axV] = spring(D.ax, D.axV, clamp(-acc * 0.03, -0.5, 0.5) - D.bobV * 0.5, 55, 2.2); [D.az, D.azV] = spring(D.az, D.azV, clamp(lat * 0.03, -0.5, 0.5), 55, 2.2);
+  world.carBody.position.y = clamp(D.bob, -0.2, 0.25); world.carBody.rotation.set(clamp(D.pitch, -0.1, 0.1), 0, clamp(D.roll, -0.13, 0.13)); world.carAnt.rotation.set(clamp(D.ax, -0.7, 0.7), 0, clamp(-D.az, -0.7, 0.7)); c.bob = world.carBody.position.y;
+  // tyre prints, one pair every half metre, from the outer wheels at both ends
+  D.trk += Math.hypot(c.x - D.px, c.z - D.pz); D.px = c.x; D.pz = c.z;
+  if (D.trk > 0.55 && P.zone === 'top') { D.trk = 0; for (const sx of [-1.5, 1.5]) world.track(c.x + fz * sx - fx * 1.8 * Math.sign(c.v || 1), c.z - fx * sx - fz * 1.8 * Math.sign(c.v || 1), c.yaw); }
   if (!(P.in === 'ship')) { const gnd = world.heightAt(s.x, s.z); if (s.y < gnd || s.alt < 0.3) s.y = gnd; }
   sg.position.set(s.x, s.y, s.z); sg.rotation.set(clamp(-Math.hypot(s.vx, s.vz) * 0.01, -0.3, 0), s.yaw, 0, 'YXZ');
   if (S) { const park = (v, pad, r, slow) => Math.hypot(v.x - pad[0], v.z - pad[1]) < r && slow; S.car.charging = park(c, CAR_PAD, 4.5, Math.abs(c.v) < 0.6) && S.car.charge < 1; S.ship.charging = park(s, SHIP_PAD, 5.5, s.alt < 0.4) && S.ship.charge < 1; }
