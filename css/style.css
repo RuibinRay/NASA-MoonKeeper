@@ -403,3 +403,7 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
   #alerts{top:92px;max-height:128px;overflow:hidden}
   #job{bottom:60px}
 }
+
+/* ---------- Space Guide: practice page ---------- */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:10px}
+.pgrid .choice{font-size:13px;color:var(--mute)}.pgrid .choice b{color:var(--text);font-size:15.5px;margin-bottom:2px}
