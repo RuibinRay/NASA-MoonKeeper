@@ -104,6 +104,23 @@ export const panelAt = (row, col) => [SOLAR.x0 + 6 + ((SOLAR.x1 - SOLAR.x0 - 12)
 // pressurised tunnels between the modules people live and work in: [x0, z0, x1, z1]
 export const TUNNELS = [[0, 7, 0, 13], [-7, -1, -15.5, -2.5], [-24, -8.5, -24, -17], [7, -1.5, 14, -4], [22, -9.5, 24.5, -23.5], [-1, -7.5, -2, -21.5]];
 
+// ---- inside the Command Habitat: one round room you can walk into ----
+// Its floor is drawn far under the ground (y), so that nothing of the world outside shows while you are in it.
+// door: the hatch on its south side. out: where you stand after leaving through the airlock.
+export const ROOM = { x: B.cmd.x, z: B.cmd.z, y: -60, r: 7.2, door: [B.cmd.x, B.cmd.z + 6.3], out: [B.airlock.x, B.airlock.z + 8.6], table: 1.7 };
+const ring = (deg, rad) => [ROOM.x + Math.cos((deg * Math.PI) / 180) * rad, ROOM.z + Math.sin((deg * Math.PI) / 180) * rad];   // 0° is east, 90° south, 270° north
+export const ROOM_CONSOLES = [210, 240, 270, 300, 330].map((deg) => ({ deg, at: ring(deg, 6.2) }));
+export const ROOM_SPOTS = { mateo: ring(240, 4.95), noor: [ROOM.x + 2.6, ROOM.z + 0.7], lena: [ROOM.x - 3.3, ROOM.z + 3.5], ladder: ring(180, 6.5), lockers: [ring(38, 6.45), ring(56, 6.45)], plant: ring(140, 6.3) };
+// Circles you cannot walk through indoors: the table, the consoles, the ladder, the lockers, the plant.
+export function roomColliders() {
+  const c = [{ x: ROOM.x, z: ROOM.z, r: ROOM.table }];
+  for (const k of ROOM_CONSOLES) c.push({ x: k.at[0], z: k.at[1], r: 1 });
+  for (const p of [ROOM_SPOTS.ladder, ...ROOM_SPOTS.lockers, ROOM_SPOTS.plant]) c.push({ x: p[0], z: p[1], r: 0.7 });
+  return c;
+}
+// Keeps a point inside the round room, a little back from its wall.
+export function keepInRoom(p, pad = 0.55) { const dx = p.x - ROOM.x, dz = p.z - ROOM.z, d = Math.hypot(dx, dz), m = ROOM.r - pad; if (d > m) { p.x = ROOM.x + (dx / d) * m; p.z = ROOM.z + (dz / d) * m; } return p; }
+
 // The way to walk (or drive) from (px,pz) to (tx,tz) without going through a building, a tunnel or a boulder.
 // Returns corner points [[x,z], …], starting at the start and ending at the target. pad = how much room to leave (m).
 // Only the first 200 m are planned round obstacles: the guide line on the ground is never drawn further than that.

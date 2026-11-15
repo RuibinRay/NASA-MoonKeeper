@@ -1265,5 +1265,325 @@
   "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd2a-1f9e-776e-a40f-a20a3cbc75f1/96fe517b-f05d-4ebc-b474-a1cd5f5f840c.png",
   "bytes": 5828184,
   "seconds": 39
+ },
+ "mr_base": {
+  "request_id": "01a1e050-2df5-76ff-a607-13b2922827a5",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e050-2df5-76ff-a607-13b2922827a5/status",
+  "prompt": "A small first human outpost on Mars seen from a low rise in mid-morning light. In the middle a two-storey white Command Habitat with a low dome on top and a bank of red soil round its foot. Left of it a long module buried under a mound of soil with only its end hatch showing. Short white pressurised tunnels join the modules. To the right a clear greenhouse tunnel glowing pink from grow lamps, a module with white spherical oxygen tanks, and a unit with two tall flat radiator wings. A lattice mast with a small dish antenna. Behind, a neat field of solar panel tables in rows. Pipes on low stands run between the buildings, one blue, one white, one red. A six-wheeled open rover parked near a drive-through garage shelter. Wheel tracks in the soil. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_base.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e050-2df5-76ff-a607-13b2922827a5/8a107eee-69f6-45a1-a7e3-97d49b2fb6a4.png",
+  "bytes": 13465357,
+  "seconds": 46
+ },
+ "mr_sunset": {
+  "request_id": "01a1e051-2abc-76ef-a95d-74090dfb0942",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e051-2abc-76ef-a95d-74090dfb0942/status",
+  "prompt": "The same small Mars outpost at sunset. The Sun is a small white disc low on the horizon with a cool blue glow around it, while the rest of the sky is dusky grey-brown, as in real rover photographs of Martian sunsets. The buildings are dark shapes with warm amber light in their portholes and the greenhouse tunnel glowing pink. Long soft shadows across the rocky plain. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "mr_base"
+  ],
+  "file": "assets/art/mars/mr_sunset.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e051-2abc-76ef-a95d-74090dfb0942/65a6ceb8-6454-4614-adba-6e665c430210.png",
+  "bytes": 11747053,
+  "seconds": 52
+ },
+ "mr_storm": {
+  "request_id": "01a1e051-2b96-7af0-8c96-6fa8bc6ad856",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e051-2b96-7af0-8c96-6fa8bc6ad856/status",
+  "prompt": "The same small Mars outpost as a regional dust storm arrives. A towering wall of tan-brown dust fills half the sky and is rolling across the plain toward the base. The Sun is a dim smudge, the light is flat and orange-brown, there are almost no shadows. The solar panel tables are coated in dust. Lights are on in the portholes. Fine dust streams low over the ground. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "mr_base"
+  ],
+  "file": "assets/art/mars/mr_storm.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e051-2b96-7af0-8c96-6fa8bc6ad856/44163c57-62c6-41e9-be6d-4996cba5c024.png",
+  "bytes": 10414556,
+  "seconds": 52
+ },
+ "mr_cmd": {
+  "request_id": "01a1e051-2b94-7f2c-a981-55bcdc11287f",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e051-2b94-7f2c-a981-55bcdc11287f/status",
+  "prompt": "The command room of the outpost, a round room under a low dome. A ring of consoles with pale amber translucent displays showing only abstract graphs and a schematic of the base, four seats, a large round table in the middle with a relief model of the surrounding plain. Three round windows look out over the outpost. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_cmd.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e051-2b94-7f2c-a981-55bcdc11287f/cddb8c55-fc51-4ee1-a787-2b48c58fca28.png",
+  "bytes": 10869726,
+  "seconds": 46
+ },
+ "mr_living": {
+  "request_id": "01a1e051-2b8d-7323-abcb-ce5995ffa4cf",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e051-2b8d-7323-abcb-ce5995ffa4cf/status",
+  "prompt": "The living quarters, a long barrel-vault module with no windows because it is buried under soil. Four curtained bunks along one wall, a small galley with a water tap and food lockers, a fold-down table with four stools, a potted herb under a small lamp, soft warm lighting. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_living.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e051-2b8d-7323-abcb-ce5995ffa4cf/d0aa383e-180a-49d9-bddf-1e0669aad882.png",
+  "bytes": 10951185,
+  "seconds": 46
+ },
+ "mr_lifesupport": {
+  "request_id": "01a1e051-2b82-794c-9144-0aa2ff62f040",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e051-2b82-794c-9144-0aa2ff62f040/status",
+  "prompt": "The life support module. Tall racks of air scrubber canisters with a large slow fan behind a grille, a water recycling unit of clear cylinders, filters and stainless pipework, white oxygen pipes and blue water pipes, a row of gauges with needles, spare filter cartridges strapped to the wall. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_lifesupport.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e051-2b82-794c-9144-0aa2ff62f040/8d1d6f5b-8a65-4e31-9c0d-242660c921c0.png",
+  "bytes": 13110506,
+  "seconds": 46
+ },
+ "mr_water": {
+  "request_id": "01a1e051-df45-7731-acaf-668e2d2afd18",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e051-df45-7731-acaf-668e2d2afd18/status",
+  "prompt": "The water processing plant. Two large stainless steel water tanks with sight glasses showing clear water, a melting vessel with a heated lid where chunks of dirty brownish ice are being melted, a filter train of cartridges, blue pipes, a floor drain grate, frost on the pipe that comes in through the wall from the ice well. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_water.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e051-df45-7731-acaf-668e2d2afd18/df719ac7-4cd6-4b41-9f1b-9a5c090ca4ef.png",
+  "bytes": 12488770,
+  "seconds": 46
+ },
+ "mr_power": {
+  "request_id": "01a1e051-df5b-757a-80a5-7ae5aae928c8",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e051-df5b-757a-80a5-7ae5aae928c8/status",
+  "prompt": "The power station control room. A wall of large battery cabinets with green status lamps, a row of heavy switchgear with big orange-handled breakers, thick bundled cables in trays, one console with a pale amber display showing an abstract power graph. Through one round window, rows of solar panel tables stand on the plain outside. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_power.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e051-df5b-757a-80a5-7ae5aae928c8/40f337e8-fefc-41f0-ae96-c1f73c493ada.png",
+  "bytes": 11518014,
+  "seconds": 46
+ },
+ "mr_greenhouse": {
+  "request_id": "01a1e051-e14c-7922-aa74-e21d45d49b98",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e051-e14c-7922-aa74-e21d45d49b98/status",
+  "prompt": "Inside the greenhouse, a long clear-walled tunnel. Two rows of raised planting troughs full of lettuce, potato plants, tomato vines and dwarf wheat under strips of pink-magenta grow lamps, drip irrigation lines, a mist of humidity, condensation on the clear wall. Outside the wall the cold rust-brown plain is dimly visible. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_greenhouse.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e051-e14c-7922-aa74-e21d45d49b98/6a1e880b-d955-4155-ae07-43f324e8d0d3.png",
+  "bytes": 13146434,
+  "seconds": 46
+ },
+ "mr_lab": {
+  "request_id": "01a1e051-f4c9-7ce9-a3ef-47a37870be62",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e051-f4c9-7ce9-a3ef-47a37870be62/status",
+  "prompt": "The research laboratory. A sealed glovebox holding reddish rock samples and a core of dirty ice, a microscope, rows of labelled-looking sealed sample boxes on shelves, a workbench with a rock hammer and sample tubes, a console showing abstract weather graphs. Through a round window a slim weather mast with a small wind sensor stands outside. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_lab.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e051-f4c9-7ce9-a3ef-47a37870be62/3407c0ac-72fe-48b4-af61-7ed46393c591.png",
+  "bytes": 11791868,
+  "seconds": 46
+ },
+ "mr_medical": {
+  "request_id": "01a1e051-f646-7531-817a-0215f40dc7d6",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e051-f646-7531-817a-0215f40dc7d6/status",
+  "prompt": "The medical bay, small and tidy. One treatment bed with a folded blanket, a swing-arm lamp, a compact scanner, cabinets of supplies with clear doors, a wall rack of four small personal radiation badges, a sink, an exercise bike folded against the wall. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_medical.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e051-f646-7531-817a-0215f40dc7d6/e4da3806-e5bc-448f-ba02-4585d2503eca.png",
+  "bytes": 9935415,
+  "seconds": 45
+ },
+ "mr_garage": {
+  "request_id": "01a1e052-936f-7ac3-9a1b-a1a66a5c1f66",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e052-936f-7ac3-9a1b-a1a66a5c1f66/status",
+  "prompt": "A rover garage on Mars: a white arched shelter open at both ends so a vehicle can drive straight through. Inside stands a six-wheeled open-frame crew rover with wire-mesh wheels and a roll bar, plugged into a charging post by a thick cable, with a tool chest and spare wheel against the wall. A round charging pad is marked on the ground in front. Seen from outside at an angle, looking in. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "mr_base"
+  ],
+  "file": "assets/art/mars/mr_garage.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e052-936f-7ac3-9a1b-a1a66a5c1f66/41bec7cc-bb2d-470e-960e-3e1980668ef1.png",
+  "bytes": 12644046,
+  "seconds": 58
+ },
+ "mr_airlock": {
+  "request_id": "01a1e052-936b-7170-b70c-dbb63cb1c421",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e052-936b-7170-b70c-dbb63cb1c421/status",
+  "prompt": "The airlock, a small room between two heavy round-cornered pressure doors, one of them with a porthole showing the tan Martian daylight outside. Two white surface suits with rust-orange stripes hang by their backs from suit ports on the wall, helmets on a shelf, boots with red dust on them in a tray, a pressure gauge with a needle, a brush and a vacuum hose for cleaning dust. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_airlock.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e052-936b-7170-b70c-dbb63cb1c421/e6ea515f-081e-4fb9-bfb8-5e19d12bdf64.png",
+  "bytes": 10690917,
+  "seconds": 45
+ },
+ "mr_comms": {
+  "request_id": "01a1e052-95b9-7d0b-96d6-feed6f82501e",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e052-95b9-7d0b-96d6-feed6f82501e/status",
+  "prompt": "A communications tower on Mars: a slim white lattice mast held by guy wires, with a white dish antenna about two metres wide near its top pointed up at the sky, a small equipment cabinet at its foot and a cable running back toward the habitat modules in the distance. Low camera angle looking up at the dish. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "mr_base"
+  ],
+  "file": "assets/art/mars/mr_comms.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e052-95b9-7d0b-96d6-feed6f82501e/c93fd7c2-cee8-4c16-a62d-aa123d431e7d.png",
+  "bytes": 12019903,
+  "seconds": 51
+ },
+ "mr_storage": {
+  "request_id": "01a1e052-a74f-7bfd-b755-30aa40854fef",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e052-a74f-7bfd-b755-30aa40854fef/status",
+  "prompt": "The storage depot, an unheated store. Floor-to-ceiling racks of grey and white cargo boxes held by cargo straps, stacked food containers, spare parts in bins, a row of white gas tanks, a hand pallet truck, a thin film of frost on the lower shelves, cold bluish working light. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_storage.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e052-a74f-7bfd-b755-30aa40854fef/6fee4198-bfc2-4a7d-a60e-8a4ff313832a.png",
+  "bytes": 12594605,
+  "seconds": 46
+ },
+ "mr_isru": {
+  "request_id": "01a1e052-a7cf-77cc-aed3-3c7a78defcb1",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e052-a7cf-77cc-aed3-3c7a78defcb1/status",
+  "prompt": "The oxygen plant. A row of insulated gold-foil-wrapped cylindrical reactor units glowing dull orange at their seams from the heat inside, a large intake duct with a dust filter where Martian air comes in through the wall, compressors, white pipes leading to two tall white oxygen tanks, a vent stack, heat shimmer. Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_isru.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e052-a7cf-77cc-aed3-3c7a78defcb1/f26e6706-78c5-4235-bd0c-45e9737311ad.png",
+  "bytes": 13541004,
+  "seconds": 52
+ },
+ "mr_thermal": {
+  "request_id": "01a1e053-44fe-7689-85d8-ef762380c451",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e053-44fe-7689-85d8-ef762380c451/status",
+  "prompt": "A thermal control facility on Mars: a compact white machinery module with a heat pump, and two tall flat radiator wings standing up from it like white sails, made of thin panels with fine tubing. Red insulated pipes on low stands run from it toward the habitat modules. Seen at an angle from the ground. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "mr_base"
+  ],
+  "file": "assets/art/mars/mr_thermal.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e053-44fe-7689-85d8-ef762380c451/e25c9a57-4e15-4087-8360-a51305393de4.png",
+  "bytes": 13034573,
+  "seconds": 59
+ },
+ "mr_solar": {
+  "request_id": "01a1e053-5b1e-7047-a11c-67ad65a08746",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e053-5b1e-7047-a11c-67ad65a08746/status",
+  "prompt": "A field of solar panels on Mars: five rows of seven dark blue panel tables on white tracking frames, all tilted the same way toward the Sun. The nearest panels have a thin coat of red-brown dust dulling the glass, with one clean stripe where a brush has been drawn across. Cables run along the ground to a small white building. Low angle along a row. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [
+   "mr_base"
+  ],
+  "file": "assets/art/mars/mr_solar.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e053-5b1e-7047-a11c-67ad65a08746/f4afe8df-4591-4180-90c0-57acdb76047a.png",
+  "bytes": 13284705,
+  "seconds": 58
+ },
+ "mr_reactor": {
+  "request_id": "01a1e053-5f07-709a-bc29-af01d969eb1c",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e053-5f07-709a-bc29-af01d969eb1c/status",
+  "prompt": "A small fission power unit standing alone on the Martian plain, well away from any building: a slim upright cylinder about as tall as a person with an umbrella-shaped ring of flat radiator fins on top, set in a shallow pit behind a curved bank of heaped soil. A single cable on low stands runs away toward a tiny distant outpost on the horizon. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_reactor.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e053-5f07-709a-bc29-af01d969eb1c/8c421bf0-2379-4f72-9db3-6b35be2de6e1.png",
+  "bytes": 13612218,
+  "seconds": 52
+ },
+ "mr_lander": {
+  "request_id": "01a1e053-73aa-7a1f-ac8f-cf85a8848e4f",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e053-73aa-7a1f-ac8f-cf85a8848e4f/status",
+  "prompt": "A crew lander standing on Mars on a flat round pad of dark baked soil: a squat white conical vehicle on four sturdy legs with a scorched heat shield underside, a hatch and a ladder, and empty cargo pallets beside it. The soil around the pad is blown clean in a ring by the landing engines. Rover wheel tracks lead away toward a tiny distant outpost. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_lander.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e053-73aa-7a1f-ac8f-cf85a8848e4f/410684ed-a625-4202-a484-f729427e8928.png",
+  "bytes": 13019495,
+  "seconds": 64
+ },
+ "mr_drill": {
+  "request_id": "01a1e053-7677-75b0-a97b-7497d458532e",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e053-7677-75b0-a97b-7497d458532e/status",
+  "prompt": "An ice well on Mars: a white tripod drill rig about three metres tall over a borehole, with a heated drill pipe going into the ground, an insulated blue water pipe on low stands running away to a nearby white module, and frost on the pipe. Around the borehole the soil is scraped back to show bright white ice a hand's depth under the red-brown regolith. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_drill.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e053-7677-75b0-a97b-7497d458532e/7c749fdb-969e-4ef8-aedd-b8d8f28c6b4d.png",
+  "bytes": 13331518,
+  "seconds": 46
+ },
+ "mr_icecrater": {
+  "request_id": "01a1e054-2b1d-7b72-8fdb-a3b6c9290191",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e054-2b1d-7b72-8fdb-a3b6c9290191/status",
+  "prompt": "A young, sharp-rimmed impact crater about thirty metres across on the Martian plain, seen from its rim. Its floor and lower walls show patches of bright white water ice dug out from beneath the soil, with dark blocks of thrown-out rock around the rim and rays of darker soil spreading outward. A six-wheeled rover is parked at the rim for scale. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_icecrater.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e054-2b1d-7b72-8fdb-a3b6c9290191/b6f85270-555c-45b6-aff0-1c5837b0e82d.png",
+  "bytes": 15580018,
+  "seconds": 52
+ },
+ "mr_flow": {
+  "request_id": "01a1e054-2b5c-792c-8917-7eb7d6eb2f5a",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e054-2b5c-792c-8917-7eb7d6eb2f5a/status",
+  "prompt": "The edge of an ancient lava flow on the Martian plain: a low dark step of cracked, rough basalt about seven metres high running across the view like a long wall, with fallen blocks at its foot and tan dust drifted against it. In front lies the smoother rust-brown plain. A six-wheeled rover near the foot of the step gives the scale. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_flow.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e054-2b5c-792c-8917-7eb7d6eb2f5a/35d68fca-b519-4e08-8b0c-86569736b952.png",
+  "bytes": 14169425,
+  "seconds": 46
+ },
+ "mr_dunes": {
+  "request_id": "01a1e054-2c6c-7c8a-a76c-ba0696379499",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e054-2c6c-7c8a-a76c-ba0696379499/status",
+  "prompt": "A field of large wind ripples on Mars: long parallel ridges of dark grey-brown basalt sand with sharp crests, a metre or two high, running across the view and fading into dust haze, with paler rust-brown soil and scattered rocks between them. Low Sun rakes across the crests. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_dunes.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e054-2c6c-7c8a-a76c-ba0696379499/be74d367-6a3f-4bee-a29c-611e30f63475.png",
+  "bytes": 14449009,
+  "seconds": 46
+ },
+ "mr_oldcrater": {
+  "request_id": "01a1e054-3ea7-7a82-aef7-a9f854eccaa1",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e054-3ea7-7a82-aef7-a9f854eccaa1/status",
+  "prompt": "An old, worn impact crater about two hundred metres across on the Martian plain, seen from its low rounded rim. Its walls are gentle and softened, its floor shallow and filled with smooth dust and small ripples, its rim barely higher than the plain, with a few half-buried rocks. Wide, quiet, ancient. The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/mr_oldcrater.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e054-3ea7-7a82-aef7-a9f854eccaa1/f850fb93-4049-48f0-998c-b8d25a947e7b.png",
+  "bytes": 13037421,
+  "seconds": 46
+ },
+ "c_mateo": {
+  "request_id": "01a1e05d-22b9-75a5-a01d-e4517a44b00a",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e05d-22b9-75a5-a01d-e4517a44b00a/status",
+  "prompt": "Cartoon portrait of a cheerful habitat engineer on a Mars outpost: a Latino man in his thirties with short curly dark hair and a neat short beard, friendly confident grin, wearing a dark blue indoor crew shirt with teal stripes on the shoulders, a small wrench tucked in his chest pocket. Background of a white round room with consoles glowing amber and one round window showing a butterscotch-tan Martian sky. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/c_mateo.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e05d-22b9-75a5-a01d-e4517a44b00a/29ec3a19-e33f-446f-962a-fdf5c05a434a.png",
+  "bytes": 4764665,
+  "seconds": 58
+ },
+ "c_noor": {
+  "request_id": "01a1e05d-22c3-717f-971d-da55f981696b",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e05d-22c3-717f-971d-da55f981696b/status",
+  "prompt": "Cartoon portrait of a calm, kind life-support specialist and doctor on a Mars outpost: an Arab woman in her forties with dark wavy hair tied back, warm reassuring smile, wearing a dark blue indoor crew shirt with violet stripes on the shoulders, a small stethoscope round her neck. Background of a white room with air pipes, a row of green plants and one round window showing a butterscotch-tan Martian sky. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/c_noor.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e05d-22c3-717f-971d-da55f981696b/f496c23a-6108-4eff-8821-cfb49e5cb182.png",
+  "bytes": 4669998,
+  "seconds": 45
+ },
+ "c_lena": {
+  "request_id": "01a1e05d-22c4-7df1-b8d4-f9b2e6f7c914",
+  "status_url": "https://api.higgsfield.ai/requests/01a1e05d-22c4-7df1-b8d4-f9b2e6f7c914/status",
+  "prompt": "Cartoon portrait of an excited planetary geologist out on the surface of Mars: a Korean woman in her thirties with a short black bob, bright curious smile, wearing a white spacesuit with green stripes on the shoulders and a clear round bubble helmet through which her whole face is seen, holding up a small reddish rock. Background of a rust-brown rocky Martian plain under a butterscotch-tan hazy sky with a small pale Sun. Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mars/c_lena.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1e05d-22c4-7df1-b8d4-f9b2e6f7c914/9df11f3d-8032-42ba-8f73-c2d370d45791.png",
+  "bytes": 5671527,
+  "seconds": 52
  }
 }

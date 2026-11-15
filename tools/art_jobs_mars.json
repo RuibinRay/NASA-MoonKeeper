@@ -1,0 +1,226 @@
+{
+ "outDir": "assets/art/mars",
+ "resolution": "4k",
+ "quality": "high",
+ "styles": {
+  "room": "Design language of this one Mars surface outpost, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, rust-orange accents only on handles, hatch wheels and door frames, each door a rounded-rectangle orange-framed pressure hatch with one round porthole, recessed warm-white ceiling light strips plus thin amber status lighting at floor level, cable trays and insulated pipes overhead colour-coded blue for water, white for oxygen and red for heat, a little fine red-brown dust in the floor corners. Any window is small and round and shows a butterscotch-tan hazy Martian sky over a rust-brown rocky plain. Grounded space-agency engineering realism, like a real habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm lens, eye-level camera, deep perspective, practical lighting, natural film colour grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no labels, no user interface, no logos, no flags, no watermark.",
+  "out": "The real surface of Mars on the northern plains of Arcadia Planitia: flat to gently rolling rust-brown and ochre regolith strewn with dark angular basalt rocks of many sizes, faint polygon-shaped cracks in the soil, thin drifts of fine dust, low hills on the horizon fading into dust haze. A butterscotch-tan hazy sky, brighter near the horizon, with a small pale Sun about two-thirds the size it has from Earth, and soft-edged shadows. No plants, no water, no puddles, no blue daytime sky, no Earth-like clouds. Any buildings are white modular habitat modules with visible panel seams and rust-orange accents, their lower walls banked with heaped regolith, lightly dusted red-brown. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark."
+ },
+ "jobs": [
+  {
+   "id": "mr_base",
+   "style": "out",
+   "web": "assets/img/mars/mr_base.jpg",
+   "prompt": "A small first human outpost on Mars seen from a low rise in mid-morning light. In the middle a two-storey white Command Habitat with a low dome on top and a bank of red soil round its foot. Left of it a long module buried under a mound of soil with only its end hatch showing. Short white pressurised tunnels join the modules. To the right a clear greenhouse tunnel glowing pink from grow lamps, a module with white spherical oxygen tanks, and a unit with two tall flat radiator wings. A lattice mast with a small dish antenna. Behind, a neat field of solar panel tables in rows. Pipes on low stands run between the buildings, one blue, one white, one red. A six-wheeled open rover parked near a drive-through garage shelter. Wheel tracks in the soil.",
+   "webW": 1920
+  },
+  {
+   "id": "mr_sunset",
+   "style": "out",
+   "refs": [
+    "mr_base"
+   ],
+   "web": "assets/img/mars/mr_sunset.jpg",
+   "prompt": "The same small Mars outpost at sunset. The Sun is a small white disc low on the horizon with a cool blue glow around it, while the rest of the sky is dusky grey-brown, as in real rover photographs of Martian sunsets. The buildings are dark shapes with warm amber light in their portholes and the greenhouse tunnel glowing pink. Long soft shadows across the rocky plain.",
+   "webW": 1920
+  },
+  {
+   "id": "mr_storm",
+   "style": "out",
+   "refs": [
+    "mr_base"
+   ],
+   "web": "assets/img/mars/mr_storm.jpg",
+   "prompt": "The same small Mars outpost as a regional dust storm arrives. A towering wall of tan-brown dust fills half the sky and is rolling across the plain toward the base. The Sun is a dim smudge, the light is flat and orange-brown, there are almost no shadows. The solar panel tables are coated in dust. Lights are on in the portholes. Fine dust streams low over the ground.",
+   "webW": 1920
+  },
+  {
+   "id": "mr_cmd",
+   "style": "room",
+   "web": "assets/img/mars/mr_cmd.jpg",
+   "prompt": "The command room of the outpost, a round room under a low dome. A ring of consoles with pale amber translucent displays showing only abstract graphs and a schematic of the base, four seats, a large round table in the middle with a relief model of the surrounding plain. Three round windows look out over the outpost.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_living",
+   "style": "room",
+   "web": "assets/img/mars/mr_living.jpg",
+   "prompt": "The living quarters, a long barrel-vault module with no windows because it is buried under soil. Four curtained bunks along one wall, a small galley with a water tap and food lockers, a fold-down table with four stools, a potted herb under a small lamp, soft warm lighting.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_lifesupport",
+   "style": "room",
+   "web": "assets/img/mars/mr_lifesupport.jpg",
+   "prompt": "The life support module. Tall racks of air scrubber canisters with a large slow fan behind a grille, a water recycling unit of clear cylinders, filters and stainless pipework, white oxygen pipes and blue water pipes, a row of gauges with needles, spare filter cartridges strapped to the wall.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_water",
+   "style": "room",
+   "web": "assets/img/mars/mr_water.jpg",
+   "prompt": "The water processing plant. Two large stainless steel water tanks with sight glasses showing clear water, a melting vessel with a heated lid where chunks of dirty brownish ice are being melted, a filter train of cartridges, blue pipes, a floor drain grate, frost on the pipe that comes in through the wall from the ice well.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_power",
+   "style": "room",
+   "web": "assets/img/mars/mr_power.jpg",
+   "prompt": "The power station control room. A wall of large battery cabinets with green status lamps, a row of heavy switchgear with big orange-handled breakers, thick bundled cables in trays, one console with a pale amber display showing an abstract power graph. Through one round window, rows of solar panel tables stand on the plain outside.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_greenhouse",
+   "style": "room",
+   "web": "assets/img/mars/mr_greenhouse.jpg",
+   "prompt": "Inside the greenhouse, a long clear-walled tunnel. Two rows of raised planting troughs full of lettuce, potato plants, tomato vines and dwarf wheat under strips of pink-magenta grow lamps, drip irrigation lines, a mist of humidity, condensation on the clear wall. Outside the wall the cold rust-brown plain is dimly visible.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_lab",
+   "style": "room",
+   "web": "assets/img/mars/mr_lab.jpg",
+   "prompt": "The research laboratory. A sealed glovebox holding reddish rock samples and a core of dirty ice, a microscope, rows of labelled-looking sealed sample boxes on shelves, a workbench with a rock hammer and sample tubes, a console showing abstract weather graphs. Through a round window a slim weather mast with a small wind sensor stands outside.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_medical",
+   "style": "room",
+   "web": "assets/img/mars/mr_medical.jpg",
+   "prompt": "The medical bay, small and tidy. One treatment bed with a folded blanket, a swing-arm lamp, a compact scanner, cabinets of supplies with clear doors, a wall rack of four small personal radiation badges, a sink, an exercise bike folded against the wall.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_garage",
+   "style": "out",
+   "refs": [
+    "mr_base"
+   ],
+   "web": "assets/img/mars/mr_garage.jpg",
+   "prompt": "A rover garage on Mars: a white arched shelter open at both ends so a vehicle can drive straight through. Inside stands a six-wheeled open-frame crew rover with wire-mesh wheels and a roll bar, plugged into a charging post by a thick cable, with a tool chest and spare wheel against the wall. A round charging pad is marked on the ground in front. Seen from outside at an angle, looking in.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_airlock",
+   "style": "room",
+   "web": "assets/img/mars/mr_airlock.jpg",
+   "prompt": "The airlock, a small room between two heavy round-cornered pressure doors, one of them with a porthole showing the tan Martian daylight outside. Two white surface suits with rust-orange stripes hang by their backs from suit ports on the wall, helmets on a shelf, boots with red dust on them in a tray, a pressure gauge with a needle, a brush and a vacuum hose for cleaning dust.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_comms",
+   "style": "out",
+   "refs": [
+    "mr_base"
+   ],
+   "web": "assets/img/mars/mr_comms.jpg",
+   "prompt": "A communications tower on Mars: a slim white lattice mast held by guy wires, with a white dish antenna about two metres wide near its top pointed up at the sky, a small equipment cabinet at its foot and a cable running back toward the habitat modules in the distance. Low camera angle looking up at the dish.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_storage",
+   "style": "room",
+   "web": "assets/img/mars/mr_storage.jpg",
+   "prompt": "The storage depot, an unheated store. Floor-to-ceiling racks of grey and white cargo boxes held by cargo straps, stacked food containers, spare parts in bins, a row of white gas tanks, a hand pallet truck, a thin film of frost on the lower shelves, cold bluish working light.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_isru",
+   "style": "room",
+   "web": "assets/img/mars/mr_isru.jpg",
+   "prompt": "The oxygen plant. A row of insulated gold-foil-wrapped cylindrical reactor units glowing dull orange at their seams from the heat inside, a large intake duct with a dust filter where Martian air comes in through the wall, compressors, white pipes leading to two tall white oxygen tanks, a vent stack, heat shimmer.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_thermal",
+   "style": "out",
+   "refs": [
+    "mr_base"
+   ],
+   "web": "assets/img/mars/mr_thermal.jpg",
+   "prompt": "A thermal control facility on Mars: a compact white machinery module with a heat pump, and two tall flat radiator wings standing up from it like white sails, made of thin panels with fine tubing. Red insulated pipes on low stands run from it toward the habitat modules. Seen at an angle from the ground.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_solar",
+   "style": "out",
+   "refs": [
+    "mr_base"
+   ],
+   "web": "assets/img/mars/mr_solar.jpg",
+   "prompt": "A field of solar panels on Mars: five rows of seven dark blue panel tables on white tracking frames, all tilted the same way toward the Sun. The nearest panels have a thin coat of red-brown dust dulling the glass, with one clean stripe where a brush has been drawn across. Cables run along the ground to a small white building. Low angle along a row.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_reactor",
+   "style": "out",
+   "web": "assets/img/mars/mr_reactor.jpg",
+   "prompt": "A small fission power unit standing alone on the Martian plain, well away from any building: a slim upright cylinder about as tall as a person with an umbrella-shaped ring of flat radiator fins on top, set in a shallow pit behind a curved bank of heaped soil. A single cable on low stands runs away toward a tiny distant outpost on the horizon.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_lander",
+   "style": "out",
+   "web": "assets/img/mars/mr_lander.jpg",
+   "prompt": "A crew lander standing on Mars on a flat round pad of dark baked soil: a squat white conical vehicle on four sturdy legs with a scorched heat shield underside, a hatch and a ladder, and empty cargo pallets beside it. The soil around the pad is blown clean in a ring by the landing engines. Rover wheel tracks lead away toward a tiny distant outpost.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_drill",
+   "style": "out",
+   "web": "assets/img/mars/mr_drill.jpg",
+   "prompt": "An ice well on Mars: a white tripod drill rig about three metres tall over a borehole, with a heated drill pipe going into the ground, an insulated blue water pipe on low stands running away to a nearby white module, and frost on the pipe. Around the borehole the soil is scraped back to show bright white ice a hand's depth under the red-brown regolith.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_icecrater",
+   "style": "out",
+   "web": "assets/img/mars/mr_ice.jpg",
+   "prompt": "A young, sharp-rimmed impact crater about thirty metres across on the Martian plain, seen from its rim. Its floor and lower walls show patches of bright white water ice dug out from beneath the soil, with dark blocks of thrown-out rock around the rim and rays of darker soil spreading outward. A six-wheeled rover is parked at the rim for scale.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_flow",
+   "style": "out",
+   "web": "assets/img/mars/mr_flow.jpg",
+   "prompt": "The edge of an ancient lava flow on the Martian plain: a low dark step of cracked, rough basalt about seven metres high running across the view like a long wall, with fallen blocks at its foot and tan dust drifted against it. In front lies the smoother rust-brown plain. A six-wheeled rover near the foot of the step gives the scale.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_dunes",
+   "style": "out",
+   "web": "assets/img/mars/mr_dunes.jpg",
+   "prompt": "A field of large wind ripples on Mars: long parallel ridges of dark grey-brown basalt sand with sharp crests, a metre or two high, running across the view and fading into dust haze, with paler rust-brown soil and scattered rocks between them. Low Sun rakes across the crests.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  },
+  {
+   "id": "mr_oldcrater",
+   "style": "out",
+   "web": "assets/img/mars/mr_old.jpg",
+   "prompt": "An old, worn impact crater about two hundred metres across on the Martian plain, seen from its low rounded rim. Its walls are gentle and softened, its floor shallow and filled with smooth dust and small ripples, its rim barely higher than the plain, with a few half-buried rocks. Wide, quiet, ancient.",
+   "webW": 1280,
+   "webCrop": "iw:ih*0.6:0:ih*0.16"
+  }
+ ]
+}
