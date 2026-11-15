@@ -52,7 +52,7 @@ export const MODES = {
                ok: 4, broken: 4, batteryCap: 420, o2: 3.4, water: 28, cans: 16, meals: 4, feed: 5, mat: 16, nutri: 2.0, ice: 3, gap: [0.42, 0.62], stormMul: 0.65, mgEase: 1.35, wreck: ['tomato', 'bathroom'] },
   pilot:     { key: 'pilot', name: 'Pilot', ages: 'Ages 11–14', tag: '7 days · one long night', days: 7, sunsetDay: 2.6, hourLen: 8, drain: 1, reactor: 5,
                ok: 3, broken: 5, batteryCap: 380, o2: 3.0, water: 24, cans: 14, meals: 2, feed: 4, mat: 11, nutri: 1.2, ice: 2, gap: [0.4, 0.6], stormMul: 1, mgEase: 1, wreck: ['tomato', 'bathroom', 'storage'] },
-  commander: { key: 'commander', name: 'Commander', ages: 'Ages 15–18', tag: '10 days · scarce materials', days: 10, sunsetDay: 3.4, hourLen: 7, drain: 1.08, reactor: 5,
+  commander: { key: 'commander', name: 'Commander', ages: 'Ages 15–18', tag: '10 days · scarce materials', days: 10, sunsetDay: 4.5, hourLen: 7, drain: 1.08, reactor: 5,
                ok: 2, broken: 6, batteryCap: 360, o2: 2.7, water: 22, cans: 12, meals: 0, feed: 3, mat: 8, nutri: 0.8, ice: 1, gap: [0.36, 0.55], stormMul: 1.25, mgEase: 0.85, wreck: ['tomato', 'bathroom', 'storage', 'quarters'] },
   unlimited: { key: 'unlimited', name: 'Unlimited', ages: 'Any age', tag: 'No end · endless materials · build a Moon town', days: Infinity, sunsetDay: 9, hourLen: 8, drain: 1, reactor: 8,
                ok: 3, broken: 5, batteryCap: 380, o2: 3.0, water: 24, cans: 14, meals: 2, feed: 4, mat: Infinity, nutri: 1.5, ice: 2, gap: [0.5, 0.8], stormMul: 1, mgEase: 1, wreck: ['tomato', 'bathroom'] },
