@@ -258,16 +258,42 @@ export class UI {
   powerHint(S, F) {
     const lv = S.lv, cost = (k, i) => SYS[k].kw[i] - SYS[k].kw[lv[k]], canPay = (k, i) => F.eff >= 1 && (F.net - cost(k, i) >= -0.5 || S.battery > F.cap * 0.25);
     const up = (k, why) => (lv[k] < SYS[k].kw.length - 1 && canPay(k, lv[k] + 1) ? { k, i: lv[k] + 1, why } : null), set = (k, i, why) => ({ k, i, why });
-    const shed = (why) => lv.heat > F.heatNeed ? set('heat', F.heatNeed, why + ' The heaters are higher than the machines topside need.') : lv.comms > 1 ? set('comms', 1, why + ' Level 1 still gives storm warnings.') : lv.isru && F.o2Days > 2 ? set('isru', 0, why + ' The Moon-Dust Oxygen Plant is the hungriest machine.') : lv.farm > 1 ? set('farm', lv.farm - 1, why + ' Dimmer grow lights only slow the crops.') : lv.recycler > 1 ? set('recycler', lv.recycler - 1, why + ' You get a little less water back.') : lv.comms > 0 ? set('comms', 0, why + ' You lose storm warnings, so stay close to the elevator.') : null;
-    if (F.eff < 1) return shed('<b>Brownout:</b> the battery is empty, so turn something down.');
-    if (lv.heat < F.heatNeed) return set('heat', F.heatNeed, `Topside machines need heater level <b>${F.heatNeed}</b> right now, or something will break.`);
+    const u = F.use, daysLeft = S.hours === Infinity ? Infinity : (S.hours - (S.t - S.t0)) / 24;
+    // in a brownout every machine runs weak, heaters too: the level that really keeps topside warm is higher than the one on paper
+    const heatTarget = Math.min(3, Math.ceil(F.heatNeed / Math.max(F.eff, 0.05) - 0.01));
+    // the battery has to last until the panels can refill it (the next sunrise; a lunar night is about 354 h), or until the rescue ship
+    const horizon = Math.min(F.sun.up ? F.sun.toSunset + 354 : F.sun.toSunrise, daysLeft * 24), short = F.net < 0 && (F.battHours < 10 || F.battHours < horizon);
+    // What to turn down, smallest loss first. Each one must really save power: a broken dish already draws nothing.
+    const shed = (lead, keepHeat, freeOnly) => {   // freeOnly: just the cuts that cost nothing (by day, while the battery still lasts until sunset)
+      const r = (k, i, why) => set(k, i, lead + ' ' + why);
+      if (!keepHeat && lv.heat > heatTarget) return r('heat', heatTarget, 'The heaters are higher than the machines topside need.');
+      if (lv.comms > 1 && u.comms > 0) return r('comms', 1, 'Level 1 still gives storm warnings.');
+      if (lv.isru && F.o2Days > 2) return r('isru', 0, 'The Moon-Dust Oxygen Plant is the hungriest machine.');
+      if (freeOnly) return null;
+      if (lv.farm > 1) return r('farm', lv.farm - 1, 'Dimmer grow lights only slow the crops.');
+      if (lv.recycler > 1 && F.waterDays > 2) return r('recycler', lv.recycler - 1, 'You get a little less water back.');
+      if (lv.farm === 1 && u.farm > 0 && F.foodDays > Math.min(daysLeft, 4) + 0.5) return r('farm', 0, `Food lasts ${fmt.days(F.foodDays)}, so the plants can wait in the dark for a while.`);
+      if (u.bots > 0) return { k: null, why: lead + ` The helper robots use <b>${u.bots.toFixed(0)} kW</b>: set them to Rest in the Control Center.` };
+      if (lv.comms > 0 && u.comms > 0) return r('comms', 0, 'You lose storm warnings, so stay close to the elevator.');
+      return null;
+    };
+    const stuck = (lead) => ({ k: null, why: lead + ' Nothing left on this board can be turned down without hurting life support. ' + (F.sun.up ? 'Get more solar panels working.' : 'Solar panels make nothing until sunrise: rebuild the Battery Store and fix panels by day, so the next night is easier.') });
+    if (F.eff < 1) { const h = shed('<b>Brownout:</b> the battery is empty, so turn something down.'); if (h) return h;
+      // still short and the air is running out: breathing comes before warm machines
+      if (lv.heat > 0 && (S.o2 < 1 || F.o2Days < 2)) return set('heat', lv.heat - 1, '<b>Brownout, and oxygen is low.</b> Breathing comes first: the heaters take power the Oxygen Maker needs. Topside machines may freeze, but they can be fixed later.');
+      return stuck('<b>Brownout:</b> the battery is empty.'); }
+    if (lv.heat < F.heatNeed) { const after = F.net - cost('heat', F.heatNeed);   // heating up when the battery cannot pay for it only swaps frozen machines for a blackout
+      if (after < 0 && S.battery / -after < 6) { const h = shed(`Topside machines need heater level <b>${F.heatNeed}</b>, but the battery cannot pay for that for long. Turn this down first, then the heaters up.`, true); if (h) return h; }
+      return set('heat', F.heatNeed, `Topside machines need heater level <b>${F.heatNeed}</b> right now, or something will break.`); }
     if (S.f.commsDown && lv.comms > 0 && F.use.comms > 0) return set('comms', 0, 'The dish is knocked over, so the Earth Link is burning power for nothing. Switch it off until the dish is fixed.');
-    if (S.o2 < 0.8 || (F.o2Net < 0 && F.o2Days < 2)) { const h = machineOk(S, 'oxygen') && S.water > 3 ? up('o2gen', '<b>Oxygen is running low.</b> Turn the Oxygen Maker up. It costs power and water.') : null; if (h) return h; if (!S.f.isruDown && !lv.isru && canPay('isru', 1)) return set('isru', 1, '<b>Oxygen is running low.</b> The Moon-Dust Oxygen Plant makes oxygen without using water.'); }
-    if (F.net < 0 && F.battHours < 10) { const h = shed(`The battery will be empty in <b>${fmt.hrs(Math.floor(F.battHours))}</b>.`); if (h) return h; }
+    if (S.o2 < 0.8 || (F.o2Net < 0 && F.o2Days < 2)) { const h = machineOk(S, 'oxygen') && S.water > 3 ? up('o2gen', '<b>Oxygen is running low.</b> Turn the Oxygen Maker up. It costs power and water.') : null; if (h) return h; if (!S.f.isruDown && !lv.isru && canPay('isru', 1)) return set('isru', 1, '<b>Oxygen is running low.</b> The Moon-Dust Oxygen Plant makes oxygen without using water.');
+      if (machineOk(S, 'oxygen') && lv.o2gen < 3 && S.water > 3) { const s2 = shed('<b>Oxygen is running low</b> and the battery cannot pay for more yet. Turn this down first, then the Oxygen Maker up.'); if (s2) return s2; } }
+    if (short) { const lead = `The battery will be empty in <b>${fmt.hrs(Math.floor(F.battHours))}</b>${F.sun.up ? (F.battHours < F.sun.toSunset ? ', even before sunset' : ', and the panels stop at sunset') : ', long before sunrise'}.`, dayOk = F.sun.up && F.battHours > F.sun.toSunset, broken = S.mounts.filter((m) => m === 2).length;
+      return shed(lead, false, dayOk) || (dayOk ? { k: null, why: lead + ` ${broken ? `Fix the broken solar panels before sunset, in ${fmt.hrs(Math.floor(F.sun.toSunset))}` : `Build more panels or a bigger battery before sunset, in ${fmt.hrs(Math.floor(F.sun.toSunset))}`}: after that only the reactor is left. If the night still looks short, turn the farm lights and the robots down then.` } : stuck(lead)); }
     if (F.wNet < 0 && F.waterDays < 3 && machineOk(S, 'water')) { const h = up('recycler', '<b>Water is dropping.</b> Turn the Water Recycler up to get more of it back.'); if (h) return h; }
-    if (F.farms > 0 && lv.farm === 0 && canPay('farm', 1)) return set('farm', 1, 'The grow lights are off, so the plants are wilting. Level 1 keeps them alive.');
+    if (!short && F.farms > 0 && lv.farm === 0 && canPay('farm', 1)) return set('farm', 1, 'The grow lights are off, so the plants are wilting. Level 1 keeps them alive.');
     if (F.farms > 0 && F.foodDays < 2) { const h = up('farm', '<b>Food is short.</b> Brighter grow lights make the crops ripen faster.'); if (h) return h; }
-    if (!S.f.commsDown && lv.comms === 0 && canPay('comms', 1)) return set('comms', 1, 'The Earth Link is off, so storms arrive with no warning. Level 1 gives about 4 hours.');
+    if (!short && !S.f.commsDown && lv.comms === 0 && canPay('comms', 1)) return set('comms', 1, 'The Earth Link is off, so storms arrive with no warning. Level 1 gives about 4 hours.');
     if (S.battery >= F.cap - 1 && F.net > 3) { const h = (F.farms > 0 && up('farm', 'The battery is full and power is being wasted. Spend it on faster crops.')) || (machineOk(S, 'oxygen') && S.water > 6 && S.o2 < S.o2Cap - 0.5 && up('o2gen', 'The battery is full and power is being wasted. Spend it on spare oxygen.')); if (h) return h; }
     return null;
   }
@@ -292,7 +318,7 @@ export class UI {
       const auto = chg + [['Fix-It bench & builder', u.tools], ['Helper robots', u.bots], ['Fish tank pump', u.pump], ['Extra', F.extra]].filter((x) => x[1] > 0).map(([a, b]) => `<div class="stat"><span>${a}</span><span>${b.toFixed(1)} kW</span></div>`).join('');
       w.querySelector('.win-b').innerHTML = `
         <div class="note"><b>No choice is free.</b> Every machine eats power. Turn one up, and something else gets less — or the battery drains faster.</div>
-        ${G.guide && !opts.goal ? `<div class="rec-banner ${hint ? '' : 'calm'}"><img src="assets/img/c_rego.jpg" alt=""><div><b>REGO${hint ? ': press the glowing switch' : ''}</b>${hint ? `${SYS[hint.k].name} → ${SYS[hint.k].kw.length === 2 ? ['OFF', 'ON'][hint.i] : hint.i === 0 ? 'OFF' : 'level ' + hint.i}. ${hint.why}` : 'Nothing needs changing right now. The switches are set well for what we have.'}</div></div>` : ''}
+        ${G.guide && !opts.goal ? `<div class="rec-banner ${hint ? '' : 'calm'}"><img src="assets/img/c_rego.jpg" alt=""><div><b>REGO${hint && hint.k ? ': press the glowing switch' : ''}</b>${hint ? `${hint.k ? `${SYS[hint.k].name} → ${SYS[hint.k].kw.length === 2 ? ['OFF', 'ON'][hint.i] : hint.i === 0 ? 'OFF' : 'level ' + hint.i}. ` : ''}${hint.why}` : 'Nothing needs changing right now. The switches are set well for what we have.'}</div></div>` : ''}
         <div class="grid2" style="margin-top:12px"><div>${rows}</div><div>
           <h4 class="h4">Power right now</h4><div class="mini">Coming in: ${F.supply.toFixed(1)} kW · ${F.nOk} solar panel${F.nOk === 1 ? '' : 's'} working</div>
           <div class="flowbar">${seg(F.solar, '#ffd257', 'Solar')}${seg(F.reactor, '#8fe9a8', 'Reactor')}</div><div class="mini">Going out: ${F.demand.toFixed(1)} kW</div>
