@@ -441,7 +441,7 @@ Played by a script through the game's own controls (E and Q, the panels, the Pow
 
 - **Many holed rooms.** Five rooms were holed in one Pilot mission. With no spare materials each one is lost, and materials are spent by Day 2 on the Bathroom, the Battery Store and two panels. (Changed afterwards: see "Fewer holed rooms".)
 - **Heaters in the last nights.** Once the rover trip was over, nothing the player still used needed the heaters; keeping them on was a choice, not a need.
-- **Robots on Farm duty with both farms sealed** keep drawing power; nothing says so.
+- **Robots on Farm duty with both farms sealed** keep drawing power; nothing says so. (Fixed afterwards: see "Three small leftovers".)
 
 **Honest limits of this run:**
 
@@ -472,3 +472,11 @@ When a hole is not allowed, the emergency still happens but does something else:
 - **Checks.** `node tools/holes_test.mjs` runs 21 checks on the rules, including a mission saved before this change.
 - **Tried in the game** (Pilot): a leak; a second one straight after became a dust event; after the gap a second leak hit a different room; past the limit, a leak became dust, a meteoroid smashed panels and a moonquake cracked a pipe.
 - **Not done:** nobody has played a mission with these limits. They are story numbers chosen from the measurements above, not from watching children play.
+
+### Three small leftovers
+
+- **A robot with nothing to do.** Farm duty needs a working farm or the Animal Bay; a Cook needs the Kitchen. Without them the robot stands still and draws no power, where it used to draw its 1 kW regardless. The Control Center says "Nothing to do" and why, under the helper's name. When nothing more pressing is on, REGO suggests another job.
+- **The chargers' switch.** The Power Board's line for the chargers has a button, "Switch off" or "Switch on". Off, the rover and hopper do not charge and the chargers draw nothing; the Charging Pads panel says so. This was the last open point (18) of the rescue-run report: the hopper starts a mission at about 45% on its pad and draws 7 kW until it is full.
+- **Rescued astronauts and buildings.** People who follow you home used the old follow code and walked straight through buildings. They now use REGO's: the first follows you, each of the others follows the one in front, and they go round buildings and stay back from the pit.
+
+`node tools/crew_test.mjs` runs 22 checks on the three rules. **Tried in the game:** the hopper at 46% stopped charging when switched off and rose to 85% after it was switched on again; a robot on Farm duty with the farms and the Animal Bay sealed drew nothing and the Control Center said so; two rescued astronauts followed round two surface buildings, never inside one, with no jumps, each about 2.6 m behind the one in front. **Not tried:** a real rescue trip from an outpost to the elevator.

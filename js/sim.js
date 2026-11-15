@@ -52,6 +52,8 @@ export function applyDisaster(S) {
 
 export const roomOk = (S, id) => { const r = S.rooms[id]; return r.built >= 1 && !r.frozen && r.p > 55; };
 export const humans = (S) => S.helpers.filter((h) => h.kind === 'human');
+// Is there anything for a helper with this job to do? Farm duty needs a farm or the Animal Bay; a cook needs the Kitchen.
+export const hasWork = (S, role) => (role === 'idle' ? false : role === 'farm' ? roomOk(S, 'potato') || roomOk(S, 'tomato') || roomOk(S, 'animal') : role === 'cook' ? roomOk(S, 'kitchen') : true);
 export const working = (S, role) => S.helpers.filter((h) => h.role === role && (h.kind === 'bot' || S.P > 55)).length;
 // How much faster jobs go with builders and an engineer around.
 export const buildSpeed = (S) => 1 + 0.35 * working(S, 'build') + (S.perks.engineer ? 0.25 : 0);
@@ -74,7 +76,7 @@ export function computeFlows(S) {
   const nOk = S.mounts.filter((x) => x === 1).length;
   const solar = safe ? 0 : nOk * K.PANEL_KW * s.factor * (1 - 0.75 * S.dust) * S.solarHealth;
   const farms = (roomOk(S, 'potato') ? 1 : 0) + (roomOk(S, 'tomato') ? 1 : 0);
-  const bots = S.helpers.filter((h) => h.kind === 'bot' && h.role !== 'idle').length;
+  const bots = S.helpers.filter((h) => h.kind === 'bot' && hasWork(S, h.role)).length;   // a robot with nothing to do stands still and draws nothing
   const use = {
     base: BASE_LOAD,
     o2gen: roomOk(S, 'oxygen') ? SYS.o2gen.kw[lv.o2gen] : 0,
@@ -161,6 +163,7 @@ export function step(S, dt) {
     S.wx.seal = Math.max(0.5, S.wx.seal - K.FROST_SEAL * F.frost * dt); S.stats.frostHours = (S.stats.frostHours || 0) + dt;
     if (!S.frostOn) { S.frostOn = true; S.pending.push('frost'); }
   } else S.frostOn = false;
+  if (S.chargeOff) S.car.charging = S.ship.charging = false;   // switched off on the Power Board
   for (const [v, rate] of [[S.car, 0.3], [S.ship, 0.2]]) if (v.charging) { v.charge = Math.min(1, v.charge + rate * dt * F.eff); if (v.charge >= 1) v.charging = false; }
   S.bench.forEach((b, i) => { if (b && b.left > 0) { b.left -= dt * F.eff * bs; if (b.left <= 0) { b.left = 0; S.pending.push('bench' + i); } } });
   if (S.fab) { S.fab.left -= dt * F.eff * bs; if (S.fab.left <= 0) { S.pending.push('fab:' + S.fab.what); S.fab = null; } }

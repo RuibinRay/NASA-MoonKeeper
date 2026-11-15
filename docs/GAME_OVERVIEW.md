@@ -336,6 +336,9 @@ The game was played from the title screen to the rescue by a script that presses
 | REGO said nothing while water was on course to run out two days before rescue; it spoke only in the last day. It also said "turn the Water Recycler up" when the recycler's room was sealed, and never mentioned a leaking water pipe. | REGO and a yellow alert speak up as soon as oxygen, water or food will not last until the rescue ship. REGO names a dead recycler or a leaking pipe first, and says how many materials the repair needs. |
 | The elevator would take you up into a solar storm without a word. | Its prompt reads "Ride the elevator up INTO THE SOLAR STORM (radiation!)" while a storm is on. |
 | Too many rooms were holed: five in one played Pilot mission, the Water Room twice, each one lost once the materials ran out. | A limit for each mission (one room on Cadet, two on Pilot, three on Commander), at least a day and a half between two, never the same room twice, and never the Water Room or Oxygen Room while you have nothing to patch with. |
+| A robot on Farm duty kept drawing 1 kW with every farm sealed, and nothing said so. | A robot with nothing to do stands still and draws nothing. The Control Center says why, and REGO suggests another job. |
+| The hopper's charger drew 7 kW at the start of a mission and could not be switched off. | The Power Board has a switch for the chargers. |
+| Rescued astronauts walked straight through buildings on the way home. | They follow in a line, each behind the one in front, and go round buildings as REGO does. |
 
 ### Found in a follow-up check of the hardest mode
 
