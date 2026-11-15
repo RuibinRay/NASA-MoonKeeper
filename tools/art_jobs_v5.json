@@ -1,0 +1,31 @@
+{
+ "outDir": "assets/art/v5",
+ "resolution": "4k",
+ "quality": "high",
+ "styles": {
+  "exterior": "Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film: white modular habitat buildings with visible panel seams and orange accents, believable scale, real lunar regolith with rover tracks and footprints, hard low sunlight with long black shadows, pure black sky. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark."
+ },
+ "jobs": [
+  {
+   "id": "st_aurora",
+   "style": "exterior",
+   "web": "assets/img/st_aurora.jpg",
+   "webW": 1280,
+   "prompt": "A polar-research station on the lunar surface. A long white barrel-vault habitat lies half buried in the regolith, banked with soil at the back, with two teal bands around it and a row of five round portholes glowing warm amber along the front; a rounded white airlock with a teal-lit hatch in the middle. To the left a faceted glass geodesic dome glowing pale teal: an ice laboratory. To the right two white spherical fuel tanks with teal bands. A row of four solar panels on short stands. The beacon lamp on the mast is teal. Three-quarter view at eye level from the south, the whole station in frame. A tall lattice radio mast stands to the left with a small beacon lamp at its tip. Grey regolith with boot prints and wheel tracks in the foreground."
+  },
+  {
+   "id": "st_sakura",
+   "style": "exterior",
+   "web": "assets/img/st_sakura.jpg",
+   "webW": 1280,
+   "prompt": "A research outpost on the lunar surface built as a round tower of three floors, each floor smaller than the one below and each under a wide curved dark-violet roof, like a pagoda made of white habitat modules; a band of warm amber windows around every floor and a slim spire on top. A plain red gate of two posts and two crossbeams stands on the path to the violet-lit hatch, with a small lantern on a post on each side. To the left a glass dome shelters one cherry tree in full pink blossom. A row of four solar panels on short stands. The beacon lamp on the mast is violet. Three-quarter view at eye level from the south, the whole station in frame. A tall lattice radio mast stands to the left with a small beacon lamp at its tip. Grey regolith with boot prints and wheel tracks in the foreground."
+  },
+  {
+   "id": "st_chandra",
+   "style": "exterior",
+   "web": "assets/img/st_chandra.jpg",
+   "webW": 1280,
+   "prompt": "A research base on the lunar surface: a six-sided white hall with a saffron band along the top of its walls and a green band along the bottom, under a polished golden dome with a short spire; a green-lit hatch in the front wall. Three small glass garden pods full of leafy green plants are joined to the hall by short white tunnels. A white parabolic dish antenna on a pedestal points at the sky. To the right six solar panels spread from a single post like the petals of an open lotus flower. The beacon lamp on the mast is green. Three-quarter view at eye level from the south, the whole station in frame. A tall lattice radio mast stands to the left with a small beacon lamp at its tip. Grey regolith with boot prints and wheel tracks in the foreground."
+  }
+ ]
+}

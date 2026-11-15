@@ -86,7 +86,8 @@ On a phone or tablet there is an on-screen stick and buttons. The speed button r
 2. Training: walk, hop, drive the rover to the Solar Field, pull a cracked panel off its mount, load it, ride the elevator down, drag it through the airlock to the Fix-It Bench.
 3. Take your suit off at the Suit Lockers. Learn the Control Center screen and the Power Board. Pick a rack in the farm.
 4. Put your suit back on, carry the fixed panel up and install it. That is the whole repair loop, done once by hand.
-5. The meteor shower hits. The mission clock starts.
+5. A flying lesson, which you may skip: take the hopper up, fly to Sakura Outpost, land, meet Kenji, load a food crate and bring it home to the Cargo Depot. It changes nothing in the mission that follows: the hopper's charge and the food store are put back afterwards.
+6. The meteor shower hits. The mission clock starts.
 
 Training can be skipped from the title screen.
 
