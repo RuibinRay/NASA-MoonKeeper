@@ -697,7 +697,7 @@ export class World {
   }
   _guideUpdate(dt, p) {
     const L = this.guideLine, T = this.target; if (!L) return;
-    if (!this.guideOn || !T || !p || T.zone !== this.zone) { L.visible = false; return; }
+    if (!(this.guideOn || this.guideForce) || !T || !p || T.zone !== this.zone) { L.visible = false; return; }
     this.guideTex.offset.y -= dt * 0.9; this._guideT -= dt; if (this._guideT > 0) return; this._guideT = 0.12;
     const top = this.zone === 'top', route = this._guideRoute(p.x, p.z, T.x, T.z), step = top ? 1.6 : 1.0, N = this.guideN, S = [];
     let skip = 1.4, budget = top ? 150 : 400;                         // start a little ahead of the feet; topside only draw the first 150 m

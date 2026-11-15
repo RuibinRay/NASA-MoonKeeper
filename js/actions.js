@@ -238,6 +238,6 @@ export function installActions(G) {
     else if (s.helpers.every((h) => h.role === 'idle') && (F.net > 2 || humans(s).length)) { t = 'Your helpers are all resting. Give them jobs in the Control Center — robots cost electricity, people cost food.'; go = 'control'; mood = 'think'; }
     else if (f.isruDown && s.mat >= 5) { t = 'When you can spare 3 materials, repair the Moon-Dust Oxygen Plant topside. It makes oxygen without using water.'; go = 'isru'; }
     if (!t) t = `All systems look steady. Did you know? ${FACTS[G.factI++ % FACTS.length]}`;
-    if (short) return t; ui.bubble(t, mood, 13); if (go) G.pointTo(go);
+    if (short) return t; ui.bubble(t, mood, 13); if (go) { G.pointTo(go); if (G.goal) G.goal.sticky = true; }   // sticky: stays until "Stop guiding" is clicked
   };
 }
