@@ -45,3 +45,17 @@ export function startSIMarks() {
   setInterval(scan, 1000);   // windows open with an animation; settle the marks after it
   scan();
 }
+
+// The station's walls, floors, ceilings and doors use four SI-made textures (assets/tex/wall3, floor3, ceil3, door3),
+// tiled across the 3D rooms. A tiled picture cannot carry a mark of its own, so while you are inside the station a small
+// label in the bottom-left corner says so. It sits in the HUD (hidden with it) and under REGO's bubble when he talks.
+let tex = null, texOn = false;
+export function texMark(on) {
+  if (on === texOn || typeof document === 'undefined') return; texOn = on;
+  if (!tex) {
+    tex = document.createElement('i'); tex.id = 'si-tex'; tex.className = 'si-mark hidden'; tex.setAttribute('aria-hidden', 'true');
+    tex.textContent = tt('Station walls and floors: SI-generated');
+    const hud = document.getElementById('hud'); if (hud) hud.prepend(tex); else document.body.appendChild(tex);
+  }
+  tex.classList.toggle('hidden', !on);
+}
