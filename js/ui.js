@@ -300,7 +300,7 @@ export class UI {
   powerBoard(opts = {}) {
     const G = this.G, S = G.S;
     const render = (w) => {
-      const F = computeFlows(S), u = F.use, total = Math.max(F.supply, F.demand, 1), sun = F.sun, hint = G.guide && !opts.goal ? this.powerHint(S, F) : null;
+      const F = computeFlows(S), u = F.use, total = Math.max(F.supply, F.demand, 1), sun = F.sun, hint = !G.guide ? null : opts.goal ? (opts.goal.rec && !opts.goal.done(S) ? { ...opts.goal.rec, why: '' } : null) : this.powerHint(S, F);
       const seg = (v, color, label) => (v > 0.05 ? `<span style="width:${(v / total) * 100}%;background:${color}" title="${label} ${v.toFixed(1)} kW">${v / total > 0.1 ? label + ' ' + v.toFixed(0) : ''}</span>` : '');
       const lvl = (k) => `<div class="lv">${SYS[k].kw.map((kw, i) => `<button data-k="${k}" data-i="${i}" class="${S.lv[k] === i ? 'on' : ''} ${hint && hint.k === k && hint.i === i ? 'guide-rec' : ''}">${SYS[k].kw.length === 2 ? ['OFF', 'ON'][i] : i === 0 ? 'OFF' : i}<small>${kw} kW</small></button>`).join('')}</div>`;
       const eff = {

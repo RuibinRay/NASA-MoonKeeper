@@ -31,7 +31,7 @@ G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.regoFollow = new Follo
 G.lampMounts = [G.astro, G.rego].map((a) => { const m = new THREE.Group(); m.add(a.lamp, a.lamp.target); G.world.scene.add(m); return [m, a.group]; });   // lamps outside the bodies: hiding a body must not change the light count
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
 world.onPart = () => G.audio.play('step');
-world.onLock = (kind) => { G.audio.play(kind); if (kind === 'hiss' && !G._lockTip && G.state === 'play') { G._lockTip = 1; ui.toast('Airlock: the door behind you shuts, the air is pumped back into the tanks, and only then does the next door open. The two doors are never open together.'); } };   // a part dropping into place during a build
+world.onLock = (kind) => { G.audio.play(kind); if (kind === 'hiss' && !G._lockTip && G.state === 'play' && P.zone === 'deep' && Math.abs(P.pos.x - (AIRLOCK.x0 + AIRLOCK.x1) / 2) < 12 && Math.abs(P.pos.z) < 8) { G._lockTip = 1; ui.toast('Airlock: the door behind you shuts, the air is pumped back into the tanks, and only then does the next door open. The two doors are never open together.'); } };   // a part dropping into place during a build
 G.dig = { x: MINE.x - 10, z: MINE.z + 9, yaw: 2.3, v: 0, load: 0, prog: 0, boom: 0, dig: 0, dry: 0 };   // the digger at the Polar Ice Mine
 const groundY = (zone, x, z) => (zone === 'top' ? world.heightAt(x, z) : TUBE.y);
 $('#b-power').innerHTML = IC.bolt + '<small>Power<kbd>Tab</kbd></small>'; $('#b-map').innerHTML = IC.map + '<small>Map<kbd>M</kbd></small>'; $('#b-ask').innerHTML = IC.bot + '<small>Ask REGO<kbd>H</kbd></small>'; $('#b-data').innerHTML = IC.book + '<small>Guide<kbd>N</kbd></small>';
@@ -145,7 +145,8 @@ G.ride = async (to) => {
   P.zone = to; if (G.S) G.S.zone = to; world.setZone(to); P.vel.set(0, 0, 0); P.vy = 0;
   if (to === 'deep') { P.pos.set(TUBE.skyX + 6, TUBE.y, 1.5); cam.yaw = -Math.PI / 2; P.face = Math.PI / 2; } else { P.pos.set(0, world.heightAt(0, 54), 54); cam.yaw = 0.2; P.face = Math.PI; }
   G.regoPos.set(P.pos.x + 1.5, P.pos.y, P.pos.z + 1.5); if (P.carry) P.carry.zone = to; G.dragP = null;
-  if (to === 'deep' && G.followers.length && G.S) { for (const f of G.followers) { world.scene.remove(f.a.group); addHelper(G.S, f.site); setTimeout(() => ui.toast(`${f.site.whoName} is safe inside the station and joins your crew! ${f.site.perk}`, 'good'), 900); } G.followers = []; }
+  if (to === 'deep' && G.followers.length && G.S) { for (const f of G.followers) { world.scene.remove(f.a.group); addHelper(G.S, f.site); const thanks = { ingrid: 'Walls and air you do not carry on your back. Thank you! Give me a job in the Control Center. And while I am here, the rover and hopper go further.', kenji: 'Real walls again! Thank you. Put me on Builder in the Control Center and every repair goes faster.', anika: 'Oh, you have farms! Thank you. Put me on Farm duty in the Control Center and the crops will grow faster.' }[f.site.who] || `Thank you! ${f.site.perk}`;
+      setTimeout(() => { ui.toast(`${f.site.whoName} is safe inside the station and joins your crew! ${f.site.perk}`, 'good'); if (!ui.busy) ui.say([{ who: f.site.who, text: thanks }, { who: 'rego', mood: 'joy', text: 'Welcome to Tranquility Deep! One more person means more food, water and air every day, so keep an eye on the gauges.' }]); }, 900); } G.followers = []; }
   if (G.simOn) G.simAdvance(0.2);
   await ui.fade(false); G.riding = false;
   if (G.state === 'play') ui.toast(to === 'deep' ? '105 m down, inside the lava tube. Under the rock roof it is a steady 17°C with almost no radiation — but there is no air. The station is straight ahead: follow the blue lights.' : `Topside. It is ${Math.round(G.S.flow.sun.tempC)}°C out here, and every hour adds a little radiation.`);
@@ -172,7 +173,7 @@ const procFor = (title, tag, tool) => {
   if (T(/heater circuit/i)) return [1, [SAFE('the heater circuit'), ['wires', { title: 'Rewire the heater circuit', winText: 'Rewired!' }], TEST('Set the heater current', 'A', 30, 'Drag the wheel to bring the heater up. Hold the needle in the GREEN band.', 'Warming up!')]];
   if (T(/Sealing/i)) return [0, [['leaks', { winText: 'Sealed!' }], TEST('Bring the pressure back', 'kPa', 300, 'Drag the valve wheel to open the water line again. Hold the needle in the GREEN band: a steady needle means the joint is tight.', 'Holding pressure!')]];
   if (T(/Patching/i)) return [0, [['weld', { title: 'Weld the patch', winText: 'Airtight!' }], TEST('Refill the room with air', 'kPa', 101, 'Drag the valve wheel to let air back in. Hold the needle in the GREEN band: if it stays steady, the patch is airtight.', 'Pressure is holding!')]];
-  if (T(/Rebuilding/i)) return [0, [['weld', { title: 'Weld the wall panel', how: 'Hold and drag the torch all the way round the new wall panel. Every part of the seam must glow.', winText: 'Wall sealed!' }], ['wires', { title: 'Wire the lights and machines', winText: 'Power on!' }], TEST('Refill the room with air', 'kPa', 101, 'Drag the valve wheel to let air back in. Hold the needle in the GREEN band to prove the room is airtight.', 'Room is airtight!')]];
+  if (T(/Rebuilding/i)) return [0, [['bolts', { title: 'Bolt the machines back', how: 'Hold the wrench on each bolt until it has turned all the way, then let go. Do all six.', winText: 'All bolted down!' }], ['wires', { title: 'Wire the lights and machines', winText: 'Power on!' }], TEST('Refill the room with air', 'kPa', 101, 'Drag the valve wheel to let air back in. Hold the needle in the GREEN band to prove the room is airtight.', 'Room is airtight!')]];
   if (T(/Repairing/i)) return [1, [SAFE('the oxygen plant'), ['weld', { title: 'Weld the cracked casing', winText: 'Repaired!' }], TEST('Bring the furnace up to heat', '°C', 1600, 'Drag the wheel to feed power to the furnace. Hold the needle in the GREEN band: hot enough to free the oxygen, not so hot it cracks again.', 'Making oxygen!')]];
   if (tag === 'cook' || T(/Cooking/i)) return [0, [['stir', { winText: 'Smells good!' }]]];
   if (T(/digester/i)) return [0, [['stir', { title: 'Mix the digester', how: 'Hold and drag in circles to mix the waste tank. Keep going until the bar is full.', col: '#5d7a3a', winText: 'Well mixed!' }], TEST('Vent the digester gas', 'kPa', 200, 'Drag the valve wheel to let gas out of the tank. Hold the needle in the GREEN band.', 'Pressure is safe!')]];
@@ -213,14 +214,16 @@ const doJob = async (o) => {
 // view of both the worker and the work: over a shoulder first, then from the side. Returns the best two, well apart.
 const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const jobShots = (sp) => {
-  const zone = P.zone, deep = zone === 'deep', room = deep ? world.roomAt(P.pos.x, P.pos.z) : null, inD = deep && world.indoors(P.pos.x, P.pos.z), cols = world.colliders[zone];
+  const zone = P.zone, deep = zone === 'deep', room = deep ? world.roomAt(P.pos.x, P.pos.z) : null, inD = deep && world.indoors(P.pos.x, P.pos.z), cols = deep ? world.colliders[zone] : world.colliders[zone].concat([G.car, G.ship, G.dig].map((v) => ({ x: v.x, z: v.z, r: 3.4 })));   // a parked rover or hopper blocks the view too
   const d0 = Math.hypot(sp.x - P.pos.x, sp.z - P.pos.z), f = d0 > 0.01 ? Math.min(0.45, 1.2 / d0) : 0, cx = P.pos.x + (sp.x - P.pos.x) * f, cz = P.pos.z + (sp.z - P.pos.z) * f;   // look between the worker and the work
   const free = (x, z, pad) => (!deep || (world.walkable(x, z) && world.roomAt(x, z) === room && world.indoors(x, z) === inD)) && !cols.some((c) => Math.hypot(c.x - x, c.z - z) < c.r + pad);
   const back = P.face + Math.PI, out = [];
   for (const d of deep ? [5.2, 4.1, 3.2] : [7, 5.5, 4.2]) for (const a of [0.85, -0.85, 1.45, -1.45, 0.35, -0.35, 2.2, -2.2]) {
     const yaw = back + a, x = cx + Math.sin(yaw) * d, z = cz + Math.cos(yaw) * d;
     if (free(x, z, 0.5) && free(cx + (x - cx) * 0.5, cz + (z - cz) * 0.5, 0.1) && free(cx + (x - cx) * 0.78, cz + (z - cz) * 0.78, 0.2)) out.push({ yaw, d }); }
-  const A = out[0] || { yaw: back + 0.85, d: 3 }, B = out.find((s) => Math.abs(wrapA(s.yaw - A.yaw)) > 0.9) || { yaw: A.yaw + (out.length ? 0.45 : -1.7), d: A.d * 0.82 };
+  // the camera swings from the first angle to the second, so the whole arc between them has to be clear too (not through a parked rover)
+  const sweep = (p, q) => { const dy = wrapA(q.yaw - p.yaw); for (let t = 0.2; t < 1; t += 0.2) { const yaw = p.yaw + dy * t, d = p.d + (q.d - p.d) * t; if (!free(cx + Math.sin(yaw) * d, cz + Math.cos(yaw) * d, 0.3)) return false; } return true; };
+  const A = out[0] || { yaw: back + 0.85, d: 3 }, B = out.find((s) => Math.abs(wrapA(s.yaw - A.yaw)) > 0.9 && sweep(A, s)) || out.find((s) => s !== A && Math.abs(wrapA(s.yaw - A.yaw)) > 0.3 && sweep(A, s)) || { yaw: A.yaw, d: A.d * 0.85 };
   return { A, B, f };
 };
 const runJob = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'work', tag, sparks = true, tool }) => new Promise((res) => {

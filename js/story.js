@@ -54,7 +54,7 @@ export async function tutorial(G) {
     { who: 'vasquez', text: 'That is why every room has a bulkhead door. <b>Lock the door and the leak cannot empty the rest of the station.</b> But the room behind it freezes. No choice is free.' },
     { who: 'vasquez', text: 'One more thing lives here: the Power Board. Every machine needs electricity and there is never enough for all of them. Try it: set the Oxygen Maker to level 2 and watch what it costs.' },
   ]);
-  await ui.powerBoard({ goal: { text: 'Set the <b>Oxygen Maker</b> to level <b>2</b>. Watch the water and battery numbers change.', done: (s) => s.lv.o2gen === 2, ok: 'See? More oxygen — but more water and more power gone. Close the board when you are ready.' } });
+  await ui.powerBoard({ goal: { text: 'Set the <b>Oxygen Maker</b> to level <b>2</b>. Watch the water and battery numbers change.', rec: { k: 'o2gen', i: 2 }, done: (s) => s.lv.o2gen === 2, ok: 'See? More oxygen — but more water and more power gone. Close the board when you are ready.' } });
   S.lv.o2gen = 1;
   G.moveNpc(O, 50, -11, 'deep');
   await say([{ who: 'vasquez', text: 'You can open that board anywhere with <b>Tab</b>, and the map with <b>M</b>. Now go and find Tobi in the Potato Farm, at the far end of the hall. Tins of food do not last forever.' }]);
@@ -94,7 +94,7 @@ export async function tutorial(G) {
     await G.waitFor(() => !P.in && near(sx + 5, sz + 14, 45), 'Hold <b>C</b> to land in front of the tower, then press <b>E</b> to get out', { zone: 'top', x: sx + 4, z: sz + 26, name: 'Sakura Outpost' });
     await say([
       { who: 'kenji', text: 'Welcome to Sakura Outpost, neighbour! I am Kenji, the engineer here. Commander Vasquez said a rookie was learning to fly. That was a fine landing.' },
-      { who: 'kenji', text: 'Stations on the Moon look after each other: when one runs short, another sends a crate. This food crate is for you. Pick it up with <b>E</b> and load it onto your hopper. The hopper carries two crates; the rover carries four.' },
+      { who: 'kenji', text: 'Stations on the Moon look after each other: when one runs short, another sends a crate. Here is a practice crate. Pick it up with <b>E</b> and load it onto your hopper. The hopper carries two crates; the rover carries four.' },
     ]);
     await G.waitFor(() => P.carry === crate || ship.cargo.includes(crate), 'Pick up the <b>food crate</b> next to Kenji (press <b>E</b>)', { zone: 'top', x: sx + 9, z: sz + 17, name: 'the food crate', r: 1 });
     await G.waitFor(() => ship.cargo.includes(crate), 'Carry the crate to the <b>hopper</b> and press <b>E</b> to load it', 'ship');
@@ -185,8 +185,11 @@ export function ending(G) {
     if (m.waterZero !== undefined && m.waterZero <= (m.o2Zero ?? 1e9)) why.push(`On ${D(S, m.waterZero)} the water ran dry. The Oxygen Maker makes air by splitting water, so no water meant no new oxygen.`);
     why.push(`On ${D(S, m.o2Zero ?? S.t)} the oxygen tank reached zero${F.people > 1 ? `, with ${F.people} people breathing from it` : ''}.`, 'With no new oxygen, the air left in the station lasted only a few hours.');
     science = 'One person needs 0.84 kg of oxygen every single day. And in space, air only stays where walls hold it in: any hole lets it rush out, because outside there is nothing pushing back.';
-    tip = leaks.length || S.stats.holes ? 'When a room leaks, decide fast: patch it, or lock its door. Keep the Oxygen Room working above everything else.'
-      : brown ? 'Before sunset, fill the battery and the oxygen tank. At night the reactor alone cannot run everything, so the tank has to carry you.'
+    const crew = F.people > 1 && S.rescued.length, crewTip = 'Check the oxygen before you bring another astronaut home: each one breathes 0.84 kg a day, so make more first.';
+    tip = leaks.length ? 'When a room leaks, decide fast: patch it, or lock its door. Keep the Oxygen Room working above everything else.'
+      : brown ? `Before sunset, fix the solar panels and fill the battery and the oxygen tank. At night the reactor alone cannot run everything, so the tank has to carry you.${crew ? ' ' + crewTip : ''}`
+      : crew ? crewTip
+      : S.stats.holes ? 'When a room leaks, decide fast: patch it, or lock its door. Keep the Oxygen Room working above everything else.'
       : 'Watch for "will run out before rescue" in the alerts, and keep the Oxygen Maker making more than you breathe.';
   } else if (c === 'water') { title = 'THE WATER RAN OUT';
     if (!machineOk(S, 'water')) why.push('The Water Room was broken, so no water was being recycled at all.'); else if (S.lv.recycler < 2) why.push('The Water Recycler was set low, so most used water was thrown away.');
