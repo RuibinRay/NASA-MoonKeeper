@@ -14,6 +14,7 @@ const FACTS = [
   'Air pressure is why we need walls. Outside there is no air at all, so the air inside pushes out through any hole.',
   'A message to Earth takes 1.3 seconds. On Mars it would take 4 to 24 minutes. Imagine waiting that long for an answer!',
   'Hens can eat dried grass, seeds and plant scraps. People cannot — our tummies are built differently.',
+  'A spacesuit is a tiny spaceship shaped like a person: it holds air, keeps you warm and blocks the Sun. Indoors you do not need it — astronauts on the Space Station work in T-shirts.',
   'Fish and plants help each other: fish poo feeds the plants, and the plants clean the water. It is called aquaponics.',
 ];
 
@@ -29,6 +30,14 @@ export function installActions(G) {
   G.toggleDoor = (id) => { const r = G.S.rooms[id]; r.door = r.door ? 0 : 1; G.audio.play('click');
     if (!r.door) { ui.toast(r.hole > 0 ? `${rn(id)} door locked. The leak cannot empty the station now — but that room will lose its air and freeze.` : `${rn(id)} door locked.`, r.hole > 0 ? 'good' : ''); note(G.S, `Locked the ${rn(id)} door.`); }
     else ui.toast(r.hole > 0 ? `${rn(id)} door open — air is rushing out through the hole!` : r.p < 60 ? `${rn(id)} door open. Fresh air is flowing in from the tanks.` : `${rn(id)} door open.`, r.hole > 0 ? 'bad' : ''); };
+
+  // ---------- spacesuit: off indoors (quicker work, cooking, sleep), on before you step out into the cave ----------
+  G.toggleSuit = async () => { const s = G.S, on = s.suitOn;
+    if (on && s.P < 45) { ui.toast('The air in here is too thin to breathe. Keep your suit on!', 'bad'); return; }
+    await G.job({ title: on ? 'Taking off your spacesuit' : 'Putting on your spacesuit', hours: 0.25, steps: on ? ['Unlocking the helmet…', 'Unplugging the air hose…', 'Hanging the suit in its locker…'] : ['Stepping into the suit…', 'Locking the gloves and helmet…', 'Checking for leaks…'], site: { x: -65.2, z: -3.9 }, sparks: false, onStep: (k) => { if (k > 0.55) G.suitShow = !on; } });
+    s.suitOn = !on; G.suitShow = undefined; ui.toast(on ? 'Suit off. Indoor jobs are quicker without big gloves, and now you can cook and sleep.' : 'Suit on and sealed. You can go out into the cave now.', 'good'); };
+  const suitAct = () => ({ label: G.S.suitOn ? 'Take off your spacesuit (15 min)' : 'Put on your spacesuit (15 min)', run: G.toggleSuit });
+  const needNoSuit = (what) => { if (!G.S.suitOn) return false; ui.toast(`You cannot ${what} in a spacesuit! Take it off at the Suit Lockers in the airlock.`, 'bad'); G.pointTo('suit'); return true; };
 
   // ---------- vehicles ----------
   G.enterVehicle = (v) => { P.in = v; P.vel.set(0, 0, 0); G.audio.play('ok'); G.camT = 0; if (G.state === 'play' && !G['_tip' + v]) { G['_tip' + v] = 1; ui.toast(v === 'car' ? 'Rover: W S to drive, A D to steer, E to get out. Park on the round pad to recharge.' : 'Hopper: Space to lift off, W to fly forward, A D to turn, C to come down, E to get out. It only charges on its own pad.'); } };
@@ -47,7 +56,7 @@ export function installActions(G) {
       await G.job({ title: `Rebuilding the ${d.name}`, hours: d.hours, steps: ['Clearing the wreckage…', 'Fixing the wall panels…', 'Bolting the machines back…', 'Wiring the lights…', 'Testing every switch…'], site: { x: (d.x0 + d.x1) / 2, z: d.side * 15 }, onStep: (k) => { r.built = Math.min(0.99, 0.3 + 0.7 * k); r.frozen = k < 0.8; r.cold = 0; } });
       r.built = 1; r.frozen = false; r.door = 1; r.cold = 0; if (G.S.crops[id]) Object.assign(G.S.crops[id], { g: 0, ripe: 0, hp: 0.6 }); G.S.stats.roomsBuilt++; note(G.S, `Rebuilt the ${d.name}.`, 'good'); ui.toast(`${d.name} rebuilt! Air is flowing back in.`, 'good'); G.rego.setMood('joy'); G.rego.wave = 2; doneGoal(id); },
     async fix(title, hours, mat, site, steps, done) { if (mat && noMat(mat)) return; await G.job({ title, hours, steps, site }); done(); },
-    async cook() { const s = G.S; if (s.raw < 1) return; await G.job({ title: 'Cooking', hours: 1, steps: ['Washing and chopping…', 'Boiling the potatoes…', 'Frying eggs and tomatoes…', 'Serving up…'], site: { x: 5, z: -22 }, tag: 'cook', sparks: false }); const n = cookBatch(s); ui.toast(`Cooked ${n} hot meals.`, 'good'); note(s, `Cooked ${n} meals.`, 'good'); },
+    async cook() { const s = G.S; if (s.raw < 1) return; if (needNoSuit('cook')) return; await G.job({ title: 'Cooking', hours: 1, steps: ['Washing and chopping…', 'Boiling the potatoes…', 'Frying eggs and tomatoes…', 'Serving up…'], site: { x: 5, z: -22 }, tag: 'cook', sparks: false }); const n = cookBatch(s); ui.toast(`Cooked ${n} hot meals.`, 'good'); note(s, `Cooked ${n} meals.`, 'good'); },
     async pick(id) { const d = ROOMS.find((q) => q.id === id); await G.job({ title: `Picking ${id === 'potato' ? 'potatoes' : 'tomatoes'}`, hours: 1, steps: ['Checking which are ripe…', 'Picking…', 'Saving leaves and peels for the hens…'], site: { x: (d.x0 + d.x1) / 2, z: d.side * 15 }, pose: 'work', sparks: false }); const n = harvest(G.S, id, 0.9); ui.toast(`Picked ${n} ${id === 'potato' ? 'potatoes' : 'tomatoes'}. Cook them in the Kitchen. The scraps became hen feed.`, 'good'); doneGoal(id); },
   };
   G.J = J;
@@ -73,6 +82,7 @@ export function installActions(G) {
       else if (veh) c.e = G[veh].cargo.length < G[veh].max ? { label: `Load the ${nm} onto the ${vn}`, run: () => G.load(veh) } : { label: `The ${vn} is full — put the ${nm} down`, run: () => G.drop() };
       else if (lift) c.e = { label: st.id === 'gate' ? `Ride the elevator down (the ${it.type.startsWith('panel') ? 'panel' : 'load'} comes too)` : 'Ride the elevator up', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
       else c.e = { label: `Put down the ${nm}`, run: () => G.drop() };
+      if (st && st.id === 'suit' && c.e.label.startsWith('Put down')) { c.q = c.e; c.e = suitAct(); }
       if (lift && c.e.run !== undefined && !c.e.label.startsWith('Ride')) c.q = { label: 'Ride the elevator', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
       return c;
     }
@@ -83,7 +93,8 @@ export function installActions(G) {
     else if (m >= 0 && s.mounts[m] === 2) c.e = { label: 'Pull the broken panel off its mount (30 min)', run: () => J.removePanel(m) };
     else if (done >= 0) c.e = { label: 'Take the fixed panel', run: () => J.benchTake(done) };
     else if (door) c.e = { label: s.rooms[door.id].door ? `Lock the ${door.name} door` : `Unlock the ${door.name} door`, run: () => G.toggleDoor(door.id) };
-    else if (lift) c.e = { label: st.id === 'gate' ? 'Ride the elevator down into the station' : 'Ride the elevator up to the surface', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
+    else if (st && st.id === 'suit') c.e = suitAct();
+    else if (lift) c.e = { label: st.id === 'gate' ? 'Ride the elevator down into the cave' : 'Ride the elevator up to the surface', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
     else if (st && G.state === 'play') c.e = { label: st.name, run: () => G.openStation(st) };
     if (veh && G[veh].cargo.length) { const last = G[veh].cargo[G[veh].cargo.length - 1]; c.q = { label: `Take the ${ITEMS[last.type].name} out (${G[veh].cargo.length} on board)`, run: () => G.take(last) }; }
     return c;
@@ -147,10 +158,10 @@ export function installActions(G) {
       A.unshift({ label: `Collect ${Math.floor(s.eggs)} egg${Math.floor(s.eggs) === 1 ? '' : 's'}`, gains: ['Raw food'], disabled: s.eggs < 1, run: async () => { const n = collectEggs(s); ui.toast(`Collected ${n} eggs. Cook them in the Kitchen!`, 'good'); } });
       note2 = 'Hens eat dry feed made of grass, seeds and plant scraps, packed before the disaster. People cannot eat it. Every time you pick crops, the leaves and peels become more feed. No feed, no eggs. The fish water feeds the plants.'; }
     if (id === 'storage' && ok) { stats.push(['Battery', `${Math.round(s.battery)} of ${Math.round(F.cap)} kWh`], ['Extra modules', `${s.mods} of 6`]); A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'Build battery modules at the Robot-Arm Builder and carry them here. Each adds 120 kWh for the long lunar night.'; }
-    if (id === 'quarters' && ok) { A.unshift({ label: 'Sleep for 8 hours', sub: 'Time races ahead. Machines keep running as you left them. You wake up if something goes wrong.', costs: ['8 h pass'], gains: ['Health'], run: async () => { G.sleepLeft = 8; } }); note2 = 'Rest matters. Tired people make mistakes — and in space, small mistakes get big fast.'; }
+    if (id === 'quarters' && ok) { A.unshift({ label: 'Sleep for 8 hours', sub: 'Time races ahead. Machines keep running as you left them. You wake up if something goes wrong.', costs: ['8 h pass'], gains: ['Health'], run: async () => { if (needNoSuit('sleep')) return; G.sleepLeft = 8; } }); note2 = 'Rest matters. Tired people make mistakes — and in space, small mistakes get big fast.'; }
     if (id === 'bathroom') note2 = ok ? 'Shower water and toilet water go straight to the recycler. Nothing is wasted.' : 'While the Bathroom is broken, the recycler gets back less water.';
     if (id === 'water' && ok) { stats.push(['Water tank', `${s.water.toFixed(0)} of ${s.waterCap} L`], ['Recycling', pct(F.rate)], ['Change', `${F.wNet.toFixed(1)} L a day`]); if (f.leakWater) A.unshift({ label: 'Seal the leaking pipe', costs: ['1 material', '1 h'], run: () => J.fix('Sealing the water pipe', 1, 1, { x: 15, z: 14 }, ['Shutting the valve…', 'Clamping the joint…', 'Turning the water back on…'], () => { f.leakWater = 0; ui.toast('Pipe sealed. No more drips.', 'good'); doneGoal('water'); }) }); A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'Each person needs about 3.8 litres of water a day. A good recycler gives 98% of it back.'; }
-    return ui.panel(d.name, { stats, actions: A, note: note2 });
+    return ui.panel(d.name, { stats, actions: A, note: note2, img: `rm_${id}` });
   };
 
   // ---------- alerts: shown on the HUD and in the Control Center ("where is the error?") ----------
@@ -178,7 +189,9 @@ export function installActions(G) {
   G.advise = (short) => {
     const s = G.S, F = computeFlows(s), f = s.f, st = s.storm, top = P.zone === 'top'; let t = null, go = null, mood = 'happy';
     const leak = F.leaks[0], wreck = ROOMS.find((d) => s.rooms[d.id].built < 1), sealedHole = ROOMS.find((d) => s.rooms[d.id].hole > 0 && !s.rooms[d.id].door), nb = s.mounts.filter((x) => x === 2).length, empty = s.mounts.filter((x) => x === 0).length;
-    if (st && s.t >= st.start && top) { t = '<b>Radiation storm!</b> Take the elevator down NOW. Metres of rock overhead will shield you.'; go = 'gate'; mood = 'alert'; }
+    const thin = !s.suitOn && (s.here && s.rooms[s.here] ? s.rooms[s.here].p : s.P) < 60;
+    if (thin) { t = '<b>The air here is too thin and you have no suit on!</b> Leave this room, or run to the Suit Lockers in the airlock.'; go = 'suit'; mood = 'alert'; }
+    else if (st && s.t >= st.start && top) { t = '<b>Radiation storm!</b> Take the elevator down NOW. Metres of rock overhead will shield you.'; go = 'gate'; mood = 'alert'; }
     else if (leak) { t = `<b>Air is escaping from the ${rn(leak)}!</b> Run there and patch the hole — or lock its door to save the rest of the station. Locking it will freeze that room.`; go = leak; mood = 'alert'; }
     else if (st && s.t < st.start && top) { t = `Storm in ${fmt.hrs(st.start - s.t)}. Finish up and get underground.`; go = 'gate'; mood = 'worried'; }
     else if (F.eff < 1) { t = '<b>Brownout!</b> The battery is empty. Turn something down on the Power Board, and get more solar panels working.'; mood = 'alert'; }

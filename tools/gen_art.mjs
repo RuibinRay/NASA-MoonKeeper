@@ -81,13 +81,20 @@ async function runJob(job) {
 
 const jobs = spec.jobs.filter((j) => !only || only.includes(j.id));
 const CONC = Number(process.env.HF_CONC || 4);
-let next = 0;
-await Promise.all(
-  Array.from({ length: CONC }, async () => {
-    while (next < jobs.length) {
-      const job = jobs[next++];
-      try { await runJob(job); } catch (e) { console.error('ERROR', job.id, e.message); }
-    }
-  })
-);
+// Jobs that other jobs use as a reference image go first, so their URL exists when the rest are submitted.
+const usedAsRef = new Set(spec.jobs.flatMap((j) => j.refs || []));
+const pool = async (list) => {
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: CONC }, async () => {
+      while (next < list.length) {
+        const job = list[next++];
+        try { await runJob(job); } catch (e) { console.error('ERROR', job.id, e.message); }
+      }
+    })
+  );
+};
+await pool(jobs.filter((j) => usedAsRef.has(j.id) && !(j.refs || []).length));
+await pool(jobs.filter((j) => !usedAsRef.has(j.id) || (j.refs || []).length));
 console.log('finished:', jobs.map((j) => `${j.id}:${state[j.id]?.file ? 'ok' : 'MISSING'}`).join(' '));
+if (spec.jobs.some((j) => j.web)) await import('./web_art.mjs'); // make the small JPEGs the game loads

@@ -5,7 +5,7 @@ import { Astronaut, Rego, Bolt } from './actors.js';
 import { UI } from './ui.js';
 import { Sound } from './audio.js';
 import { IC } from './icons.js';
-import { K, MODES, STATIONS, SITES, PIT, TUBE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, fmt } from './config.js';
+import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, fmt } from './config.js';
 import { createSim, step, computeFlows, applyDisaster, jobHours, addHelper, serialize, deserialize } from './sim.js';
 import { installActions } from './actions.js';
 import { installEvents } from './events.js';
@@ -31,7 +31,9 @@ $('#b-view').innerHTML = IC.eye + '<small>View<kbd>V</kbd></small>'; $('#b-speed
 G.spawnItem = (type, zone, x, z, where = 'ground') => { const it = { id: G.itemSeq++, type, zone, x, z, where, rot: Math.random() * 3, mesh: world.makeItem(type) }; world.scene.add(it.mesh); G.items.push(it); return it; };
 G.removeItem = (it) => { world.scene.remove(it.mesh); G.items.splice(G.items.indexOf(it), 1); if (P.carry === it) P.carry = null; for (const v of [G.car, G.ship]) { const i = v.cargo.indexOf(it); if (i >= 0) v.cargo.splice(i, 1); } };
 G.take = (it) => { for (const v of [G.car, G.ship]) { const i = v.cargo.indexOf(it); if (i >= 0) v.cargo.splice(i, 1); } it.where = 'hand'; it.zone = P.zone; P.carry = it; G.audio.play('blip'); };
-G.drop = (x = P.pos.x + Math.sin(P.face) * 1.6, z = P.pos.z + Math.cos(P.face) * 1.6) => { const it = P.carry; if (!it) return; it.where = 'ground'; it.zone = P.zone; it.x = x; it.z = z; it.rot = P.face; P.carry = null; G.audio.play('step'); return it; };
+G.drop = (x = P.pos.x + Math.sin(P.face) * 1.6, z = P.pos.z + Math.cos(P.face) * 1.6) => { const it = P.carry; if (!it) return; it.where = 'ground'; it.zone = P.zone; it.x = x; it.z = z; it.rot = P.face;
+  const d = G.dragP; if (ITEMS[it.type].heavy && d && d.id === it.id) { it.x = d.cx; it.z = d.cz; it.rot = d.yaw; }   // a dragged panel stays where it lies
+  P.carry = null; G.audio.play('step'); return it; };
 G.load = (veh) => { const it = P.carry, v = G[veh]; if (!it || v.cargo.length >= v.max) return false; it.where = veh; it.zone = 'top'; v.cargo.push(it); P.carry = null; G.audio.play('ok'); return true; };
 function placeItems() {
   const heavy = (it) => ITEMS[it.type].heavy;
@@ -39,7 +41,14 @@ function placeItems() {
     const m = it.mesh; m.scale.setScalar(1);
     if (it.where === 'ground') { m.visible = it.zone === P.zone; if (m.visible) { m.position.set(it.x, groundY(it.zone, it.x, it.z) + 0.05, it.z); m.rotation.set(0, it.rot, 0); } }
     else if (it.where === 'hand') { m.visible = true; const fx = Math.sin(P.face), fz = Math.cos(P.face);
-      if (heavy(it)) { m.position.set(P.pos.x - fx * 2.5, P.pos.y + 0.75, P.pos.z - fz * 2.5); m.rotation.set(0, P.face + Math.PI / 2, 0.42, 'YXZ'); }   // dragged behind, one edge held up
+      if (heavy(it)) {   // dragged like a sled: you hold the near edge at hip height, the far edge scrapes along the ground and swings round behind you
+        const d = G.dragP || (G.dragP = {}), L = 4.85, hx = P.pos.x - fx * 0.45, hz = P.pos.z - fz * 0.45;
+        if (d.id !== it.id || d.zone !== P.zone || Math.hypot(d.tx - hx, d.tz - hz) > 9) { d.id = it.id; d.zone = P.zone; d.tx = hx - fx * L; d.tz = hz - fz * L; d.run = 0; }
+        let bx = d.tx - hx, bz = d.tz - hz; const bl = Math.hypot(bx, bz) || 1; bx /= bl; bz /= bl; const ntx = hx + bx * L, ntz = hz + bz * L; d.run += Math.hypot(ntx - d.tx, ntz - d.tz); d.tx = ntx; d.tz = ntz;
+        const hy = P.pos.y + 0.95, ty = groundY(P.zone, d.tx, d.tz) + 0.1, sp = Math.hypot(P.vel.x, P.vel.z); d.cx = (hx + d.tx) / 2; d.cz = (hz + d.tz) / 2; d.yaw = Math.atan2(-bz, bx);
+        m.position.set(d.cx, (hy + ty) / 2 - 0.1, d.cz); m.rotation.set(Math.sin(performance.now() * 0.012) * 0.04 * Math.min(1, sp / 3), d.yaw, -Math.asin(clamp((hy - ty) / 5, -0.6, 0.6)), 'YXZ');
+        if (P.zone === 'top' && d.run > 0.55) { d.run = 0; world.scuff(d.tx, d.tz, d.yaw); }
+      }
       else { m.position.set(P.pos.x + fx * 0.75, P.pos.y + 0.75, P.pos.z + fz * 0.75); m.rotation.set(0, P.face, 0); m.scale.setScalar(0.7); } }
     else { const v = G[it.where], i = v.cargo.indexOf(it), s = Math.sin(v.yaw), c = Math.cos(v.yaw), by = (it.where === 'car' ? 1.55 : 3.1) + (it.where === 'ship' ? v.y : world.heightAt(v.x, v.z)); m.visible = P.zone === 'top';
       const back = it.where === 'car' ? -1.15 : -1.0; let ox = 0, oz = back, oy = 0;
@@ -56,16 +65,16 @@ const SITE_COL = { ingrid: 0x1fb5a8, kenji: 0x9a5cff, anika: 0x3fbf5a };
 G.spawnSurvivors = () => { for (const s of SITES) if (!G.S.rescued.includes(s.id) && !G.siteNpc[s.id] && !G.followers.some((f) => f.site.id === s.id)) { const a = new Astronaut(SITE_COL[s.who]); world.scene.add(a.group); G.siteNpc[s.id] = { a, x: s.pos[0] + 5, z: s.pos[1] + 14 }; } };
 G.follow = (site) => { const n = G.siteNpc[site.id]; if (!n) return; delete G.siteNpc[site.id]; G.followers.push({ site, a: n.a, x: n.x, z: n.z }); };
 function updateActors(dt) {
-  for (const n of G.npcs) { const a = n.a.group; a.visible = n.zone === P.zone; a.position.set(n.x, groundY(n.zone, n.x, n.z), n.z); a.rotation.y = Math.atan2(P.pos.x - n.x, P.pos.z - n.z); n.a.update(dt, 0, false, Math.hypot(P.pos.x - n.x, P.pos.z - n.z) < 14 && G.goal ? 'wave' : 'walk'); }
+  for (const n of G.npcs) { const a = n.a.group; a.visible = n.zone === P.zone; a.position.set(n.x, groundY(n.zone, n.x, n.z), n.z); a.rotation.y = Math.atan2(P.pos.x - n.x, P.pos.z - n.z); n.a.setSuit(!(n.zone === 'deep' && world.indoors(n.x, n.z))); n.a.update(dt, 0, false, Math.hypot(P.pos.x - n.x, P.pos.z - n.z) < 14 && G.goal ? 'wave' : 'walk'); }
   for (const id in G.siteNpc) { const n = G.siteNpc[id], a = n.a.group; a.visible = P.zone === 'top'; a.position.set(n.x, world.heightAt(n.x, n.z), n.z); a.rotation.y = Math.atan2(P.pos.x - n.x, P.pos.z - n.z); n.a.update(dt, 0, false, Math.hypot(P.pos.x - n.x, P.pos.z - n.z) < 40 ? 'wave' : 'walk'); }
   G.followers.forEach((f, i) => { const a = f.a.group; a.visible = P.zone === 'top' && !P.in; const tx = P.pos.x - Math.sin(P.face + 0.6 + i) * (2.6 + i), tz = P.pos.z - Math.cos(P.face + 0.6 + i) * (2.6 + i), dx = tx - f.x, dz = tz - f.z, d = Math.hypot(dx, dz); let sp = 0;
     if (P.in || d > 40) { f.x = tx; f.z = tz; } else if (d > 0.4) { sp = Math.min(d * 3, 9); f.x += (dx / d) * sp * dt; f.z += (dz / d) * sp * dt; a.rotation.y = Math.atan2(dx, dz); } a.position.set(f.x, world.heightAt(f.x, f.z), f.z); f.a.update(dt, sp); });
   // crew inside the station walk around the room that matches their job
   const S = G.S; if (!S) return; const roomOf = { idle: 'quarters', farm: 'potato', cook: 'kitchen', clean: null, build: 'workshop' };
   for (const h of S.helpers) {
-    let c = G.crew[h.id]; if (!c) { const actor = h.kind === 'bot' ? new Bolt() : new Astronaut(SITE_COL[h.id] || 0x888888); world.scene.add(actor.group); c = G.crew[h.id] = { actor, x: -66 + Math.random() * 6, z: -4 + Math.random() * 8, tx: -66, tz: 0, t: 0, role: null }; }
+    let c = G.crew[h.id]; if (!c) { const actor = h.kind === 'bot' ? new Bolt() : new Astronaut(SITE_COL[h.id] || 0x888888); actor.setSuit?.(false); world.scene.add(actor.group); c = G.crew[h.id] = { actor, x: -58 + Math.random() * 6, z: -1.5 + Math.random() * 3, tx: -56, tz: 0, t: 0, role: null }; }
     const g = c.actor.group; g.visible = P.zone === 'deep'; if (!g.visible) continue;
-    const rid = h.kind === 'bot' && h.role === 'idle' ? null : roomOf[h.role], def = rid && ROOMS.find((r) => r.id === rid), q = def ? roomRect(def) : { x0: -80, x1: -64, z0: -6, z1: 6 };
+    const rid = h.kind === 'bot' && h.role === 'idle' ? null : roomOf[h.role], def = rid && ROOMS.find((r) => r.id === rid), q = def ? roomRect(def) : { x0: -60, x1: -34, z0: -3.8, z1: 3.8 };
     if (c.role !== h.role) { c.role = h.role; c.x = (q.x0 + q.x1) / 2; c.z = (q.z0 + q.z1) / 2; c.t = 0; }
     c.t -= dt; if (c.t <= 0) { c.t = 3 + Math.random() * 5; c.tx = q.x0 + 2 + Math.random() * (q.x1 - q.x0 - 4); c.tz = q.z0 + 2 + Math.random() * (q.z1 - q.z0 - 4); }
     const dx = c.tx - c.x, dz = c.tz - c.z, d = Math.hypot(dx, dz); let sp = 0; if (d > 0.3) { sp = 2.2; c.x += (dx / d) * sp * dt; c.z += (dz / d) * sp * dt; g.rotation.y = Math.atan2(dx, dz); }
@@ -83,28 +92,38 @@ function updateGoal() {
   const g = G.goal; if (!g) { if (world.target) world.setTarget(null); ui.objective(null); return; }
   if (g.id === 'car' || g.id === 'ship') { g.x = G[g.id].x; g.z = G[g.id].z; }
   if (!g.cb && ((g.id === 'gate' && P.zone === 'deep') || (g.id === 'lift' && P.zone === 'top'))) { G.goal = null; world.setTarget(null); ui.objective(null); return; }
-  const has = g.zone !== undefined, same = has && g.zone === P.zone, tgt = !has ? null : same ? g : G.resolve(P.zone === 'top' ? 'gate' : 'lift');
+  const has = g.zone !== undefined, same = has && g.zone === P.zone;
+  // No suit, and the goal is outside the station? Then the first stop is the Suit Lockers.
+  const suitFirst = has && P.zone === 'deep' && G.S && !G.S.suitOn && (!same || !world.indoors(g.x, g.z));
+  const tgt = !has ? null : suitFirst ? G.resolve('suit') : same ? g : G.resolve(P.zone === 'top' ? 'gate' : 'lift');
   if (tgt) world.setTarget({ zone: tgt.zone, x: tgt.x, z: tgt.z, id: tgt.id }); else world.setTarget(null);
-  ui.objective(`<b>${g.cb ? 'GOAL' : 'GO TO'}</b> ${g.text || g.name}${has && !same ? ' <small>(take the elevator first)</small>' : ''}`);
+  // A small strip at the top: an arrow that turns toward the place, what to do, how far.
+  let arr = '<i class="dot"></i>', tail = '';
+  if (tgt) { const dx = tgt.x - P.pos.x, dz = tgt.z - P.pos.z, d = Math.hypot(dx, dz), sy = Math.sin(cam.yaw), cy = Math.cos(cam.yaw), a = Math.round((Math.atan2(dx * cy - dz * sy, -dx * sy - dz * cy) * 57.3) / 15) * 15;
+    arr = `<i class="arr" style="transform:rotate(${a}deg)">▲</i>`; tail = `<small>${d < 30 ? Math.round(d) : Math.round(d / 5) * 5} m${suitFirst ? ' · suit up at the airlock first' : !same ? ' · take the elevator' : ''}</small>`; }
+  ui.objective(`${arr}<span>${g.text || 'Go to: ' + g.name}</span>${tail}`);
   const near = same && Math.hypot(g.x - P.pos.x, g.z - P.pos.z) < (g.r || 5) + 1;
   if (g.cond ? g.cond() : near) { G.goal = null; world.setTarget(null); ui.objective(null); g.cb?.(); }
 }
+// REGO says something, but not the same thing over and over
+G.warn = (key, html, mood = 'worried', gap = 5000) => { const now = performance.now(), w = G._warn || (G._warn = {}); if (w[key] && now - w[key] < gap) return; w[key] = now; ui.bubble(html, mood, 7); G.audio.play('bad'); };
 G.ride = async (to) => {
   if (P.in) return; G.riding = true; G.audio.play('lift'); await ui.fade(true);
   P.zone = to; if (G.S) G.S.zone = to; world.setZone(to); P.vel.set(0, 0, 0); P.vy = 0;
   if (to === 'deep') { P.pos.set(TUBE.skyX + 6, TUBE.y, 1.5); cam.yaw = -Math.PI / 2; P.face = Math.PI / 2; } else { P.pos.set(0, world.heightAt(0, 54), 54); cam.yaw = 0.2; P.face = Math.PI; }
-  G.regoPos.set(P.pos.x + 1.5, P.pos.y, P.pos.z + 1.5); if (P.carry) P.carry.zone = to;
+  G.regoPos.set(P.pos.x + 1.5, P.pos.y, P.pos.z + 1.5); if (P.carry) P.carry.zone = to; G.dragP = null;
   if (to === 'deep' && G.followers.length && G.S) { for (const f of G.followers) { world.scene.remove(f.a.group); addHelper(G.S, f.site); setTimeout(() => ui.toast(`${f.site.whoName} is safe inside the station and joins your crew! ${f.site.perk}`, 'good'), 900); } G.followers = []; }
   if (G.simOn) G.simAdvance(0.2);
   await ui.fade(false); G.riding = false;
-  if (G.state === 'play') ui.toast(to === 'deep' ? '105 m down. Under the rock roof: steady 17°C and almost no radiation.' : `Topside. It is ${Math.round(G.S.flow.sun.tempC)}°C out here, and every hour adds a little radiation.`);
+  if (G.state === 'play') ui.toast(to === 'deep' ? '105 m down, inside the lava tube. Under the rock roof it is a steady 17°C with almost no radiation — but there is no air. The station is straight ahead: follow the blue lights.' : `Topside. It is ${Math.round(G.S.flow.sun.tempC)}°C out here, and every hour adds a little radiation.`);
 };
 
 // ---------- time ----------
 G.simAdvance = (h) => { const S = G.S; while (h > 1e-6 && !S.over) { const d = Math.min(h, 0.05); step(S, d); h -= d; } };
 // A build / fix scene that plays by itself: the camera circles, you and REGO work, the clock races, parts appear step by step.
 G.job = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'work', tag, sparks = true }) => new Promise((res) => {
-  const S = G.S, real = clamp(3.5 + hours * 1.5, 4.5, 13), hrs = G.simOn ? jobHours(S, hours) : 0; let t = 0; G.jobbing = { pose, tag }; ui.prompt(null);
+  const S = G.S, real = clamp(3.5 + hours * 1.5, 4.5, 13), hrs = G.simOn ? jobHours(S, hours) * (G.inside && !S.suitOn ? 0.75 : 1) : 0;   // no big gloves indoors: a quarter faster
+  let t = 0; G.jobbing = { pose, tag }; ui.prompt(null);
   const sp = site ? world.at(P.zone, site.x, site.z, site.y || 0) : P.pos.clone(); if (site) P.face = Math.atan2(sp.x - P.pos.x, sp.z - P.pos.z);
   world.sparks(pose === 'work' && sparks ? sp : null); G.rego.work = true; const pitch0 = cam.pitch, dist0 = cam.dist; cam.fp = false;
   G.jobTick = (dt) => {
@@ -157,7 +176,14 @@ function updatePlayer(dt) {
   tmp.multiplyScalar(maxV); const acc = P.ground ? 7 : 1.2; P.vel.x += (tmp.x - P.vel.x) * Math.min(1, acc * dt); P.vel.z += (tmp.z - P.vel.z) * Math.min(1, acc * dt);
   const ox = P.pos.x, oz = P.pos.z; P.pos.x += P.vel.x * dt; P.pos.z += P.vel.z * dt; pushOut(P.pos, P.zone, 0.5);
   if (P.zone === 'top') { if (topBounds(P.pos, 7.5) && (!G._edgeT || performance.now() - G._edgeT > 9000)) { G._edgeT = performance.now(); ui.bubble('That is the edge of the map. Nothing but craters beyond here!', 'worried', 6); } }
-  else if (!world.walkable(P.pos.x, P.pos.z)) { if (world.walkable(P.pos.x, oz)) P.pos.z = oz; else if (world.walkable(ox, P.pos.z)) P.pos.x = ox; else { P.pos.x = ox; P.pos.z = oz; } }
+  else {
+    if (!world.walkable(P.pos.x, P.pos.z)) { if (world.walkable(P.pos.x, oz)) P.pos.z = oz; else if (world.walkable(ox, P.pos.z)) P.pos.x = ox; else { P.pos.x = ox; P.pos.z = oz; } }
+    const S = G.S;
+    if (S && !S.suitOn) {   // without a suit you stay where the air is
+      if (P.pos.x < AIRLOCK.x0 + 0.8) { P.pos.x = Math.max(ox, AIRLOCK.x0 + 0.8); P.vel.x = 0; G.warn('suitOut', 'Stop! There is <b>no air</b> out in the cave. Put your suit on at the <b>Suit Lockers</b> first.'); }
+      const rid = world.roomAt(P.pos.x, P.pos.z); if (rid && S.rooms[rid].p < 40 && world.roomAt(ox, oz) !== rid) { P.pos.x = ox; P.pos.z = oz; P.vel.set(0, 0, 0); G.warn('suitRoom', `There is almost <b>no air</b> in the ${ROOMS.find((r) => r.id === rid).name}. Put your suit on before you go in.`); }
+    }
+  }
   const gy = groundY(P.zone, P.pos.x, P.pos.z);
   if (free && k[' '] && P.ground && !heavy) { P.vy = 3.4; P.ground = false; G.audio.play('step'); }   // real lunar gravity
   if (!P.ground) { P.vy -= K.GRAVITY * dt; P.pos.y += P.vy * dt; if (P.pos.y <= gy) { P.pos.y = gy; P.vy = 0; P.ground = true; G.audio.play('step'); } } else P.pos.y = gy;
@@ -200,7 +226,7 @@ function updateRego(dt) {
   R.y = groundY(P.zone, R.x, R.z); g.position.copy(R);
   const want = sp > 0.8 ? Math.atan2(dx, dz) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z); let dy = want - g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); g.rotation.y += dy * Math.min(1, dt * 6);
   let look = Math.atan2(P.pos.x - R.x, P.pos.z - R.z) - g.rotation.y; look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -1.1, 1.1); G.rego.update(dt, sp, look);
-  const dark = P.zone === 'deep' ? G.S && G.S.flow.eff < 1 : G.S && !G.S.flow.sun.up; G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = dark && !P.in ? 5 : 0;
+  const dark = P.zone === 'deep' ? !G.inside || (G.S && G.S.flow.eff < 1) : G.S && !G.S.flow.sun.up; G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = dark && !P.in ? 5 : 0;
 }
 function updateCamera(dt) {
   const c = world.camera; G.shake *= Math.pow(0.25, dt); const veh = P.in === 'car' ? 5 : P.in === 'ship' ? 8 : 0;
@@ -232,6 +258,7 @@ async function tickSim(dt) {
   else if (S.flow.leaks.length) ui.banner(`AIR LEAK in the ${ROOMS.find((r) => r.id === S.flow.leaks[0]).name} — patch it or lock its door!`);
   else if (!G.paused) ui.banner(null);
   if (S.over) return endGame();
+  if (!S.suitOn && G.inside) { const pr = S.here && S.rooms[S.here] ? S.rooms[S.here].p : S.P; if (pr < 60) G.warn('thin', pr < 45 ? '<b>You cannot breathe in here!</b> Get out of this room, or run to the Suit Lockers!' : 'The air is getting thin in here. Leave, or put your suit on.', 'alert', 6000); }
   if (S.fansUntil && S.t >= S.fansUntil) { delete S.extraKw.fans; S.fansUntil = 0; ui.toast('Farm fans back to normal.'); }
   if (S.pending.length) { G.eventBusy = true; await G.processPending(); G.eventBusy = false; }
   if (S.t >= G.nextEventAt && (S.hours === Infinity || S.hours - (S.t - S.t0) > 5) && !P.in) { G.eventBusy = true; await G.fireEvent(); G.eventBusy = false; }
@@ -249,10 +276,13 @@ let last = performance.now(), ccT = 0;
 function frame(now, manual) {
   if (!manual) requestAnimationFrame(frame); const dt = clamp((now - last) / 1000, 0, 0.05); last = now; if (G.state === 'title') return;
   if (G.jobTick) G.jobTick(dt);
+  G.inside = P.zone === 'deep' && world.indoors(P.pos.x, P.pos.z);
+  if (G.S) { const S = G.S; if (!S.suitOn && !G.inside) S.suitOn = true; S.here = G.inside ? world.roomAt(P.pos.x, P.pos.z) : null; G.astro.setSuit(G.suitShow ?? S.suitOn);
+    if (G.inside && !G._wasIn && S.suitOn && G.state === 'play' && !G._tipIn) { G._tipIn = 1; ui.bubble('You are indoors, and the air is good. You can take your suit off at the <b>Suit Lockers</b>: indoor jobs go a quarter faster without big gloves, and you need it off to cook or sleep.', 'happy', 11); } G._wasIn = G.inside; }
   updatePlayer(dt); if (G.S) placeVehicles(dt); updateRego(dt); updateActors(dt); if (G.cineTick) G.cineTick(dt); else updateCamera(dt);
   if (G.S) { tickSim(dt); updateRad(dt); if (G.state !== 'over') updateGoal(); }
   placeItems();
-  world.update(dt, G.S, P.pos, { player: P.pos, carOn: P.in === 'car', shipOn: P.in === 'ship', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook' });
+  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook' });
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
   world.render();
   if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) G._sleepAlerts = G.alerts().length; if (G.sleepLeft <= 0) G._sleepAlerts = undefined; }
@@ -288,8 +318,8 @@ async function start(modeKey, skip, seed) {
   if (!skip) { await comicIntro(G); G.state = 'tutorial'; ui.showHud(true); await tutorial(G); ui.showHud(false); }
   G.state = 'tutorial'; await disaster(G, skip);
   applyDisaster(G.S); for (const s of SITES) s.loot.forEach((type, i) => G.spawnItem(type, 'top', s.pos[0] + 14 + (i % 3) * 2.2, s.pos[1] + 12 + Math.floor(i / 3) * 2.2)); G.spawnSurvivors();
-  if (P.zone !== 'deep') { P.zone = 'deep'; G.S.zone = 'deep'; world.setZone('deep'); } P.pos.set(-17, TUBE.y, -10); cam.yaw = Math.PI; P.face = 0; G.regoPos.set(-15, TUBE.y, -9); if (P.carry) G.removeItem(P.carry);
+  if (P.zone !== 'deep') { P.zone = 'deep'; G.S.zone = 'deep'; world.setZone('deep'); } P.pos.set(-17, TUBE.y, -10); cam.yaw = Math.PI; P.face = 0; G.regoPos.set(-15, TUBE.y, -9); if (P.carry) G.removeItem(P.carry); G.S.suitOn = false;   // you were indoors, out of your suit, when it hit
   ui.showHud(true); G.state = 'play'; G.simOn = true; G.nextEventAt = G.S.t + 7 + G.S.rng() * 5; G.save();
-  ui.bubble('I am right here with you. The big screen shows what is broken. <b>First job: power.</b> Take the elevator up, pull a broken panel off its mount, and bring it down to the Fix-It Bench. Press <b>H</b> whenever you want my advice.', 'happy', 18); G.pointTo('lift');
+  ui.bubble('I am right here with you. The big screen shows what is broken. <b>First job: power.</b> Put your suit on at the airlock, take the elevator up, pull a broken panel off its mount, and bring it down to the Fix-It Bench. Press <b>H</b> whenever you want my advice.', 'happy', 18); G.pointTo('lift');
 }
 if (params.get('go')) start(mode, true, Number(params.get('seed')) || undefined);

@@ -61,9 +61,11 @@ export const MODES = {
 // Topside: x = east, z = south (metres). The Deep (lava tube station) has its own x/z, x runs along the tunnel.
 export const PIT = { x: 0, z: 118, r: 50 };
 export const SPAWN = { x: 52, z: 22 };
-export const TUBE = { halfLen: 125, halfWidth: 40, height: 44, y: -300, skyX: -72, skyR: 15 };
+export const TUBE = { halfLen: 125, halfWidth: 40, height: 44, y: -300, skyX: -104, skyR: 15 };
 export const HALL = { x0: -60, x1: 76, z0: -2.6, z1: 2.6, h: 4.6 };
-export const LOBBY = { x0: -84, x1: -60, z0: -9, z1: 9, h: 7 };
+// The airlock is the station's front door: outside it is the open cave (no air, a steady 17°C).
+export const AIRLOCK = { x0: -70, x1: -60, z0: -5, z1: 5, h: 5 };
+export const CAVE_C = 17, INDOOR_C = 21;
 export const ROOM_H = 6.2;
 export const ROOMS = [
   { id: 'workshop', name: 'Workshop',       side: -1, x0: -56, x1: -32, door: -44, mat: 4, hours: 4, what: 'the Fix-It bench and the robot-arm builder' },
@@ -96,7 +98,8 @@ export const STATIONS = [
   { id: 'isru',  zone: 'top',  name: 'Moon-Dust Oxygen Plant', ico: 'fire', pos: [56, -30],  r: 8 },
   { id: 'park',  zone: 'top',  name: 'Charging Pads',       ico: 'bolt',   pos: [-36, 34],  r: 6 },
   { id: 'pad',   zone: 'top',  name: 'Landing Pad',         ico: 'rocket', pos: [72, 34],   r: 9 },
-  { id: 'lift',  zone: 'deep', name: 'Elevator to Surface', ico: 'lift',   pos: [-72, 0],   r: 6 },
+  { id: 'lift',  zone: 'deep', name: 'Elevator to Surface', ico: 'lift',   pos: [TUBE.skyX, 0], r: 6 },
+  { id: 'suit',  zone: 'deep', name: 'Suit Lockers',        ico: 'room',   pos: [-65.2, -1.6], r: 3.3 },
   { id: 'bench', zone: 'deep', name: 'Fix-It Bench',        ico: 'wrench', pos: BENCH,      r: 4.5 },
   { id: 'fab',   zone: 'deep', name: 'Robot-Arm Builder',   ico: 'arm',    pos: FAB,        r: 4.5 },
   ...ROOMS.filter((r) => r.id !== 'workshop').map((r) => ({ id: r.id, zone: 'deep', name: r.name, ico: 'room', pos: roomSpot(r), r: 4.2, room: true })),

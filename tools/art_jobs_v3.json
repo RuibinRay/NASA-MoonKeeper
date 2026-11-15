@@ -1,0 +1,83 @@
+{
+  "outDir": "assets/art/v3",
+  "resolution": "4k",
+  "quality": "high",
+  "styles": {
+    "station": "Design language of this one lunar habitat, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, safety-orange accents only on handles, hatch wheels and bulkhead door frames, each bulkhead door a rounded-rectangle orange-framed pressure hatch with one round porthole lit cyan, recessed warm-white ceiling light strips plus thin cyan status lighting at floor level, labelled-looking cable trays and insulated pipes overhead, cargo straps and handrails, pale blue translucent holographic displays floating above consoles showing only abstract graphs and schematics. Grounded space-agency engineering realism, like a real orbital station and a real lunar habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm anamorphic lens, eye-level camera, deep perspective, soft volumetric haze, practical lighting, natural film color grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no logos, no flags, no watermark.",
+    "texture": "Seamless tileable photorealistic game texture, perfectly flat orthographic front view, even soft diffuse lighting, no cast shadows, no perspective, no vignette, the pattern fills the whole frame edge to edge and repeats cleanly on all four sides. No text, no letters, no numbers, no logos, no watermark."
+  },
+  "jobs": [
+    {
+      "id": "rm_hall", "style": "station", "web": "assets/img/rm_hall.jpg", "webW": 1600,
+      "prompt": "The main corridor of a Moon station built inside a lava tube, seen straight down its length. A long straight hallway about five metres wide with a flat ceiling, a row of identical orange-framed bulkhead doors along both walls leading to side rooms, each with a small wall-mounted door control panel glowing green beside it. Aluminium ribs repeat into the distance, ceiling light strips form a line to the vanishing point, pipes and cable trays run overhead, a faint holographic wayfinding stripe hovers along one wall."
+    },
+    {
+      "id": "rm_airlock", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_airlock.jpg", "webW": 1600,
+      "prompt": "The airlock and suit room of the same Moon station as the reference image. A compact square room: on the left wall a row of three tall grey suit lockers with orange handles, one open with a white spacesuit and gold-visored helmet hanging inside; on the right a low orange bench with boots under it. Straight ahead the heavy orange-framed outer pressure hatch with a round cyan-lit porthole, and through the porthole a glimpse of a dark basalt cave. A wall panel beside the hatch glows green."
+    },
+    {
+      "id": "rm_cave", "style": "station", "web": "assets/img/rm_cave.jpg", "webW": 1600,
+      "prompt": "Inside an enormous lunar lava tube cave, wide shot. A white modular Moon station building made of joined rectangular habitat modules with warm glowing windows stands on the flat dark basalt floor, small under the huge rippled rock ceiling. In the foreground an open-frame cargo elevator platform ringed by amber lights, its guide cables rising to a round skylight far above where one hard shaft of sunlight falls through dust. A path of small blue ground lights leads from the elevator to the station's orange airlock door. Boulders, lamp posts with warm lights along the cave walls."
+    },
+    {
+      "id": "rm_workshop", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_workshop.jpg", "webW": 1600,
+      "prompt": "The engineering workshop and repair laboratory of the same Moon station as the reference image. A long repair bench with an orange top holding a dark blue solar panel, a yellow-and-white industrial robot arm bolted to the floor beside it with a small cyan light at its tool tip, and a gantry-style fabrication line with a moving print head over a metal bed. Tool walls with every tool in a shadow outline, parts bins, stacked white and orange cargo crates, a holographic exploded diagram of a solar panel floating above the bench. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "rm_control", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_control.jpg", "webW": 1600,
+      "prompt": "The control center of the same Moon station as the reference image. One whole wall is a huge dark display showing a glowing schematic floor plan of the station with rooms in green, amber and red. Three dark operator consoles with angled screens and worn chairs on floor rails face it. A large holographic globe of the Moon with orbit lines floats in the middle of the room, casting pale blue light. Dim room, screens as the main light, thin cyan floor lighting. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "rm_kitchen", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_kitchen.jpg", "webW": 1600,
+      "prompt": "The galley and dining room of the same Moon station as the reference image. A long white counter with a brushed-metal worktop, an induction hob with one pot, a tall steel food-storage locker, wall racks of green and orange food tins held by elastic straps, a water dispenser with tubing. A round white dining table on a single pedestal with fold-down stools, a small tray of fresh tomatoes and potatoes on it. Warm, welcoming light. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "rm_oxygen", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_oxygen.jpg", "webW": 1600,
+      "prompt": "The oxygen generation room of the same Moon station as the reference image, the heart of its life support. Three large spherical pale-green-white pressure tanks on short pedestals along one wall, joined by insulated steel pipes with valves and pressure gauges. In the centre a grey electrolysis machine the size of a wardrobe with a glowing cyan status bar, transparent tubes with rising bubbles, and a holographic flow diagram of air circulation floating above it. Cool clean light, faint mist near the floor. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "rm_potato", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_potato.jpg", "webW": 1600,
+      "prompt": "The potato farm of the same Moon station as the reference image. Three long white raised growing beds filled with dark soil and rows of bushy green potato plants, running the length of a long room. Above each bed hangs a bar of magenta-pink LED grow lights, bathing the leaves in pink light, with drip-irrigation lines and small moisture sensors in the soil. Condensation on the wall panels, a ventilation fan in the far wall, a holographic growth chart floating at the end of one bed. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "rm_storage", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_storage.jpg", "webW": 1600,
+      "prompt": "The battery store of the same Moon station as the reference image. Four tall dark battery cabinets with orange top caps stand in a row, each with a vertical green charge-level light bar on its front. Thick insulated power cables in overhead trays drop into each cabinet, a row of smaller removable battery modules sits on a floor rack with carry handles. A holographic bar chart of stored energy floats beside a wall breaker panel. Low, slightly dim industrial lighting with green reflections on the deck. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "rm_quarters", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_quarters.jpg", "webW": 1600,
+      "prompt": "The crew living quarters of the same Moon station as the reference image. Three double-deck bunk alcoves set into the wall, each with a white frame, a privacy curtain, a small reading light and a blanket in orange, teal or blue, with ladders between them. Personal lockers, a fold-down desk with a tablet, a few photographs and a small potted plant, soft-goods storage pockets on the wall. Warm low evening lighting, cosy and quiet. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "rm_bathroom", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_bathroom.jpg", "webW": 1600,
+      "prompt": "The hygiene room of the same Moon station as the reference image. A cylindrical glass shower cabin with a water-recovery drain ring, a compact white vacuum toilet with a hinged lid and a wall control box, a small washbasin with a mirror lit by a cyan light band, towels held by clips, and clearly visible transparent pipes carrying used water into the wall toward the recycler. White panels, bright clean light, a few water droplets. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "rm_water", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_water.jpg", "webW": 1600,
+      "prompt": "The water recycling room of the same Moon station as the reference image. Two tall blue cylindrical water tanks with sight-glass level tubes stand against the wall. In front, a white filtration and distillation unit with a glowing cyan status bar, a bank of transparent filter cartridges, pumps, valves and a steel pipe run across the room at head height. A holographic diagram of the water loop floats above the unit. Cool blue-white light, a single drip tray under one joint. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "rm_animal", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_animal.jpg", "webW": 1600,
+      "prompt": "The animal bay and bioscience laboratory of the same Moon station as the reference image. A round low pen with a white rail and a straw floor where six brown hens peck around a white dome-shaped nest pod and a small red coop. Stacked sacks of dry feed against the wall. On the other side a long glass aquaponics fish tank on a dark base with orange fish, lit from above, its water tubes leading to plant trays. A lab bench with a microscope and sample jars, and a holographic chart of animal health above it. Gentle warm light. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "rm_tomato", "style": "station", "refs": ["rm_hall"], "web": "assets/img/rm_tomato.jpg", "webW": 1600,
+      "prompt": "The tomato farm of the same Moon station as the reference image. Three long white hydroponic troughs with tall tomato vines climbing vertical strings, heavy with clusters of ripe red tomatoes among green leaves. Bars of magenta-pink LED grow lights hang above each row, nutrient tubes run along the troughs, a circulation fan stirs the leaves, humidity sensors blink green. A holographic humidity and temperature readout floats near the door. One orange-framed bulkhead door in the side wall."
+    },
+    {
+      "id": "tex3_wall", "style": "texture", "aspect_ratio": "1:1", "resolution": "2k", "web": "assets/tex/wall3.jpg", "webW": 1024,
+      "prompt": "Interior wall of a realistic lunar habitat: a regular grid of two by two large matte white composite panels with rounded corners, thin dark shadow-gap seams between them, small flush fasteners at the panel corners, one small recessed vent grille and one small inset handhold. Very subtle scuffs and fine dust, warm white with light-grey variation."
+    },
+    {
+      "id": "tex3_floor", "style": "texture", "aspect_ratio": "1:1", "resolution": "2k", "web": "assets/tex/floor3.jpg", "webW": 1024,
+      "prompt": "Deck floor of a realistic lunar habitat seen from directly above: a grid of four by four dark graphite-grey anti-slip metal deck plates with fine raised stud pattern, thin seams, flush corner screws, light scuff wear along walking paths, and one thin amber guide line running straight across the middle from edge to edge."
+    },
+    {
+      "id": "tex3_ceil", "style": "texture", "aspect_ratio": "1:1", "resolution": "2k", "web": "assets/tex/ceil3.jpg", "webW": 1024,
+      "prompt": "Ceiling of a realistic lunar habitat seen from directly below: light-grey perforated acoustic panels in a regular grid of two by two, separated by brushed aluminium channels, with one round air diffuser and one small sensor dome."
+    },
+    {
+      "id": "tex3_door", "style": "texture", "aspect_ratio": "1:1", "resolution": "2k", "web": "assets/tex/door3.jpg", "webW": 1024,
+      "prompt": "The flat face of one airtight bulkhead pressure door of a realistic lunar habitat, filling the entire frame: safety-orange painted metal with a slightly darker reinforced border, rows of flush bolts around the edge, two horizontal stiffening ribs, a round porthole window with a thick metal rim slightly above the centre, and a grey recessed pull handle on the right side. Light scratches and worn paint at the edges."
+    }
+  ]
+}

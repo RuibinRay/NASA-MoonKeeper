@@ -1,6 +1,7 @@
 # full-size art originals (hundreds of MB) — the game only loads assets/img and assets/tex
 assets/art/4k/
 assets/art/v2/
+assets/art/v3/
 assets/art/v1_web/
 # local tooling
 .claude/
