@@ -183,6 +183,20 @@ const doJob = async (o) => {
   if (fx && G.S) setTimeout(() => { fx[0](G.S); ui.toast(fx[1], fx[2] === 'great' ? 'good' : 'bad'); }, 0);   // after the caller has applied the job's own result
   return out;
 };
+// Job camera. Instead of circling (which put the camera inside panels and behind racks), pick spots with a clear
+// view of both the worker and the work: over a shoulder first, then from the side. Returns the best two, well apart.
+const wrapA = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+const jobShots = (sp) => {
+  const zone = P.zone, deep = zone === 'deep', room = deep ? world.roomAt(P.pos.x, P.pos.z) : null, inD = deep && world.indoors(P.pos.x, P.pos.z), cols = world.colliders[zone];
+  const d0 = Math.hypot(sp.x - P.pos.x, sp.z - P.pos.z), f = d0 > 0.01 ? Math.min(0.45, 1.2 / d0) : 0, cx = P.pos.x + (sp.x - P.pos.x) * f, cz = P.pos.z + (sp.z - P.pos.z) * f;   // look between the worker and the work
+  const free = (x, z, pad) => (!deep || (world.walkable(x, z) && world.roomAt(x, z) === room && world.indoors(x, z) === inD)) && !cols.some((c) => Math.hypot(c.x - x, c.z - z) < c.r + pad);
+  const back = P.face + Math.PI, out = [];
+  for (const d of deep ? [5.2, 4.1, 3.2] : [7, 5.5, 4.2]) for (const a of [0.85, -0.85, 1.45, -1.45, 0.35, -0.35, 2.2, -2.2]) {
+    const yaw = back + a, x = cx + Math.sin(yaw) * d, z = cz + Math.cos(yaw) * d;
+    if (free(x, z, 0.5) && free(cx + (x - cx) * 0.5, cz + (z - cz) * 0.5, 0.1) && free(cx + (x - cx) * 0.78, cz + (z - cz) * 0.78, 0.2)) out.push({ yaw, d }); }
+  const A = out[0] || { yaw: back + 0.85, d: 3 }, B = out.find((s) => Math.abs(wrapA(s.yaw - A.yaw)) > 0.9) || { yaw: A.yaw + (out.length ? 0.45 : -1.7), d: A.d * 0.82 };
+  return { A, B, f };
+};
 const runJob = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'work', tag, sparks = true, tool }) => new Promise((res) => {
   const S = G.S, real = clamp(3.5 + hours * 1.5, 4.5, 13), hrs = G.simOn ? jobHours(S, hours) * (G.inside && !S.suitOn ? 0.75 : 1) : 0;   // no big gloves indoors: a quarter faster
   let t = 0; tool = tool || toolFor(title, tag); const J = (G.jobbing = { pose, tag, tool, aim: -0.25, site: null }); ui.prompt(null);
@@ -197,7 +211,10 @@ const runJob = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'wo
     t += dt; const tw = walk ? walk.t : 0, k = Math.min(1, Math.max(0, t - tw) / real); if (hrs && t > tw) G.simAdvance((hrs * dt) / real);
     if (walk && t < tw) { const u = t / tw, e = u * u * (3 - 2 * u); P.pos.x = walk.x0 + (walk.x1 - walk.x0) * e; P.pos.z = walk.z0 + (walk.z1 - walk.z0) * e; P.vel.set(0, 0, 0); J.pose = 'walk'; J.speed = 5.5 * Math.sin(u * Math.PI) + 1; G.stepT += dt * J.speed; if (G.stepT > 4.2) { G.stepT = 0; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x, P.pos.z, 4, 0, 0, 0.9, 0.8); } }
     else { if (walk) { walk = null; world.sparks(lit ? sp : null); } J.pose = pose; J.speed = 0; const d = Math.hypot(sp.x - P.pos.x, sp.z - P.pos.z); P.face = d > 0.3 ? Math.atan2(sp.x - P.pos.x, sp.z - P.pos.z) : P.face; J.aim = Math.atan2(workY - (P.pos.y + 1.5), Math.max(0.7, d)); G.rego.workAim = Math.atan2(workY - (G.regoPos.y + 0.65), Math.max(0.6, Math.hypot(sp.x - G.regoPos.x, sp.z - G.regoPos.z))); }
-    cam.yaw += dt * 0.42; cam.pitch += (0.42 - cam.pitch) * dt * 2; cam.dist += (9 - cam.dist) * dt * 2; if (Math.random() < dt * (tool === 'weld' ? 9 : 3) && pose === 'work' && t > tw) G.audio.play('step');
+    if (t < tw) { cam.pitch += (0.34 - cam.pitch) * dt * 2; cam.dist += (7 - cam.dist) * dt * 2; }   // walking over: just settle
+    else { const sh = J.shots || (J.shots = jobShots(sp)), s = k < 0.55 ? sh.A : sh.B, deepZ = P.zone === 'deep', ez = Math.min(1, dt * (k < 0.55 ? 2.2 : 1.5));   // second angle for the second half
+      cam.yaw += wrapA(s.yaw + Math.sin(t * 0.33) * 0.1 - cam.yaw) * ez; cam.pitch += ((J.high ? 0.03 : deepZ ? 0.3 : 0.36) - cam.pitch) * dt * 2; cam.dist += (s.d * (1 - 0.1 * k) - cam.dist) * ez;   // a slow drift and push-in, never a spin
+      J.fk = Math.min(1, (J.fk || 0) + dt * 1.6); J.focus = J.fk * sh.f; J.high = workY - P.pos.y > 3; J.lift = J.high ? (workY - P.pos.y - 1.75) * 0.3 * J.fk : -0.3 * J.fk; }   // work overhead: look up at it from low down if (Math.random() < dt * (tool === 'weld' ? 9 : 3) && pose === 'work' && t > tw) G.audio.play('step');
     ui.job(title, k, t < tw ? 'Walking over…' : steps[Math.min(steps.length - 1, Math.floor(k * steps.length))], hrs ? `${fmt.hrs(Math.max(0, hrs * (1 - k)))} to go` : ''); onStep?.(k);
     if (k >= 1) { G.jobTick = null; G.jobbing = null; world.sparks(null); G.rego.work = false; G.rego.workAim = undefined; ui.job(null); cam.pitch = pitch0; cam.dist = dist0; S.stats.jobs++; G.audio.play('ok'); res(); }
   };
@@ -398,6 +415,7 @@ function updateCamera(dt) {
   if (cam.fp && !P.in) { c.position.set(P.pos.x, P.pos.y + 1.78, P.pos.z); c.rotation.set(-cam.pitch, cam.yaw, 0, 'YXZ'); }
   else {
     const pp = Math.max(cam.pitch, 0.06), cp = Math.cos(pp), dist = cam.dist + veh; tmp.set(P.pos.x, P.pos.y + (P.in ? 2.6 : 1.75), P.pos.z);
+    if (G.jobbing && G.jobbing.site && G.jobbing.focus) { const f = G.jobbing.focus, s = G.jobbing.site; tmp.x += (s.x - P.pos.x) * f; tmp.z += (s.z - P.pos.z) * f; tmp.y += G.jobbing.lift || 0; }
     c.position.set(tmp.x + Math.sin(cam.yaw) * cp * dist, tmp.y + Math.sin(pp) * dist, tmp.z + Math.cos(cam.yaw) * cp * dist);
     if (P.zone === 'top') c.position.y = Math.max(c.position.y, world.heightAt(c.position.x, c.position.z) + 0.6);
     else { c.position.z = clamp(c.position.z, -TUBE.halfWidth + 3, TUBE.halfWidth - 3); c.position.x = clamp(c.position.x, -TUBE.halfLen + 2, TUBE.halfLen - 2); c.position.y = clamp(c.position.y, TUBE.y + 0.6, TUBE.y + 26); }
