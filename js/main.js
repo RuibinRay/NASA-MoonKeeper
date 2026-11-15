@@ -90,7 +90,8 @@ G.pointTo = (t, text) => { const r = G.resolve(t); if (!r) return; G.goal = { ..
 G.goTo = (t, text) => new Promise((res) => { const r = G.resolve(t); G.goal = { ...r, text, cb: res, cond: null }; });
 G.waitFor = (cond, text, t) => new Promise((res) => { const r = G.resolve(t) || {}; G.goal = { ...r, text, cb: res, cond }; });
 function updateGoal() {
-  const g = G.goal; if (!g) { if (world.target) world.setTarget(null); ui.objective(null); return; }
+  const g = G.goal; $('#goal-x').classList.toggle('hidden', !(g && g.sticky && G.state === 'play')); world.guideForce = !!(g && g.sticky);   // advice you asked for always draws its line, even with guide mode off
+  if (!g) { if (world.target) world.setTarget(null); ui.objective(null); return; }
   if (g.id === 'car' || g.id === 'ship') { g.x = G[g.id].x; g.z = G[g.id].z; }
   if (!g.cb && ((g.id === 'gate' && P.zone === 'deep') || (g.id === 'lift' && P.zone === 'top'))) { G.goal = null; world.setTarget(null); ui.objective(null); return; }
   const has = g.zone !== undefined, same = has && g.zone === P.zone;
@@ -104,7 +105,7 @@ function updateGoal() {
     arr = `<i class="arr" style="transform:rotate(${a}deg)">▲</i>`; tail = `<small>${d < 30 ? Math.round(d) : Math.round(d / 5) * 5} m${suitFirst ? ' · suit up at the airlock first' : !same ? ' · take the elevator' : ''}</small>`; }
   ui.objective(`${arr}<span>${g.text || 'Go to: ' + g.name}</span>${tail}`);
   const near = same && Math.hypot(g.x - P.pos.x, g.z - P.pos.z) < (g.r || 5) + 1;
-  if (g.cond ? g.cond() : near) { G.goal = null; world.setTarget(null); ui.objective(null); g.cb?.(); }
+  if (g.cond ? g.cond() : near && !g.sticky) { G.goal = null; world.setTarget(null); ui.objective(null); g.cb?.(); }
 }
 // REGO says something, but not the same thing over and over
 G.warn = (key, html, mood = 'worried', gap = 5000) => { const now = performance.now(), w = G._warn || (G._warn = {}); if (w[key] && now - w[key] < gap) return; w[key] = now; ui.bubble(html, mood, 7); G.audio.play('bad'); };
@@ -171,6 +172,7 @@ $('#b-sound').onclick = () => { $('#b-sound').innerHTML = G.audio.toggle() ? IC.
 G.guide = (() => { try { return localStorage.getItem('mk-guide') !== '0'; } catch (e) { return true; } })(); world.guideOn = G.guide;
 G.setGuide = (on) => { G.guide = !!on; world.guideOn = G.guide; try { localStorage.setItem('mk-guide', G.guide ? '1' : '0'); } catch (e) {} };
 G.setSound = (on) => { if (G.audio.on !== !!on) G.audio.toggle(); $('#b-sound').innerHTML = G.audio.on ? IC.sound : IC.mute; };
+$('#goal-x').onclick = () => { G.goal = null; world.setTarget(null); ui.objective(null); $('#goal-x').classList.add('hidden'); G.audio?.play('click'); };
 $('#b-set').innerHTML = IC.gear; $('#b-set').onclick = () => !ui.busy && ui.settings(); $('#btn-settings').onclick = () => ui.settings();
 const stickEl = $('#stick'), knob = stickEl.querySelector('i');
 const stickMove = (e) => { const r = stickEl.getBoundingClientRect(), x = (e.clientX - r.left - 59) / 59, y = (e.clientY - r.top - 59) / 59, l = Math.max(1, Math.hypot(x, y)); G.stick.x = x / l; G.stick.y = -y / l; knob.style.transform = `translate(${(x / l) * 34}px,${(y / l) * 34}px)`; };

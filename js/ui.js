@@ -182,12 +182,29 @@ export class UI {
   }
 
   // ---------- Power Board ----------
+  // Guide mode on the Power Board: the one switch REGO would press now, and why. Returns { k, i, why } or null.
+  powerHint(S, F) {
+    const lv = S.lv, cost = (k, i) => SYS[k].kw[i] - SYS[k].kw[lv[k]], canPay = (k, i) => F.eff >= 1 && (F.net - cost(k, i) >= -0.5 || S.battery > F.cap * 0.25);
+    const up = (k, why) => (lv[k] < SYS[k].kw.length - 1 && canPay(k, lv[k] + 1) ? { k, i: lv[k] + 1, why } : null), set = (k, i, why) => ({ k, i, why });
+    const shed = (why) => lv.heat > F.heatNeed ? set('heat', F.heatNeed, why + ' The heaters are higher than the machines topside need.') : lv.comms > 1 ? set('comms', 1, why + ' Level 1 still gives storm warnings.') : lv.isru && F.o2Days > 2 ? set('isru', 0, why + ' The Moon-Dust Oxygen Plant is the hungriest machine.') : lv.farm > 1 ? set('farm', lv.farm - 1, why + ' Dimmer grow lights only slow the crops.') : lv.recycler > 1 ? set('recycler', lv.recycler - 1, why + ' You get a little less water back.') : lv.comms > 0 ? set('comms', 0, why + ' You lose storm warnings, so stay close to the elevator.') : null;
+    if (F.eff < 1) return shed('<b>Brownout:</b> the battery is empty, so turn something down.');
+    if (lv.heat < F.heatNeed) return set('heat', F.heatNeed, `Topside machines need heater level <b>${F.heatNeed}</b> right now, or something will break.`);
+    if (S.f.commsDown && lv.comms > 0 && F.use.comms > 0) return set('comms', 0, 'The dish is knocked over, so the Earth Link is burning power for nothing. Switch it off until the dish is fixed.');
+    if (S.o2 < 0.8 || (F.o2Net < 0 && F.o2Days < 2)) { const h = roomOk(S, 'oxygen') && S.water > 3 ? up('o2gen', '<b>Oxygen is running low.</b> Turn the Oxygen Maker up. It costs power and water.') : null; if (h) return h; if (!S.f.isruDown && !lv.isru && canPay('isru', 1)) return set('isru', 1, '<b>Oxygen is running low.</b> The Moon-Dust Oxygen Plant makes oxygen without using water.'); }
+    if (F.net < 0 && F.battHours < 10) { const h = shed(`The battery will be empty in <b>${fmt.hrs(Math.floor(F.battHours))}</b>.`); if (h) return h; }
+    if (F.wNet < 0 && F.waterDays < 3 && roomOk(S, 'water')) { const h = up('recycler', '<b>Water is dropping.</b> Turn the Water Recycler up to get more of it back.'); if (h) return h; }
+    if (F.farms > 0 && lv.farm === 0 && canPay('farm', 1)) return set('farm', 1, 'The grow lights are off, so the plants are wilting. Level 1 keeps them alive.');
+    if (F.farms > 0 && F.foodDays < 2) { const h = up('farm', '<b>Food is short.</b> Brighter grow lights make the crops ripen faster.'); if (h) return h; }
+    if (!S.f.commsDown && lv.comms === 0 && canPay('comms', 1)) return set('comms', 1, 'The Earth Link is off, so storms arrive with no warning. Level 1 gives about 4 hours.');
+    if (S.battery >= F.cap - 1 && F.net > 3) { const h = (F.farms > 0 && up('farm', 'The battery is full and power is being wasted. Spend it on faster crops.')) || (roomOk(S, 'oxygen') && S.water > 6 && S.o2 < S.o2Cap - 0.5 && up('o2gen', 'The battery is full and power is being wasted. Spend it on spare oxygen.')); if (h) return h; }
+    return null;
+  }
   powerBoard(opts = {}) {
     const G = this.G, S = G.S;
     const render = (w) => {
-      const F = computeFlows(S), u = F.use, total = Math.max(F.supply, F.demand, 1), sun = F.sun;
+      const F = computeFlows(S), u = F.use, total = Math.max(F.supply, F.demand, 1), sun = F.sun, hint = G.guide && !opts.goal ? this.powerHint(S, F) : null;
       const seg = (v, color, label) => (v > 0.05 ? `<span style="width:${(v / total) * 100}%;background:${color}" title="${label} ${v.toFixed(1)} kW">${v / total > 0.1 ? label + ' ' + v.toFixed(0) : ''}</span>` : '');
-      const lvl = (k) => `<div class="lv">${SYS[k].kw.map((kw, i) => `<button data-k="${k}" data-i="${i}" class="${S.lv[k] === i ? 'on' : ''}">${SYS[k].kw.length === 2 ? ['OFF', 'ON'][i] : i === 0 ? 'OFF' : i}<small>${kw} kW</small></button>`).join('')}</div>`;
+      const lvl = (k) => `<div class="lv">${SYS[k].kw.map((kw, i) => `<button data-k="${k}" data-i="${i}" class="${S.lv[k] === i ? 'on' : ''} ${hint && hint.k === k && hint.i === i ? 'guide-rec' : ''}">${SYS[k].kw.length === 2 ? ['OFF', 'ON'][i] : i === 0 ? 'OFF' : i}<small>${kw} kW</small></button>`).join('')}</div>`;
       const eff = {
         o2gen: !roomOk(S, 'oxygen') ? '<span class="down">The Oxygen Room is broken or has no air. Fix the room first.</span>' : S.water <= 0 ? '<span class="down">No water to split!</span>' : `Makes <b>${SYS.o2gen.out[S.lv.o2gen]} kg</b> of oxygen a day and drinks <b>${(SYS.o2gen.out[S.lv.o2gen] * K.H2O_PER_KG_O2).toFixed(1)} L</b> of water a day.`,
         isru: S.f.isruDown ? '<span class="down">Broken by the meteor shower. Repair it topside.</span>' : S.lv.isru ? 'Makes <b>2.2 kg</b> of oxygen a day from moon soil. Uses no water.' : 'Off.',
@@ -202,6 +219,7 @@ export class UI {
       const auto = [['Chargers (rover, hopper)', u.chargers], ['Fix-It bench & builder', u.tools], ['Helper robots', u.bots], ['Fish tank pump', u.pump], ['Extra', F.extra]].filter((x) => x[1] > 0).map(([a, b]) => `<div class="stat"><span>${a}</span><span>${b.toFixed(1)} kW</span></div>`).join('');
       w.querySelector('.win-b').innerHTML = `
         <div class="note"><b>No choice is free.</b> Every machine eats power. Turn one up, and something else gets less — or the battery drains faster.</div>
+        ${G.guide && !opts.goal ? `<div class="rec-banner ${hint ? '' : 'calm'}"><img src="assets/img/c_rego.jpg" alt=""><div><b>REGO${hint ? ': press the glowing switch' : ''}</b>${hint ? `${SYS[hint.k].name} → ${SYS[hint.k].kw.length === 2 ? ['OFF', 'ON'][hint.i] : hint.i === 0 ? 'OFF' : 'level ' + hint.i}. ${hint.why}` : 'Nothing needs changing right now. The switches are set well for what we have.'}</div></div>` : ''}
         <div class="grid2" style="margin-top:12px"><div>${rows}</div><div>
           <h4 class="h4">Power right now</h4><div class="mini">Coming in: ${F.supply.toFixed(1)} kW · ${F.nOk} solar panel${F.nOk === 1 ? '' : 's'} working</div>
           <div class="flowbar">${seg(F.solar, '#ffd257', 'Solar')}${seg(F.reactor, '#8fe9a8', 'Reactor')}</div><div class="mini">Going out: ${F.demand.toFixed(1)} kW</div>
