@@ -21,6 +21,7 @@ With REGO the robot you must keep the **power on** and the **air in** until resc
 | Space · Q (in the digger) | dig · tip the bucket into the filler |
 | **Q** | second action (take cargo out of a vehicle) |
 | Tab · M · H · N · L · T | Power Board · Map · ask REGO · Space Guide · Life-support loop · Day and night |
+| In the hopper | Space up · C down (it slows itself near the ground) · a ring below shows where it will land |
 | Settings (gear button) | Guide mode · job games · sound · graphics detail (Auto, High, Medium, Low) · frame-rate counter |
 | V · P | first/third person · pause |
 
