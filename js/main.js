@@ -16,6 +16,9 @@ import { installActions } from './actions.js';
 import { patchAt, scoop } from './life.js';
 import { installEvents } from './events.js';
 import { comicIntro, tutorial, disaster, ending } from './story.js';
+import { tt, LANG, LANGS, setLang, translatePage } from './i18n.js';
+translatePage();   // the words written into index.html
+for (const [v, w] of [['--t-dyk', tt('DID YOU KNOW?')], ['--t-hint', tt('REGO · HINT')], ['--t-sel', tt('SELECTED')]]) document.documentElement.style.setProperty(v, JSON.stringify(w));   // labels drawn by the style sheet
 
 const V3 = THREE.Vector3, $ = (s) => document.querySelector(s), clamp = (x, a, b) => Math.max(a, Math.min(b, x)), UP = new V3(0, 1, 0), TMP = new V3();
 const canvas = $('#view'), params = new URLSearchParams(location.search);
@@ -31,11 +34,11 @@ G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.regoFollow = new Follo
 G.lampMounts = [G.astro, G.rego].map((a) => { const m = new THREE.Group(); m.add(a.lamp, a.lamp.target); G.world.scene.add(m); return [m, a.group]; });   // lamps outside the bodies: hiding a body must not change the light count
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
 world.onPart = () => G.audio.play('step');
-world.onLock = (kind) => { G.audio.play(kind); if (kind === 'hiss' && !G._lockTip && G.state === 'play' && P.zone === 'deep' && Math.abs(P.pos.x - (AIRLOCK.x0 + AIRLOCK.x1) / 2) < 12 && Math.abs(P.pos.z) < 8) { G._lockTip = 1; ui.toast('Airlock: the door behind you shuts, the air is pumped back into the tanks, and only then does the next door open. The two doors are never open together.'); } };   // a part dropping into place during a build
+world.onLock = (kind) => { G.audio.play(kind); if (kind === 'hiss' && !G._lockTip && G.state === 'play' && P.zone === 'deep' && Math.abs(P.pos.x - (AIRLOCK.x0 + AIRLOCK.x1) / 2) < 12 && Math.abs(P.pos.z) < 8) { G._lockTip = 1; ui.toast(tt('Airlock: the door behind you shuts, the air is pumped back into the tanks, and only then does the next door open. The two doors are never open together.')); } };   // a part dropping into place during a build
 G.dig = { x: MINE.x - 10, z: MINE.z + 9, yaw: 2.3, v: 0, load: 0, prog: 0, boom: 0, dig: 0, dry: 0 };   // the digger at the Polar Ice Mine
 const groundY = (zone, x, z) => (zone === 'top' ? world.heightAt(x, z) : TUBE.y);
-$('#b-power').innerHTML = IC.bolt + '<small>Power<kbd>Tab</kbd></small>'; $('#b-map').innerHTML = IC.map + '<small>Map<kbd>M</kbd></small>'; $('#b-ask').innerHTML = IC.bot + '<small>Ask REGO<kbd>H</kbd></small>'; $('#b-data').innerHTML = IC.book + '<small>Guide<kbd>N</kbd></small>';
-$('#b-view').innerHTML = IC.eye + '<small>View<kbd>V</kbd></small>'; $('#b-speed').innerHTML = IC.speed + '<small id="speed-l">×1</small>'; $('#b-pause').innerHTML = IC.pause + '<small>Pause<kbd>P</kbd></small>'; $('#b-sound').innerHTML = IC.sound; $('#hp-ic').innerHTML = IC.heart;
+$('#b-power').innerHTML = IC.bolt + ('<small>' + tt('Power<kbd>Tab</kbd>') + '</small>'); $('#b-map').innerHTML = IC.map + ('<small>' + tt('Map<kbd>M</kbd>') + '</small>'); $('#b-ask').innerHTML = IC.bot + ('<small>' + tt('Ask REGO<kbd>H</kbd>') + '</small>'); $('#b-data').innerHTML = IC.book + ('<small>' + tt('Guide<kbd>N</kbd>') + '</small>');
+$('#b-view').innerHTML = IC.eye + ('<small>' + tt('View<kbd>V</kbd>') + '</small>'); $('#b-speed').innerHTML = IC.speed + '<small id="speed-l">×1</small>'; $('#b-pause').innerHTML = IC.pause + ('<small>' + tt('Pause<kbd>P</kbd>') + '</small>'); $('#b-sound').innerHTML = IC.sound; $('#hp-ic').innerHTML = IC.heart;
 
 // ---------- things you can carry ----------
 G.spawnItem = (type, zone, x, z, where = 'ground') => { const it = { id: G.itemSeq++, type, zone, x, z, where, rot: Math.random() * 3, mesh: world.makeItem(type) }; world.scene.add(it.mesh); G.items.push(it); return it; };
@@ -116,7 +119,7 @@ function updateActors(dt) {
 
 // ---------- guide beam / goals ----------
 // A target can be a station id, 'car', 'ship', or { zone, x, z, name }.
-G.resolve = (t) => { if (!t) return null; if (typeof t !== 'string') return t; if (t === 'car' || t === 'ship') return { zone: 'top', x: G[t].x, z: G[t].z, name: t === 'car' ? 'Rover' : 'Hopper', id: t }; const s = STATIONS.find((q) => q.id === t); if (s) return { zone: s.zone, x: s.pos[0], z: s.pos[1], name: s.name, id: s.id, r: s.r }; const site = SITES.find((q) => q.id === t); if (site) return { zone: 'top', x: site.pos[0] + 2, z: site.pos[1] + 16, name: site.name, id: site.id, r: 9 }; const room = ROOMS.find((q) => q.id === t); return room ? { zone: 'deep', x: room.door, z: room.side * 9.5, name: room.name, id: t, r: 4 } : null; };
+G.resolve = (t) => { if (!t) return null; if (typeof t !== 'string') return t; if (t === 'car' || t === 'ship') return { zone: 'top', x: G[t].x, z: G[t].z, name: t === 'car' ? tt('Rover') : tt('Hopper'), id: t }; const s = STATIONS.find((q) => q.id === t); if (s) return { zone: s.zone, x: s.pos[0], z: s.pos[1], name: s.name, id: s.id, r: s.r }; const site = SITES.find((q) => q.id === t); if (site) return { zone: 'top', x: site.pos[0] + 2, z: site.pos[1] + 16, name: site.name, id: site.id, r: 9 }; const room = ROOMS.find((q) => q.id === t); return room ? { zone: 'deep', x: room.door, z: room.side * 9.5, name: room.name, id: t, r: 4 } : null; };
 G.pointTo = (t, text) => { const r = G.resolve(t); if (!r) return; G.goal = { ...r, text: text || null, cb: null, cond: null }; };
 G.goTo = (t, text) => new Promise((res) => { const r = G.resolve(t); G.goal = { ...r, text, cb: res, cond: null }; });
 G.waitFor = (cond, text, t) => new Promise((res) => { const r = G.resolve(t) || {}; G.goal = { ...r, text, cb: res, cond }; });
@@ -133,8 +136,8 @@ function updateGoal() {
   // A small strip at the top: an arrow that turns toward the place, what to do, how far.
   let arr = '<i class="dot"></i>', tail = '';
   if (tgt) { const dx = tgt.x - P.pos.x, dz = tgt.z - P.pos.z, d = Math.hypot(dx, dz), sy = Math.sin(cam.yaw), cy = Math.cos(cam.yaw), a = Math.round((Math.atan2(dx * cy - dz * sy, -dx * sy - dz * cy) * 57.3) / 15) * 15;
-    arr = `<i class="arr" style="transform:rotate(${a}deg)">▲</i>`; tail = `<small>${d < 30 ? Math.round(d) : Math.round(d / 5) * 5} m${suitFirst ? ' · suit up at the airlock first' : !same ? ' · take the elevator' : ''}</small>`; }
-  ui.objective(`${arr}<span>${g.text || 'Go to: ' + g.name}</span>${tail}`);
+    arr = `<i class="arr" style="transform:rotate(${a}deg)">▲</i>`; tail = `<small>${d < 30 ? Math.round(d) : Math.round(d / 5) * 5} m${suitFirst ? tt(' · suit up at the airlock first') : !same ? tt(' · take the elevator') : ''}</small>`; }
+  ui.objective(`${arr}<span>${g.text || tt('Go to: ') + g.name}</span>${tail}`);
   const near = same && Math.hypot(g.x - P.pos.x, g.z - P.pos.z) < (g.r || 5) + 1;
   if (g.cond ? g.cond() : near && !g.sticky) { G.goal = null; world.setTarget(null); ui.objective(null); g.cb?.(); }
 }
@@ -145,11 +148,11 @@ G.ride = async (to) => {
   P.zone = to; if (G.S) G.S.zone = to; world.setZone(to); P.vel.set(0, 0, 0); P.vy = 0;
   if (to === 'deep') { P.pos.set(TUBE.skyX + 6, TUBE.y, 1.5); cam.yaw = -Math.PI / 2; P.face = Math.PI / 2; } else { P.pos.set(0, world.heightAt(0, 54), 54); cam.yaw = 0.2; P.face = Math.PI; }
   G.regoPos.set(P.pos.x + 1.5, P.pos.y, P.pos.z + 1.5); if (P.carry) P.carry.zone = to; G.dragP = null;
-  if (to === 'deep' && G.followers.length && G.S) { for (const f of G.followers) { world.scene.remove(f.a.group); addHelper(G.S, f.site); const thanks = { ingrid: 'Walls and air you do not carry on your back. Thank you! Give me a job in the Control Center. And while I am here, the rover and hopper go further.', kenji: 'Real walls again! Thank you. Put me on Builder in the Control Center and every repair goes faster.', anika: 'Oh, you have farms! Thank you. Put me on Farm duty in the Control Center and the crops will grow faster.' }[f.site.who] || `Thank you! ${f.site.perk}`;
-      setTimeout(() => { ui.toast(`${f.site.whoName} is safe inside the station and joins your crew! ${f.site.perk}`, 'good'); if (!ui.busy) ui.say([{ who: f.site.who, text: thanks }, { who: 'rego', mood: 'joy', text: 'Welcome to Tranquility Deep! One more person means more food, water and air every day, so keep an eye on the gauges.' }]); }, 900); } G.followers = []; }
+  if (to === 'deep' && G.followers.length && G.S) { for (const f of G.followers) { world.scene.remove(f.a.group); addHelper(G.S, f.site); const thanks = { ingrid: tt('Walls and air you do not carry on your back. Thank you! Give me a job in the Control Center. And while I am here, the rover and hopper go further.'), kenji: tt('Real walls again! Thank you. Put me on Builder in the Control Center and every repair goes faster.'), anika: tt('Oh, you have farms! Thank you. Put me on Farm duty in the Control Center and the crops will grow faster.') }[f.site.who] || tt`Thank you! ${f.site.perk}`;
+      setTimeout(() => { ui.toast(tt`${f.site.whoName} is safe inside the station and joins your crew! ${f.site.perk}`, 'good'); if (!ui.busy) ui.say([{ who: f.site.who, text: thanks }, { who: 'rego', mood: 'joy', text: tt('Welcome to Tranquility Deep! One more person means more food, water and air every day, so keep an eye on the gauges.') }]); }, 900); } G.followers = []; }
   if (G.simOn) G.simAdvance(0.2);
   await ui.fade(false); G.riding = false;
-  if (G.state === 'play') ui.toast(to === 'deep' ? '105 m down, inside the lava tube. Under the rock roof it is a steady 17°C with almost no radiation — but there is no air. The station is straight ahead: follow the blue lights.' : `Topside. It is ${Math.round(G.S.flow.sun.tempC)}°C out here, and every hour adds a little radiation.`);
+  if (G.state === 'play') ui.toast(to === 'deep' ? tt('105 m down, inside the lava tube. Under the rock roof it is a steady 17°C with almost no radiation — but there is no air. The station is straight ahead: follow the blue lights.') : tt`Topside. It is ${Math.round(G.S.flow.sun.tempC)}°C out here, and every hour adds a little radiation.`);
 };
 
 // ---------- time ----------
@@ -161,27 +164,27 @@ const toolFor = (title, tag) => tag === 'cook' ? 'stir' : /spacesuit/i.test(titl
 // A job can pass `mini: false` to skip it or `mini: 'name'` to choose one. Settings can switch all of them off.
 // Each job is a list of steps taken from how the real work is done: make it safe, do the work, then test it.
 // [core, steps]: Cadet plays only the core step, Pilot the core step and one more, Commander and Unlimited the whole procedure.
-const SAFE = (what) => ['safe', { title: 'Make it safe', how: `Before touching ${what}, drag each breaker lever all the way DOWN to OFF. Work from left to right.`, winText: 'Power is off!' }];
+const SAFE = (what) => ['safe', { title: tt('Make it safe'), how: tt`Before touching ${what}, drag each breaker lever all the way DOWN to OFF. Work from left to right.`, winText: tt('Power is off!') }];
 const TEST = (title, unit, max, how, winText) => ['gauge', { title, unit, max, how, winText }];
 const procFor = (title, tag, tool) => {
   const T = (re) => re.test(title);
-  if (T(/spacesuit/i)) return [0, [['suit', T(/Taking off/i) ? { title: 'Unlock the suit seals', winText: 'Suit off!' } : { title: 'Check the suit seals', winText: 'Suit sealed!' }], ...(T(/Putting on/i) ? [TEST('Suit leak check', 'kPa', 60, 'Drag the valve wheel to fill the suit with air. Hold the needle in the GREEN band: if it stays steady, the suit has no leaks.', 'No leaks!')] : [])]];
-  if (T(/Brushing/i)) return [0, [['wipe', { winText: 'Spotless!' }], TEST('Test the panel output', 'V', 120, 'Drag the wheel to connect the load. Hold the needle in the GREEN band to prove the clean panels are making full power.', 'Full power!')]];
-  if (T(/Pulling the broken panel/i)) return [1, [SAFE('the broken panel'), ['bolts', { title: 'Loosen the bolts', winText: 'Panel free!' }]]];
-  if (T(/Installing the solar panel/i)) return [0, [['bolts', { title: 'Tighten the bolts', winText: 'Panel on!' }], ['wires', { title: 'Plug in the power cables', winText: 'Connected!' }], TEST('Test the panel output', 'V', 120, 'Drag the wheel to connect the load. Hold the needle in the GREEN band to prove the new panel works.', 'Making power!')]];
-  if (T(/battery module/i)) return [1, [SAFE('the battery rack'), ['wires', { title: 'Connect the battery cables', winText: 'Connected!' }], TEST('Check the charge voltage', 'V', 60, 'Drag the wheel to bring the charger up. Hold the needle in the GREEN band: too high would damage the new module.', 'Charging!')]];
-  if (T(/heater circuit/i)) return [1, [SAFE('the heater circuit'), ['wires', { title: 'Rewire the heater circuit', winText: 'Rewired!' }], TEST('Set the heater current', 'A', 30, 'Drag the wheel to bring the heater up. Hold the needle in the GREEN band.', 'Warming up!')]];
-  if (T(/Sealing/i)) return [0, [['leaks', { winText: 'Sealed!' }], TEST('Bring the pressure back', 'kPa', 300, 'Drag the valve wheel to open the water line again. Hold the needle in the GREEN band: a steady needle means the joint is tight.', 'Holding pressure!')]];
-  if (T(/Patching/i)) return [0, [['weld', { title: 'Weld the patch', winText: 'Airtight!' }], TEST('Refill the room with air', 'kPa', 101, 'Drag the valve wheel to let air back in. Hold the needle in the GREEN band: if it stays steady, the patch is airtight.', 'Pressure is holding!')]];
-  if (T(/Rebuilding/i)) return [0, [['bolts', { title: 'Bolt the machines back', how: 'Hold the wrench on each bolt until it has turned all the way, then let go. Do all six.', winText: 'All bolted down!' }], ['wires', { title: 'Wire the lights and machines', winText: 'Power on!' }], TEST('Refill the room with air', 'kPa', 101, 'Drag the valve wheel to let air back in. Hold the needle in the GREEN band to prove the room is airtight.', 'Room is airtight!')]];
-  if (T(/Repairing/i)) return [1, [SAFE('the oxygen plant'), ['weld', { title: 'Weld the cracked casing', winText: 'Repaired!' }], TEST('Bring the furnace up to heat', '°C', 1600, 'Drag the wheel to feed power to the furnace. Hold the needle in the GREEN band: hot enough to free the oxygen, not so hot it cracks again.', 'Making oxygen!')]];
-  if (tag === 'cook' || T(/Cooking/i)) return [0, [['stir', { winText: 'Smells good!' }]]];
-  if (T(/digester/i)) return [0, [['stir', { title: 'Mix the digester', how: 'Hold and drag in circles to mix the waste tank. Keep going until the bar is full.', col: '#5d7a3a', winText: 'Well mixed!' }], TEST('Vent the digester gas', 'kPa', 200, 'Drag the valve wheel to let gas out of the tank. Hold the needle in the GREEN band.', 'Pressure is safe!')]];
+  if (T(/spacesuit/i)) return [0, [['suit', T(/Taking off/i) ? { title: tt('Unlock the suit seals'), winText: tt('Suit off!') } : { title: tt('Check the suit seals'), winText: tt('Suit sealed!') }], ...(T(/Putting on/i) ? [TEST(tt('Suit leak check'), 'kPa', 60, tt('Drag the valve wheel to fill the suit with air. Hold the needle in the GREEN band: if it stays steady, the suit has no leaks.'), tt('No leaks!'))] : [])]];
+  if (T(/Brushing/i)) return [0, [['wipe', { winText: tt('Spotless!') }], TEST(tt('Test the panel output'), 'V', 120, tt('Drag the wheel to connect the load. Hold the needle in the GREEN band to prove the clean panels are making full power.'), tt('Full power!'))]];
+  if (T(/Pulling the broken panel/i)) return [1, [SAFE(tt('the broken panel')), ['bolts', { title: tt('Loosen the bolts'), winText: tt('Panel free!') }]]];
+  if (T(/Installing the solar panel/i)) return [0, [['bolts', { title: tt('Tighten the bolts'), winText: tt('Panel on!') }], ['wires', { title: tt('Plug in the power cables'), winText: tt('Connected!') }], TEST(tt('Test the panel output'), 'V', 120, tt('Drag the wheel to connect the load. Hold the needle in the GREEN band to prove the new panel works.'), tt('Making power!'))]];
+  if (T(/battery module/i)) return [1, [SAFE(tt('the battery rack')), ['wires', { title: tt('Connect the battery cables'), winText: tt('Connected!') }], TEST(tt('Check the charge voltage'), 'V', 60, tt('Drag the wheel to bring the charger up. Hold the needle in the GREEN band: too high would damage the new module.'), tt('Charging!'))]];
+  if (T(/heater circuit/i)) return [1, [SAFE(tt('the heater circuit')), ['wires', { title: tt('Rewire the heater circuit'), winText: tt('Rewired!') }], TEST(tt('Set the heater current'), 'A', 30, tt('Drag the wheel to bring the heater up. Hold the needle in the GREEN band.'), tt('Warming up!'))]];
+  if (T(/Sealing/i)) return [0, [['leaks', { winText: tt('Sealed!') }], TEST(tt('Bring the pressure back'), 'kPa', 300, tt('Drag the valve wheel to open the water line again. Hold the needle in the GREEN band: a steady needle means the joint is tight.'), tt('Holding pressure!'))]];
+  if (T(/Patching/i)) return [0, [['weld', { title: tt('Weld the patch'), winText: tt('Airtight!') }], TEST(tt('Refill the room with air'), 'kPa', 101, tt('Drag the valve wheel to let air back in. Hold the needle in the GREEN band: if it stays steady, the patch is airtight.'), tt('Pressure is holding!'))]];
+  if (T(/Rebuilding/i)) return [0, [['bolts', { title: tt('Bolt the machines back'), how: tt('Hold the wrench on each bolt until it has turned all the way, then let go. Do all six.'), winText: tt('All bolted down!') }], ['wires', { title: tt('Wire the lights and machines'), winText: tt('Power on!') }], TEST(tt('Refill the room with air'), 'kPa', 101, tt('Drag the valve wheel to let air back in. Hold the needle in the GREEN band to prove the room is airtight.'), tt('Room is airtight!'))]];
+  if (T(/Repairing/i)) return [1, [SAFE(tt('the oxygen plant')), ['weld', { title: tt('Weld the cracked casing'), winText: tt('Repaired!') }], TEST(tt('Bring the furnace up to heat'), '°C', 1600, tt('Drag the wheel to feed power to the furnace. Hold the needle in the GREEN band: hot enough to free the oxygen, not so hot it cracks again.'), tt('Making oxygen!'))]];
+  if (tag === 'cook' || T(/Cooking/i)) return [0, [['stir', { winText: tt('Smells good!') }]]];
+  if (T(/digester/i)) return [0, [['stir', { title: tt('Mix the digester'), how: tt('Hold and drag in circles to mix the waste tank. Keep going until the bar is full.'), col: '#5d7a3a', winText: tt('Well mixed!') }], TEST(tt('Vent the digester gas'), 'kPa', 200, tt('Drag the valve wheel to let gas out of the tank. Hold the needle in the GREEN band.'), tt('Pressure is safe!'))]];
   if (T(/Picking/i)) return [0, [['harvest', {}]]];
-  if (T(/Replanting/i)) return [0, [['plant', { winText: 'Planted!' }], TEST('Set the nutrient flow', 'L/h', 40, 'Drag the valve wheel to send plant food to the roots. Hold the needle in the GREEN band: too little starves them, too much burns them.', 'Roots are fed!')]];
-  if (T(/Clearing the rack/i)) return [0, [['plant', { title: 'Rinse the cups', how: 'Click every cup once to rinse it out. Clicking a cup twice wastes a second.', noun: 'Cups rinsed', winText: 'Rack clean!' }]]];
-  if (T(/Unloading/i)) return [0, [['stack', { winText: 'Stacked!' }]]];
-  if (T(/Servicing/i)) return [1, [SAFE('the Water Plant'), ['bolts', { title: 'Open the service hatch', winText: 'Hatch open!' }], TEST('Set the chamber pressure', 'Pa', 900, 'Drag the valve wheel to pump the chamber down. Hold the needle in the GREEN band: in a near-vacuum, ice turns straight into vapour.', 'Ready to extract!')]];
+  if (T(/Replanting/i)) return [0, [['plant', { winText: tt('Planted!') }], TEST(tt('Set the nutrient flow'), 'L/h', 40, tt('Drag the valve wheel to send plant food to the roots. Hold the needle in the GREEN band: too little starves them, too much burns them.'), tt('Roots are fed!'))]];
+  if (T(/Clearing the rack/i)) return [0, [['plant', { title: tt('Rinse the cups'), how: tt('Click every cup once to rinse it out. Clicking a cup twice wastes a second.'), noun: tt('Cups rinsed'), winText: tt('Rack clean!') }]]];
+  if (T(/Unloading/i)) return [0, [['stack', { winText: tt('Stacked!') }]]];
+  if (T(/Servicing/i)) return [1, [SAFE(tt('the Water Plant')), ['bolts', { title: tt('Open the service hatch'), winText: tt('Hatch open!') }], TEST(tt('Set the chamber pressure'), tt('Pa'), 900, tt('Drag the valve wheel to pump the chamber down. Hold the needle in the GREEN band: in a near-vacuum, ice turns straight into vapour.'), tt('Ready to extract!'))]];
   return [0, [[{ weld: 'weld', pick: 'plant', brush: 'wipe', stir: 'stir', suit: 'suit' }[tool] || 'bolts', {}]]];
 };
 const stagesFor = (o) => {
@@ -199,11 +202,11 @@ G.job = async (o) => { G.inJob = (G.inJob || 0) + 1; try { return await doJob(o)
 const doJob = async (o) => {
   let fx = null;
   if (G.minis && o.mini !== false && (G.minisAll || o.hours >= 1 || typeof o.mini === 'string')) {   // quick jobs (suit, unloading, replanting) skip the game unless "every job" is switched on
-    ui.prompt(null); const r = await playProcedure(G, stagesFor(o).map(([k, opt]) => [k, { loseText: 'Done the slow way', ...opt }]));
+    ui.prompt(null); const r = await playProcedure(G, stagesFor(o).map(([k, opt]) => [k, { loseText: tt('Done the slow way'), ...opt }]));
     const q = !r.win || (/Picking/i.test(o.title) && r.stars <= 1) ? 'poor' : r.stars >= 3 ? 'great' : 'ok';   // harvest never fails on time, so one star counts as a poor harvest
     fx = G.S ? jobEffect(o.title, o.tag, q) : null;
-    if (q === 'poor') { o = { ...o, hours: o.hours * 1.3 }; ui.toast('That was fiddly, so the job takes 30% longer.'); }
-    else if (q === 'great') { o = { ...o, hours: o.hours * 0.85 }; ui.toast('Clean work! The job goes 15% faster.', 'good'); }
+    if (q === 'poor') { o = { ...o, hours: o.hours * 1.3 }; ui.toast(tt('That was fiddly, so the job takes 30% longer.')); }
+    else if (q === 'great') { o = { ...o, hours: o.hours * 0.85 }; ui.toast(tt('Clean work! The job goes 15% faster.'), 'good'); }
     if (fx) fx.push(q);
   }
   const out = await runJob(o);
@@ -226,7 +229,7 @@ const jobShots = (sp) => {
   const A = out[0] || { yaw: back + 0.85, d: 3 }, B = out.find((s) => Math.abs(wrapA(s.yaw - A.yaw)) > 0.9 && sweep(A, s)) || out.find((s) => s !== A && Math.abs(wrapA(s.yaw - A.yaw)) > 0.3 && sweep(A, s)) || { yaw: A.yaw, d: A.d * 0.85 };
   return { A, B, f };
 };
-const runJob = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'work', tag, sparks = true, tool }) => new Promise((res) => {
+const runJob = ({ title, hours, steps = [tt('Working…')], site, onStep, pose = 'work', tag, sparks = true, tool }) => new Promise((res) => {
   const S = G.S, real = clamp(3.5 + hours * 1.5, 4.5, 13), hrs = G.simOn ? jobHours(S, hours) * (G.inside && !S.suitOn ? 0.75 : 1) : 0;   // no big gloves indoors: a quarter faster
   let t = 0; tool = tool || toolFor(title, tag); const J = (G.jobbing = { pose, tag, tool, aim: -0.25, site: null }); ui.prompt(null);
   const sp = site ? world.at(P.zone, site.x, site.z, site.y || 0) : P.pos.clone(), workY = sp.y + (site && site.y ? 0.6 : tool === 'pick' ? 0.95 : 1.15);   // the height the hands go to
@@ -245,7 +248,7 @@ const runJob = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'wo
       cam.yaw += wrapA(s.yaw + Math.sin(t * 0.33) * 0.1 - cam.yaw) * ez; cam.pitch += ((J.high ? 0.03 : deepZ ? 0.3 : 0.36) - cam.pitch) * dt * 2; cam.dist += (s.d * (1 - 0.1 * k) - cam.dist) * ez;   // a slow drift and push-in, never a spin
       J.fk = Math.min(1, (J.fk || 0) + dt * 1.6); J.focus = J.fk * sh.f; J.high = workY - P.pos.y > 3; J.lift = J.high ? (workY - P.pos.y - 1.75) * 0.3 * J.fk : -0.3 * J.fk; }   // work overhead: look up at it from low down
       if (Math.random() < dt * (tool === 'weld' ? 9 : 3) && pose === 'work' && t > tw) G.audio.play('step');
-    ui.job(title, k, t < tw ? 'Walking over…' : steps[Math.min(steps.length - 1, Math.floor(k * steps.length))], hrs ? `${fmt.hrs(Math.max(0, hrs * (1 - k)))} to go` : ''); onStep?.(k);
+    ui.job(title, k, t < tw ? tt('Walking over…') : steps[Math.min(steps.length - 1, Math.floor(k * steps.length))], hrs ? tt`${fmt.hrs(Math.max(0, hrs * (1 - k)))} to go` : ''); onStep?.(k);
     if (k >= 1) { G.jobTick = null; G.jobbing = null; world.sparks(null); G.rego.work = false; G.rego.workAim = undefined; ui.job(null); cam.pitch = pitch0; cam.dist = dist0; S.stats.jobs++; G.audio.play('ok'); res(); }
   };
 });
@@ -267,8 +270,8 @@ canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clie
 addEventListener('pointerup', () => (drag = null));
 addEventListener('pointermove', (e) => { if (ui.busy || G.jobTick) return; let dx = 0, dy = 0; if (document.pointerLockElement === canvas) { dx = e.movementX; dy = e.movementY; } else if (drag && e.pointerId === drag.id) { dx = (e.clientX - drag.x) * 1.6; dy = (e.clientY - drag.y) * 1.6; drag.x = e.clientX; drag.y = e.clientY; } if (dx || dy) G.camT = performance.now(); cam.yaw -= dx * 0.0026; cam.pitch = clamp(cam.pitch + dy * 0.0026, cam.fp ? -1.35 : -0.95, cam.fp ? 1.2 : 1.25); });
 canvas.addEventListener('wheel', (e) => { cam.dist = clamp(cam.dist + Math.sign(e.deltaY) * 0.8, 3.5, 22); }, { passive: true });
-function toggleView() { cam.fp = !cam.fp; cam.pitch = clamp(cam.pitch, -0.9, 1.1); ui.toast(cam.fp ? 'First-person view. Look up to find Earth!' : 'Third-person view.'); }
-function togglePause() { if (G.state !== 'play') return; G.paused = !G.paused; ui.banner(G.paused ? 'PAUSED — press P to continue' : null, true); }
+function toggleView() { cam.fp = !cam.fp; cam.pitch = clamp(cam.pitch, -0.9, 1.1); ui.toast(cam.fp ? tt('First-person view. Look up to find Earth!') : tt('Third-person view.')); }
+function togglePause() { if (G.state !== 'play') return; G.paused = !G.paused; ui.banner(G.paused ? tt('PAUSED — press P to continue') : null, true); }
 $('#b-power').onclick = () => G.state === 'play' && !ui.busy && ui.powerBoard(); $('#b-map').onclick = () => !ui.busy && G.S && ui.bigMap(); $('#b-ask').onclick = () => G.state === 'play' && !ui.busy && G.advise(); $('#b-data').onclick = () => !ui.busy && ui.guide(); $('#clock').onclick = () => G.S && G.state === 'play' && !ui.busy && ui.dayNight();
 $('#b-view').onclick = toggleView; $('#b-pause').onclick = togglePause;
 G.setSpeed = (v) => { G.speedMul = v; $('#speed-l').textContent = '×' + v; };
@@ -297,12 +300,14 @@ function fpsTick(now) {
     if (!helped) { G._autoQ = fpsTry.from; fpsStop = true; world.setQuality(G._autoQ); }                      // nothing helps: something else caps the rate, so put the detail back
     store('mk-quality-auto', G._autoQ); fpsTry = null; fpsLow = 0; return; }
   fpsLow = fps < 40 ? fpsLow + 1 : 0;
-  if (fpsLow >= 2 && G._autoQ !== 'low') { fpsTry = { from: G._autoQ, before: fps, n: 0 }; G._autoQ = G._autoQ === 'high' ? 'medium' : 'low'; fpsLow = 0; world.setQuality(G._autoQ); ui.toast('Graphics detail lowered to keep the game smooth. You can change this in Settings.'); }
+  if (fpsLow >= 2 && G._autoQ !== 'low') { fpsTry = { from: G._autoQ, before: fps, n: 0 }; G._autoQ = G._autoQ === 'high' ? 'medium' : 'low'; fpsLow = 0; world.setQuality(G._autoQ); ui.toast(tt('Graphics detail lowered to keep the game smooth. You can change this in Settings.')); }
 }
 world.setQuality(G.qLevel()); G._fpsTick = fpsTick;   // test hook
 G.setGuide = (on) => { G.guide = !!on; world.guideOn = G.guide; try { localStorage.setItem('mk-guide', G.guide ? '1' : '0'); } catch (e) {} };
+// A new language reloads the game: every text is looked up once, when the game starts. A mission in progress is saved first and can be continued.
+G.setLanguage = (code) => { if (code === LANG) return; setLang(code); try { if (G.state === 'play') G.save(true); } catch (e) { /* nothing to save */ } const u = new URL(location.href); u.searchParams.delete('lang'); location.href = u.href; };
 G.voicePref = stored('mk-voice', ''); G.applyVoice = () => { G.voice.on = G.voicePref ? G.voicePref === '1' : !!G.S && G.S.mode === 'cadet'; if (!G.voice.on) G.voice.stop(); };
-G.setVoice = (on) => { G.voicePref = on ? '1' : '0'; store('mk-voice', G.voicePref); G.applyVoice(); if (on) G.voice.say('Hello! I am REGO. I will read my lines aloud for you.'); };
+G.setVoice = (on) => { G.voicePref = on ? '1' : '0'; store('mk-voice', G.voicePref); G.applyVoice(); if (on) G.voice.say(tt('Hello! I am REGO. I will read my lines aloud for you.')); };
 G.quiz = stored('mk-quiz', '1') === '1'; G.setQuiz = (on) => { G.quiz = !!on; store('mk-quiz', on ? '1' : '0'); };
 G.audio.music = stored('mk-music', '1') === '1'; G.setMusic = (on) => { G.audio.setMusic(on); store('mk-music', on ? '1' : '0'); };
 G.setSound = (on) => { if (G.audio.on !== !!on) G.audio.toggle(); $('#b-sound').innerHTML = G.audio.on ? IC.sound : IC.mute; };
@@ -312,7 +317,7 @@ const stickEl = $('#stick'), knob = stickEl.querySelector('i');
 const stickMove = (e) => { const r = stickEl.getBoundingClientRect(), x = (e.clientX - r.left - 59) / 59, y = (e.clientY - r.top - 59) / 59, l = Math.max(1, Math.hypot(x, y)); G.stick.x = x / l; G.stick.y = -y / l; knob.style.transform = `translate(${(x / l) * 34}px,${(y / l) * 34}px)`; };
 stickEl.onpointerdown = (e) => { stickEl.setPointerCapture(e.pointerId); stickMove(e); G.touch = true; }; stickEl.onpointermove = (e) => e.buttons && stickMove(e); stickEl.onpointerup = stickEl.onpointercancel = () => { G.stick.x = G.stick.y = 0; knob.style.transform = ''; };
 $('#t-use').onclick = () => G.doAction('e'); $('#t-alt').onclick = () => G.doAction('q'); const hold = (b, key) => { b.onpointerdown = () => (G.keys[key] = true); b.onpointerup = b.onpointerleave = () => (G.keys[key] = false); }; hold($('#t-jump'), ' '); hold($('#t-down'), 'c');
-if ('ontouchstart' in window) { $('#touch').classList.remove('hidden'); G.touch = true; $('#dlg-next').textContent = 'Tap anywhere ▸'; }
+if ('ontouchstart' in window) { $('#touch').classList.remove('hidden'); G.touch = true; $('#dlg-next').textContent = tt('Tap anywhere ▸'); }
 
 // ---------- per-frame updates ----------
 const tmp = new V3();
@@ -326,13 +331,13 @@ function updatePlayer(dt) {
   const heavy = P.carry && ITEMS[P.carry.type].heavy, load = heavy ? 0.6 : P.carry ? 0.85 : 1, weak = G.S && G.S.health < 35 ? 0.7 : 1, maxV = (k.Shift && !heavy ? 10.5 : 6.4) * weak * load;
   tmp.multiplyScalar(maxV); const acc = P.ground ? 7 : 1.2; P.vel.x += (tmp.x - P.vel.x) * Math.min(1, acc * dt); P.vel.z += (tmp.z - P.vel.z) * Math.min(1, acc * dt);
   const ox = P.pos.x, oz = P.pos.z; P.pos.x += P.vel.x * dt; P.pos.z += P.vel.z * dt; pushOut(P.pos, P.zone, 0.5);
-  if (P.zone === 'top') { if (topBounds(P.pos, 7.5) && (!G._edgeT || performance.now() - G._edgeT > 9000)) { G._edgeT = performance.now(); ui.bubble('That is the edge of the map. Nothing but craters beyond here!', 'worried', 6); } }
+  if (P.zone === 'top') { if (topBounds(P.pos, 7.5) && (!G._edgeT || performance.now() - G._edgeT > 9000)) { G._edgeT = performance.now(); ui.bubble(tt('That is the edge of the map. Nothing but craters beyond here!'), 'worried', 6); } }
   else {
     if (!world.walkable(P.pos.x, P.pos.z)) { if (world.walkable(P.pos.x, oz)) P.pos.z = oz; else if (world.walkable(ox, P.pos.z)) P.pos.x = ox; else { P.pos.x = ox; P.pos.z = oz; } }
     const S = G.S;
     if (S && !S.suitOn) {   // without a suit you stay where the air is
-      if (P.pos.x < AIRLOCK.x0 + 0.8) { P.pos.x = Math.max(ox, AIRLOCK.x0 + 0.8); P.vel.x = 0; G.warn('suitOut', 'Stop! There is <b>no air</b> out in the cave. Put your suit on at the <b>Suit Lockers</b> first.'); }
-      const rid = world.roomAt(P.pos.x, P.pos.z); if (rid && S.rooms[rid].p < 40 && world.roomAt(ox, oz) !== rid) { P.pos.x = ox; P.pos.z = oz; P.vel.set(0, 0, 0); G.warn('suitRoom', `There is almost <b>no air</b> in the ${ROOMS.find((r) => r.id === rid).name}. Put your suit on before you go in.`); }
+      if (P.pos.x < AIRLOCK.x0 + 0.8) { P.pos.x = Math.max(ox, AIRLOCK.x0 + 0.8); P.vel.x = 0; G.warn('suitOut', tt('Stop! There is <b>no air</b> out in the cave. Put your suit on at the <b>Suit Lockers</b> first.')); }
+      const rid = world.roomAt(P.pos.x, P.pos.z); if (rid && S.rooms[rid].p < 40 && world.roomAt(ox, oz) !== rid) { P.pos.x = ox; P.pos.z = oz; P.vel.set(0, 0, 0); G.warn('suitRoom', tt`There is almost <b>no air</b> in the ${ROOMS.find((r) => r.id === rid).name}. Put your suit on before you go in.`); }
     }
   }
   const gy = groundY(P.zone, P.pos.x, P.pos.z);
@@ -349,13 +354,13 @@ function updateVehicle(dt, free) {
   if (P.in === 'dig') {   // the digger: slow, turns on the spot, and stays on its power cable
     const d = G.dig; d.v += (thr * 5 - d.v) * Math.min(1, dt * 2.2); if (Math.abs(thr) < 0.05) d.v *= 1 - Math.min(1, dt * 3);
     d.yaw += st * dt * 1.15; const p = { x: d.x + Math.sin(d.yaw) * d.v * dt, z: d.z + Math.cos(d.yaw) * d.v * dt }; pushOut(p, 'top', 2.3);
-    const ox = p.x - MINE.x, oz = p.z - MINE.z, od = Math.hypot(ox, oz); if (od > MINE.tether) { p.x = MINE.x + (ox / od) * MINE.tether; p.z = MINE.z + (oz / od) * MINE.tether; d.v *= 0.5; G.warn('cable', 'The digger runs on a power cable from the mast. It cannot leave the crater floor.', 'think', 12000); }
+    const ox = p.x - MINE.x, oz = p.z - MINE.z, od = Math.hypot(ox, oz); if (od > MINE.tether) { p.x = MINE.x + (ox / od) * MINE.tether; p.z = MINE.z + (oz / od) * MINE.tether; d.v *= 0.5; G.warn('cable', tt('The digger runs on a power cable from the mast. It cannot leave the crater floor.'), 'think', 12000); }
     d.x = p.x; d.z = p.z; d.dig = free && k[' '] ? 1 : 0;
     if (d.dig && d.boom > 0.8) { const bx = d.x + Math.sin(d.yaw) * 5.6, bz = d.z + Math.cos(d.yaw) * 5.6, i = patchAt(S, bx, bz);   // the bucket bites 5.6 m ahead
-      if (d.load >= MINE.bucket) G.warn('full', 'The bucket is full. Drive to the orange filler in the middle and press <b>Q</b> to tip it in.', 'happy', 9000);
+      if (d.load >= MINE.bucket) G.warn('full', tt('The bucket is full. Drive to the orange filler in the middle and press <b>Q</b> to tip it in.'), 'happy', 9000);
       else if (i >= 0) { d.prog += dt / MINE.digSec; if (Math.random() < dt * 14) world.puff(bx, bz, 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, 1.6, 1.4);
-        if (d.prog >= 1) { d.prog = 0; scoop(S, i); d.load++; G.audio.play('ok'); ui.toast(d.load >= MINE.bucket ? 'Bucket full! Tip it into the orange filler (Q).' : `One scoop of icy soil. The bucket holds ${MINE.bucket}.`, 'good'); } }
-      else { d.prog = 0; d.dry += dt; if (d.dry > 1.4) { d.dry = -8; ui.toast('Only dry soil here. Put the bucket over a pale blue patch.'); } } }
+        if (d.prog >= 1) { d.prog = 0; scoop(S, i); d.load++; G.audio.play('ok'); ui.toast(d.load >= MINE.bucket ? tt('Bucket full! Tip it into the orange filler (Q).') : tt`One scoop of icy soil. The bucket holds ${MINE.bucket}.`, 'good'); } }
+      else { d.prog = 0; d.dry += dt; if (d.dry > 1.4) { d.dry = -8; ui.toast(tt('Only dry soil here. Put the bucket over a pale blue patch.')); } } }
     else d.prog = Math.max(0, d.prog - dt * 2);
     P.pos.set(d.x, world.heightAt(d.x, d.z), d.z); P.face = d.yaw;
   } else if (P.in === 'car') {
@@ -390,18 +395,18 @@ const pct = (x) => Math.max(0, Math.round(x * 100)) + '%';
 function rangeCheck(S, car, ship) {
   const last = G._rng || (G._rng = { car: S.car.charge, ship: S.ship.charge, in: null });
   for (const [k, v] of [['car', car], ['ship', ship]]) {
-    const ch = S[k].charge, name = k === 'car' ? 'rover' : 'hopper', { home, need } = homeNeed(S, k, v), away = home > 20, near = P.in === k || Math.hypot(P.pos.x - v.x, P.pos.z - v.z) < 30, atMine = Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9;
-    if (last[k] > 0 && ch <= 0 && away) { if (near) G.pointTo('gate'); G.warn('dead-' + k, `<b>The ${name}'s battery is empty</b>, ${Math.round(home)} m from its pad. ${k === 'ship' ? 'A hopper only charges on its own pad, so it has to stay here.' : 'A rover only charges on its pad.'} Walk home: follow the line to the elevator.`, 'alert', 60000); }
+    const ch = S[k].charge, name = k === 'car' ? tt('rover') : tt('hopper'), { home, need } = homeNeed(S, k, v), away = home > 20, near = P.in === k || Math.hypot(P.pos.x - v.x, P.pos.z - v.z) < 30, atMine = Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9;
+    if (last[k] > 0 && ch <= 0 && away) { if (near) G.pointTo('gate'); G.warn('dead-' + k, tt`<b>The ${name}'s battery is empty</b>, ${Math.round(home)} m from its pad. ${k === 'ship' ? tt('A hopper only charges on its own pad, so it has to stay here.') : tt('A rover only charges on its pad.')} Walk home: follow the line to the elevator.`, 'alert', 60000); }
     else if (away && near && !atMine && ch > 0 && P.zone === 'top') {   // the crater has its own warning
-      if (ch < need) G.warn('range-' + k, `<b>The ${name} cannot get home on ${pct(ch)}.</b> The ${Math.round(home)} m back to its pad needs about ${pct(need)}${S.flow.frost > 0 ? ', and the cold keeps draining it' : ''}. ${k === 'ship' ? 'Fly as far as it goes, then walk the rest.' : 'Drive as far as it goes, then walk the rest.'}`, 'alert', 45000);
-      else if (ch < need * 1.25 + 0.04) G.warn('range-' + k, `<b>Time to go home!</b> The ${name} is at <b>${pct(ch)}</b> and needs about ${pct(need)} to get back to its pad${S.flow.frost > 0 ? '. The night cold drains it even while it stands still' : ''}.`, 'worried', 45000);
+      if (ch < need) G.warn('range-' + k, tt`<b>The ${name} cannot get home on ${pct(ch)}.</b> The ${Math.round(home)} m back to its pad needs about ${pct(need)}${S.flow.frost > 0 ? tt(', and the cold keeps draining it') : ''}. ${k === 'ship' ? tt('Fly as far as it goes, then walk the rest.') : tt('Drive as far as it goes, then walk the rest.')}`, 'alert', 45000);
+      else if (ch < need * 1.25 + 0.04) G.warn('range-' + k, tt`<b>Time to go home!</b> The ${name} is at <b>${pct(ch)}</b> and needs about ${pct(need)} to get back to its pad${S.flow.frost > 0 ? tt('. The night cold drains it even while it stands still') : ''}.`, 'worried', 45000);
     }
     last[k] = ch;
   }
   // climbing in near the pad: is there enough for the trip to where you are heading, and back?
   if (P.in !== last.in && (P.in === 'car' || P.in === 'ship')) {
-    const k = P.in, v = k === 'car' ? car : ship, T = G.world.target, name = k === 'car' ? 'rover' : 'hopper', there = T && T.zone === 'top' ? Math.hypot(T.x - v.x, T.z - v.z) : 0;
-    if (there > 150) { const trip = homeNeed(S, k, { x: T.x, z: T.z }, there); if (S[k].charge < trip.need) G.warn('trip-' + k, `<b>Check the charge first!</b> The ${name} has <b>${pct(S[k].charge)}</b>. Getting there and back needs about <b>${pct(trip.need)}</b>${S.flow.frost > 0 ? ' in this cold' : ''}. Charge it on its pad first${k === 'ship' ? ', or take the rover' : ''}.`, 'worried', 20000); }
+    const k = P.in, v = k === 'car' ? car : ship, T = G.world.target, name = k === 'car' ? tt('rover') : tt('hopper'), there = T && T.zone === 'top' ? Math.hypot(T.x - v.x, T.z - v.z) : 0;
+    if (there > 150) { const trip = homeNeed(S, k, { x: T.x, z: T.z }, there); if (S[k].charge < trip.need) G.warn('trip-' + k, tt`<b>Check the charge first!</b> The ${name} has <b>${pct(S[k].charge)}</b>. Getting there and back needs about <b>${pct(trip.need)}</b>${S.flow.frost > 0 ? tt(' in this cold') : ''}. Charge it on its pad first${k === 'ship' ? tt(', or take the rover') : ''}.`, 'worried', 20000); }
   }
   last.in = P.in;
 }
@@ -441,7 +446,7 @@ function placeVehicles(dt) {
   if (S) { const th = S.t, dh = Math.max(0, th - (G._mT ?? th)); G._mT = th; if (dh > 0 && dh < 5) for (const [k2, v] of [['car', c], ['ship', s]]) if (Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9) { S[k2].charge = Math.max(0, S[k2].charge - MINE.drain * dh);
       // what it takes to reach its pad: the rover uses a full charge in 2.6 km, the hopper in 4.2 km plus a little for every second in the air
       const pad = k2 === 'car' ? CAR_PAD : SHIP_PAD, home = Math.hypot(v.x - pad[0], v.z - pad[1]), need = k2 === 'car' ? home / 2600 : home / 4200 + home / 25 / 420, name = k2 === 'car' ? 'rover' : 'hopper';
-      if (G.state === 'play' && S[k2].charge > 0 && S[k2].charge < need * 1.25 + 0.04) G.warn('cold-' + k2, `<b>Time to go!</b> The cold has drained the ${name} to <b>${Math.round(S[k2].charge * 100)}%</b>. That is only just enough to get home. Take what you have and leave now.`, 'alert', 45000); } }
+      if (G.state === 'play' && S[k2].charge > 0 && S[k2].charge < need * 1.25 + 0.04) G.warn('cold-' + k2, tt`<b>Time to go!</b> The cold has drained the ${name} to <b>${Math.round(S[k2].charge * 100)}%</b>. That is only just enough to get home. Take what you have and leave now.`, 'alert', 45000); } }
   if (S && G.state === 'play') rangeCheck(S, c, s);
   // --- the hopper on its legs. Like the rover's springs, this is for the eye only: it never changes where the hopper goes.
   const H = s.dyn || (s.dyn = { dy: 0, dv: 0, roll: 0, thr: 0, dust: 0, hud: 0 }), flying = P.in === 'ship'; if (!flying) { s.thr = 0; s.steer = 0; }
@@ -459,7 +464,7 @@ function placeVehicles(dt) {
     if (show || flying) { const g0 = world.heightAt(s.x, s.z), hs = [[-2.2, 1.8], [2.2, 1.8], [-2.2, -1.8], [2.2, -1.8]].map(([ax, az]) => world.heightAt(s.x + ax, s.z + az)), rough = Math.max(...hs) - Math.min(...hs) > 0.7, state = s.inPit ? 2 : rough ? 1 : 0;
       ret.position.set(s.x, g0 + 0.07, s.z); ret.rotation.y = s.yaw; ret.scale.setScalar(1 + Math.min(s.alt, 40) * 0.035); world.shipRetM.color.setHex([0x5fe3a1, 0xffb347, 0xff5a4a][state]); world.shipRetM.opacity = 0.55 + 0.3 * Math.sin(performance.now() * 0.006);
       H.hud -= dt; if (H.hud <= 0) { H.hud = 0.12; const vs = s.vy, sp = Math.hypot(s.vx, s.vz); el.classList.remove('hidden');
-        el.innerHTML = `<span>ALT <b>${s.alt.toFixed(s.alt < 10 ? 1 : 0)} m</b></span><span>${vs < -0.05 ? '▼' : vs > 0.05 ? '▲' : '•'} <b>${Math.abs(vs).toFixed(1)} m/s</b></span><span>SPEED <b>${sp.toFixed(0)} m/s</b></span><span class="${['ok', 'warn', 'bad'][state]}">${s.alt < 0.6 ? 'On the ground' : ['Clear to land', 'Bumpy ground below', 'Over the pit'][state]}</span>`; } }
+        el.innerHTML = `<span>${tt`ALT <b>${s.alt.toFixed(s.alt < 10 ? 1 : 0)} m</b>`}</span><span>${vs < -0.05 ? '▼' : vs > 0.05 ? '▲' : '•'} <b>${Math.abs(vs).toFixed(1)} m/s</b></span><span>${tt`SPEED <b>${sp.toFixed(0)} m/s</b>`}</span><span class="${['ok', 'warn', 'bad'][state]}">${s.alt < 0.6 ? tt('On the ground') : [tt('Clear to land'), tt('Bumpy ground below'), tt('Over the pit')][state]}</span>`; } }
     else if (!el.classList.contains('hidden')) el.classList.add('hidden'); }
   if (S) { const park = (v, pad, r, slow) => Math.hypot(v.x - pad[0], v.z - pad[1]) < r && slow; const warm = !(S.flow && S.flow.frost > 0) && !S.chargeOff; S.car.charging = warm && park(c, CAR_PAD, 4.5, Math.abs(c.v) < 0.6) && S.car.charge < 1; S.ship.charging = warm && park(s, SHIP_PAD, 5.5, s.alt < 0.4) && S.ship.charge < 1; }
 }
@@ -504,16 +509,16 @@ async function tickSim(dt) {
   if (G.sleepLeft > 0) { G.sleepLeft -= h; const al = G.alerts(); if (al.filter((a) => a.kind !== 'warn').length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
     const alarm = G._sleepKeys && al.find((a) => a.key && !G._sleepKeys.includes(a.key));   // a new emergency (power out, air/water/food nearly gone) always wakes you, even if a warning was already showing
     if (alarm) { G.sleepLeft = 0; G.audio.play('alarm'); ui.bubble(alarm.wake, 'alert', 12); }
-    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!alarm) ui.toast('You wake up rested.', 'good'); } }
+    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!alarm) ui.toast(tt('You wake up rested.'), 'good'); } }
   G.simAdvance(h);
   const st = S.storm;
-  if (st && S.t >= st.start) { if (!st.begun) { st.begun = true; G.sleepLeft = 0; G.audio.play('alarm'); if (P.zone === 'top') { ui.bubble('<b>The storm is here!</b> Elevator. Now. The rock roof will shield you.', 'alert', 12); G.pointTo('gate'); } } ui.banner(P.zone === 'top' ? 'RADIATION STORM — GET UNDERGROUND!' : 'Solar storm raging topside — you are shielded down here', P.zone !== 'top'); }
-  else if (st) ui.banner(`Solar storm arrives in ${fmt.hrs(Math.max(0, st.start - S.t))} — be underground`, true);
-  else if (S.flow.leaks.length) ui.banner(`AIR LEAK in the ${ROOMS.find((r) => r.id === S.flow.leaks[0]).name} — patch it or lock its door!`);
+  if (st && S.t >= st.start) { if (!st.begun) { st.begun = true; G.sleepLeft = 0; G.audio.play('alarm'); if (P.zone === 'top') { ui.bubble(tt('<b>The storm is here!</b> Elevator. Now. The rock roof will shield you.'), 'alert', 12); G.pointTo('gate'); } } ui.banner(P.zone === 'top' ? tt('RADIATION STORM — GET UNDERGROUND!') : tt('Solar storm raging topside — you are shielded down here'), P.zone !== 'top'); }
+  else if (st) ui.banner(tt`Solar storm arrives in ${fmt.hrs(Math.max(0, st.start - S.t))} — be underground`, true);
+  else if (S.flow.leaks.length) ui.banner(tt`AIR LEAK in the ${ROOMS.find((r) => r.id === S.flow.leaks[0]).name} — patch it or lock its door!`);
   else if (!G.paused) ui.banner(null);
   if (S.over) return endGame();
-  if (!S.suitOn && G.inside) { const pr = S.here && S.rooms[S.here] ? S.rooms[S.here].p : S.P; if (pr < 60) G.warn('thin', pr < 45 ? '<b>You cannot breathe in here!</b> Get out of this room, or run to the Suit Lockers!' : 'The air is getting thin in here. Leave, or put your suit on.', 'alert', 6000); }
-  if (S.fansUntil && S.t >= S.fansUntil) { delete S.extraKw.fans; S.fansUntil = 0; ui.toast('Farm fans back to normal.'); }
+  if (!S.suitOn && G.inside) { const pr = S.here && S.rooms[S.here] ? S.rooms[S.here].p : S.P; if (pr < 60) G.warn('thin', pr < 45 ? tt('<b>You cannot breathe in here!</b> Get out of this room, or run to the Suit Lockers!') : tt('The air is getting thin in here. Leave, or put your suit on.'), 'alert', 6000); }
+  if (S.fansUntil && S.t >= S.fansUntil) { delete S.extraKw.fans; S.fansUntil = 0; ui.toast(tt('Farm fans back to normal.')); }
   if (S.pending.length) { G.eventBusy = true; await G.processPending(); G.eventBusy = false; }
   if (S.t >= G.nextEventAt && (S.hours === Infinity || S.hours - (S.t - S.t0) > 5) && !P.in) { G.eventBusy = true; await G.fireEvent(); G.eventBusy = false; }
   G.nagT += dt; const F = S.flow, serious = G.alerts().some((a) => a.kind !== 'warn') || F.eff < 1 || F.o2Days < 0.8 || F.waterDays < 1 || F.foodDays < 1 || S.lv.heat < F.heatNeed;
@@ -531,9 +536,9 @@ function frame(now, manual) {
   if (!manual) { requestAnimationFrame(frame); fpsTick(now); } const dt = clamp((now - last) / 1000, 0, 0.05); last = now; if (G.state === 'title') return;
   if (G.jobTick) G.jobTick(dt);
   G.inside = P.zone === 'deep' && world.indoors(P.pos.x, P.pos.z); G.inCrater = P.zone === 'top' && Math.hypot(P.pos.x - MINE.x, P.pos.z - MINE.z) < MINE.r * 0.9;
-  if (G.inCrater && G.state === 'play' && !G._tipMine) { G._tipMine = 1; ui.bubble('The <b>Polar Ice Mine</b>. This crater floor never sees the Sun, so it stays near −230°C: cold enough to keep ice frozen for billions of years. Get in the <b>digger</b>, hold <b>SPACE</b> over a pale blue patch, then tip the bucket into the orange filler. Do not park here long: the cold drains batteries.', 'think', 16); }
+  if (G.inCrater && G.state === 'play' && !G._tipMine) { G._tipMine = 1; ui.bubble(tt('The <b>Polar Ice Mine</b>. This crater floor never sees the Sun, so it stays near −230°C: cold enough to keep ice frozen for billions of years. Get in the <b>digger</b>, hold <b>SPACE</b> over a pale blue patch, then tip the bucket into the orange filler. Do not park here long: the cold drains batteries.'), 'think', 16); }
   if (G.S) { const S = G.S; if (!S.suitOn && !G.inside) S.suitOn = true; S.here = G.inside ? world.roomAt(P.pos.x, P.pos.z) : null; G.astro.setSuit(G.suitShow ?? S.suitOn);
-    if (G.inside && !G._wasIn && S.suitOn && G.state === 'play' && !G._tipIn) { G._tipIn = 1; ui.bubble('You are indoors, and the air is good. You can take your suit off at the <b>Suit Lockers</b>: indoor jobs go a quarter faster without big gloves, and you need it off to cook or sleep.', 'happy', 11); } G._wasIn = G.inside; }
+    if (G.inside && !G._wasIn && S.suitOn && G.state === 'play' && !G._tipIn) { G._tipIn = 1; ui.bubble(tt('You are indoors, and the air is good. You can take your suit off at the <b>Suit Lockers</b>: indoor jobs go a quarter faster without big gloves, and you need it off to cook or sleep.'), 'happy', 11); } G._wasIn = G.inside; }
   updatePlayer(dt); if (G.S) placeVehicles(dt); updateRego(dt); updateActors(dt); if (G.cineTick) G.cineTick(dt); else updateCamera(dt);
   if (G.S) { tickSim(dt); updateRad(dt); if (G.state !== 'over') updateGoal(); }
   placeItems();
@@ -541,7 +546,7 @@ function frame(now, manual) {
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
   { const S = G.S; G._radioT = (G._radioT ?? 25) - dt;
     if (S && G._radioT <= 0) { const quiet = G.state === 'play' && !ui.busy && !G.eventBusy && !G.inJob && !G.riding && !G.paused && G.sleepLeft <= 0, line = quiet ? radioLine(S) : null;
-      if (line) ui.toast(`<b>${line.who}</b>${line.text}`, line.who === 'RADIO' ? 'radio off' : 'radio'); G._radioT = line ? 55 + Math.random() * 35 : 12; } }
+      if (line) ui.toast(`<b>${line.who}</b>${line.text}`, line.who === tt('RADIO') ? 'radio off' : 'radio'); G._radioT = line ? 55 + Math.random() * 35 : 12; } }
   // sound follows where you are: the station hums with its power, the helmet muffles the world, music darkens with danger
   { const S = G.S; G._dgT = (G._dgT || 0) - dt; if (S && G._dgT <= 0) { G._dgT = 0.5; const st = S.storm, urgent = G.state === 'play' ? G.alerts().filter((a) => a.kind !== 'warn').length : 0;
       G._danger = G.state !== 'play' ? 0 : clamp(urgent * 0.45 + (S.flow.eff < 1 ? 0.35 : 0) + (S.health < 50 ? 0.4 : 0) + (st && S.t >= st.start ? 0.5 : 0), 0, 1); }
@@ -563,7 +568,7 @@ function loadGame() {
   Object.assign(G.car, o.car, { cargo: o.car.cargo.map((id) => byId[id]).filter(Boolean) }); if (o.dig) Object.assign(G.dig, o.dig, { v: 0, prog: 0, dig: 0 }); Object.assign(G.ship, o.ship, { cargo: o.ship.cargo.map((id) => byId[id]).filter(Boolean), vx: 0, vz: 0, vy: 0, alt: 0 });
   P.zone = o.p.zone; G.S.zone = P.zone; world.setZone(P.zone); P.pos.set(o.p.x, groundY(P.zone, o.p.x, o.p.z), o.p.z); G.regoPos.set(o.p.x + 1.5, P.pos.y, o.p.z + 1.5); P.carry = byId[o.p.carry] || null;
   G.spawnSurvivors(); for (const id of o.fol) G.follow(SITES.find((s) => s.id === id));
-  $('#title').classList.add('hidden'); ui.showHud(true); G.state = 'play'; G.simOn = true; ui.bubble('Welcome back! I kept everything just as you left it.', 'joy', 8);
+  $('#title').classList.add('hidden'); ui.showHud(true); G.state = 'play'; G.simOn = true; ui.bubble(tt('Welcome back! I kept everything just as you left it.'), 'joy', 8);
 }
 
 // ---------- title screen & mission start ----------
@@ -572,19 +577,20 @@ const modesEl = $('#modes');
 // Mission page: one card per mission, and a briefing for the chosen one built from the same numbers the simulation uses.
 const HARD = { cadet: 1, pilot: 2, commander: 3, unlimited: 0 }, MODE_IC = { cadet: 'moon', pilot: 'rocket', commander: 'fire', unlimited: 'dome' };
 const drawModes = () => {
-  modesEl.innerHTML = Object.values(MODES).map((m) => `<button class="mode ${m.key === mode ? 'sel' : ''}" data-m="${m.key}"><i class="mode-ic">${IC[MODE_IC[m.key]] || IC.room}</i><b>${m.name}</b><em>${m.ages}</em><span>${m.tag}</span><div class="pips" title="How hard it is">${HARD[m.key] ? [1, 2, 3].map((n) => `<u class="${n <= HARD[m.key] ? 'on' : ''}"></u>`).join('') : '<small>free build</small>'}</div></button>`).join('');
+  modesEl.innerHTML = Object.values(MODES).map((m) => `<button class="mode ${m.key === mode ? 'sel' : ''}" data-m="${m.key}"><i class="mode-ic">${IC[MODE_IC[m.key]] || IC.room}</i><b>${m.name}</b><em>${m.ages}</em><span>${m.tag}</span><div class="pips" title="${tt`How hard it is`}">${HARD[m.key] ? [1, 2, 3].map((n) => `<u class="${n <= HARD[m.key] ? 'on' : ''}"></u>`).join('') : ('<small>' + tt('free build') + '</small>')}</div></button>`).join('');
   modesEl.querySelectorAll('.mode').forEach((b) => (b.onclick = () => { mode = b.dataset.m; try { localStorage.setItem('mk-mode', mode); } catch (e) {} G.audio?.play?.('click'); drawModes(); }));
   const m = MODES[mode], lim = m.days !== Infinity, names = m.wreck.map((id) => ROOMS.find((r) => r.id === id)?.name).filter(Boolean);
   const fact = (ic, label, val) => `<div class="bf"><i>${IC[ic] || ''}</i><span>${label}</span><b>${val}</b></div>`;
-  $('#brief').innerHTML = `<div class="brief-h"><b>${m.name} mission</b><span>${lim ? `Hold the station for ${m.days} days until the rescue ship lands.` : 'Nobody is lost in this one: Commander Vasquez and Engineer Okoro stay as your crew. Build a Moon town that can live on its own.'}</span></div>
-    <div class="brief-grid">${fact('rocket', 'Rescue', lim ? `in ${m.days} days` : 'never')}${fact('sun', 'Sunset', `day ${Math.floor(m.sunsetDay) + 1}, then two weeks of night`)}${fact('bolt', 'Solar panels', `${m.ok} working · ${m.broken} broken`)}${fact('o2', 'Oxygen', `${m.o2} kg in the tank`)}${fact('water', 'Water', `${m.water} L`)}${fact('food', 'Food', `${m.cans} tins${m.meals ? ` · ${m.meals} hot meals` : ''}`)}${fact('box', 'Materials', m.mat === Infinity ? 'endless' : `${m.mat} crates' worth`)}${fact('wrench', 'Wrecked rooms', names.join(', ') || 'none')}</div>`;
+  $('#brief').innerHTML = `<div class="brief-h"><b>${tt`${m.name} mission`}</b><span>${lim ? tt`Hold the station for ${m.days} days until the rescue ship lands.` : tt('Nobody is lost in this one: Commander Vasquez and Engineer Okoro stay as your crew. Build a Moon town that can live on its own.')}</span></div>
+    <div class="brief-grid">${fact('rocket', tt('Rescue'), lim ? tt`in ${m.days} days` : tt('never'))}${fact('sun', tt('Sunset'), tt`day ${Math.floor(m.sunsetDay) + 1}, then two weeks of night`)}${fact('bolt', tt('Solar panels'), tt`${m.ok} working · ${m.broken} broken`)}${fact('o2', tt('Oxygen'), tt`${m.o2} kg in the tank`)}${fact('water', tt('Water'), `${m.water} L`)}${fact('food', tt('Food'), tt`${m.cans} tins${m.meals ? tt` · ${m.meals} hot meals` : ''}`)}${fact('box', tt('Materials'), m.mat === Infinity ? tt('endless') : tt`${m.mat} crates' worth`)}${fact('wrench', tt('Wrecked rooms'), names.join(', ') || tt('none'))}</div>`;
 };
+{ const lp = $('#lang-pick'); if (lp) { lp.innerHTML = LANGS.map(([k, n]) => `<option value="${k}">${n}</option>`).join(''); lp.value = LANG; lp.onchange = () => G.setLanguage(lp.value); } }
 drawModes(); $('#btn-codex').onclick = () => ui.guide('how'); $('#btn-how').onclick = () => ui.guide('truth');
 const showMission = (on) => { $('#mission').classList.toggle('hidden', !on); $('#title').classList.toggle('hidden', on); };
 $('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour'); $('#btn-games').onclick = () => { G.audio.init(); ui.guide('games'); };
 $('#btn-launch').onclick = () => start(mode, $('#skip-tut').checked);
 document.querySelectorAll('.pillar').forEach((p) => p.insertAdjacentHTML('afterbegin', `<i>${IC[p.dataset.ic] || ''}</i>`));
-if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = async () => { if (G._starting) return; G._starting = true; G.audio.init(); if (!world.warmMs) b.textContent = 'Loading…'; await world.warm(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
+if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = async () => { if (G._starting) return; G._starting = true; G.audio.init(); if (!world.warmMs) b.textContent = tt('Loading…'); await world.warm(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
 async function start(modeKey, skip, seed) {
   G.audio.init(); G.audio.play('ok'); G.clearSave();
   G.S = createSim(modeKey, seed || ((Math.random() * 2 ** 31) >>> 0)); G.applyVoice(); installActions(G); installEvents(G);
@@ -597,11 +603,11 @@ async function start(modeKey, skip, seed) {
   for (const s of SITES) s.loot.forEach((type, i) => G.spawnItem(type, 'top', s.pos[0] + 14 + (i % 3) * 2.2, s.pos[1] + 12 + Math.floor(i / 3) * 2.2)); G.spawnSurvivors();   // crates and a survivor at each outpost
   if (P.zone !== 'deep') { P.zone = 'deep'; G.S.zone = 'deep'; world.setZone('deep'); } P.pos.set(-17, TUBE.y, -10); cam.yaw = Math.PI; P.face = 0; G.regoPos.set(-15, TUBE.y, -9); if (P.carry) G.removeItem(P.carry); G.S.suitOn = false;   // you were indoors, out of your suit, when it hit
   if (free) {   // the Commander and the Engineer survived: they are crew you can give jobs to, and the stores are stocked for three people
-    const S = G.S; for (const [id, name] of [['vasquez', 'Commander Vasquez'], ['okoro', 'Engineer Okoro']]) if (!S.helpers.some((h) => h.id === id)) S.helpers.push({ id, kind: 'human', name, role: 'idle', img: 'c_' + id });
+    const S = G.S; for (const [id, name] of [['vasquez', tt('Commander Vasquez')], ['okoro', tt('Engineer Okoro')]]) if (!S.helpers.some((h) => h.id === id)) S.helpers.push({ id, kind: 'human', name, role: 'idle', img: 'c_' + id });
     S.o2 = S.o2Cap; S.water = Math.min(S.waterCap, S.water + 24); S.cans += 24;
   }
   ui.showHud(true); G.state = 'play'; G.simOn = true; G.nextEventAt = G.S.t + 7 + G.S.rng() * 5; G.save();
-  if (free) { ui.bubble('Everyone is safe! <b>Commander Vasquez and Engineer Okoro are part of your crew</b>: give them jobs at the Control Center. The big screen shows what is broken. <b>First job: power.</b> Press <b>H</b> whenever you want my advice.', 'joy', 18); G.pointTo('lift'); return; }
-  ui.bubble('I am right here with you. The big screen shows what is broken. <b>First job: power.</b> Put your suit on at the airlock, take the elevator up, pull a broken panel off its mount, and bring it down to the Fix-It Bench. Press <b>H</b> whenever you want my advice.', 'happy', 18); G.pointTo('lift');
+  if (free) { ui.bubble(tt('Everyone is safe! <b>Commander Vasquez and Engineer Okoro are part of your crew</b>: give them jobs at the Control Center. The big screen shows what is broken. <b>First job: power.</b> Press <b>H</b> whenever you want my advice.'), 'joy', 18); G.pointTo('lift'); return; }
+  ui.bubble(tt('I am right here with you. The big screen shows what is broken. <b>First job: power.</b> Put your suit on at the airlock, take the elevator up, pull a broken panel off its mount, and bring it down to the Fix-It Bench. Press <b>H</b> whenever you want my advice.'), 'happy', 18); G.pointTo('lift');
 }
 if (params.get('go')) start(mode, true, Number(params.get('seed')) || undefined);

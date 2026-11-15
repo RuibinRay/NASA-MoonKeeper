@@ -2,6 +2,7 @@
 // Pure logic and a drawing made of text (SVG). Checked by `node tools/moonmap_test.mjs`.
 // REAL: every position here is a real place on the Moon; the distances are worked out from them on a ball of the Moon's size.
 // STORY: the game draws the ice mine a short trip from the base. This page shows the true distance.
+import { tt } from './i18n.js';
 
 export const MOON_R = 1737.4;                 // km, the Moon's mean radius
 export const EARTH_KM = 384400;               // km, mean distance from Earth to the Moon
@@ -20,15 +21,15 @@ export const REAL = {
 // They are drawn as simple round patches of that width.
 // The one exception is the largest, the Ocean of Storms: a ragged shape 2,592 km long, drawn half as wide so it does not swallow its neighbours.
 export const SEAS = [
-  ['Ocean of Storms', 20.67, -56.68, 1296], ['Sea of Showers', 34.72, -14.91, 1145.53], ['Sea of Serenity', 27.29, 18.36, 674.28],
-  ['Sea of Tranquility', 8.35, 30.83, 875.75], ['Sea of Crises', 16.18, 59.10, 555.92], ['Sea of Fertility', -7.83, 53.67, 840.35],
-  ['Sea of Nectar', -15.19, 34.60, 339.39], ['Sea of Clouds', -20.59, -17.29, 714.50], ['Sea of Moisture', -24.48, -38.57, 419.67],
-  ['Sea of Vapours', 13.20, 4.09, 242.46], ['Known Sea', -10.53, -22.31, 350.01], ['Sea of Islands', 7.79, -30.64, 511.93],
+  [tt('Ocean of Storms'), 20.67, -56.68, 1296], [tt('Sea of Showers'), 34.72, -14.91, 1145.53], [tt('Sea of Serenity'), 27.29, 18.36, 674.28],
+  [tt('Sea of Tranquility'), 8.35, 30.83, 875.75], [tt('Sea of Crises'), 16.18, 59.10, 555.92], [tt('Sea of Fertility'), -7.83, 53.67, 840.35],
+  [tt('Sea of Nectar'), -15.19, 34.60, 339.39], [tt('Sea of Clouds'), -20.59, -17.29, 714.50], [tt('Sea of Moisture'), -24.48, -38.57, 419.67],
+  [tt('Sea of Vapours'), 13.20, 4.09, 242.46], [tt('Known Sea'), -10.53, -22.31, 350.01], [tt('Sea of Islands'), 7.79, -30.64, 511.93],
 ];
 // Two bright young craters that help the eye recognise the Moon: [name, latitude, longitude].
-export const CRATERS = [['Tycho', -43.30, -11.22], ['Copernicus', 9.62, -20.08]];
+export const CRATERS = [[tt('Tycho'), -43.30, -11.22], [tt('Copernicus'), 9.62, -20.08]];
 // The dark crater the probe struck: [name, latitude, longitude, width in km].
-export const CABEUS = ['Cabeus', -85.33, -42.13, 100.58];
+export const CABEUS = [tt('Cabeus'), -85.33, -42.13, 100.58];
 
 const D = Math.PI / 180;
 const vec = (p) => { const a = p.lat * D, o = p.lon * D; return [Math.cos(a) * Math.sin(o), Math.sin(a), Math.cos(a) * Math.cos(o)]; };   // x to the east, y to the north, z towards Earth
@@ -86,7 +87,7 @@ export function realMoonSvg(W = 460) {
   const km = (v) => roundTo(v, 100).toLocaleString('en-US') + ' km';
   const grid = [-60, -30, 0, 30, 60].map((la) => { const y = cy - Math.sin(la * D) * R, h = Math.cos(la * D) * R; return `<line x1="${f(cx - h)}" x2="${f(cx + h)}" y1="${f(y)}" y2="${f(y)}"/>`; }).join('')
     + [30, 60].map((lo) => `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(Math.sin(lo * D) * R)}" ry="${f(R)}"/>`).join('') + `<line x1="${f(cx)}" x2="${f(cx)}" y1="${f(cy - R)}" y2="${f(cy + R)}"/>`;
-  return `<svg class="rm-moon" viewBox="0 0 ${W} ${W}" role="img" aria-label="The side of the Moon that faces Earth, showing the base near the middle and the ice near the two poles">
+  return `<svg class="rm-moon" viewBox="0 0 ${W} ${W}" role="img" aria-label="${tt`The side of the Moon that faces Earth, showing the base near the middle and the ice near the two poles`}">
     <defs><radialGradient id="rm-g" cx="42%" cy="38%" r="75%"><stop offset="0" stop-color="#c9cdd3"/><stop offset="0.7" stop-color="#9da3ac"/><stop offset="1" stop-color="#6d7480"/></radialGradient><clipPath id="rm-c"><circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R)}"/></clipPath></defs>
     <circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R)}" fill="url(#rm-g)"/>
     <g clip-path="url(#rm-c)">
@@ -99,10 +100,10 @@ export function realMoonSvg(W = 460) {
     <path class="rm-trip" d="${poly(toPole)}"/><path class="rm-trip" d="${poly(toProbe)}"/>
     <text class="rm-km" x="${f(m1.x - 8)}" y="${f(m1.y + 4)}" text-anchor="end">${km(gcKm(REAL.base, REAL.north))}</text>
     <text class="rm-km" x="${f(m2.x - 8)}" y="${f(m2.y + 4)}" text-anchor="end">${km(gcKm(REAL.base, REAL.probe))}</text>
-    <circle class="rm-pole" cx="${f(np.x)}" cy="${f(np.y)}" r="4"/><text x="${f(np.x)}" y="${f(np.y - 10)}" text-anchor="middle">North pole</text>
-    <circle class="rm-pole" cx="${f(sp.x)}" cy="${f(sp.y)}" r="4"/><text x="${f(sp.x + 10)}" y="${f(sp.y + 18)}">South pole</text>
-    <circle class="rm-probe" cx="${f(pr.x)}" cy="${f(pr.y)}" r="4.5"/><text x="${f(pr.x - 8)}" y="${f(pr.y + 18)}" text-anchor="end">A probe found water here</text>
-    <circle class="rm-base" cx="${f(base.x)}" cy="${f(base.y)}" r="6"/><text class="rm-you" x="${f(base.x + 10)}" y="${f(base.y + 4)}">Your base</text>
+    <circle class="rm-pole" cx="${f(np.x)}" cy="${f(np.y)}" r="4"/><text x="${f(np.x)}" y="${f(np.y - 10)}" text-anchor="middle">${tt`North pole`}</text>
+    <circle class="rm-pole" cx="${f(sp.x)}" cy="${f(sp.y)}" r="4"/><text x="${f(sp.x + 10)}" y="${f(sp.y + 18)}">${tt`South pole`}</text>
+    <circle class="rm-probe" cx="${f(pr.x)}" cy="${f(pr.y)}" r="4.5"/><text x="${f(pr.x - 8)}" y="${f(pr.y + 18)}" text-anchor="end">${tt`A probe found water here`}</text>
+    <circle class="rm-base" cx="${f(base.x)}" cy="${f(base.y)}" r="6"/><text class="rm-you" x="${f(base.x + 10)}" y="${f(base.y + 4)}">${tt`Your base`}</text>
     <text x="${f(cx - R * 0.5)}" y="${f(cy - iceY + 16)}" text-anchor="middle" class="rm-icel">ice zone</text><text x="${f(cx - R * 0.5)}" y="${f(cy + iceY - 8)}" text-anchor="middle" class="rm-icel">ice zone</text>
   </svg>`;
 }

@@ -2,6 +2,7 @@
 // Core rule: every machine eats power, every helper eats something, every fix costs time. No choice is free.
 import { K, SYS, MODES, BASE_LOAD, ROOMS, MOUNTS } from './config.js';
 import { newLife, lifeFlows, stepLife, harvestRoom } from './life.js';
+import { tt, lower, upper } from './i18n.js';
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export function mulberry32(a) {
@@ -24,7 +25,7 @@ export function createSim(modeKey = 'pilot', seed = (Date.now() >>> 0)) {
     lv: { o2gen: 1, isru: 0, recycler: 2, farm: 1, heat: 1, comms: 1 },
     f: { commsDown: false, isruDown: false, heater: false, scrubber: false, leakWater: 0, mold: false, pump: null, led: null },
     extraKw: {}, safeMode: 0, storm: null, zone: 'top', suitOn: true, here: null,
-    helpers: [{ id: 'bolt1', kind: 'bot', name: 'BOLT-1', role: 'idle', img: 'c_bot' }, { id: 'bolt2', kind: 'bot', name: 'BOLT-2', role: 'idle', img: 'c_bot' }],
+    helpers: [{ id: 'bolt1', kind: 'bot', name: tt('BOLT-1'), role: 'idle', img: 'c_bot' }, { id: 'bolt2', kind: 'bot', name: tt('BOLT-2'), role: 'idle', img: 'c_bot' }],
     perks: {}, rescued: [],
     car: { charge: 1, charging: false }, ship: { charge: 0.4, charging: false },
     bench: [null, null], fab: null,
@@ -47,7 +48,7 @@ export function applyDisaster(S) {
   for (const id of m.wreck) Object.assign(S.rooms[id], { p: 0, hole: 1, door: 0, built: 0.3, frozen: true });
   for (const r of S.racks) if (m.wreck.includes(r.room)) Object.assign(r, { g: 0, ripe: 0, hp: 0.1 });
   S.f.commsDown = true; S.f.isruDown = true; S.lv.isru = 0; S.dust = 0.3; S.battery = Math.min(S.battery, S.batteryCap * 0.5);
-  note(S, 'A meteor shower hit every station on the Moon. You are the only one left at Tranquility Deep.', 'bad');
+  note(S, tt('A meteor shower hit every station on the Moon. You are the only one left at Tranquility Deep.'), 'bad');
 }
 
 export const roomOk = (S, id) => { const r = S.rooms[id]; return r.built >= 1 && !r.frozen && r.p > 55; };
@@ -238,26 +239,26 @@ export function step(S, dt) {
 // ---------- player actions (each one costs something) ----------
 // Pick every ripe rack in one farm room. Returns { racks, raw, meals, herbs, sci, names }.
 export function harvest(S, room, score = 0.8) {
-  const out = harvestRoom(S, room, score); if (out.racks) note(S, `Picked ${out.names.join(' and ').toLowerCase()}.`, 'good'); return out;
+  const out = harvestRoom(S, room, score); if (out.racks) note(S, tt`Picked ${lower(out.names.join(tt(' and ')))}.`, 'good'); return out;
 }
 export function collectEggs(S) { const n = Math.floor(S.eggs); S.eggs -= n; S.raw += n; return n; }
 // Herbs make a cooked batch a fifth bigger (food people want to eat goes further).
 export function cookBatch(S) { const n = Math.min(12, Math.floor(S.raw)), herb = S.herbs >= 1 && n > 0; if (herb) S.herbs -= 1; const made = Math.round(n * (herb ? 1.2 : 1)); S.raw -= n; S.meals += made; return made; }
 export function spend(S, n) { if (S.mat < n) return false; if (S.mat !== Infinity) S.mat -= n; return true; }
-export function runDustShield(S) { if (S.battery < 35) return false; S.battery -= 35; S.dust = Math.max(0.03, S.dust * 0.2); note(S, 'Ran the dust shield (−35 kWh).'); return true; }
+export function runDustShield(S) { if (S.battery < 35) return false; S.battery -= 35; S.dust = Math.max(0.03, S.dust * 0.2); note(S, tt('Ran the dust shield (−35 kWh).')); return true; }
 export function startStorm(S, real, leadHours) {
   const sev = real.sev, peak = [0, 0.4, 4, 13][sev] * S.m.stormMul, dur = [0, 4, 8, 12][sev];
   S.storm = { start: S.t + leadHours, end: S.t + leadHours + dur, peak, sev, real, now: 0 };
-  note(S, `Solar storm alert: ${real.cls} flare (a real event from ${real.t.slice(0, 10)}).`, 'bad'); return S.storm;
+  note(S, tt`Solar storm alert: ${real.cls} flare (a real event from ${real.t.slice(0, 10)}).`, 'bad'); return S.storm;
 }
 export function addHelper(S, site) {
   S.helpers.push({ id: site.who, kind: 'human', name: site.whoName, role: 'idle', img: 'c_' + site.who, job: site.job });
-  S.perks[site.job] = true; S.rescued.push(site.id); note(S, `Rescued ${site.whoName} from ${site.name}.`, 'good');
+  S.perks[site.job] = true; S.rescued.push(site.id); note(S, tt`Rescued ${site.whoName} from ${site.name}.`, 'good');
 }
 export function score(S) {
   const days = (S.t - S.t0) / 24, okPanels = S.mounts.filter((x) => x === 1).length, roomsOk = ROOMS.filter((r) => roomOk(S, r.id)).length;
   const pts = Math.round(days * 150 + S.health * 6 + Math.max(0, K.DOSE_LIMIT - S.dose) * 2 + okPanels * 60 + roomsOk * 80 + S.rescued.length * 500 + (S.over?.win ? 1000 : 0));
-  const rank = S.mode === 'unlimited' ? (days > 30 ? 'Moon Town Mayor' : days > 12 ? 'Master Builder' : 'Settler') : !S.over?.win ? 'Rookie in Training' : pts > 6500 ? 'Legend of Tranquility' : pts > 5200 ? 'Master Moonkeeper' : pts > 4000 ? 'Moonkeeper' : 'Survivor';
+  const rank = S.mode === 'unlimited' ? (days > 30 ? tt('Moon Town Mayor') : days > 12 ? tt('Master Builder') : tt('Settler')) : !S.over?.win ? tt('Rookie in Training') : pts > 6500 ? tt('Legend of Tranquility') : pts > 5200 ? tt('Master Moonkeeper') : pts > 4000 ? tt('Moonkeeper') : tt('Survivor');
   return { pts, rank, days, okPanels, roomsOk };
 }
 
