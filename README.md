@@ -22,7 +22,7 @@ With REGO the robot you must keep the **power on** and the **air in** until resc
 | **Q** | second action (take cargo out of a vehicle) |
 | Tab · M · H · N · L · T | Power Board · Map · ask REGO · Space Guide · Life-support loop · Day and night |
 | In the hopper | Space up · C down (it slows itself near the ground) · a ring below shows where it will land |
-| Settings (gear button) | Guide mode · job games · questions after emergencies · sound · music · graphics detail (Auto, High, Medium, Low) · frame-rate counter |
+| Settings (gear button) | Guide mode · job games · questions after emergencies · REGO reads aloud · sound · music · graphics detail (Auto, High, Medium, Low) · frame-rate counter |
 | V · P | first/third person · pause |
 
 ## What you do

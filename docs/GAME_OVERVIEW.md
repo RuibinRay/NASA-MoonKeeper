@@ -108,7 +108,7 @@ Training can be skipped from the title screen.
 5. **Fetch what you lack.** Other stations have materials and people. The Polar Ice Mine has water.
 6. **Give jobs away.** Robots cost electricity, rescued astronauts cost food.
 
-A settings screen offers a guide mode: REGO highlights the choice it would make and draws a path on the floor. It also sets the graphics detail (Auto, High, Medium or Low), switches sound, music and the questions separately, and can show a frame-rate counter.
+A settings screen offers a guide mode: REGO highlights the choice it would make and draws a path on the floor. It also sets the graphics detail (Auto, High, Medium or Low), switches sound, music, REGO's voice and the questions separately, and can show a frame-rate counter.
 
 ## Features
 
@@ -134,7 +134,7 @@ Everything is done by hand in the world, not from a menu: you walk there, carry 
 | Experiment | The same seeds grown three ways: hydroponics, treated moon soil, raw moon soil |
 | Events | Solar storms, moonquakes, meteoroid strikes, air leaks, dust, fire, stale air, mold, pump and lamp failures, a drifting dish, a distress call |
 | Questions | After each kind of emergency, one short question about why it happened, with three answers. A right answer earns a research point; a wrong one costs nothing and the card explains. The end screen says how many were answered right |
-| REGO | Follows you, lights your work, points at the job, gives advice on H, and tells a real space fact when all is calm |
+| REGO | Follows you, lights your work, points at the job, gives advice on H, and tells a real space fact when all is calm. It can read its hints, its lines and the emergency cards aloud, using the voice built into the device: on by itself in Cadet missions, a switch in Settings otherwise |
 | Clock and map | A mission clock with sunset, rescue and storm marks, and a line that shows the temperature outside falling after sunset while the cave stays at 17°C. A map of the surface and of the station |
 | Day and night page | A graph of one whole Moon day with "now", sunset, sunrise and rescue marked, three thermometers (outside, cave, station), and a short explanation of why the Moon is so hot and so cold |
 | Guide | How to play, a "Real or made up?" table, why live in a lava tube, a station tour in pictures, space words |

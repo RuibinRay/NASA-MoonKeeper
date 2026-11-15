@@ -89,7 +89,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
 | 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | Hopper done (see below). Gait and transitions to do |
 | 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | Sound and music done (see below); reactive lighting was done in step 3. Radio chatter to do |
-| 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | Questions done (see below), and the Day and night page earlier. Voice, ice picture and map to do |
+| 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | Questions, REGO's voice and the Day and night page done (see below). Ice picture and map to do |
 
 ### Step 1: what changed and what was measured
 
@@ -210,3 +210,19 @@ After an emergency is settled, one card asks why it happened. There are 14 quest
 | Questions can be switched off in Settings | For players who only want to play |
 
 Every fact in the questions is one the game already uses, with its source in `docs/SCIENCE_AND_SOURCES.md`. The end screen shows how many were asked and how many answered right: as a badge on every ending, and as a line in "How you did it" when the mission is won. Nothing is shown if no question was asked.
+
+### Step 7, second part: REGO reads aloud
+
+REGO speaks with the voice built into the player's own device (the browser's speech feature). Nothing is downloaded and nothing is sent anywhere.
+
+| What | How it behaves |
+| --- | --- |
+| What is read | REGO's hints, REGO's own lines in conversations, and the title and text of emergency and question cards |
+| What is not | Other characters' lines (one voice for everyone would confuse), buttons, and the answers to a question |
+| Units and symbols | Spelled out: "−128°C" is read as "minus 128 degrees Celsius", "166 kWh" as "166 kilowatt hours", a key as its name |
+| A new line | Replaces the one being spoken; another character speaking, or choosing an answer, stops REGO |
+| When it is on | In Cadet missions (ages 7 to 10) it is on until the player chooses otherwise. In the other modes it is off until switched on. The choice is remembered |
+| Sound off | REGO is silent too |
+| No voice on the device | The switch is not shown |
+
+Checked by intercepting what the game hands to the speech feature, not by ear. The voice itself depends on the device: on the test computer it was "Microsoft Zira". Nobody has listened to it yet.
