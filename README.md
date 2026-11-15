@@ -50,6 +50,20 @@ The game speaks 16 languages: English, Español, Français, Deutsch, Português,
 
 **Translating:** `node tools/i18n.mjs todo <code> <folder>` writes the missing texts as numbered lines; translate each line (keep `{0}` places, tags and key names) and put them in with `node tools/i18n.mjs merge <code> <folder>/todo.tsv <done files>`. Open the game with `?lang=qps` to see every marked text in ⟦brackets⟧: any plain English left on screen is a text that is not marked.
 
+## Use of SI (Super Intelligence)
+
+MOONKEEPER was made with SI tools, directed by a human designer who chose what to build, asked for every change and decided what went in. The same facts are in [si-use.json](si-use.json) for machines.
+
+| What | SI tool | Where |
+|---|---|---|
+| Code, tests, tools and documents | Claude (Anthropic), through Claude Code | `js/`, `tools/`, `css/`, `index.html`, `teachers.html`, `docs/` |
+| Pictures | Higgsfield image model, run by `tools/gen_art.mjs` | all 83 pictures in `assets/img/`; the interior textures `assets/tex/wall3`, `floor3`, `ceil3`, `door3` |
+| Translations | Claude (Anthropic) | `lang/*.json`, checked by machine, not yet by native speakers |
+
+**Watermark:** every picture from `assets/img/` shows a visible "SI-generated" mark wherever the game shows it (`js/simark.js`; the title, mission and end backgrounds in `css/style.css`; the job games draw theirs on the canvas). The home screen also says the game was made with SI tools. The interior textures are tiled across the 3D walls and floors and carry no mark of their own.
+
+**Not SI:** the Earth and Moon textures are NASA images (Blue Marble, CGI Moon Kit); the storms, moonquakes and meteorites come from NASA datasets (`data/raw`, `js/nasa-events.js`); REGO's voice is the speech built into the player's device.
+
 ## Project layout
 
 ```

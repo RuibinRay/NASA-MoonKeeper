@@ -405,6 +405,13 @@ const DEBRIEF = {
 };
 const BG = {};   // backdrop pictures, loaded on first use: assets/img/mg_<kind>.jpg (the game still works without them)
 function backdrop(kind) { if (BG[kind] === undefined) { const im = new Image(); im.onerror = () => { BG[kind] = null; }; im.src = 'assets/img/mg_' + kind + '.jpg'; BG[kind] = im; } const im = BG[kind]; return im && im.complete && im.naturalWidth ? im : null; }
+// the backdrop pictures are SI-made: a visible "SI-generated" mark in the bottom-right corner (Space Apps rules)
+function siMark(c, W, H) {
+  c.save(); const fs = Math.round(12 * TXT), p = Math.round(5 * TXT), t = tt('SI-generated');
+  c.font = `700 ${fs}px Inter,sans-serif`; c.textAlign = 'left'; c.textBaseline = 'top'; const tw = c.measureText(t).width;
+  c.fillStyle = 'rgba(0,0,0,.55)'; c.fillRect(W - tw - p * 4, H - fs - p * 4, tw + p * 2, fs + p * 2); c.fillStyle = '#fff'; c.fillText(t, W - tw - p * 3, H - fs - p * 3);
+  c.restore();
+}
 function wrap(c, text, x, y, maxW, lh) { let line = ''; for (const w of text.split(' ')) { if (c.measureText(line + w).width > maxW && line) { c.fillText(line.trim(), x, y); y += lh; line = ''; } line += w + ' '; } c.fillText(line.trim(), x, y); return y + lh; }
 let TXT = 1;   // text scale: 1 on a desktop, up to 2 when the canvas is drawn small on a phone
 function label(c, text) { const fs = Math.round(18 * TXT); c.font = '600 ' + fs + 'px Inter,sans-serif'; c.textAlign = 'center'; if (c.measureText(text).width > W - 40 && text.includes('   ·   ')) text = text.split('   ·   ')[0]; const w = Math.min(W - 8, c.measureText(text).width + 30), h = fs + 12; c.fillStyle = 'rgba(4,10,16,.82)'; rr(c, W / 2 - w / 2, 6, w, h, 10); c.fill(); c.fillStyle = '#fff'; c.fillText(text, W / 2, 6 + fs + 3); }
@@ -433,7 +440,7 @@ export function playMini(G, kind, opts = {}) {
           s.t += dt; s.left -= dt; result = def.update(s, dt) || (window.__mgSkip ? (window.__mgSkip === 'fail' ? { win: false, score: 0 } : { win: true, score: typeof window.__mgSkip === 'number' ? window.__mgSkip : 0.8 }) : null); // __mgSkip: test hook (true, a score, or 'fail')
           if (result) { result.stars = result.win ? (result.score > 0.8 ? 3 : result.score > 0.55 ? 2 : 1) : 0; endT = 3.2; s.ptr.down = false; G.audio?.play(result.win ? 'win' : 'bad'); }
         } else endT -= dt;
-        TXT = clamp(0.7 / (cv.clientWidth / W || 1), 1, 2); c.clearRect(0, 0, W, H); const bg = backdrop(def.bg || kind); s.hasBg = !!bg; if (bg) { const k = Math.max(W / bg.naturalWidth, H / bg.naturalHeight), bw = bg.naturalWidth * k, bh = bg.naturalHeight * k; c.drawImage(bg, (W - bw) / 2, (H - bh) / 2, bw, bh); c.fillStyle = 'rgba(4,9,15,.58)'; c.fillRect(0, 0, W, H); } def.draw(s, c);
+        TXT = clamp(0.7 / (cv.clientWidth / W || 1), 1, 2); c.clearRect(0, 0, W, H); const bg = backdrop(def.bg || kind); s.hasBg = !!bg; if (bg) { const k = Math.max(W / bg.naturalWidth, H / bg.naturalHeight), bw = bg.naturalWidth * k, bh = bg.naturalHeight * k; c.drawImage(bg, (W - bw) / 2, (H - bh) / 2, bw, bh); c.fillStyle = 'rgba(4,9,15,.58)'; c.fillRect(0, 0, W, H); } def.draw(s, c); if (bg) siMark(c, W, H);   // drawn last, so nothing covers it
         bar.style.width = clamp(s.left / s.time, 0, 1) * 100 + '%';
         if (result) {   // the result card: stars, what you did, why it mattered
           const d = DEBRIEF[kind] || ['', '']; c.fillStyle = 'rgba(2,6,12,.84)'; c.fillRect(0, 0, W, H); c.textAlign = 'center';

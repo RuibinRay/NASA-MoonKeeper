@@ -17,8 +17,10 @@ import { patchAt, scoop } from './life.js';
 import { installEvents } from './events.js';
 import { comicIntro, tutorial, disaster, ending } from './story.js';
 import { tt, LANG, LANGS, setLang, translatePage } from './i18n.js';
+import { startSIMarks } from './simark.js';
 translatePage();   // the words written into index.html
-for (const [v, w] of [['--t-dyk', tt('DID YOU KNOW?')], ['--t-hint', tt('REGO · HINT')], ['--t-sel', tt('SELECTED')]]) document.documentElement.style.setProperty(v, JSON.stringify(w));   // labels drawn by the style sheet
+for (const [v, w] of [['--t-dyk', tt('DID YOU KNOW?')], ['--t-hint', tt('REGO · HINT')], ['--t-sel', tt('SELECTED')], ['--t-si', tt('SI-generated')]]) document.documentElement.style.setProperty(v, JSON.stringify(w));   // labels drawn by the style sheet
+startSIMarks();   // a visible "SI-generated" mark on every SI-made picture
 
 const V3 = THREE.Vector3, $ = (s) => document.querySelector(s), clamp = (x, a, b) => Math.max(a, Math.min(b, x)), UP = new V3(0, 1, 0), TMP = new V3();
 const canvas = $('#view'), params = new URLSearchParams(location.search);
