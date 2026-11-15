@@ -313,14 +313,25 @@ export class World {
   // The rover car and the hopper ship. The game moves them; this only builds them.
   _vehicles() {
     const M = this.M;
-    const car = this.car = new THREE.Group(); this.scene.add(car);
-    this.put(car, this.box(2.5, 0.7, 4.8, M.white), 0, 1.0, 0); this.put(car, this.box(2.6, 0.18, 4.9, M.orange), 0, 0.62, 0); this.put(car, this.box(2.3, 0.14, 2.3, M.grey), 0, 1.43, -1.15);
-    for (const [px, pz] of [[-1.1, 0.4], [1.1, 0.4], [-1.1, 2.1], [1.1, 2.1]]) this.put(car, this.cyl(0.06, 0.06, 1.5, M.grey, 6), px, 2.1, pz);
-    this.put(car, this.box(2.4, 0.1, 1.9, M.orange), 0, 2.88, 1.25); this.put(car, this.box(1.6, 0.5, 0.5, M.dark), 0, 1.5, 1.2); this.put(car, this.cyl(0.03, 0.03, 2, M.grey, 5), -1, 3.9, 0.4); this.put(car, this.sph(0.09, M.amber), -1, 4.9, 0.4);
-    this.carWheels = []; for (const [wx, wz] of [[-1.5, 1.8], [1.5, 1.8], [-1.5, 0], [1.5, 0], [-1.5, -1.8], [1.5, -1.8]]) { const w = this.cyl(0.62, 0.62, 0.5, M.dark, 14); w.rotation.z = Math.PI / 2; w.position.set(wx, 0.62, wz); car.add(w); this.carWheels.push(w); }
-    this.carLed = this.put(car, this.box(0.9, 0.12, 0.05, M.greenG.clone()), 0, 1.25, 2.43);
-    this.carLamp = new THREE.SpotLight(0xfff2dc, 0, 90, 0.5, 0.6, 1); this.carLamp.position.set(0, 1.6, 2.5); this.carLamp.target.position.set(0, 0, 22); car.add(this.carLamp, this.carLamp.target);
-    this.carCargo = new THREE.Group(); this.carCargo.position.set(0, 1.5, -1.15); car.add(this.carCargo);
+    // The rover. `car` sits on the ground plane; `body` rides on springs above it; every wheel has its own suspension and the
+    // front and rear pairs steer. (The middle pair only rolls.)
+    const car = this.car = new THREE.Group(); this.scene.add(car); const body = this.carBody = new THREE.Group(); car.add(body);
+    this.put(body, this.box(2.5, 0.7, 4.8, M.white), 0, 1.0, 0); this.put(body, this.box(2.6, 0.18, 4.9, M.orange), 0, 0.62, 0); this.put(body, this.box(2.3, 0.14, 2.3, M.grey), 0, 1.43, -1.15);
+    for (const [px, pz] of [[-1.1, 0.4], [1.1, 0.4], [-1.1, 2.1], [1.1, 2.1]]) this.put(body, this.cyl(0.06, 0.06, 1.5, M.grey, 6), px, 2.1, pz);
+    this.put(body, this.box(2.4, 0.1, 1.9, M.orange), 0, 2.88, 1.25); this.put(body, this.box(1.6, 0.5, 0.5, M.dark), 0, 1.5, 1.2);
+    for (const hx of [-0.85, 0.85]) this.put(body, this.cyl(0.2, 0.2, 0.08, M.warm, 12), hx, 1.05, 2.42, Math.PI / 2);                                                   // headlights
+    const ant = this.carAnt = new THREE.Group(); ant.position.set(-1, 2.9, 0.4); body.add(ant); this.put(ant, this.cyl(0.02, 0.035, 2, M.grey, 5), 0, 1, 0); this.put(ant, this.sph(0.09, M.amber), 0, 2.05, 0);   // whips about on its base
+    this.carWheels = []; const lug = new THREE.BoxGeometry(0.17, 0.52, 0.09), spoke = new THREE.BoxGeometry(1.0, 0.56, 0.1);
+    for (const [wx, wz] of [[-1.5, 1.8], [1.5, 1.8], [-1.5, 0], [1.5, 0], [-1.5, -1.8], [1.5, -1.8]]) {
+      const sus = new THREE.Group(); sus.position.set(wx, 0.62, wz); car.add(sus); const steer = new THREE.Group(); sus.add(steer);
+      const tire = this.cyl(0.62, 0.62, 0.5, M.dark, 18); tire.rotation.z = Math.PI / 2; steer.add(tire);
+      for (let i = 0; i < 10; i++) { const a = (i / 10) * 6.2832, l = new THREE.Mesh(lug, M.grey); l.position.set(Math.cos(a) * 0.63, 0, Math.sin(a) * 0.63); l.rotation.y = -a; tire.add(l); }                 // tread blocks: you can see the wheel turn
+      for (const a of [0, Math.PI / 2]) { const sp = new THREE.Mesh(spoke, M.metal); sp.rotation.y = a; tire.add(sp); }
+      const arm = this.box(0.75, 0.1, 0.16, M.grey); arm.position.set(-Math.sign(wx) * 0.55, 0.3, 0); arm.castShadow = false; sus.add(arm);                                                                    // suspension arm
+      this.carWheels.push({ sus, steer, tire, x: wx, z: wz, y: 0 }); }
+    this.carLed = this.put(body, this.box(0.9, 0.12, 0.05, M.greenG.clone()), 0, 1.25, 2.43);
+    this.carLamp = new THREE.SpotLight(0xfff2dc, 0, 90, 0.5, 0.6, 1); this.carLamp.position.set(0, 1.6, 2.5); this.carLamp.target.position.set(0, 0, 22); body.add(this.carLamp, this.carLamp.target);
+    this.carCargo = new THREE.Group(); this.carCargo.position.set(0, 1.5, -1.15); body.add(this.carCargo);
     const ship = this.ship = new THREE.Group(); this.scene.add(ship);
     this.put(ship, this.box(3.2, 2.0, 4.6, M.white), 0, 1.9, 0); this.put(ship, this.box(3.26, 0.35, 4.66, M.teal), 0, 1.5, 0); this.put(ship, this.sph(1.25, M.glass.clone(), 18, 12), 0, 2.3, 2.0); this.put(ship, this.box(2.6, 0.12, 2.2, M.grey), 0, 2.98, -1.0);
     this.shipJets = []; for (const [px, pz] of [[-1.9, 1.7], [1.9, 1.7], [-1.9, -1.7], [1.9, -1.7]]) { this.put(ship, this.cyl(0.07, 0.07, 1.5, M.metal, 6), px * 1.05, 0.7, pz * 1.05, 0, 0, px > 0 ? -0.3 : 0.3); this.put(ship, this.cyl(0.5, 0.5, 0.12, M.foil, 10), px * 1.2, 0.06, pz * 1.05); this.put(ship, this.cyl(0.32, 0.42, 0.6, M.dark, 10), px, 1.0, pz); const f = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.6, 10), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); f.rotation.x = Math.PI; f.position.set(px, 0.0, pz); ship.add(f); this.shipJets.push(f); }
@@ -519,6 +530,98 @@ export class World {
       this.sacks = []; for (let i = 0; i < 5; i++) this.sacks.push(add('animal', this.box(0.9, 0.5, 0.6, M.straw), c.x0 + 1.2 + (i % 2) * 1, 0.25 + Math.floor(i / 2) * 0.5, c.z0 + 6));
       const tx = c.x1 - 3.6, tz = c.z0 + 7; add('animal', this.box(4.6, 0.7, 2.2, M.dark), tx, 0.35, tz); add('animal', this.box(4.4, 1.6, 2.0, M.water), tx, 1.5, tz); add('animal', this.box(4.5, 1.7, 2.1, M.glass.clone()), tx, 1.5, tz); this.fishes = []; for (let i = 0; i < 5; i++) { const f = this.sph(0.16, M.fish, 8, 6); f.scale.set(1.8, 1, 0.6); f.position.set(tx, 1.5, tz); R.animal.props.add(f); this.fishes.push({ m: f, ph: i * 1.3, tx, tz }); } hard(tx, tz, 2.2); hard(px, pz + 2.2, 1.4); }
     this.farmLights = [this.lamp(this.deep, 57, 4.6, -15, 0xff4fd8, 20, 34), this.lamp(this.deep, 60, 4.6, 15, 0xff4fd8, 20, 34)];
+    this._decor();
+  }
+
+  // Furnishing: the things that make each room read as a real place (ribs, ducts, shelves, pipes, lockers, chairs).
+  // Everything is one group per room, added last to that room's props, so it disappears with a wrecked room and returns when it is rebuilt.
+  // Nothing here blocks walking: pieces sit within 0.7 m of a wall, above head height, or inside an existing machine's collider. The few that do not get their own small collider.
+  _decor() {
+    const M = this.M, R = this.rooms, PI2 = Math.PI / 2, hard = (x, z, r) => this.solid('deep', x, z, r);
+    const quiet = (m) => { m.castShadow = false; m.receiveShadow = false; return m; };
+    for (const id of Object.keys(R)) {
+      const d = R[id].def, q = roomRect(d), sd = d.side, g = new THREE.Group();
+      const c = { ...q, cx: (q.x0 + q.x1) / 2, cz: (q.z0 + q.z1) / 2, W: q.x1 - q.x0, D: q.z1 - q.z0, door: d.door };
+      const zB = (k) => (sd < 0 ? q.z0 : q.z1) - sd * k, zD = (k) => (sd < 0 ? q.z1 : q.z0) + sd * k;   // k metres in from the back wall / from the door wall
+      const B = (w, h, dp, m, x, y, z, ry = 0) => this.put(g, quiet(this.box(w, h, dp, m)), x, y, z, 0, ry, 0);
+      const C = (r, h, m, x, y, z, rx = 0, rz = 0, seg = 10) => this.put(g, quiet(this.cyl(r, r, h, m, seg)), x, y, z, rx, 0, rz);
+      const S = (r, m, x, y, z) => this.put(g, quiet(this.sph(r, m, 10, 8)), x, y, z);
+      const T = (r, t, m, x, y, z, rx = 0, ry = 0) => this.put(g, quiet(new THREE.Mesh(new THREE.TorusGeometry(r, t, 6, 16), m)), x, y, z, rx, ry, 0);
+      // --- the same structure in every room: ribs on the side walls, a duct and a cable tray overhead, a vent, floor lighting, a status screen by the door
+      for (const x of [c.x0 + 0.08, c.x1 - 0.08]) for (let k = 1; k <= 3; k++) B(0.16, ROOM_H, 0.2, M.metal, x, ROOM_H / 2, c.z0 + (c.D * k) / 4);
+      C(0.2, c.W - 0.5, M.metal, c.cx, ROOM_H - 0.4, zB(0.45), 0, PI2); B(c.W - 0.5, 0.06, 0.45, M.dark, c.cx, ROOM_H - 0.75, zB(1.2));
+      B(0.08, 0.7, 1.3, M.dark, c.x1 - 0.05, ROOM_H - 1.3, c.cz + c.D * 0.3);
+      for (const x of [c.x0 + 0.06, c.x1 - 0.06]) B(0.05, 0.05, c.D - 0.4, M.cyan, x, 0.1, c.cz);
+      B(0.95, 0.65, 0.05, M.dark, c.door - 3.2, 1.7, zD(0.05)); B(0.8, 0.5, 0.02, M.screen, c.door - 3.2, 1.7, zD(0.09));
+
+      if (id === 'workshop') {
+        B(0.08, 2.2, 6, M.dark, c.x0 + 0.06, 2.3, -14); for (let i = 0; i < 6; i++) B(0.06, 0.45 + (i % 3) * 0.15, 0.12, i % 2 ? M.orange : M.metal, c.x0 + 0.13, 1.9 + (i % 3) * 0.42, -16.4 + i * 0.95);   // tool wall
+        for (const y of [0.5, 1.4, 2.3]) B(7, 0.06, 0.55, M.metal, -51.2, y, zD(0.33)); for (const x of [-54.6, -47.8]) B(0.08, 2.6, 0.55, M.metal, x, 1.3, zD(0.33));                                   // parts shelves
+        for (let i = 0; i < 8; i++) B(0.62, 0.4, 0.42, [M.orange, M.blue, M.white, M.yellow][i % 4], -54.1 + i * 0.83, (i % 2 ? 1.4 : 0.5) + 0.23, zD(0.33));
+        B(0.25, 0.3, c.D - 1, M.yellow, BENCH[0], ROOM_H - 0.95, c.cz); B(0.6, 0.4, 0.6, M.dark, BENCH[0], ROOM_H - 1.3, BENCH[1] - 2.6); C(0.03, 1.5, M.metal, BENCH[0], ROOM_H - 2.25, BENCH[1] - 2.6); B(0.18, 0.25, 0.1, M.orange, BENCH[0], ROOM_H - 3.1, BENCH[1] - 2.6);   // overhead hoist
+        B(0.7, 0.9, 1.4, M.grey, c.x1 - 0.45, 0.45, -15); B(0.04, 0.06, 1.2, M.orange, c.x1 - 0.82, 0.55, -15); B(0.04, 1.4, 2.4, M.screen, c.x1 - 0.05, 2.7, -15);                                   // parts cart, plan screen
+      }
+      if (id === 'control') {
+        for (let i = 0; i < 3; i++) { const x = c.x0 + 4.5 + i * 6.4, z = c.cz - 0.7; C(0.05, 0.5, M.metal, x, 0.27, z); C(0.32, 0.1, M.dark, x, 0.55, z, 0, 0, 14); B(0.6, 0.7, 0.08, M.dark, x, 1.0, z + 0.34); }   // operator chairs
+        for (const [x, e] of [[c.x0 + 0.33, 1], [c.x1 - 0.33, -1]]) for (let k = 0; k < 3; k++) { const z = -21 + k * 1.6; B(0.55, 2.7, 1.3, M.dark, x, 1.35, z); B(0.02, 1.7, 0.08, M.greenG, x + e * 0.29, 1.4, z - 0.4); B(0.02, 0.1, 0.5, M.amber, x + e * 0.29, 2.35, z + 0.2); }   // server racks
+        const hx = c.x0 + 4.5, hz = zD(4.1); C(0.9, 0.5, M.dark, hx, 0.25, hz, 0, 0, 20); T(0.75, 0.04, M.cyan, hx, 0.56, hz, PI2);                                                                 // hologram table
+        this.holoMoon = this.put(g, new THREE.Mesh(new THREE.SphereGeometry(0.78, 16, 12), new THREE.MeshBasicMaterial({ color: 0x8fe9ff, wireframe: true, transparent: true, opacity: 0.55 })), hx, 1.9, hz);
+        T(1.05, 0.015, M.cyan, hx, 1.9, hz, PI2 + 0.35); hard(hx, hz, 1.1);
+      }
+      if (id === 'kitchen') {
+        B(10, 0.8, 0.55, M.white, c.cx, 2.85, zB(0.3)); B(9.6, 0.04, 0.1, M.warm, c.cx, 2.42, zB(0.5));                                                                                                   // wall cabinets + light
+        B(1.5, 0.3, 1.2, M.metal, c.cx - 2, 2.25, zB(1.0)); B(1.2, 0.06, 0.8, M.metal, c.cx + 2.5, 1.12, zB(1.1)); C(0.04, 0.45, M.metal, c.cx + 2.5, 1.33, zB(0.55));                                    // hood, sink, tap
+        for (let i = 0; i < 4; i++) { const a = i * PI2 + 0.785, x = c.cx + Math.cos(a) * 2.15, z = c.cz + 2 + Math.sin(a) * 2.15; C(0.06, 0.6, M.grey, x, 0.3, z); C(0.32, 0.08, M.orange, x, 0.62, z, 0, 0, 14); }   // stools
+        B(0.7, 0.05, 0.5, M.grey, c.cx, 1.04, c.cz + 2); for (let i = 0; i < 3; i++) S(0.1, M.tomato, c.cx - 0.2 + i * 0.2, 1.15, c.cz + 2 + (i % 2) * 0.1);                                              // tray of tomatoes
+        B(0.6, 1.1, 0.6, M.white, c.x0 + 0.4, 0.55, zD(5.5)); C(0.3, 1.0, M.tankW, c.x0 + 0.42, 1.6, zD(5.5), 0, 0, 14);                                                                                  // water dispenser
+        for (const y of [1.6, 2.25]) { B(0.3, 0.05, 3, M.metal, c.x1 - 0.2, y, zD(7.5)); for (let i = 0; i < 5; i++) C(0.16, 0.36, i % 2 ? M.green : M.orange, c.x1 - 0.22, y + 0.2, zD(6.2 + i * 0.62)); }   // tin racks
+      }
+      if (id === 'oxygen') {
+        const tz = c.z0 + 2.4, xs = [0, 1, 2].map((i) => c.x0 + 3 + i * 4.2), mz = c.cz + 2.5;
+        C(0.14, 10.6, M.metal, c.x0 + 7.9, 4.5, tz, 0, PI2); for (const x of xs) { C(0.1, 0.9, M.metal, x, 4.1, tz); T(0.28, 0.05, M.orange, x, 1.5, tz + 1.72); C(0.16, 0.05, M.white, x + 0.55, 2.4, tz + 1.62, PI2, 0, 14); }   // header, risers, valves, gauges
+        C(0.12, mz - tz, M.metal, c.cx + 2, 4.5, (tz + mz) / 2, PI2); C(0.12, 1.9, M.metal, c.cx + 2, 3.55, mz);                                                                                          // feed pipe to the Oxygen Maker
+        for (const dx of [-1, 1]) { C(0.22, 1.1, M.glass, c.cx + dx, 3.15, mz, 0, 0, 14); C(0.17, 0.75, M.water, c.cx + dx, 3.0, mz, 0, 0, 12); }                                                          // bubbling tubes
+        for (let i = 0; i < 4; i++) C(0.24, 1.5, M.tankO2, c.x1 - 0.4, 0.75, -19 + i * 0.6, 0, 0, 12); B(0.06, 0.06, 2.4, M.orange, c.x1 - 0.68, 1.1, -18.1); B(6.2, 0.03, 3, M.dark, c.cx, 0.05, mz);       // spare bottles, floor grating
+      }
+      if (id === 'storage') {
+        const rz = c.z1 - 1.5; B(15, 0.08, 0.6, M.dark, c.x0 + 8, 4.3, rz); for (let i = 0; i < 4; i++) C(0.07, 0.75, M.orange, c.x0 + 2.6 + i * 3.6, 3.95, rz);                                          // cable tray and drops
+        B(0.2, 1.6, 1.2, M.grey, c.x1 - 0.12, 1.8, 15); B(0.04, 0.5, 0.12, M.orange, c.x1 - 0.25, 1.9, 15); B(0.02, 0.08, 0.8, M.greenG, c.x1 - 0.23, 2.45, 15);                                           // breaker panel
+        B(5.6, 0.05, 1.3, M.yellow, c.x0 + 3.3, 0.045, c.z0 + 6); B(15, 0.03, 0.25, M.yellow, c.x0 + 8, 0.05, c.z1 - 2.8);                                                                               // floor markings
+        C(0.14, 0.6, M.red, c.door + 3, 0.9, zD(0.25)); B(0.04, 1.2, 2, M.screen, c.x0 + 0.05, 2.4, 17);                                                                                                  // extinguisher, energy screen
+      }
+      if (id === 'quarters') {
+        for (let i = 0; i < 3; i++) { const x = c.x0 + 3.5 + i * 6, z = c.z1 - 5.05; for (const e of [-0.3, 0.3]) B(0.06, 3.0, 0.06, M.metal, x + e, 1.5, z); for (let k = 0; k < 4; k++) B(0.6, 0.05, 0.05, M.metal, x, 0.55 + k * 0.6, z); B(0.04, 1.3, 2.0, [M.orange, M.teal, M.blue][i], x + 1.12, 3.25, c.z1 - 1.9); }   // ladders, privacy curtains
+        for (let i = 0; i < 4; i++) { B(0.6, 2.4, 1.1, M.grey, c.x0 + 0.35, 1.2, 10 + i * 1.2); B(0.03, 0.4, 0.06, M.orange, c.x0 + 0.67, 1.3, 10.35 + i * 1.2); }                                         // lockers
+        B(0.7, 0.08, 2.6, M.white, c.x1 - 0.4, 0.95, 12.5); B(0.04, 0.6, 0.9, M.screen, c.x1 - 0.1, 1.5, 12.5); C(0.3, 0.5, M.orange, c.x1 - 1.25, 0.25, 12.5, 0, 0, 14); C(0.14, 0.2, M.white, c.x1 - 0.4, 1.09, 13.5); S(0.22, M.green, c.x1 - 0.4, 1.4, 13.5);   // desk, stool, plant
+        B(6, 0.02, 4, M.teal, c.cx, 0.045, 13.5);                                                                                                                                                         // rug
+      }
+      if (id === 'bathroom') {
+        B(0.4, 0.9, 0.4, M.white, c.cx + 0.5, 0.45, c.z0 + 4.2); B(1.4, 0.2, 0.6, M.white, c.cx + 0.5, 1.0, c.z1 - 0.4); C(0.04, 0.35, M.metal, c.cx + 0.5, 1.28, c.z1 - 0.2); B(1.6, 0.08, 0.1, M.whiteG, c.cx + 0.5, 2.95, c.z1 - 0.15);   // basin under the mirror, light bar
+        C(0.04, 0.5, M.metal, c.x0 + 2.4, 3.15, c.z1 - 2.4); C(0.25, 0.05, M.metal, c.x0 + 2.4, 2.9, c.z1 - 2.4, 0, 0, 14); B(1.6, 0.02, 1, M.blue, c.x0 + 2.4, 0.045, c.z1 - 4.4);                          // shower head, mat
+        C(0.09, c.W - 1, M.tankW, c.cx, 0.35, c.z1 - 0.25, 0, PI2); C(0.09, ROOM_H - 0.4, M.tankW, c.x1 - 0.25, ROOM_H / 2, c.z1 - 0.25);                                                                  // used-water pipes to the recycler
+        B(0.04, 0.04, 2.2, M.metal, c.x0 + 0.2, 1.5, 14); B(0.06, 0.8, 0.6, M.white, c.x0 + 0.22, 1.1, 13.4); B(0.06, 0.8, 0.6, M.orange, c.x0 + 0.22, 1.1, 14.6); B(0.4, 1.0, 1.4, M.white, c.x1 - 0.25, 1.9, 14);   // towels, cabinet
+      }
+      if (id === 'water') {
+        const tz = c.z1 - 3, ux = c.cx + 2, uz = c.cz - 1;
+        for (let i = 0; i < 2; i++) { const x = c.x0 + 3.4 + i * 5.2; B(0.12, 3.4, 0.06, M.cyan, x, 2.5, tz - 2.02); T(0.26, 0.05, M.orange, x + 0.9, 1.2, tz - 1.85); }                                   // sight glasses, valves
+        C(0.12, 9, M.metal, c.x0 + 7.1, 5.1, tz, 0, PI2); C(0.12, tz - uz, M.metal, ux + 1.6, 5.1, (tz + uz) / 2, PI2); C(0.12, 2.9, M.metal, ux + 1.6, 3.65, uz);                                         // header and feed to the recycler
+        for (let i = 0; i < 4; i++) { C(0.2, 0.8, M.glass, ux - 1.4 + i * 0.75, 2.6, uz, 0, 0, 12); C(0.15, 0.6, [M.water, M.tankW, M.straw, M.white][i], ux - 1.4 + i * 0.75, 2.52, uz); }                // filter cartridges
+        B(0.9, 0.6, 0.6, M.dark, c.x0 + 0.5, 0.3, 12); C(0.25, 0.8, M.metal, c.x0 + 0.5, 0.75, 12, 0, PI2, 12); C(0.25, 0.4, M.yellow, c.cx - 1, 0.2, c.cz + 1, 0, 0, 12);                                   // pump, drip bucket
+      }
+      if (id === 'animal') {
+        const px = c.x0 + 5, pz = c.cz + 2.5, tx = c.x1 - 3.6, tz = c.z0 + 7;
+        B(5, 0.9, 0.6, M.white, c.x1 - 3.5, 0.45, c.z1 - 0.4); B(5.1, 0.06, 0.65, M.grey, c.x1 - 3.5, 0.93, c.z1 - 0.4); B(0.25, 0.08, 0.3, M.dark, c.x1 - 4.5, 1.0, c.z1 - 0.4); C(0.06, 0.45, M.dark, c.x1 - 4.5, 1.25, c.z1 - 0.35);   // lab bench, microscope
+        for (let i = 0; i < 3; i++) C(0.1, 0.25, M.glass, c.x1 - 3 + i * 0.35, 1.09, c.z1 - 0.4); B(1.2, 0.7, 0.04, M.screen, c.x1 - 1.8, 1.75, c.z1 - 0.1);                                               // sample jars, health screen
+        C(0.02, 2.6, M.dark, px, ROOM_H - 1.3, pz); C(0.45, 0.2, M.metal, px, ROOM_H - 2.7, pz, 0, 0, 14); C(0.3, 0.04, M.warm, px, ROOM_H - 2.82, pz, 0, 0, 14);                                           // heat lamp over the pen
+        C(0.3, 0.3, M.metal, px - 1.6, 0.25, pz - 1.5, 0, 0, 12); C(0.18, 0.5, M.tankW, px + 1.8, 0.35, pz - 1.7);                                                                                        // feeder, water
+        B(4.4, 0.2, 1.4, M.white, tx, 3.0, tz); for (const ex of [-2.1, 2.1]) for (const ez of [-0.9, 0.9]) B(0.07, 3, 0.07, M.metal, tx + ex, 1.5, tz + ez); for (let i = 0; i < 5; i++) S(0.3, i % 2 ? M.green : M.greenD, tx - 1.7 + i * 0.85, 3.3, tz);   // plants fed by the fish water
+      }
+      if (id === 'potato' || id === 'tomato') {
+        const fz = c.cz; B(0.06, 1.7, 1.7, M.dark, c.x1 - 0.04, 4.2, fz); T(0.72, 0.07, M.metal, c.x1 - 0.12, 4.2, fz, 0, PI2); B(0.04, 1.3, 0.14, M.metal, c.x1 - 0.13, 4.2, fz); B(0.04, 0.14, 1.3, M.metal, c.x1 - 0.13, 4.2, fz);   // ventilation fan
+        const nx = c.x1 - 0.95, nz = zD(0.95); C(0.6, 1.6, M.tankW, nx, 0.8, nz, 0, 0, 16); C(0.63, 0.1, M.white, nx, 1.65, nz, 0, 0, 16); C(0.05, 1.4, M.tankW, nx - 0.4, 2.4, nz); hard(nx, nz, 0.85);                                  // nutrient tank
+      }
+      R[id].props.add(g);
+    }
   }
 
   _markers() {
@@ -537,6 +640,9 @@ export class World {
     const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(60 * 3), 3)); this.sparkPts = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffd27a, size: 0.14, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); this.sparkPts.frustumCulled = false; this.scene.add(this.sparkPts);
     const sgeo = new THREE.CircleGeometry(0.3, 8); sgeo.rotateX(-Math.PI / 2); this.scuffs = new THREE.InstancedMesh(sgeo, new THREE.MeshBasicMaterial({ color: 0x4f4c49, transparent: true, opacity: 0.28, depthWrite: false }), 240); this.scuffs.frustumCulled = false; this.scuffI = 0;
     const far = new THREE.Matrix4().makeTranslation(0, -9999, 0); for (let i = 0; i < 240; i++) this.scuffs.setMatrixAt(i, far); this.top.add(this.scuffs);
+    const trTex = canvasTex(64, 64, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(40,38,36,0.95)'; g.lineWidth = 7; g.lineCap = 'round'; for (const y of [10, 32, 54]) { g.beginPath(); g.moveTo(8, y + 9); g.lineTo(32, y - 9); g.lineTo(56, y + 9); g.stroke(); } });
+    const tgeo = new THREE.PlaneGeometry(0.52, 0.62); tgeo.rotateX(-Math.PI / 2); this.tracks = new THREE.InstancedMesh(tgeo, new THREE.MeshBasicMaterial({ map: trTex, transparent: true, opacity: 0.5, depthWrite: false }), 900); this.tracks.frustumCulled = false; this.trackI = 0;
+    const tfar = new THREE.Matrix4().makeTranslation(0, -9999, 0); for (let i = 0; i < 900; i++) this.tracks.setMatrixAt(i, tfar); this.top.add(this.tracks);
     const dn = 220, dgeo = new THREE.BufferGeometry(); dgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(dn * 3).fill(-9999), 3)); this.dustPts = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0xc9c5bd, size: 0.2, transparent: true, opacity: 0.85, depthWrite: false })); this.dustPts.frustumCulled = false; this.top.add(this.dustPts);
     this.dustV = Array.from({ length: dn }, () => [0, 0, 0, 0]); this.dustI = 0;
     this.sparkV = Array.from({ length: 60 }, () => [0, 0, 0, 0]); this.sparkAt = null; this.sparkLight = new THREE.PointLight(0xffc27a, 0, 14, 1.5); this.scene.add(this.sparkLight);
@@ -547,6 +653,8 @@ export class World {
   // Where the orange guide beam stands: { zone, x, z, id }
   setTarget(t) { this.target = t; if (!t) { this.beacon.visible = false; return; } const p = this.at(t.zone, t.x, t.z); this.beacon.position.set(p.x, p.y + 30, p.z); }
   setZone(z) { this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; this.earth.visible = this.sunSprite.visible = z === 'top'; }
+  // Press one tyre print into the dust at (x, z), pointing along yaw.
+  track(x, z, yaw) { const m = (this._tm || (this._tm = new THREE.Matrix4())).makeRotationY(yaw); m.setPosition(x, this.heightAt(x, z) + 0.045, z); this.tracks.setMatrixAt(this.trackI++ % 900, m); this.tracks.instanceMatrix.needsUpdate = true; }
   // Kick up n grains of dust at (x, z). dx, dz = which way it is thrown; they fly as far as their speed takes them and drop straight back.
   puff(x, z, n = 6, dx = 0, dz = 0, up = 1.6, spread = 1.2) { const p = this.dustPts.geometry.attributes.position, y = this.heightAt(x, z) + 0.05;
     for (let k = 0; k < n; k++) { const i = this.dustI++ % this.dustV.length, v = this.dustV[i]; p.setXYZ(i, x + (Math.random() - 0.5) * 0.3, y, z + (Math.random() - 0.5) * 0.3); v[0] = dx + (Math.random() - 0.5) * spread; v[1] = up * (0.5 + Math.random()); v[2] = dz + (Math.random() - 0.5) * spread; v[3] = 1; } p.needsUpdate = true; }

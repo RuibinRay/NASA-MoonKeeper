@@ -17,6 +17,8 @@ const FACTS = [
   'A message to Earth takes 1.3 seconds. On Mars it would take 4 to 24 minutes. Imagine waiting that long for an answer!',
   'Hens can eat dried grass, seeds and plant scraps. People cannot — our tummies are built differently.',
   'Why is there no glowing beam under the skylight? You can only see a light beam when air or dust scatters it. The cave has no air, so sunlight just makes a bright patch on the floor.',
+  'The rover bounces in slow motion. Its springs push back just as hard as on Earth, but gravity pulls it down six times more gently — so every bump becomes a long, floating wallow.',
+  'Your tyre tracks will still be here in a million years. With no wind and no rain, nothing on the Moon rubs them out.',
   'Watch the dust your boots kick up. On Earth it would hang in the air as a cloud. Here there is no air, so every grain flies in a clean arc and drops straight back down.',
   'A plant grows only as fast as whatever it has least of: light, water, plant food, warmth or fresh air. Fixing anything else changes nothing.',
   'In 2022 scientists grew plants in real Moon soil for the first time. Nearly every seed sprouted — but the plants stayed small and stressed. Moon soil is not garden soil.',
