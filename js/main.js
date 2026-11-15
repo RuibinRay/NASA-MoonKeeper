@@ -14,7 +14,7 @@ import { patchAt, scoop } from './life.js';
 import { installEvents } from './events.js';
 import { comicIntro, tutorial, disaster, ending } from './story.js';
 
-const V3 = THREE.Vector3, $ = (s) => document.querySelector(s), clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const V3 = THREE.Vector3, $ = (s) => document.querySelector(s), clamp = (x, a, b) => Math.max(a, Math.min(b, x)), UP = new V3(0, 1, 0), TMP = new V3();
 const canvas = $('#view'), params = new URLSearchParams(location.search);
 const G = (window.G = {
   state: 'title', keys: {}, S: null, simOn: false, speedMul: 1, sleepLeft: 0, shake: 0, paused: false, npcs: [], goal: null, nagT: 0, stepT: 0, saveT: 0,
@@ -311,9 +311,10 @@ function updateVehicle(dt, free) {
   } else {
     const s = G.ship, dead = S.ship.charge <= 0, up = free && !dead ? (k[' '] ? 1 : 0) - (k.c || k.Control ? 1 : 0) : dead ? -0.6 : 0, fly = s.alt > 0.25;
     s.yaw += st * dt * 1.7; const a = dead || !fly ? 0 : thr * 16; s.vx += Math.sin(s.yaw) * a * dt; s.vz += Math.cos(s.yaw) * a * dt; const drag = fly ? 0.55 : 6; s.vx *= 1 - Math.min(1, drag * dt); s.vz *= 1 - Math.min(1, drag * dt);
-    const sp = Math.hypot(s.vx, s.vz); if (sp > 30) { s.vx *= 30 / sp; s.vz *= 30 / sp; } s.vy += (up * 8 - s.vy) * Math.min(1, dt * 2.5);
+    const sp = Math.hypot(s.vx, s.vz); if (sp > 30) { s.vx *= 30 / sp; s.vz *= 30 / sp; } const vy0 = s.vy, alt0 = s.alt; s.vy += ((up < 0 ? -Math.min(8, 0.7 + s.alt * 0.55) : up * 8) - s.vy) * Math.min(1, dt * (up < 0 && s.alt < 12 ? 5 : 2.5));   // coming down, the hopper slows by itself in the last metres
     const p = { x: s.x + s.vx * dt, z: s.z + s.vz * dt }; if (topBounds(p, -999)) { s.vx = s.vz = 0; } s.x = p.x; s.z = p.z;
-    const inPit = Math.hypot(s.x - PIT.x, s.z - PIT.z) < PIT.r + 4, gnd = inPit ? 6 : world.heightAt(s.x, s.z); s.y = clamp(s.y + s.vy * dt, gnd, gnd + 80); if (s.y <= gnd + 0.001 && s.vy < 0) s.vy = 0; s.alt = s.y - gnd;
+    const inPit = Math.hypot(s.x - PIT.x, s.z - PIT.z) < PIT.r + 4, gnd = inPit ? 6 : world.heightAt(s.x, s.z); s.y = clamp(s.y + s.vy * dt, gnd, gnd + 80); if (s.y <= gnd + 0.001 && s.vy < 0) s.vy = 0; s.alt = s.y - gnd; if (alt0 > 0.05 && s.alt <= 0.05) s.hit = clamp(-vy0 * 0.9, 0.5, 2.6);
+    s.thr = dead ? 0 : fly || up > 0 ? clamp(0.4 + Math.max(0, up) * 0.6 + Math.abs(thr) * 0.25 - (up < 0 ? 0.2 : 0), 0, 1.25) : 0; s.steer = st; s.gnd = gnd; s.inPit = inPit;
     S.ship.charge = Math.max(0, S.ship.charge - ((sp * dt) / 4200 + (fly ? dt / 420 : 0)) * perk); S.stats.km += (sp * dt) / 1000;
     P.pos.set(s.x, s.y, s.z); P.face = s.yaw;
   }
@@ -357,7 +358,24 @@ function placeVehicles(dt) {
       // what it takes to reach its pad: the rover uses a full charge in 2.6 km, the hopper in 4.2 km plus a little for every second in the air
       const pad = k2 === 'car' ? CAR_PAD : SHIP_PAD, home = Math.hypot(v.x - pad[0], v.z - pad[1]), need = k2 === 'car' ? home / 2600 : home / 4200 + home / 25 / 420, name = k2 === 'car' ? 'rover' : 'hopper';
       if (G.state === 'play' && S[k2].charge > 0 && S[k2].charge < need * 1.25 + 0.04) G.warn('cold-' + k2, `<b>Time to go!</b> The cold has drained the ${name} to <b>${Math.round(S[k2].charge * 100)}%</b>. That is only just enough to get home. Take what you have and leave now.`, 'alert', 45000); } }
-  sg.position.set(s.x, s.y, s.z); sg.rotation.set(clamp(-Math.hypot(s.vx, s.vz) * 0.01, -0.3, 0), s.yaw, 0, 'YXZ');
+  // --- the hopper on its legs. Like the rover's springs, this is for the eye only: it never changes where the hopper goes.
+  const H = s.dyn || (s.dyn = { dy: 0, dv: 0, roll: 0, thr: 0, dust: 0, hud: 0 }), flying = P.in === 'ship'; if (!flying) { s.thr = 0; s.steer = 0; }
+  if (s.hit) { H.dv -= s.hit; if (P.zone === 'top') for (const [ex, ez] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) world.puff(s.x + ex * 2.3, s.z + ez * 1.8, 5, ex * 2.4, ez * 2.4, 0.7, 0.8); G.audio.play('blip'); s.hit = 0; }   // feet down: the body dips and dust jumps from each pad
+  H.dv += ((0 - H.dy) * 45 - H.dv * 5.5) * dt; H.dy = clamp(H.dy + H.dv * dt, -0.32, 0.12);   // soft and slow, as things settle in one-sixth gravity
+  H.thr += ((s.thr || 0) - H.thr) * Math.min(1, dt * 6); H.roll += ((flying && s.alt > 0.3 ? -(s.steer || 0) * 0.16 : 0) - H.roll) * Math.min(1, dt * 3);
+  sg.position.set(s.x, s.y, s.z); sg.rotation.set(clamp(-Math.hypot(s.vx, s.vz) * 0.01, -0.3, 0), s.yaw, H.roll, 'YXZ');
+  const ext = Math.min(s.alt, 0.35); world.shipBody.position.y = H.dy;   // in the air the legs hang 35 cm lower; as the feet touch they take the weight
+  for (const L of world.shipLegs) { const hx = L.hip.x, hy = L.hip.y + H.dy, hz = L.hip.z, fx2 = L.foot.x, fy = L.foot.y - ext, fz2 = L.foot.z, dx = fx2 - hx, dy = fy - hy, dz = fz2 - hz, len = Math.hypot(dx, dy, dz);
+    L.pad.position.y = 0.06 - ext; L.leg.position.set((hx + fx2) / 2, (hy + fy) / 2, (hz + fz2) / 2); L.leg.scale.y = len; L.leg.quaternion.setFromUnitVectors(UP, TMP.set(dx / len, dy / len, dz / len)); }
+  // dust blown flat and outward by the jets when the hopper is low (no air on the Moon, so it does not billow)
+  if (P.zone === 'top' && H.thr > 0.2 && s.alt < 7) { H.dust += dt * (1 - s.alt / 7) * H.thr * 24; while (H.dust > 1) { H.dust -= 1; const a = Math.random() * 6.283, r = 1.2 + Math.random() * 1.4; world.puff(s.x + Math.cos(a) * r, s.z + Math.sin(a) * r, 2, Math.cos(a) * 3.4, Math.sin(a) * 3.4, 0.45, 0.6); } }
+  // landing ring on the ground below, and the flight readout
+  { const show = flying && P.zone === 'top' && s.alt > 0.6, ret = world.shipRet; ret.visible = show; const el = $('#flight');
+    if (show || flying) { const g0 = world.heightAt(s.x, s.z), hs = [[-2.2, 1.8], [2.2, 1.8], [-2.2, -1.8], [2.2, -1.8]].map(([ax, az]) => world.heightAt(s.x + ax, s.z + az)), rough = Math.max(...hs) - Math.min(...hs) > 0.7, state = s.inPit ? 2 : rough ? 1 : 0;
+      ret.position.set(s.x, g0 + 0.07, s.z); ret.rotation.y = s.yaw; ret.scale.setScalar(1 + Math.min(s.alt, 40) * 0.035); world.shipRetM.color.setHex([0x5fe3a1, 0xffb347, 0xff5a4a][state]); world.shipRetM.opacity = 0.55 + 0.3 * Math.sin(performance.now() * 0.006);
+      H.hud -= dt; if (H.hud <= 0) { H.hud = 0.12; const vs = s.vy, sp = Math.hypot(s.vx, s.vz); el.classList.remove('hidden');
+        el.innerHTML = `<span>ALT <b>${s.alt.toFixed(s.alt < 10 ? 1 : 0)} m</b></span><span>${vs < -0.05 ? '▼' : vs > 0.05 ? '▲' : '•'} <b>${Math.abs(vs).toFixed(1)} m/s</b></span><span>SPEED <b>${sp.toFixed(0)} m/s</b></span><span class="${['ok', 'warn', 'bad'][state]}">${s.alt < 0.6 ? 'On the ground' : ['Clear to land', 'Bumpy ground below', 'Over the pit'][state]}</span>`; } }
+    else if (!el.classList.contains('hidden')) el.classList.add('hidden'); }
   if (S) { const park = (v, pad, r, slow) => Math.hypot(v.x - pad[0], v.z - pad[1]) < r && slow; S.car.charging = park(c, CAR_PAD, 4.5, Math.abs(c.v) < 0.6) && S.car.charge < 1; S.ship.charging = park(s, SHIP_PAD, 5.5, s.alt < 0.4) && S.ship.charge < 1; }
 }
 function updateRego(dt) {
@@ -430,7 +448,7 @@ function frame(now, manual) {
   updatePlayer(dt); if (G.S) placeVehicles(dt); updateRego(dt); updateActors(dt); if (G.cineTick) G.cineTick(dt); else updateCamera(dt);
   if (G.S) { tickSim(dt); updateRad(dt); if (G.state !== 'over') updateGoal(); }
   placeItems();
-  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook', sleeping: G.sleepLeft > 0 });
+  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook', sleeping: G.sleepLeft > 0, shipThrust: G.ship.dyn ? G.ship.dyn.thr : 0 });
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
   world.render();
   if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { G._sleepAlerts = G.alerts().filter((a) => a.kind !== 'warn').length; G._sleepBatt = G.S.battery; } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepBatt = undefined; }

@@ -400,11 +400,15 @@ export class World {
     this.carLamp = new THREE.SpotLight(0xfff2dc, 0, 90, 0.5, 0.6, 1); this.carLamp.position.set(0, 1.6, 2.5); this.carLamp.target.position.set(0, 0, 22); body.add(this.carLamp, this.carLamp.target);
     this.carCargo = new THREE.Group(); this.carCargo.position.set(0, 1.5, -1.15); body.add(this.carCargo);
     const ship = this.ship = new THREE.Group(); this.scene.add(ship);
-    this.put(ship, this.box(3.2, 2.0, 4.6, M.white), 0, 1.9, 0); this.put(ship, this.box(3.26, 0.35, 4.66, M.teal), 0, 1.5, 0); this.put(ship, this.sph(1.25, M.glass.clone(), 18, 12), 0, 2.3, 2.0); this.put(ship, this.box(2.6, 0.12, 2.2, M.grey), 0, 2.98, -1.0);
-    this.shipJets = []; for (const [px, pz] of [[-1.9, 1.7], [1.9, 1.7], [-1.9, -1.7], [1.9, -1.7]]) { this.put(ship, this.cyl(0.07, 0.07, 1.5, M.metal, 6), px * 1.05, 0.7, pz * 1.05, 0, 0, px > 0 ? -0.3 : 0.3); this.put(ship, this.cyl(0.5, 0.5, 0.12, M.foil, 10), px * 1.2, 0.06, pz * 1.05); this.put(ship, this.cyl(0.32, 0.42, 0.6, M.dark, 10), px, 1.0, pz); const f = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.6, 10), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); f.rotation.x = Math.PI; f.position.set(px, 0.0, pz); ship.add(f); this.shipJets.push(f); }
-    this.shipLed = this.put(ship, this.box(1.1, 0.14, 0.05, M.greenG.clone()), 0, 1.95, -2.33);
-    this.shipLamp = new THREE.SpotLight(0xdff2ff, 0, 120, 0.55, 0.6, 1); this.shipLamp.position.set(0, 1.5, 2.6); this.shipLamp.target.position.set(0, -6, 20); ship.add(this.shipLamp, this.shipLamp.target);
-    this.shipCargo = new THREE.Group(); this.shipCargo.position.set(0, 3.05, -1.0); ship.add(this.shipCargo);
+    const sb = this.shipBody = new THREE.Group(); ship.add(sb);   // everything but the legs and feet: it dips on the legs when the hopper lands
+    this.put(sb, this.box(3.2, 2.0, 4.6, M.white), 0, 1.9, 0); this.put(sb, this.box(3.26, 0.35, 4.66, M.teal), 0, 1.5, 0); this.put(sb, this.sph(1.25, M.glass.clone(), 18, 12), 0, 2.3, 2.0); this.put(sb, this.box(2.6, 0.12, 2.2, M.grey), 0, 2.98, -1.0);
+    this.shipJets = []; this.shipLegs = []; for (const [px, pz] of [[-1.9, 1.7], [1.9, 1.7], [-1.9, -1.7], [1.9, -1.7]]) { const leg = this.put(ship, this.cyl(0.07, 0.07, 1, M.metal, 6), px * 1.05, 0.7, pz * 1.05), pad = this.put(ship, this.cyl(0.5, 0.5, 0.12, M.foil, 10), px * 1.2, 0.06, pz * 1.05); this.shipLegs.push({ leg, pad, hip: new V3(px * 0.93, 1.4, pz * 1.05), foot: new V3(px * 1.17, 0.12, pz * 1.05) }); this.put(sb, this.cyl(0.32, 0.42, 0.6, M.dark, 10), px, 1.0, pz); const f = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.6, 10), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); f.rotation.x = Math.PI; f.position.set(px, 0.0, pz); sb.add(f); this.shipJets.push(f); }
+    this.shipLed = this.put(sb, this.box(1.1, 0.14, 0.05, M.greenG.clone()), 0, 1.95, -2.33);
+    this.shipLamp = new THREE.SpotLight(0xdff2ff, 0, 120, 0.55, 0.6, 1); this.shipLamp.position.set(0, 1.5, 2.6); this.shipLamp.target.position.set(0, -6, 20); sb.add(this.shipLamp, this.shipLamp.target);
+    this.shipCargo = new THREE.Group(); this.shipCargo.position.set(0, 3.05, -1.0); sb.add(this.shipCargo);
+    // landing ring: drawn on the ground straight below the hopper while it flies
+    const retM = this.shipRetM = new THREE.MeshBasicMaterial({ color: 0x5fe3a1, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide }); const ret = this.shipRet = new THREE.Group(); ret.visible = false; this.top.add(ret);
+    this.put(ret, new THREE.Mesh(new THREE.RingGeometry(2.5, 2.8, 40), retM), 0, 0, 0, -Math.PI / 2); this.put(ret, new THREE.Mesh(new THREE.RingGeometry(0.25, 0.4, 20), retM), 0, 0, 0, -Math.PI / 2); for (let k = 0; k < 4; k++) this.put(ret, new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.9), retM), Math.sin(k * Math.PI / 2) * 3.4, 0, Math.cos(k * Math.PI / 2) * 3.4, -Math.PI / 2, 0, k * Math.PI / 2);
   }
 
   // ---------- the lava tube (now the shell around the station) ----------
@@ -877,7 +881,7 @@ export class World {
       this.carLed.material.emissive.setHex(S.car.charge > 0.5 ? 0x4dff88 : S.car.charge > 0.2 ? 0xffa424 : 0xff3b30); this.shipLed.material.emissive.setHex(S.ship.charge > 0.5 ? 0x4dff88 : S.ship.charge > 0.2 ? 0xffa424 : 0xff3b30);
     }
     this.car.visible = this.ship.visible = topZ; this.carLamp.intensity = ctx.carOn && night ? 40 : 0; this.shipLamp.intensity = ctx.shipOn && night ? 50 : 0; this.carLamp.visible = this.carLamp.intensity > 0; this.shipLamp.visible = this.shipLamp.intensity > 0;
-    for (const j of this.shipJets) { j.material.opacity = ctx.shipFly ? 0.55 + Math.random() * 0.3 : 0; j.scale.y = 0.8 + Math.random() * 0.5; }
+    { const th = ctx.shipThrust || 0; for (const j of this.shipJets) { j.material.opacity = th > 0.03 ? Math.min(0.95, 0.3 + 0.5 * th + Math.random() * 0.15) : 0; j.scale.y = 0.45 + 1.5 * th + Math.random() * 0.25; j.scale.x = j.scale.z = 0.8 + 0.35 * th; } }   // longer and brighter with more thrust
     for (const s of SITES) { const o = this.sites[s.id], done = S && S.rescued.includes(s.id); o.beam.material.opacity = (done ? 0.05 : 0.14) + 0.05 * Math.sin(t * 2); o.b.material.emissiveIntensity = 1.5 + Math.sin(t * 4) * 1.2; }
     // ---- the station
     if (S && !topZ) {

@@ -87,7 +87,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | 2 | **Remaining verification.** Commander with the Water Plant and the ice mine in the planned player. Saving and loading during a job, in a vehicle and in an emergency. | Done (see below). A full touch play-through is still to do |
 | 3 | **Station interiors.** Moving machinery in each of the 11 rooms, emergency and power-out lighting, one consistent material pass, new textures. | Lighting and machinery done in all 11 rooms (see below). Material pass and new textures to do |
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
-| 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | To do |
+| 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | Hopper done (see below). Gait and transitions to do |
 | 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | To do |
 | 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | To do |
 
@@ -162,3 +162,17 @@ Still to do in step 3: one consistent material pass, and new textures.
 | Bunk Room | Five bars of air quality on the wall; a night light on each ladder | The bars follow how fresh the air is and flash while the air cleaner is broken. The night lights breathe and the room dims while you sleep |
 | Bathroom | Rings slide along the used-water pipe toward the recycler | Their speed is the share of water the recycler is saving. This water is not thrown away |
 | Animal Bay | Bubbles rise in the fish tank | Only while the fish are alive and the pump has power |
+
+### Step 5, first part: the hopper
+
+| What | How it behaves |
+| --- | --- |
+| Landing legs | In the air the legs hang 35 cm lower. As the feet touch they take the weight, the body dips on them and settles slowly, as things do in one-sixth gravity |
+| Engines | The four jets grow longer and brighter with the throttle. They light as soon as you press Space, before the hopper leaves the ground, and go out when it is parked |
+| Dust | Below 7 m the jets blow dust flat and outward (there is no air to make it billow). Each foot kicks up a puff on touchdown |
+| Banking | The hopper leans into a turn |
+| Gentle landing | Coming down, the hopper slows by itself in the last metres. From 19 m it now touches down at 0.8 m/s; before, it arrived at about 4 m/s |
+| Landing ring | A ring on the ground straight below the hopper, larger the higher you are. Green: clear. Amber: bumpy ground. Red: over the pit |
+| Flight readout | Height, climb or descent rate, speed, and the same landing advice in words |
+
+The legs, dust and ring are for the eye only. The one change to how the hopper flies is the slower final descent.
