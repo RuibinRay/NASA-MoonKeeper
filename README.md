@@ -81,7 +81,7 @@ js/mars/mola.js       Mars: real elevation data from NASA's MOLA laser, packed f
 js/mars/world.js      Mars: the 3D ground, sky, dust, real skyline and the outpost
 js/mars/game.js       Mars: what E does, the building panels, HUD, alerts, REGO's advice, the maps, saving (its own save, apart from the Moon's)
 tools/build_mars.mjs  downloads the MOLA files from NASA's Planetary Data System and builds `js/mars/mola.js` (`--check` fails if it is out of date)
-tools/mars_test.mjs   117 checks on the Mars data, the Sun and dust model, every building's effect, and the layout
+tools/mars_test.mjs   125 checks on the Mars data, the Sun and dust model, every building's effect, the layout, and the yellow guide line's routes
 docs/MARS_SCIENCE.md  every Mars number in the game, its class (observed, demonstrated, proposed, made for the game) and its source
 js/world.js           3D world (surface base, other stations, the cave, the white-panelled station, vehicles)
 js/actors.js          astronaut, REGO, BOLT robots

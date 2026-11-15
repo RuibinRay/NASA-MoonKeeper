@@ -50,6 +50,8 @@ export class MarsWorld {
     T.buildGrid(); this._mats(); this._ground(); this._rocks(); this._sky(); this._skyline(); this._dust(); this._station(); this._marks();
   }
   heightAt(x, z) { return T.heightAt(x, z); }
+  // Corner points of the yellow guide line: round the buildings, with more room when you are in the rover.
+  route(px, pz, tx, tz) { const R = this._route, key = `${Math.round(px / 1.5)},${Math.round(pz / 1.5)},${Math.round(tx)},${Math.round(tz)},${this.carOn ? 1 : 0}`; if (R && R.key === key) { R.pts[0] = [px, pz]; return R.pts; } const pts = T.routeAround(this.colliders, px, pz, tx, tz, this.carOn ? 2.4 : 1.1); this._route = { key, pts }; return pts; }
 
   _mats() {
     const M = (this.M = {});
@@ -249,7 +251,7 @@ export class MarsWorld {
 
   // ---------- every frame ----------
   update(dt, S, focus, ctx = {}) {
-    this.t += dt; const t = this.t, w = this.w, F = S ? S.flow : null, sn = F ? F.sun : { e: 0.3, u: 0.8, n: -0.3, elev: 50, hour: 12 }, tau = F ? F.tau : 0.45, cam = w.camera.position;
+    this.carOn = !!ctx.carOn; this.t += dt; const t = this.t, w = this.w, F = S ? S.flow : null, sn = F ? F.sun : { e: 0.3, u: 0.8, n: -0.3, elev: 50, hour: 12 }, tau = F ? F.tau : 0.45, cam = w.camera.position;
     this.sunDir.set(sn.e, sn.u, -sn.n).normalize();
     const day = Math.pow(clamp((sn.elev + 8) / 16, 0, 1), 1.5), low = clamp(1 - Math.abs(sn.elev - 2) / 14, 0, 1), dusty = clamp((tau - 0.4) / 3.5, 0, 1), night = 1 - clamp((sn.elev + 6) / 8, 0, 1); this.night = night;
     // sky colours

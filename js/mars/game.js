@@ -89,12 +89,12 @@ export function installMars(G, deps) {
     if (S.car.charge < 0.2) a.push({ text: tt('Rover battery low'), sub: `${Math.round(S.car.charge * 100)}%`, kind: 'warn', go: 'garage' });
     return a;
   };
-  G.pointTo = (id, text) => { const w = where(id); if (!w) return; G.goal = { ...w, text: text || null }; };
+  G.pointTo = (id, text) => { const w = where(id); if (!w) return; G.goal = { ...w, zone: 'top', text: text || null }; };
   G.advise = () => {
     const al = G.alerts(), hot = al.find((a) => a.key) || al[0]; nagT = 0;
     if (hot) { const why = { power: tt('<b>The power is out.</b> Go to the Power Station: brush the dust off the panels, or switch off something that is not keeping the crew alive.'), o2: tt('<b>We are using oxygen faster than we make it.</b> Check the ISRU Facility is on and has power.'), water: tt('<b>The water is going down.</b> Check the Water Plant and the Life Support Module: one melts new ice, the other cleans used water.'), co2: tt('<b>The air indoors is going stale.</b> The Life Support Module scrubs out carbon dioxide. Switch it back on.'), cold: tt('<b>The rooms are cooling.</b> The Thermal Control Facility needs to be on, and it needs power.') }[hot.key];
       ui.bubble(why || `<b>${hot.text}.</b> ${hot.sub || ''}`, 'worried', 12); G.pointTo(hot.go); return; }
-    const b = TOUR.find((id) => !S.seen[id]); if (b) { ui.bubble(tt`Everything is running. Let us look at the <b>${INFO[b].name}</b>: ${INFO[b].does} Follow the orange beam and press <b>E</b> at its door.`, 'happy', 12); G.pointTo(b); return; }
+    const b = TOUR.find((id) => !S.seen[id]); if (b) { ui.bubble(tt`Everything is running. Let us look at the <b>${INFO[b].name}</b>: ${INFO[b].does} Follow the yellow line on the ground and press <b>E</b> at its door.`, 'happy', 12); G.pointTo(b); return; }
     const p = POI.find((q) => !S.seen[q.id]); if (p) { ui.bubble(tt`You know the whole base now. Take the rover and find the <b>${p.name}</b>. It is ${Math.round(Math.hypot(p.x - P.pos.x, p.z - P.pos.z))} m away. Watch the rover's battery.`, 'happy', 12); G.pointTo(p.id); return; }
     ui.bubble(tt('You have seen every building and every place on this map. Try the dust control at the Power Station to see what a storm does to the base. Survival, the story and flights between the Moon and Mars come in the next updates.'), 'joy', 14);
   };
@@ -201,7 +201,7 @@ export function installMars(G, deps) {
       else if (view === 'planet') { body.innerHTML = `${tabs}<canvas id="bm" width="1000" height="500" style="width:100%;border-radius:12px;border:1px solid var(--line)"></canvas><div class="learn">${tt`Mars, flattened into a map. The colours are heights measured by the MOLA laser on NASA's Mars Global Surveyor: blue is low, red is high, white is the top of the great volcanoes. The north is low and smooth; the south is high and cratered. Nobody knows for certain why.`} ${pill('obs')}</div>`; drawPlanet(body.querySelector('#bm').getContext('2d'), 1000, 500); }
       else if (view === 'region') { body.innerHTML = `${tabs}<div class="grid2"><canvas id="bm" width="640" height="640" style="width:100%;border-radius:12px;border:1px solid var(--line)"></canvas><div><div class="stat"><span>${tt('Across')}</span><b>${REGION.km} km</b></div><div class="stat"><span>${tt('Lowest · highest')}</span><b>${REGION.min.toLocaleString()} m · ${REGION.max.toLocaleString()} m</b></div><div class="stat"><span>${tt('Our outpost')}</span><b>${SITE.elev.toLocaleString()} m</b></div><div class="stat"><span>${tt('The map you can walk')}</span><b>${tt('1.6 km: smaller than the blue dot')}</b></div><div class="learn">${tt('Real ground, from the MOLA laser: one height every 463 m. The smooth plain is Arcadia Planitia. The knobs and ridges are the Erebus Montes: old highland hills that the plains lavas flowed around. Their outline is the skyline you see from the base.')} ${pill('obs')}</div></div></div>`; drawRegion(body.querySelector('#bm').getContext('2d'), 640); }
       else { const places = [...TOUR.map((id) => [id, INFO[id].name]), ['car', tt('My Rover')], ...POI.filter((p) => S.seen[p.id]).map((p) => [p.id, p.name])];
-        body.innerHTML = `${tabs}<div class="grid2"><canvas id="bm" width="720" height="720" style="width:100%;border-radius:12px;border:1px solid var(--line)"></canvas><div><h4 class="h4">${tt('Point the guide beam at…')}</h4><div class="places">${places.map(([id, n]) => `<button class="mini-b" data-go="${id}">${n}</button>`).join('')}</div><div class="learn">${tt`White shapes are buildings (red = switched off). Blue is the solar field, the yellow dot the fission unit, the dark circle the landing pad. Places you find are added to the map: ${POI.filter((p) => S.seen[p.id]).length} of ${POI.length} so far.`}</div></div></div>`;
+        body.innerHTML = `${tabs}<div class="grid2"><canvas id="bm" width="720" height="720" style="width:100%;border-radius:12px;border:1px solid var(--line)"></canvas><div><h4 class="h4">${tt('Show me the way to…')}</h4><div class="places">${places.map(([id, n]) => `<button class="mini-b" data-go="${id}">${n}</button>`).join('')}</div><div class="learn">${tt`White shapes are buildings (red = switched off). Blue is the solar field, the yellow dot the fission unit, the dark circle the landing pad. Places you find are added to the map: ${POI.filter((p) => S.seen[p.id]).length} of ${POI.length} so far.`}</div></div></div>`;
         const c = body.querySelector('#bm').getContext('2d'), paint = () => (view === 'base' ? drawMars(c, 720, 720, 125, 10, 36, true) : drawMars(c, 720, 720, 820, 0, 0, true)); paint(); ui._tick = setInterval(paint, 400);
         body.querySelectorAll('[data-go]').forEach((b) => (b.onclick = () => { G.pointTo(b.dataset.go); ui.close(); })); }
       body.querySelectorAll('.tabs button').forEach((b) => (b.onclick = () => { view = b.dataset.v; render(w); })); };
@@ -239,7 +239,7 @@ export function installMars(G, deps) {
     drawMars(ui.mm, 340, 340, 150, P.pos.x, P.pos.z, false);
   }
   function goal() {
-    const g = G.goal; $('#goal-x').classList.toggle('hidden', !g); if (!g) { world.setTarget(null); ui.objective(null); return; }
+    const g = G.goal; $('#goal-x').classList.toggle('hidden', !g); world.guideForce = !!g; if (!g) { world.setTarget(null); ui.objective(null); return; }
     if (g.id === 'car') { g.x = G.car.x; g.z = G.car.z; } const d = Math.hypot(g.x - P.pos.x, g.z - P.pos.z);
     if (d < (P.in ? 12 : 6)) { G.goal = null; return; } world.setTarget(g); ui.objective(`<i class="dot"></i><b>${g.name}</b> ${d.toFixed(0)} m${g.text ? ' · ' + g.text : ''}`);
   }
@@ -282,7 +282,7 @@ export function installMars(G, deps) {
     $('#suit').className = 'glass on'; $('#suit').textContent = tt('SUIT ON'); $('#title').classList.add('hidden'); $('#mission').classList.add('hidden');
     S.flow = marsFlows(S); world.update(0.016, S, P.pos, {}); ui.showHud(true); G.state = 'play'; G.simOn = true; G.save();
     if (o) ui.bubble(tt('Welcome back to Mars! Everything is as you left it.'), 'joy', 8);
-    else { ui.bubble(tt('<b>Welcome to Mars!</b> This is Arcadia Planitia: a cold, flat plain with ice under the soil. The sky is butterscotch because fine dust hangs in the thin air. Walk to the <b>Command Habitat</b> and press <b>E</b> at its door. Press <b>H</b> whenever you want my advice, and <b>M</b> for the map.'), 'joy', 20); G.pointTo('cmd'); }
+    else { ui.bubble(tt('<b>Welcome to Mars!</b> This is Arcadia Planitia: a cold, flat plain with ice under the soil. The sky is butterscotch because fine dust hangs in the thin air. Follow the <b>yellow line</b> on the ground to the <b>Command Habitat</b> and press <b>E</b> at its door. Press <b>H</b> whenever you want my advice, and <b>M</b> for the map.'), 'joy', 20); G.pointTo('cmd'); }
   }
   const key = (k) => { if (k === 'Tab') panel('power'); else if (k === 'm') bigMap(); else if (k === 'h') G.advise(); else if (k === 'n') facts(); else if (k === 'v') deps.toggleView(); else if (k === 'p') deps.togglePause(); };
   return { start, frame, key, hasSave: () => { try { return !!localStorage.getItem(SAVE); } catch (e) { return false; } }, panel, bigMap, drawMars };
