@@ -78,7 +78,8 @@ function updateActors(dt) {
     if (c.role !== h.role) { c.role = h.role; c.x = (q.x0 + q.x1) / 2; c.z = (q.z0 + q.z1) / 2; c.t = 0; }
     c.t -= dt; if (c.t <= 0) { c.t = 3 + Math.random() * 5; c.tx = q.x0 + 2 + Math.random() * (q.x1 - q.x0 - 4); c.tz = q.z0 + 2 + Math.random() * (q.z1 - q.z0 - 4); }
     const dx = c.tx - c.x, dz = c.tz - c.z, d = Math.hypot(dx, dz); let sp = 0; if (d > 0.3) { sp = 2.2; c.x += (dx / d) * sp * dt; c.z += (dz / d) * sp * dt; g.rotation.y = Math.atan2(dx, dz); }
-    g.position.set(c.x, TUBE.y, c.z); c.actor.update(dt, sp, h.role !== 'idle' && d <= 0.3 ? (h.kind === 'bot' ? true : 'work') : (h.kind === 'bot' ? false : 'walk'));
+    g.position.set(c.x, TUBE.y, c.z); const busy = h.role !== 'idle' && d <= 0.3;
+    if (h.kind === 'bot') c.actor.update(dt, sp, busy); else c.actor.update(dt, sp, false, busy ? 'work' : 'walk', busy ? { tool: { farm: 'pick', cook: 'stir', clean: 'brush', build: 'wrench' }[h.role], aim: -0.45 } : null);
   }
 }
 
@@ -121,16 +122,25 @@ G.ride = async (to) => {
 // ---------- time ----------
 G.simAdvance = (h) => { const S = G.S; while (h > 1e-6 && !S.over) { const d = Math.min(h, 0.05); step(S, d); h -= d; } };
 // A build / fix scene that plays by itself: the camera circles, you and REGO work, the clock races, parts appear step by step.
-G.job = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'work', tag, sparks = true }) => new Promise((res) => {
+// Which tool fits this job? (Callers can also pass `tool` themselves.)
+const toolFor = (title, tag) => tag === 'cook' ? 'stir' : /spacesuit/i.test(title) ? 'suit' : /Picking|Replanting|Clearing the rack|digester/i.test(title) ? 'pick' : /Brushing/i.test(title) ? 'brush' : /Patching|Rebuilding|Sealing|Repairing/i.test(title) ? 'weld' : 'wrench';
+G.job = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'work', tag, sparks = true, tool }) => new Promise((res) => {
   const S = G.S, real = clamp(3.5 + hours * 1.5, 4.5, 13), hrs = G.simOn ? jobHours(S, hours) * (G.inside && !S.suitOn ? 0.75 : 1) : 0;   // no big gloves indoors: a quarter faster
-  let t = 0; G.jobbing = { pose, tag }; ui.prompt(null);
-  const sp = site ? world.at(P.zone, site.x, site.z, site.y || 0) : P.pos.clone(); if (site) P.face = Math.atan2(sp.x - P.pos.x, sp.z - P.pos.z);
-  world.sparks(pose === 'work' && sparks ? sp : null); G.rego.work = true; const pitch0 = cam.pitch, dist0 = cam.dist; cam.fp = false;
+  let t = 0; tool = tool || toolFor(title, tag); const J = (G.jobbing = { pose, tag, tool, aim: -0.25, site: null }); ui.prompt(null);
+  const sp = site ? world.at(P.zone, site.x, site.z, site.y || 0) : P.pos.clone(), workY = sp.y + (site && site.y ? 0.6 : tool === 'pick' ? 0.95 : 1.15);   // the height the hands go to
+  // Walk up to the job first: stop 1.5 m short of it. Never through a wall, and never into a room without air unless suited.
+  let walk = null;
+  if (site) { const dx = sp.x - P.pos.x, dz = sp.z - P.pos.z, d = Math.hypot(dx, dz); P.face = Math.atan2(dx, dz); J.site = sp;
+    const stand = site.r || 1.5; if (d > stand + 0.7 && d < 16) { let go = d - stand; if (P.zone === 'deep') { let ok = 0; for (let q = 0.4; q <= go + 1e-6; q += 0.4) { const x = P.pos.x + (dx / d) * q, z = P.pos.z + (dz / d) * q, rid = world.roomAt(x, z); if (!world.walkable(x, z) || (rid && S && !S.suitOn && S.rooms[rid].p < 60)) break; ok = q; } go = ok; }
+      if (go > 0.6) walk = { x0: P.pos.x, z0: P.pos.z, x1: P.pos.x + (dx / d) * go, z1: P.pos.z + (dz / d) * go, t: clamp(go / 5.5, 0.5, 2.2) }; } }
+  const lit = pose === 'work' && sparks && tool === 'weld'; G.rego.work = true; const pitch0 = cam.pitch, dist0 = cam.dist; cam.fp = false; if (!walk) world.sparks(lit ? sp : null);
   G.jobTick = (dt) => {
-    t += dt; const k = Math.min(1, t / real); if (hrs) G.simAdvance((hrs * dt) / real);
-    cam.yaw += dt * 0.42; cam.pitch += (0.42 - cam.pitch) * dt * 2; cam.dist += (9 - cam.dist) * dt * 2; if (Math.random() < dt * 9 && pose === 'work') G.audio.play('step');
-    ui.job(title, k, steps[Math.min(steps.length - 1, Math.floor(k * steps.length))], hrs ? `${fmt.hrs(Math.max(0, hrs * (1 - k)))} to go` : ''); onStep?.(k);
-    if (k >= 1) { G.jobTick = null; G.jobbing = null; world.sparks(null); G.rego.work = false; ui.job(null); cam.pitch = pitch0; cam.dist = dist0; S.stats.jobs++; G.audio.play('ok'); res(); }
+    t += dt; const tw = walk ? walk.t : 0, k = Math.min(1, Math.max(0, t - tw) / real); if (hrs && t > tw) G.simAdvance((hrs * dt) / real);
+    if (walk && t < tw) { const u = t / tw, e = u * u * (3 - 2 * u); P.pos.x = walk.x0 + (walk.x1 - walk.x0) * e; P.pos.z = walk.z0 + (walk.z1 - walk.z0) * e; P.vel.set(0, 0, 0); J.pose = 'walk'; J.speed = 5.5 * Math.sin(u * Math.PI) + 1; G.stepT += dt * J.speed; if (G.stepT > 4.2) { G.stepT = 0; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x, P.pos.z, 4, 0, 0, 0.9, 0.8); } }
+    else { if (walk) { walk = null; world.sparks(lit ? sp : null); } J.pose = pose; J.speed = 0; const d = Math.hypot(sp.x - P.pos.x, sp.z - P.pos.z); P.face = d > 0.3 ? Math.atan2(sp.x - P.pos.x, sp.z - P.pos.z) : P.face; J.aim = Math.atan2(workY - (P.pos.y + 1.5), Math.max(0.7, d)); G.rego.workAim = Math.atan2(workY - (G.regoPos.y + 0.65), Math.max(0.6, Math.hypot(sp.x - G.regoPos.x, sp.z - G.regoPos.z))); }
+    cam.yaw += dt * 0.42; cam.pitch += (0.42 - cam.pitch) * dt * 2; cam.dist += (9 - cam.dist) * dt * 2; if (Math.random() < dt * (tool === 'weld' ? 9 : 3) && pose === 'work' && t > tw) G.audio.play('step');
+    ui.job(title, k, t < tw ? 'Walking over…' : steps[Math.min(steps.length - 1, Math.floor(k * steps.length))], hrs ? `${fmt.hrs(Math.max(0, hrs * (1 - k)))} to go` : ''); onStep?.(k);
+    if (k >= 1) { G.jobTick = null; G.jobbing = null; world.sparks(null); G.rego.work = false; G.rego.workAim = undefined; ui.job(null); cam.pitch = pitch0; cam.dist = dist0; S.stats.jobs++; G.audio.play('ok'); res(); }
   };
 });
 
@@ -157,6 +167,11 @@ $('#b-power').onclick = () => G.state === 'play' && !ui.busy && ui.powerBoard();
 $('#b-view').onclick = toggleView; $('#b-pause').onclick = togglePause;
 $('#b-speed').onclick = () => { G.speedMul = G.speedMul === 1 ? 2 : G.speedMul === 2 ? 4 : 1; $('#speed-l').textContent = '×' + G.speedMul; };
 $('#b-sound').onclick = () => { $('#b-sound').innerHTML = G.audio.toggle() ? IC.sound : IC.mute; };
+// Guide mode: a yellow line on the ground to the next place, and REGO marks the button to press in panels. On by default; Settings turns it off.
+G.guide = (() => { try { return localStorage.getItem('mk-guide') !== '0'; } catch (e) { return true; } })(); world.guideOn = G.guide;
+G.setGuide = (on) => { G.guide = !!on; world.guideOn = G.guide; try { localStorage.setItem('mk-guide', G.guide ? '1' : '0'); } catch (e) {} };
+G.setSound = (on) => { if (G.audio.on !== !!on) G.audio.toggle(); $('#b-sound').innerHTML = G.audio.on ? IC.sound : IC.mute; };
+$('#b-set').innerHTML = IC.gear; $('#b-set').onclick = () => !ui.busy && ui.settings(); $('#btn-settings').onclick = () => ui.settings();
 const stickEl = $('#stick'), knob = stickEl.querySelector('i');
 const stickMove = (e) => { const r = stickEl.getBoundingClientRect(), x = (e.clientX - r.left - 59) / 59, y = (e.clientY - r.top - 59) / 59, l = Math.max(1, Math.hypot(x, y)); G.stick.x = x / l; G.stick.y = -y / l; knob.style.transform = `translate(${(x / l) * 34}px,${(y / l) * 34}px)`; };
 stickEl.onpointerdown = (e) => { stickEl.setPointerCapture(e.pointerId); stickMove(e); G.touch = true; }; stickEl.onpointermove = (e) => e.buttons && stickMove(e); stickEl.onpointerup = stickEl.onpointercancel = () => { G.stick.x = G.stick.y = 0; knob.style.transform = ''; };
@@ -188,7 +203,7 @@ function updatePlayer(dt) {
   if (free && k[' '] && P.ground && !heavy) { P.vy = 3.4; P.ground = false; G.audio.play('step'); }   // real lunar gravity
   if (!P.ground) { P.vy -= K.GRAVITY * dt; P.pos.y += P.vy * dt; if (P.pos.y <= gy) { P.pos.y = gy; P.vy = 0; P.ground = true; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x, P.pos.z, 14, P.vel.x * 0.2, P.vel.z * 0.2, 1.5, 2.6); } } else P.pos.y = gy;
   const sp = Math.hypot(P.vel.x, P.vel.z); if (sp > 0.4 && !G.jobTick) { let d = Math.atan2(P.vel.x, P.vel.z) - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 9); }
-  const g = G.astro.group; g.position.copy(P.pos); g.rotation.set(0, P.face, 0); g.visible = !cam.fp; G.astro.update(dt, sp, !P.ground, G.jobbing ? G.jobbing.pose : heavy ? 'drag' : P.carry ? 'carry' : 'walk');
+  const g = G.astro.group; g.position.copy(P.pos); g.rotation.set(0, P.face, 0); g.visible = !cam.fp; G.astro.update(dt, G.jobbing && G.jobbing.speed ? G.jobbing.speed : sp, !P.ground, G.jobbing ? G.jobbing.pose : heavy ? 'drag' : P.carry ? 'carry' : 'walk', G.jobbing);
   if (sp > 1.5 && P.ground) { G.stepT += dt * sp; if (G.stepT > 4.2) { G.stepT = 0; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x - Math.sin(P.face) * 0.3, P.pos.z - Math.cos(P.face) * 0.3, 4, -P.vel.x * 0.12, -P.vel.z * 0.12, 0.9, 0.8); } }
 }
 function updateVehicle(dt, free) {
@@ -221,13 +236,15 @@ function placeVehicles(dt) {
 }
 function updateRego(dt) {
   const R = G.regoPos, fx = Math.sin(P.face), fz = Math.cos(P.face), g = G.rego.group; g.visible = !P.in;
-  tmp.set(P.pos.x + fz * 1.9 - fx * 1.3, 0, P.pos.z - fx * 1.9 - fz * 1.3); let dx = tmp.x - R.x, dz = tmp.z - R.z, d = Math.hypot(dx, dz), sp = 0;
+  const js = G.jobbing && G.jobbing.site && G.jobbing.pose === 'work' ? G.jobbing.site : null;
+  if (js) tmp.set(js.x - fx * 0.95 + fz * 1.25, 0, js.z - fz * 0.95 - fx * 1.25); else tmp.set(P.pos.x + fz * 1.9 - fx * 1.3, 0, P.pos.z - fx * 1.9 - fz * 1.3);   // beside the work, or behind your shoulder
+  let dx = tmp.x - R.x, dz = tmp.z - R.z, d = Math.hypot(dx, dz), sp = 0;
   if (d > 32 || P.in) { R.x = tmp.x; R.z = tmp.z; } else if (d > 0.3) { sp = Math.min(d * 3.2, 12); R.x += (dx / d) * sp * dt; R.z += (dz / d) * sp * dt; }
   if (P.zone === 'top') topBounds(R, 8); else if (!world.walkable(R.x, R.z)) { R.x = P.pos.x; R.z = P.pos.z; }
   R.y = groundY(P.zone, R.x, R.z); g.position.copy(R);
-  const want = sp > 0.8 ? Math.atan2(dx, dz) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z); let dy = want - g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); g.rotation.y += dy * Math.min(1, dt * 6);
-  let look = Math.atan2(P.pos.x - R.x, P.pos.z - R.z) - g.rotation.y; look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -1.1, 1.1); G.rego.update(dt, sp, look);
-  const dark = P.zone === 'deep' ? !G.inside || (G.S && G.S.flow.eff < 1) : G.S && !G.S.flow.sun.up; G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = dark && !P.in ? 5 : 0;
+  const want = sp > 0.8 ? Math.atan2(dx, dz) : js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z); let dy = want - g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); g.rotation.y += dy * Math.min(1, dt * 6);
+  let look = (js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z)) - g.rotation.y; look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -1.1, 1.1); G.rego.update(dt, sp, look);
+  const dark = P.zone === 'deep' ? !G.inside || (G.S && G.S.flow.eff < 1) : G.S && !G.S.flow.sun.up; G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = (dark || js) && !P.in ? (js ? 9 : 5) : 0;   // REGO lights the work
 }
 function updateCamera(dt) {
   const c = world.camera; G.shake *= Math.pow(0.25, dt); const veh = P.in === 'car' ? 5 : P.in === 'ship' ? 8 : 0;

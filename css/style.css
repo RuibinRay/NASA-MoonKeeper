@@ -318,3 +318,20 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
 #dialog[data-who="you"] #dlg-name{background:linear-gradient(180deg,#ffffff,#cfd9e2)}#dialog[data-who="you"] #dlg-img{border-color:#e9f2f9}
 #dlg-next{font-size:12px;color:var(--cyan);animation:blink 1.4s ease-in-out infinite}
 @media (max-width:900px){#dlg-img{width:84px;height:84px}.comic-page{width:96vw}}
+
+/* ---------- guide mode ---------- */
+.choice{position:relative}
+.choice.guide-rec{border-color:#ffd21f;background:linear-gradient(180deg,rgba(64,48,4,.95),rgba(30,22,4,.95));box-shadow:0 0 0 2px rgba(255,210,31,.45),0 0 26px rgba(255,210,31,.35);padding-top:30px;overflow:hidden;animation:recGlow 1.8s ease-in-out infinite}
+@keyframes recGlow{50%{box-shadow:0 0 0 4px rgba(255,210,31,.25),0 0 40px rgba(255,210,31,.55)}}
+.choice.guide-rec::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,240,170,.28),transparent);animation:shine 2.4s ease-in-out infinite;pointer-events:none}
+@keyframes shine{0%{left:-60%}60%,100%{left:120%}}
+.choice.guide-rec:hover{border-color:#ffe36b;background:linear-gradient(180deg,rgba(84,62,6,.97),rgba(40,29,5,.97))}
+.rec-tag{position:absolute;left:10px;top:6px;display:flex;align-items:center;gap:6px;font-family:var(--head);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#ffd21f}
+.rec-tag img{width:18px;height:18px;border-radius:50%;border:1.5px solid #ffd21f;object-fit:cover}
+.set-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:13px 14px;border-radius:12px;background:rgba(10,18,28,.9);border:1px solid var(--line);margin-bottom:8px;cursor:pointer}
+.set-row b{display:block;font-family:var(--head);font-size:17px}.set-row span{display:block;font-size:13px;color:var(--mute);line-height:1.4;margin-top:2px}
+.set-row input{position:absolute;opacity:0;pointer-events:none}
+.set-row .sw{flex:none;width:52px;height:28px;border-radius:20px;background:#27384a;border:1px solid var(--line);position:relative;transition:background .15s}
+.set-row .sw::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#9bb0c3;transition:transform .15s,background .15s}
+.set-row input:checked + .sw{background:rgba(255,210,31,.3);border-color:#ffd21f}.set-row input:checked + .sw::after{transform:translateX(24px);background:#ffd21f}
+@media (prefers-reduced-motion:reduce){.choice.guide-rec,.choice.guide-rec::after{animation:none}}

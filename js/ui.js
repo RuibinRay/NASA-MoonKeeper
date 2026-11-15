@@ -156,17 +156,24 @@ export class UI {
     });
   }
   close(v) { this._resolve?.(v); }
-  choices(list) { return `<div class="choices">${list.map((c, i) => `<button class="choice" data-i="${i}" ${c.disabled ? 'disabled' : ''}><b>${c.label}</b>${c.sub ? gloss(c.sub) : ''}<div>${(c.costs || []).map((x) => `<span class="cost">${x}</span>`).join('')}${(c.gains || []).map((x) => `<span class="cost gain">${x}</span>`).join('')}</div></button>`).join('')}</div>`; }
+  // Guide mode: which button REGO would press. Housekeeping buttons (door locks, opening another board) are never the suggestion.
+  recIndex(list) { if (!this.G.guide) return -1; return list.findIndex((c) => !c.disabled && !c.norec && !/^(Lock|Unlock) the door|^Open the |^See the /.test(c.label)); }
+  settings() {
+    const G = this.G, row = (id, on, title, sub) => `<label class="set-row"><div><b>${title}</b><span>${sub}</span></div><input type="checkbox" id="${id}" ${on ? 'checked' : ''}><i class="sw"></i></label>`;
+    return this.window({ title: 'Settings', html: row('set-guide', G.guide, 'Guide mode', 'A yellow line on the ground shows where to go, and REGO marks the button to press in every panel.') + row('set-sound', G.audio?.on, 'Sound', 'Beeps, alarms and radio chatter.'),
+      onMount: (w) => { w.querySelector('#set-guide').onchange = (e) => { G.setGuide(e.target.checked); G.audio?.play('click'); }; w.querySelector('#set-sound').onchange = (e) => { G.setSound(e.target.checked); G.audio?.play('click'); }; } });
+  }
+  choices(list, rec = -1) { return `<div class="choices">${list.map((c, i) => `<button class="choice ${i === rec ? 'guide-rec' : ''}" data-i="${i}" ${c.disabled ? 'disabled' : ''}>${i === rec ? '<span class="rec-tag"><img src="assets/img/c_rego.jpg" alt="">REGO: press this</span>' : ''}<b>${c.label}</b>${c.sub ? gloss(c.sub) : ''}<div>${(c.costs || []).map((x) => `<span class="cost">${x}</span>`).join('')}${(c.gains || []).map((x) => `<span class="cost gain">${x}</span>`).join('')}</div></button>`).join('')}</div>`; }
   // A panel with facts and actions. Returns after the chosen action has run.
   async panel(title, { stats = [], actions = [], note, img }) {
-    const html = `${stats.map(([a, b]) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`).join('')}${this.choices(actions)}${note ? `<div class="learn">${gloss(note)}</div>` : ''}`;
+    const html = `${stats.map(([a, b]) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`).join('')}${this.choices(actions, this.recIndex(actions))}${note ? `<div class="learn">${gloss(note)}</div>` : ''}`;
     const i = await this.window({ title, html, img, onMount: (w) => w.querySelectorAll('.choice').forEach((b) => (b.onclick = () => { this.G.audio?.play('click'); this.close(Number(b.dataset.i)); })) });
     if (i !== undefined) await actions[i].run();
   }
   // Event card. cfg: { art, title, real, body, learn, choices, advice (index), adviceText }
   card(cfg) {
     const S = this.G.S, canCall = S && S.flow.commsOn && cfg.advice !== undefined;
-    const html = `${cfg.real ? `<div class="real"><b class="tag">THIS REALLY HAPPENED</b>${cfg.real}</div>` : ''}<div class="body">${gloss(cfg.body)}</div>${cfg.learn ? `<div class="learn">${gloss(cfg.learn)}</div>` : ''}${this.choices(cfg.choices)}${cfg.advice !== undefined ? `<div class="row"><button class="ghost" id="call" ${canCall ? '' : 'disabled'}>${IC.dish} Ask Mission Control ${canCall ? '(answer takes 2.6 s)' : '(Earth Link is down)'}</button><span id="call-out"></span></div>` : ''}`;
+    const html = `${cfg.real ? `<div class="real"><b class="tag">THIS REALLY HAPPENED</b>${cfg.real}</div>` : ''}<div class="body">${gloss(cfg.body)}</div>${cfg.learn ? `<div class="learn">${gloss(cfg.learn)}</div>` : ''}${this.choices(cfg.choices, this.G.guide && cfg.advice !== undefined && !cfg.choices[cfg.advice]?.disabled ? cfg.advice : -1)}${cfg.advice !== undefined ? `<div class="row"><button class="ghost" id="call" ${canCall ? '' : 'disabled'}>${IC.dish} Ask Mission Control ${canCall ? '(answer takes 2.6 s)' : '(Earth Link is down)'}</button><span id="call-out"></span></div>` : ''}`;
     this.G.audio?.play(cfg.good ? 'ok' : 'alarm');
     return this.window({ title: cfg.title, html, img: cfg.art, closable: false, onMount: (w) => {
       w.querySelectorAll('.choice').forEach((b) => (b.onclick = () => { this.G.audio?.play('click'); this.close(Number(b.dataset.i)); }));
