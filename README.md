@@ -10,6 +10,7 @@ With REGO the robot you must keep the **power on** and the **air in** until resc
 
 - **On this computer:** double-click `play.bat` (needs Node.js), or run `node tools/serve.mjs 8130` and open http://localhost:8130
 - **Online:** upload the folder to any static web host (GitHub Pages, Netlify, itch.io…). No build step, no login, nothing to install. The mission saves itself in the browser.
+- **Mars (preview):** on the mission page choose **Mars** to explore a second world: a Mars map built from NASA elevation data and a working outpost of 14 buildings. It is the first step of the Mars expansion; see [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and [docs/MARS_SCIENCE.md](docs/MARS_SCIENCE.md) for where every number comes from. Shortcut: `?go=mars` (`&load=1` continues the saved Mars game).
 - Testing shortcut: add `?go=cadet`, `?go=pilot`, `?go=commander` or `?go=unlimited` to the address to skip the comic and training (`&seed=123` repeats a mission).
 
 | Key | Does |
@@ -74,6 +75,14 @@ js/lifeui.js          farm, Water Plant, life-support loop, research and experim
 docs/GAME_OVERVIEW.md  what the game is, what it teaches, how to play, the data behind it, test results, what to improve
 docs/ROADMAP.md       what is built, what comes next, and which real data each plan uses
 docs/TEACHERS.md      the teacher's page: learning goals, a 40-minute lesson, the questions the game asks (written by `node tools/build_teachers.mjs`, which takes the missions and questions from the game; `--check` fails if it is out of date)
+js/mars/sim.js        Mars: the Sun's path, seasons, dust, temperature, and the outpost's power, air, water and food (pure logic)
+js/mars/terrain.js    Mars: the shape of the ground and where the 14 buildings stand (pure logic)
+js/mars/mola.js       Mars: real elevation data from NASA's MOLA laser, packed for the game (written by `node tools/build_mars.mjs`; do not edit by hand)
+js/mars/world.js      Mars: the 3D ground, sky, dust, real skyline and the outpost
+js/mars/game.js       Mars: what E does, the building panels, HUD, alerts, REGO's advice, the maps, saving (its own save, apart from the Moon's)
+tools/build_mars.mjs  downloads the MOLA files from NASA's Planetary Data System and builds `js/mars/mola.js` (`--check` fails if it is out of date)
+tools/mars_test.mjs   117 checks on the Mars data, the Sun and dust model, every building's effect, and the layout
+docs/MARS_SCIENCE.md  every Mars number in the game, its class (observed, demonstrated, proposed, made for the game) and its source
 js/world.js           3D world (surface base, other stations, the cave, the white-panelled station, vehicles)
 js/actors.js          astronaut, REGO, BOLT robots
 js/follow.js          how REGO keeps up with you without walking into walls (pure logic; `node tools/follow_test.mjs` runs 44 checks)

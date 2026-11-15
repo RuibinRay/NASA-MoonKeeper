@@ -511,3 +511,22 @@ html[data-dir="rtl"] #modal .win,html[data-dir="rtl"] #dlg-box,html[data-dir="rt
 .lv button{width:auto;min-width:38px;padding:0 5px;white-space:nowrap}
 .gauge .g-top span{flex-shrink:20;min-width:0;overflow:hidden;text-overflow:ellipsis}.gauge .g-top b{flex:none}
 .fine.ai-note{margin-top:4px}
+
+/* ---------- Mars ---------- */
+#planets{display:flex;gap:10px;margin:0 0 12px}
+.planet{flex:1;display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center;text-align:left;padding:10px 14px;border-radius:14px;background:var(--panel);border:1px solid var(--line);color:var(--text);cursor:pointer;transition:border-color .15s,transform .15s}
+.planet:hover{transform:translateY(-1px)}.planet.sel{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+.planet i{grid-row:1/3;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f2f2ee,#9a9a96 60%,#55554f)}
+.planet.mars i{background:radial-gradient(circle at 35% 30%,#f0a070,#c1552b 55%,#6e2a14)}
+.planet b{font-family:var(--head);font-size:17px}.planet span{font-size:12px;color:var(--mute)}
+.planet.mars.sel{border-color:#ff9a62;box-shadow:0 0 0 1px #ff9a62 inset}
+#mission.mars .mission-bg{background:radial-gradient(120% 90% at 70% 0%,#6b2c16 0%,#2a120b 55%,#0d0705 100%)}
+#mission.mars #brief{border-color:rgba(255,154,98,.35)}#mission.mars #btn-launch{background:linear-gradient(180deg,#ff9a62,#d9562a);color:#1c0a04}
+#btn-mars-cont{margin-top:12px}
+body.mars{--line:rgba(255,170,120,.24);--panel:rgba(24,13,9,.86);--panel2:rgba(40,22,14,.92);--cyan:#ffb27a}
+body.mars .label{border-color:rgba(255,170,120,.4)}
+body.mars #suit{color:#ffd9bf}
+.pill.demo{color:#7fd4ff;border-color:rgba(127,212,255,.5);background:none;margin:0;padding:0 7px}
+.pill.prop{color:#d7a6ff;border-color:rgba(215,166,255,.5);background:none;margin:0;padding:0 7px}
+.pill.game{background:none;margin:0;padding:0 7px}
+.stat .pill{white-space:nowrap;font-weight:600;font-size:11.5px}
