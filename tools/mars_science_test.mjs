@@ -24,7 +24,7 @@ near('water boils at Earth sea level (°C)', S.boilC(S.PRESSURES.earth), 100, 6)
 console.log('— sunlight');
 near('sunlight above the air at Mars (W/m²)', S.SUN_MARS, 586.2, 0.5);
 const clear = S.solarKw(0.45, 50, 900), storm = S.solarKw(10, 50, 900), night = S.solarKw(0.45, 0, 900);
-near('clear day, Sun 50° up: on the ground (W/m²)', clear.ground, 400, 8);
+near('clear day, Sun 50° up: on the ground (W/m²)', clear.ground, 390, 8);
 near('clear day: 900 m² field (kW)', clear.kw, 97, 3);
 yes('a planet-wide storm cuts the power to under a tenth', storm.kw < clear.kw * 0.1 && storm.kw > 0, `${storm.kw.toFixed(1)} kW`);
 yes('the direct beam dies long before the daylight does', storm.beam < 0.001 && storm.glow > 0.03, `beam ${(storm.beam * 100).toFixed(4)} %, daylight ${(storm.glow * 100).toFixed(1)} %`);

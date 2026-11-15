@@ -67,3 +67,17 @@ export function grade(S) {
   const b = clamp(S.stats.minHealth ?? S.health, 0, 100) * 0.5 + clamp(100 - (S.stats.brownHours || 0) * 4, 0, 100) * 0.35 + clamp((S.stats.repairs / Math.max(1, S.stats.faults)) * 100, 0, 100) * 0.15;
   return Math.round(S.over && !S.over.win ? b * 0.4 : b);
 }
+
+// Free exploring only (no ending): what the crew and the supply line do by themselves so the outpost keeps going
+// however long you stay. Returns what happened: 'brush' (the panels were cleaned), 'food' (a supply lander came),
+// 'shed' (the battery was nearly empty, so the crew switched off what could wait) and 'unshed' (they switched it back on).
+// The last two matter in winter: at 39.5°N the days are short and the Sun is low, and the solar field cannot carry everything.
+export function exploreUpkeep(S) {
+  const out = []; if (S.hard) return out;
+  if (S.panelDust > 0.25 && S.flow && S.flow.sun.up && S.tau < 2) { S.panelDust = 0.03; out.push('brush'); }
+  if (S.food < 60) { S.food += 600; out.push('food'); }
+  const F = S.flow, cap = F ? F.cap : S.batteryCap;
+  if (F && F.net < 0 && S.battery < 0.12 * cap) { const off = SHED.filter((k) => S.on[k]); if (off.length) { for (const k of off) S.on[k] = false; S.autoShed = [...(S.autoShed || []), ...off]; out.push('shed'); } }
+  else if (S.autoShed && S.autoShed.length && S.battery > 0.6 * cap && F && F.net > 0) { for (const k of S.autoShed) S.on[k] = true; S.autoShed = []; out.push('unshed'); }
+  return out;
+}

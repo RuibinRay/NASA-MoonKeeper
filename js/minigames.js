@@ -179,7 +179,7 @@ const GAMES = {
   },
   // 8. Harvest: pick each plant in its ripe window
   harvest: {
-    title: tt('Harvest time'), how: tt('Pick each plant while it GLOWS (ripe). Too early wastes it; too late and it wilts.'), time: 17, bg: 'plant',
+    title: tt('Harvest time'), how: tt('Pick each plant while it GLOWS (ripe). Too early wastes it; too late and it wilts.'), time: 24, bg: 'plant',
     why: tt('Red romaine lettuce took 33 days to grow on the Space Station in 2015. It was the first space-grown crop astronauts ate there. Radishes took 27 days.'), src: 'veggie',
     init(s, rnd) { s.p = []; for (let i = 0; i < 10; i++) s.p.push({ x: 110 + (i % 5) * 170, y: 150 + ((i / 5) | 0) * 190, g: rnd() * 0.6, sp: 0.35 + rnd() * 0.35, fx: 0 }); s.picks = 0; s.rnd = rnd; s.win = [0.7, 0.55, 0.42][s.tier]; },
     down(s, x, y) { const p = s.p.find((q) => Math.hypot(q.x - x, q.y - y) < 70); if (!p) return; if (p.g >= 1 && p.g < 1 + s.win) { s.picks++; p.fx = 1; s.sfx('ok'); } else { p.fx = -1; s.sfx('bad'); } p.g = 0; p.sp = 0.35 + s.rnd() * 0.4; },
