@@ -18,7 +18,8 @@ Legend for evidence: **MOON** measured on or from the Moon · **FLOWN** done in 
 | Closed loop | Crew CO₂ helps the plants, plants give some oxygen, their water is recovered, electrolysis leaves hydrogen. A loop diagram with moving flows, made-and-used bars and trend graphs (key **L**). | `computeFlows`, loop screen |
 | Experiment | Thale cress three ways: hydroponics, treated moon soil, raw moon soil. | `EXP_POTS` |
 | Research | Points from first harvests, new heating methods and the experiment buy five upgrades. | `TECH` |
-| Tests | 60 checks of mass balance, energy balance, crop timing, routing, saving. | `tools/life_test.mjs` |
+| Polar Ice Mine | A permanently dark crater to the south-west with six icy patches, a drivable digger on a power cable, a canister filler, floodlights and a shelter. Two scoops fill one canister; the first one earns research. Vehicles lose charge in the cold. | `MINE` in `js/config.js`, `scoop` and `dump` in `js/life.js`, `_mine` in `js/world.js` |
+| Tests | 70 checks of mass balance, energy balance, crop timing, routing, saving. | `tools/life_test.mjs` |
 | Animation, step 3 | Rover suspension, steering, body lean, squat and dive, antenna, tyre tracks. All of it is visual only: it never changes where the rover goes. | `placeVehicles` in `js/main.js`, `_vehicles` in `js/world.js` |
 | Animation, step 2 | Walk-in before every job, aimed arms and head, six hand tools, REGO working beside you, crew tools by role. | `G.job` in `js/main.js`, `js/actors.js` |
 | Animation, step 1 | Eased astronaut poses, idle look-around and breathing, landing squash, hip roll; dust from boots, landings, rover wheels and dragged panels that flies in arcs; growing, swaying, fruiting plants; Water Plant glow, vapour, frost, tracking mirror, digger. | `js/actors.js`, `js/world.js` |
@@ -50,13 +51,12 @@ Rules for every step: no visible light beams or billowing dust (there is no air)
 | OSD-476 (plants in Apollo soil) | LAB, real Moon soil | The moon-soil experiment | Load the study's sample groups so the three Apollo sites give three different results (Apollo 11 worst, Apollo 17 best) |
 | BVAD crop tables | LAB | Crop cycles and rankings | A crop-planning screen that shows the real per-square-metre numbers beside the game numbers |
 | LRO Diviner temperatures | MOON / orbit | 17°C pit, surface swing, crater cold | A second site: a polar outpost you reach by hopper, with real crater temperatures |
-| LCROSS and polar ice maps | MOON | 5.6% ice in canister soil | **Polar ice run:** drive or fly to the polar mine, dig icy soil with the digger, and haul it back (today the canisters are simply waiting by the cold store) |
+| LCROSS and polar ice maps | MOON | 5.6% ice in canister soil; the Polar Ice Mine you dig at | Vary the ice richness from patch to patch, as the orbital maps do, and give the player a prospecting scanner to find the rich ones |
 | ISS water recovery, ECLSS | FLOWN | 98% recycling, electrolysis ratios | A brine-processor upgrade (93% to 98%), matching the real 2023 step |
 | Ilmenite reduction, ROxygen | LAB | Water from rock | Hydrogen tank as a tracked resource, so electrolysis and rock reduction visibly trade hydrogen |
 
 ## 4. Farming and water: still to do
 
-- **Polar ice run.** Excavation as something you do, not a canister you find. Needs a new site and digger controls.
 - **Per-rack disease.** Today only damp-air mold in one farm. Add root rot (too much water), tip burn (too much light on lettuce), and spread between neighbouring racks.
 - **Nutrient recipe.** One "plant food" number today. Split into nitrogen, phosphorus and potassium only if it stays readable for a ten-year-old.
 - **CO₂ control.** Let the player bleed scrubbed CO₂ into the farms on purpose.

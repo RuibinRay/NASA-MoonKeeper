@@ -49,13 +49,13 @@ export const SYS = {
 // hourLen = real seconds per game hour. gap = game days between surprise events.
 export const MODES = {
   cadet:     { key: 'cadet', name: 'Cadet', ages: 'Ages 7–10', tag: '4 days · a gentle mission', days: 4, sunsetDay: 1.7, hourLen: 9, drain: 0.85, reactor: 6,
-               ok: 4, broken: 4, batteryCap: 420, o2: 3.4, water: 28, cans: 16, meals: 4, feed: 5, mat: 16, nutri: 2.0, ice: 4, gap: [0.42, 0.62], stormMul: 0.65, mgEase: 1.35, wreck: ['tomato', 'bathroom'] },
+               ok: 4, broken: 4, batteryCap: 420, o2: 3.4, water: 28, cans: 16, meals: 4, feed: 5, mat: 16, nutri: 2.0, ice: 3, gap: [0.42, 0.62], stormMul: 0.65, mgEase: 1.35, wreck: ['tomato', 'bathroom'] },
   pilot:     { key: 'pilot', name: 'Pilot', ages: 'Ages 11–14', tag: '7 days · one long night', days: 7, sunsetDay: 2.6, hourLen: 8, drain: 1, reactor: 5,
-               ok: 3, broken: 5, batteryCap: 380, o2: 3.0, water: 24, cans: 14, meals: 2, feed: 4, mat: 11, nutri: 1.2, ice: 3, gap: [0.4, 0.6], stormMul: 1, mgEase: 1, wreck: ['tomato', 'bathroom', 'storage'] },
+               ok: 3, broken: 5, batteryCap: 380, o2: 3.0, water: 24, cans: 14, meals: 2, feed: 4, mat: 11, nutri: 1.2, ice: 2, gap: [0.4, 0.6], stormMul: 1, mgEase: 1, wreck: ['tomato', 'bathroom', 'storage'] },
   commander: { key: 'commander', name: 'Commander', ages: 'Ages 15–18', tag: '10 days · scarce materials', days: 10, sunsetDay: 3.4, hourLen: 7, drain: 1.08, reactor: 5,
-               ok: 2, broken: 6, batteryCap: 360, o2: 2.7, water: 22, cans: 12, meals: 0, feed: 3, mat: 8, nutri: 0.8, ice: 2, gap: [0.36, 0.55], stormMul: 1.25, mgEase: 0.85, wreck: ['tomato', 'bathroom', 'storage', 'quarters'] },
+               ok: 2, broken: 6, batteryCap: 360, o2: 2.7, water: 22, cans: 12, meals: 0, feed: 3, mat: 8, nutri: 0.8, ice: 1, gap: [0.36, 0.55], stormMul: 1.25, mgEase: 0.85, wreck: ['tomato', 'bathroom', 'storage', 'quarters'] },
   unlimited: { key: 'unlimited', name: 'Unlimited', ages: 'Any age', tag: 'No end · endless materials · build a Moon town', days: Infinity, sunsetDay: 9, hourLen: 8, drain: 1, reactor: 8,
-               ok: 3, broken: 5, batteryCap: 380, o2: 3.0, water: 24, cans: 14, meals: 2, feed: 4, mat: Infinity, nutri: 1.5, ice: 6, gap: [0.5, 0.8], stormMul: 1, mgEase: 1, wreck: ['tomato', 'bathroom'] },
+               ok: 3, broken: 5, batteryCap: 380, o2: 3.0, water: 24, cans: 14, meals: 2, feed: 4, mat: Infinity, nutri: 1.5, ice: 2, gap: [0.5, 0.8], stormMul: 1, mgEase: 1, wreck: ['tomato', 'bathroom'] },
 };
 
 // ---------- the map ----------
@@ -92,6 +92,16 @@ export const CAR_PAD = [-24, 40], SHIP_PAD = [-48, 46];
 
 // The surface base: [x, z, radius] for domes, [x, z] for buildings. Laid out west and east of the road from the Solar Field to the Pit Elevator.
 export const BASE = { hub: [-34, -8, 11], green: [26, -10, 8], tower: [-34, -31], batt: [-58, -28], garage: [-40, 15], lab: [28, 14], water: [46, -12], mine: [86, -30], comm: [-78, -18] };
+// The Polar Ice Mine: a crater whose floor never sees the Sun. REAL: such craters exist only near the Moon's poles, about
+// 2,500 km from this base, and are among the coldest places ever measured. STORY: the game draws it a short trip away.
+export const MINE = {
+  x: -470, z: 470, r: 78, depth: 17,   // where the crater is on the surface map, and its size (m)
+  tether: 56,                           // the digger runs on a power cable: it cannot go further than this from the middle
+  bucket: 2, perCan: 2, digSec: 2.2,    // scoops the bucket holds, scoops that fill one canister, seconds of digging per scoop
+  coldC: -230, drain: 0.03,             // °C on the crater floor; share of a vehicle's charge the cold steals per hour parked inside
+  patches: [[-20, 16, 9], [24, 20, 8], [32, -12, 10], [-30, -16, 9], [4, 36, 8], [-6, -36, 10]],   // icy patches: offset from the middle, scoops in each
+  out: [8, 3],                          // where filled canisters are set down, from the middle
+};
 export const STATIONS = [
   { id: 'gate',  zone: 'top',  name: 'Pit Elevator',        ico: 'lift',   pos: [0, 60],    r: 7 },
   { id: 'depot', zone: 'top',  name: 'Cargo Depot',         ico: 'box',    pos: [16, 52],   r: 6 },
@@ -108,6 +118,7 @@ export const STATIONS = [
   { id: 'lab',   zone: 'top',  name: 'Research Lab',        ico: 'room',   pos: [19, 14],     r: 5, info: 'Scientists here study moon rock, test new building materials and look for ice. Everything we learn makes the next base better.', hit: 'The lab is sealed and dark until the rescue ship brings a repair crew.' },
   { id: 'wplant', zone: 'top', name: 'Water Plant',         ico: 'room',   pos: [46, -18],    r: 4.5 },
   { id: 'mine',  zone: 'top',  name: 'Moon-Dust Mine',      ico: 'room',   pos: [78, -23],    r: 6, info: 'Diggers scoop up moon soil and a conveyor carries it to the Oxygen Plant next door. Nearly half the weight of moon soil is oxygen, locked inside the rock.', hit: 'The digger still works. Repair the Oxygen Plant and it will feed it again.' },
+  { id: 'icemine', zone: 'top', name: 'Polar Ice Mine',     ico: 'room',   pos: [MINE.x + 5, MINE.z - 5], r: 5.5 },
   { id: 'lift',  zone: 'deep', name: 'Elevator to Surface', ico: 'lift',   pos: [TUBE.skyX, 0], r: 6 },
   { id: 'suit',  zone: 'deep', name: 'Suit Lockers',        ico: 'room',   pos: [-65.2, -1.6], r: 3.3 },
   { id: 'bench', zone: 'deep', name: 'Fix-It Bench',        ico: 'wrench', pos: BENCH,      r: 4.5 },
