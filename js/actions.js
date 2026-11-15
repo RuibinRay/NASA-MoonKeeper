@@ -189,7 +189,7 @@ export function installActions(G) {
     if (id === 'pad') return ui.panel('Landing Pad', { stats: [[s.hours === Infinity ? 'Rescue ship' : 'Rescue ship lands in', s.hours === Infinity ? 'not coming — this is home now' : fmt.days((s.hours - (s.t - s.t0)) / 24)], ['Trip from Earth', 'about 3 days']], note: 'The first Moon crews took about three days to get here. They landed in lunar morning, when the low Sun makes long shadows that show every bump.' });
   };
   const sitePanel = (site) => { const s = G.S, waiting = !!G.siteNpc[site.id], crates = G.items.filter((it) => it.where === 'ground' && it.zone === 'top' && Math.hypot(it.x - site.pos[0], it.z - site.pos[1]) < 40).length;
-    return ui.panel(site.name, { img: waiting ? 'ev2_rescue' : null, stats: [['Astronaut', s.rescued.includes(site.id) ? `${site.whoName} — safe at your station` : waiting ? `${site.whoName} is stranded here!` : `${site.whoName} is following you`], ['Crates lying around', crates]],
+    return ui.panel(site.name, { img: `st_${site.id}|${waiting ? 'ev2_rescue' : ''}`, stats: [['Astronaut', s.rescued.includes(site.id) ? `${site.whoName} — safe at your station` : waiting ? `${site.whoName} is stranded here!` : `${site.whoName} is following you`], ['Crates lying around', crates]],
       actions: [{ label: `Rescue ${site.whoName}`, sub: `${/^[aeiou]/i.test(site.job) ? 'An' : 'A'} ${site.job}. ${site.perk} They will work without electricity — but they need food, water and air like you.`, costs: ['+3 meals a day', '+0.84 kg oxygen a day'], gains: ['A new crew member'], disabled: !waiting, run: async () => { await ui.say([{ who: site.who, text: `You came! Our dome cracked in the meteor shower and my radio died. I thought nobody was left. I am ${site.whoName}, ${site.job}.` }, { who: 'rego', mood: 'joy', text: (G.player.in === 'ship' || G.lastRide === 'ship' ? 'Climb aboard the hopper!' : 'Hop in the rover!') + ' There is room at Tranquility Deep. Take the elevator down and you will be safe.' }]); G.follow(site); note(s, `Found ${site.whoName} at ${site.name}.`, 'good'); } }],
       note: 'Pick up crates with E, load them onto your rover or hopper, and deliver them to the Cargo Depot back home.' }); };
   const roomPanel = (id) => {
@@ -225,7 +225,7 @@ export function installActions(G) {
     else if (draining && fl.battHours < 12) a.push({ text: `Battery empty in ${fmt.hrs(Math.max(0.1, Math.round(fl.battHours * 10) / 10))}`, sub: 'Using more power than you make: open the Power Board (Tab)', kind: 'warn' });
     // life support: a warning a day and a half out, an emergency (which wakes a sleeper) six hours out or when it is gone
     const left = (d) => (d * 24 < 36 ? fmt.hrs(Math.max(0.1, Math.round(d * 240) / 10)) : `${d.toFixed(1)} days`);
-    const toRescue = s.hours === Infinity ? Infinity : (s.hours - (s.t - s.t0)) / 24;
+    const toRescue = s.hours === Infinity ? 0 : (s.hours - (s.t - s.t0)) / 24;   // 0 in Unlimited: no ship is coming, so nothing can run out "before rescue"
     for (const [id, name, amt, days, fix, go] of [['o2', 'Oxygen', s.o2, fl.o2Days, 'Turn the Oxygen Maker up (Tab), or fix the Oxygen Room', 'oxygen'], ['water', 'Water', s.water, fl.waterDays, 'Turn the Water Recycler up, or bring icy soil to the Water Plant', 'water'], ['food', 'Food', fl.foodTotal, fl.foodDays, 'Pick ripe crops and cook them in the Kitchen', 'kitchen']]) {
       if (amt === undefined || days === undefined) continue;
       if (amt <= 0.01 && days !== Infinity) a.push({ text: `OUT OF ${name.toUpperCase()} — you are losing health`, sub: fix, go, key: id + '-out', wake: `<b>Wake up! There is no ${name.toLowerCase()} left.</b> ${fix}.` });
@@ -260,7 +260,7 @@ export function installActions(G) {
     const s = G.S, F = computeFlows(s), f = s.f, st = s.storm, top = P.zone === 'top'; let t = null, go = null, mood = 'happy';
     const leak = F.leaks[0], wreck = ROOMS.find((d) => s.rooms[d.id].built < 1), sealedHole = ROOMS.find((d) => s.rooms[d.id].hole > 0 && !s.rooms[d.id].door), nb = s.mounts.filter((x) => x === 2).length, empty = s.mounts.filter((x) => x === 0).length;
     const thin = !s.suitOn && (s.here && s.rooms[s.here] ? s.rooms[s.here].p : s.P) < 60;
-    const daysLeft = s.hours === Infinity ? Infinity : (s.hours - (s.t - s.t0)) / 24, soon = (d) => (d * 24 < 36 ? fmt.hrs(Math.max(1, Math.round(d * 24))) : `${d.toFixed(1)} days`);   // days until the rescue ship lands
+    const daysLeft = s.hours === Infinity ? 0 : (s.hours - (s.t - s.t0)) / 24, soon = (d) => (d * 24 < 36 ? fmt.hrs(Math.max(1, Math.round(d * 24))) : `${d.toFixed(1)} days`);   // days until the rescue ship lands
     // By day, a battery that is full wastes the sunshine. More room for power helps the night far more than more panels do, so say that first.
     // The Bathroom's materials are kept back: without it the water recycler works badly.
     const storeR = s.rooms.storage, storeD = ROOMS.find((d) => d.id === 'storage'), bathD = ROOMS.find((d) => d.id === 'bathroom'), bathKeep = s.rooms.bathroom.built < 1 ? bathD.mat + (s.rooms.bathroom.hole > 0 ? 1 : 0) : 0;

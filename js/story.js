@@ -1,5 +1,5 @@
 // MOONKEEPER 2 — story: comic pages, the hands-on training, the meteor shower, and the endings.
-import { K, MOUNTS, PIT, ROOMS, SITES, fmt } from './config.js';
+import { K, MOUNTS, PIT, ROOMS, SITES, SHIP_PAD, fmt } from './config.js';
 import { roomOk, machineOk, score } from './sim.js';
 
 const cap = (t) => t, by = (who, text, at) => ({ who, text, at });
@@ -72,13 +72,48 @@ export async function tutorial(G) {
   if (!S.suitOn) { await say([{ who: 'okoro', text: 'Wait! Before you step outside, put your suit back on at the lockers. Past the airlock door there is no air at all. This is the rule that keeps you alive: <b>suit on before you go out.</b>' }]);
     await G.waitFor(() => S.suitOn, 'Put your suit back on at the <b>Suit Lockers</b> (press <b>E</b>)', 'suit'); }
   await G.waitFor(() => S.mounts[BM] === 1, 'Carry the panel out through the cave, up the elevator, to the <b>empty mount</b> in the Solar Field, and press <b>E</b>', { zone: 'top', x: mx, z: mz, name: 'the empty mount', r: 0.5 });
+
+  // ---- Flying lesson: the hopper, a neighbour station, and a crate brought home. It can be skipped, and it changes nothing
+  // in the mission that follows: the hopper's charge, the food store and the hopper's place on its pad are put back after it.
+  const flying = await ui.card({ good: true, title: 'One more lesson: the hopper', body: 'Three other countries have stations a short flight away: <b>Aurora</b>, <b>Sakura</b> and <b>Chandra</b>. The Commander wants you to fly to Sakura Outpost, meet a neighbour, and bring a crate home. It takes about five minutes.',
+    learn: 'Engineers have built small rocket "hoppers" for the Moon. A hop crosses craters and boulder fields that a rover would have to drive around, and can reach crater floors a rover could never climb out of.',
+    choices: [{ label: 'Fly to Sakura Outpost', sub: 'Learn to take off, steer, land and carry crates.' }, { label: 'Skip the flying lesson', sub: 'REGO reminds you of the keys the first time you climb in.' }] });
+  if (flying === 0) {
+    const site = SITES.find((q) => q.id === 'sakura'), [sx, sz] = site.pos, ship = G.ship, charge0 = S.ship.charge, cans0 = S.cans, far = (x, z) => Math.hypot(ship.x - x, ship.z - z);
+    S.ship.charge = 1; G.addNpc('kenji', 0x9a5cff, sx + 5, sz + 14); const crate = G.spawnItem('cans', 'top', sx + 9, sz + 17);
+    await say([
+      { who: 'vasquez', text: 'The rover can drive to the other stations, but it is a long, bumpy trip. The <b>hopper</b> flies in a straight line over every crater. It is the tall lander on the big pad, next to where the rover parks.' },
+      { who: 'vasquez', text: 'Walk to it and climb in with <b>E</b>.' },
+    ]);
+    await G.waitFor(() => P.in === 'ship', 'Walk to the <b>hopper</b> on its pad and press <b>E</b> to climb in', 'ship');
+    await say([{ who: 'vasquez', text: 'Hold <b>Space</b> to fire the engine and climb. Let go and it hovers. Hold <b>C</b> to come down. The numbers at the top show your height. Take it up to twenty metres.' }]);
+    await G.waitFor(() => ship.alt > 20, 'Hold <b>Space</b> to climb above <b>20 m</b>');
+    await say([{ who: 'vasquez', text: 'Good. Now <b>W</b> pushes you forward and <b>A</b> and <b>D</b> turn you. See the purple beam of light? That is Sakura Outpost. Flying drains the battery the whole time you are in the air, so go straight there.' }]);
+    await G.waitFor(() => far(sx, sz) < 80, 'Fly to the <b>purple light</b>: <b>W</b> forward, <b>A</b> and <b>D</b> to turn', 'sakura');
+    await say([{ who: 'vasquez', text: 'There is the tower with the red gate. Come down in front of it: hold <b>C</b>. The ring on the ground under you turns green where it is safe to land.' }]);
+    await G.waitFor(() => !P.in && near(sx + 5, sz + 14, 45), 'Hold <b>C</b> to land in front of the tower, then press <b>E</b> to get out', { zone: 'top', x: sx + 4, z: sz + 26, name: 'Sakura Outpost' });
+    await say([
+      { who: 'kenji', text: 'Welcome to Sakura Outpost, neighbour! I am Kenji, the engineer here. Commander Vasquez said a rookie was learning to fly. That was a fine landing.' },
+      { who: 'kenji', text: 'Stations on the Moon look after each other: when one runs short, another sends a crate. This food crate is for you. Pick it up with <b>E</b> and load it onto your hopper. The hopper carries two crates; the rover carries four.' },
+    ]);
+    await G.waitFor(() => P.carry === crate || ship.cargo.includes(crate), 'Pick up the <b>food crate</b> next to Kenji (press <b>E</b>)', { zone: 'top', x: sx + 9, z: sz + 17, name: 'the food crate', r: 1 });
+    await G.waitFor(() => ship.cargo.includes(crate), 'Carry the crate to the <b>hopper</b> and press <b>E</b> to load it', 'ship');
+    await say([{ who: 'kenji', text: 'Remember the way here. If your station is ever in trouble, there are crates of materials, food and water at every station. Safe flight home!' }]);
+    await G.waitFor(() => !P.in && ship.alt < 0.5 && far(16, 52) < 26 && ship.cargo.includes(crate), 'Fly home and land beside the <b>Cargo Depot</b>, then get out', 'depot');
+    await say([{ who: 'vasquez', text: 'Nicely done. Crates belong in the Cargo Depot. Press <b>Q</b> at the hopper to take the crate out, carry it to the depot and press <b>E</b>.' }]);
+    await G.waitFor(() => !G.items.includes(crate), 'Press <b>Q</b> at the hopper to take the crate out, carry it to the <b>Cargo Depot</b> and press <b>E</b>', 'depot');
+    await say([{ who: 'vasquez', text: 'That is the whole trip. Two things to remember: the hopper only charges on its own pad, and a flight to another station and back uses about half its battery. Check the charge before you leave. Tobi will park it for you this time.' }]);
+    S.ship.charge = charge0; S.cans = cans0; G._flew = true;
+  }
   await say([
     { who: 'flight', text: 'Tranquility Deep, this is Mission Control on Earth. Nice work, rookie! Notice the pause before I answer? Your voice takes 1.3 seconds to reach us, and mine takes 1.3 more to reach you.' },
     { who: 'flight', text: 'Stand by… all stations, stand by. We are seeing something on the long-range radar.' },
     { who: 'vasquez', text: 'Rookie, get back underground. Right now. Take the elevator down!' },
   ]);
   await G.waitFor(() => P.zone === 'deep', '<b>Get underground!</b> Ride the elevator down', 'gate');
-  await ui.fade(true); G.clearNpcs(); await ui.fade(false);
+  await ui.fade(true); G.clearNpcs();
+  if (G._flew) { Object.assign(G.ship, { x: SHIP_PAD[0], z: SHIP_PAD[1], vx: 0, vz: 0, vy: 0, alt: 0, yaw: 1.2 }); G.ship.y = world.heightAt(G.ship.x, G.ship.z); }
+  await ui.fade(false);
 }
 
 // The meteor shower seen from the surface: rocks hit the solar field while the camera circles. Used by both tellings of the story.
@@ -108,7 +143,7 @@ async function disasterFree(G, skipped) {
 export async function disaster(G, skipped) {
   const ui = G.ui, S = G.S, world = G.world, days = S.m.days, lim = S.hours !== Infinity;
   if (S.mode === 'unlimited') return disasterFree(G, skipped);
-  const quick = { who: 'rego', text: 'Quick lesson, since we skipped training: a meteor shower wrecked the base and I am all you have. Press <b>E</b> to do things — the bar at the bottom says what. Pull a broken solar panel off its mount, take it down to the <b>Fix-It Bench</b>, then put it back. <b>Tab</b> is the Power Board, <b>M</b> is the map, <b>H</b> asks me.' };
+  const quick = { who: 'rego', text: 'Quick lesson, since we skipped training: a meteor shower wrecked the base and I am all you have. Press <b>E</b> to do things — the bar at the bottom says what. Pull a broken solar panel off its mount, take it down to the <b>Fix-It Bench</b>, then put it back. The other stations have crates of materials, food and water: the <b>hopper</b> on the big pad flies there (<b>Space</b> climbs, <b>C</b> lands). <b>Tab</b> is the Power Board, <b>M</b> is the map, <b>H</b> asks me.' };
   if (skipped) return ui.say([quick]);
   await ui.comic([{ title: 'Chapter 2 · The Warning', btn: 'Watch ▸', panels: [
     { img: 'cm05', cap: cap('Every Moon station from every country calls at once.'), say: [by('Aurora Station', 'Meteor shower incoming!', 0), by('Sakura Outpost', 'It is huge. Take cover!', 1), by('Chandra Base', 'Everybody underground!', 2)] },

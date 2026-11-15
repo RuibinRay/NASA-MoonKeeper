@@ -12,7 +12,7 @@ function seeded(seed) { let a = seed; return () => { a = (a * 1664525 + 10139042
 function canvasTex(w, h, draw, rep) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); } return t; }
 const std = (o) => new THREE.MeshStandardMaterial(o);
 const glow = (color, intensity = 1.5) => new THREE.MeshStandardMaterial({ color: 0x111111, emissive: color, emissiveIntensity: intensity });
-const PANEL_W = 5, PANEL_D = 2.8;
+const PANEL_W = 5, PANEL_D = 2.8, HEN_Y = 0.52;   // HEN_Y: how high a hen's body sits so that its feet touch the floor
 
 // Earth in the lunar sky for 8.3355°N 33.222°E with a typical libration tilt: azimuth 248°, elevation 57°. It stays there.
 export const EARTH_DIR = new V3(-0.5017, 0.8409, 0.2027).normalize();
@@ -362,18 +362,91 @@ export class World {
     this.digLamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.6, 0.6, 1); this.digLamp.position.set(0, 3.3, 1); this.digLamp.target.position.set(0, 0, 9); d.add(this.digLamp, this.digLamp.target);
   }
 
-  // Other countries' stations: a cracked dome, a leaning mast with a coloured beacon you can see from far away.
+  // One hen: a round body with a paler breast, a neck and head, a fanned tail, a red comb and wattle, a beak, eyes,
+  // yellow legs and folded wings. Four feather colours, so the six are easy to tell apart. The wings are their own
+  // groups so they can flap; the feet reach the floor when the hen stands at HEN_Y.
+  _hen(i) {
+    const M = this.M, H = this.henM || (this.henM = { coats: [[0xa5602c, 0xc98a52, 0x6e3d1c], [0xf1ece2, 0xffffff, 0xd8d0c2], [0x3b3531, 0x5a524c, 0x211d1a], [0xd9a14a, 0xf0c987, 0x9a6a2a]].map((c) => c.map((color) => std({ color, roughness: 0.9 }))), eye: std({ color: 0x111111, roughness: 0.3 }), leg: std({ color: 0xe8b021, roughness: 0.7 }) });
+    const [coat, breast, dark] = H.coats[i % 4], g = new THREE.Group(), at = (p, m, ...a) => this.put(p, m, ...a);
+    at(g, this.sph(0.34, coat, 14, 10)).scale.set(1, 0.92, 1.3);
+    at(g, this.sph(0.25, breast, 12, 8), 0, -0.04, 0.2).scale.set(1.05, 1, 1);
+    at(g, this.cyl(0.1, 0.15, 0.3, coat, 10), 0, 0.26, 0.27, 0.4); at(g, this.sph(0.15, coat, 12, 8), 0, 0.43, 0.34);
+    for (let k = -1; k <= 1; k++) at(g, new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.44, 6), dark), k * 0.09, 0.3, -0.44, -0.75, 0, k * -0.35);   // tail feathers, fanned
+    for (let k = 0; k < 3; k++) at(g, this.sph(0.05 - k * 0.006, M.red, 6, 5), 0, 0.585 - k * 0.012, 0.4 - k * 0.07);                      // comb
+    at(g, this.sph(0.045, M.red, 6, 5), 0, 0.32, 0.46).scale.y = 1.5;                                                                   // wattle
+    at(g, new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.14, 5), M.orange), 0, 0.42, 0.51, Math.PI / 2);                                // beak
+    for (const sx of [-1, 1]) { at(g, this.sph(0.024, H.eye, 6, 5), 0.1 * sx, 0.47, 0.42); at(g, this.cyl(0.02, 0.02, 0.17, H.leg, 5), 0.1 * sx, -0.35, 0.02); at(g, this.box(0.1, 0.02, 0.15, H.leg), 0.1 * sx, -0.425, 0.06); }
+    const wings = [-1, 1].map((sx) => { const w = new THREE.Group(); w.position.set(0.3 * sx, 0.1, -0.02); at(w, this.sph(0.21, dark, 10, 8), 0.02 * sx, -0.08, -0.02).scale.set(0.28, 0.8, 1.3); g.add(w); return w; });
+    g.scale.setScalar(1.2); return { g, wings };
+  }
+
+  // Other countries' stations. Each has its own shape, so you can tell from far away which one you are looking at:
+  // Aurora is a white barrel vault half sunk in the soil, Sakura a three-tier tower behind a red gate, Chandra a
+  // six-sided hall under a golden dome with a lotus of solar panels. Every one has a door, a mast with a coloured
+  // beacon, and a beam of light. Before the meteor shower they stand whole; after it the hurt parts show instead.
   _sites() {
     const M = this.M; this.sites = {};
+    const win = glow(0xffc27a, 1.5), glassM = (tint) => std({ color: tint, roughness: 0.08, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });
+    const part = (geo, mat) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true; return m; };
     for (const s of SITES) {
-      const g = this.group(this.top, s.pos[0], s.pos[1]), col = glow(s.color, 2.4);
-      const dm = new THREE.Mesh(new THREE.SphereGeometry(10, 26, 14, 0.5, 5.2, 0, 1.5708), std({ color: 0xd8d8d2, roughness: 0.7, side: THREE.DoubleSide })); dm.castShadow = true; g.add(dm);
-      this.put(g, this.box(4, 3.4, 2, M.white), 0, 1.7, 9.4); this.put(g, new THREE.Mesh(new THREE.PlaneGeometry(1.8, 2.4), col), 0, 1.5, 10.42);
-      this.put(g, this.cyl(0.25, 0.4, 16, M.grey, 8), -15, 7.5, -4, 0, 0, 0.32); const b = this.put(g, this.sph(0.7, col), -17.5, 15.4, -4);
-      for (let i = 0; i < 4; i++) this.put(g, this.box(PANEL_W, 0.12, PANEL_D, M.panelB), 14 + i * 3.5, 0.5 + hash(i, 5), -8 + i * 4, hash(i, 6), hash(i, 7) * 3, 0.4);
+      const g = this.group(this.top, s.pos[0], s.pos[1]), col = glow(s.color, 2.4), acc = std({ color: s.color, roughness: 0.6 });
+      const whole = new THREE.Group(), hurt = new THREE.Group(); g.add(whole, hurt); hurt.visible = false;
+      const at = (grp, mesh, ...a) => this.put(grp, mesh, ...a), solid = (x, z, r) => this.solid('top', s.pos[0] + x, s.pos[1] + z, r);
+      const door = (z) => { at(g, this.box(4, 3.4, 2, M.white), 0, 1.7, z); at(g, new THREE.Mesh(new THREE.PlaneGeometry(1.8, 2.4), col), 0, 1.5, z + 1.02); solid(0, z, 1.7); };
+      // the mast and its beacon: it stands straight until the shower knocks it over
+      const mast = new THREE.Group(); mast.position.set(-15, 0, -4); g.add(mast); at(mast, this.cyl(0.25, 0.4, 16, M.grey, 8), 0, 8, 0); for (let i = 1; i < 4; i++) at(mast, this.box(2 - i * 0.4, 0.12, 0.12, M.grey), 0, 4 * i, 0);
+      const b = at(mast, this.sph(0.7, col), 0, 16.4, 0);
+      // solar panels: a tidy row on stands when whole, thrown about on the ground when hurt
+      const row = (pts) => pts.forEach(([x, z, ry], i) => { at(whole, this.box(PANEL_W, 0.12, PANEL_D, M.panel), x, 1.5, z, -0.5, ry, 0); at(whole, this.cyl(0.1, 0.14, 1.4, M.grey, 6), x, 0.7, z);
+        at(hurt, this.box(PANEL_W, 0.12, PANEL_D, M.panelB), x + hash(i, 3) * 2 - 1, 0.5 + hash(i, 5), z + hash(i, 4) * 2 - 1, hash(i, 6), ry + hash(i, 7) * 3, 0.4); });
+      for (let i = 0; i < 6; i++) { const a = hash(i, s.pos[0]) * 6.283, d = 13 + hash(i, 9) * 9, r = 0.35 + hash(i, 2) * 0.6, x = Math.cos(a) * d, z = -Math.abs(Math.sin(a)) * d; const rk = at(hurt, this.sph(r, M.rock, 7, 5), x, r * 0.4, z); rk.scale.y = 0.6; }   // fresh rocks, behind the building: the front stays clear for landing
+
+      if (s.id === 'aurora') {
+        // a barrel vault lying on its side, half under the ground, banked with soil at the back; portholes glow along the front
+        at(g, part(new THREE.CylinderGeometry(6, 6, 18, 28), M.white), 0, 0, 0, 0, 0, Math.PI / 2);
+        for (const x of [-5.4, 5.4]) at(g, part(new THREE.CylinderGeometry(6.07, 6.07, 0.9, 28, 1, true), acc), x, 0, 0, 0, 0, Math.PI / 2);
+        { const berm = at(g, this.sph(7, M.rock, 14, 8), 0, -0.6, -4.6); berm.scale.set(1.6, 0.55, 0.9); }
+        for (let i = -2; i <= 2; i++) { const a = 0.62, y = 6 * Math.sin(a), z = 6 * Math.cos(a); at(g, this.cyl(0.98, 0.98, 0.2, M.grey, 14), i * 3.1, y - 0.03, z - 0.04, Math.PI / 2 - a); at(g, this.cyl(0.74, 0.74, 0.26, win, 14), i * 3.1, y, z, Math.PI / 2 - a); }
+        door(6.4); for (const x of [-6, 0, 6]) solid(x, 0, 6.3);
+        // an ice laboratory under a faceted dome, and two round fuel tanks
+        at(g, part(new THREE.IcosahedronGeometry(3.4, 1), std({ color: 0xc8f4ee, roughness: 0.25, metalness: 0.1, flatShading: true, emissive: s.color, emissiveIntensity: 0.22 })), -13, 1.4, 6.2); at(g, this.cyl(3.5, 3.7, 0.5, M.white, 20), -13, 0.25, 6.2); at(g, this.box(3.2, 1.8, 1.6, M.white), -10.2, 0.9, 4.4, 0, 0.6, 0); solid(-13, 6.2, 3.7);
+        for (const z of [-2.1, 2.1]) { at(g, this.sph(1.7, M.white, 16, 12), 11.6, 1.9, z); at(g, this.cyl(1.74, 1.74, 0.3, acc, 16), 11.6, 1.9, z); at(g, this.cyl(0.9, 1.2, 0.5, M.grey, 10), 11.6, 0.25, z); } solid(11.6, 0, 3.4);
+        row([[16, -9, 0.2], [19.5, -5, 0.2], [23, -1, 0.2], [26.5, 3, 0.2]]);
+        at(hurt, this.box(0.5, 0.14, 6.5, M.dark), 2.2, 5.92, 0.4, 0, 0.5, 0.05); at(hurt, this.box(0.4, 0.14, 3.2, M.dark), 3.6, 5.55, -1.2, 0, -0.9, 0.3);   // a crack across the roof
+      } else if (s.id === 'sakura') {
+        // a tower of three round floors, each under a wide curved roof
+        const roofM = std({ color: 0x4b2d7a, roughness: 0.5, metalness: 0.2 }), tier = (r, h, y) => { at(g, this.cyl(r, r, h, M.white, 28), 0, y, 0); at(g, this.cyl(r + 0.05, r + 0.05, h * 0.26, win, 28), 0, y + 0.2, 0); }, eave = (rt, rb, y) => at(g, this.cyl(rt, rb, 0.7, roofM, 28), 0, y, 0);
+        tier(8, 3, 1.5); eave(6.4, 9.6, 3.35); tier(5.6, 2.6, 5.0); eave(4.2, 6.9, 6.65); tier(3.4, 2.2, 8.1);
+        const top = (grp) => { const t = new THREE.Group(); grp.add(t); at(t, this.cyl(0.2, 4.7, 2.4, roofM, 28), 0, 0, 0); at(t, this.cyl(0.09, 0.09, 2.6, M.metal, 6), 0, 2.4, 0); at(t, this.sph(0.42, col, 10, 8), 0, 3.8, 0); return t; };
+        top(whole).position.set(0, 10.4, 0); { const t = top(hurt); t.position.set(1.7, 9.8, 0.9); t.rotation.set(0.12, 0, -0.38); }   // the shower knocked the top roof askew
+        door(8.6); solid(0, 0, 8.4);
+        // a red gate on the path to the door, with two lanterns
+        for (const x of [-2.7, 2.7]) at(g, this.cyl(0.28, 0.34, 4.6, M.red, 10), x, 2.3, 14.2); at(g, this.box(7.2, 0.44, 0.6, M.red), 0, 4.8, 14.2); at(g, this.box(8, 0.22, 0.85, M.dark), 0, 5.12, 14.2); at(g, this.box(5.8, 0.3, 0.4, M.red), 0, 3.9, 14.2);
+        for (const x of [-4.4, 4.4]) { at(g, this.cyl(0.07, 0.07, 1.7, M.dark, 6), x, 0.85, 11.4); at(g, this.box(0.55, 0.65, 0.55, win), x, 1.95, 11.4); at(g, this.box(0.8, 0.1, 0.8, M.dark), x, 2.33, 11.4); }
+        // a cherry tree under glass
+        at(g, this.cyl(4.4, 4.6, 0.5, M.white, 24), -13.6, 0.25, 4.4); at(g, part(new THREE.SphereGeometry(4.2, 22, 10, 0, 6.283, 0, 1.5708), glassM(0xffd9ec)), -13.6, 0.4, 4.4); at(g, this.cyl(0.22, 0.4, 2.3, M.soil, 8), -13.6, 1.5, 4.4);
+        { const blossom = std({ color: 0xff9ecb, roughness: 0.8, emissive: 0xff5fae, emissiveIntensity: 0.25 }); for (let i = 0; i < 6; i++) { const a = i * 1.047; at(g, this.sph(0.85 + hash(i, 1) * 0.35, blossom, 9, 7), -13.6 + Math.cos(a) * 1.1, 2.9 + hash(i, 4) * 0.5, 4.4 + Math.sin(a) * 1.1); } at(g, this.sph(1, blossom, 9, 7), -13.6, 3.5, 4.4); } solid(-13.6, 4.4, 4.7);
+        row([[15, -9, -0.2], [18.5, -5, -0.2], [22, -1, -0.2], [25.5, 3, -0.2]]);
+      } else {
+        // Chandra: a six-sided hall with saffron and green bands, a golden dome, and three glass garden pods joined by short tunnels
+        const R6 = Math.PI / 6, hex = (r, h, m) => this.cyl(r, r, h, m, 6);
+        at(g, hex(7.6, 4, M.white), 0, 2, 0, 0, R6); at(g, hex(7.72, 0.5, std({ color: 0xff9933, roughness: 0.6 })), 0, 3.55, 0, 0, R6); at(g, hex(7.72, 0.5, acc), 0, 0.45, 0, 0, R6); at(g, hex(7.66, 0.9, win), 0, 2.1, 0, 0, R6);
+        const domeG = (a0, len) => part(new THREE.SphereGeometry(5.3, 28, 14, a0, len, 0, 1.5708), std({ color: 0xd9a531, roughness: 0.4, metalness: 0.75, side: THREE.DoubleSide }));
+        at(whole, domeG(0, 6.283), 0, 4, 0); at(hurt, domeG(0.5, 5.2), 0, 4, 0); at(g, this.cyl(0.12, 0.12, 1.6, M.metal, 6), 0, 9.9, 0); at(g, this.sph(0.4, col, 10, 8), 0, 10.9, 0);
+        door(7.2); solid(0, 0, 7.8);
+        for (const [x, z] of [[-9.8, -3.4], [9.8, -3.4], [0, -10.4]]) { at(g, hex(3, 2.2, M.white), x, 1.1, z, 0, R6); at(g, part(new THREE.SphereGeometry(2.7, 18, 9, 0, 6.283, 0, 1.5708), glassM(0xcfffd9)), x, 2.2, z);
+          for (let i = 0; i < 5; i++) at(g, this.sph(0.5 + hash(i, x) * 0.3, M.green, 7, 6), x + Math.cos(i * 1.257) * 1.2, 2.5, z + Math.sin(i * 1.257) * 1.2); at(g, this.sph(0.16, M.pink, 6, 5), x, 3.2, z);
+          const len = Math.hypot(x, z) - 9, a = Math.atan2(x, z); at(g, this.box(1.7, 1.7, len + 1.2, M.white), x * 0.7, 0.85, z * 0.7, 0, a, 0); solid(x, z, 3.2); }
+        // the big dish that talks to Earth
+        { const d = new THREE.Group(); d.position.set(-15.2, 0, 7.2); g.add(d); at(d, this.cyl(0.5, 0.85, 3.2, M.grey, 10), 0, 1.6, 0); const dish = new THREE.Group(); dish.position.set(0, 3.6, 0); dish.rotation.set(0.5, 0.6, 0); d.add(dish);
+          at(dish, part(new THREE.SphereGeometry(4.4, 24, 8, 0, 6.283, 0, 0.78), std({ color: 0xe8e8e3, roughness: 0.6, side: THREE.DoubleSide })), 0, 4.6, 0, Math.PI); at(dish, this.cyl(0.06, 0.06, 2.6, M.grey, 5), 0, 1.5, 0); at(dish, this.sph(0.26, col, 8, 6), 0, 2.8, 0); solid(-15.2, 7.2, 1.3); }
+        // a lotus of six solar petals: open when whole, drooping and cracked when hurt
+        for (const [grp, mat, tilt] of [[whole, M.panel, 0.3], [hurt, M.panelB, -0.25]]) { const c = new THREE.Group(); c.position.set(17, 0, -7); grp.add(c); at(c, this.cyl(0.25, 0.4, 2.2, M.grey, 8), 0, 1.1, 0); at(c, this.sph(0.5, grp === whole ? col : M.dark, 10, 8), 0, 2.4, 0);
+          for (let k = 0; k < 6; k++) { const p = new THREE.Group(); p.rotation.y = k * 1.047; c.add(p); const leaf = new THREE.Group(); leaf.position.set(0, 2.1, 0.5); leaf.rotation.x = -(tilt + (grp === hurt ? hash(k, 8) * 0.8 : 0)); p.add(leaf); at(leaf, this.box(2.3, 0.1, 4.4, mat), 0, 0, 2.3); } } solid(17, -7, 1.2);
+      }
       const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 150, 14, 1, true), new THREE.MeshBasicMaterial({ color: s.color, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); beam.position.set(0, 75, 0); g.add(beam);
-      this.solid('top', s.pos[0], s.pos[1], 10.6); const l = this.lamp(this.top, s.pos[0], this.heightAt(s.pos[0], s.pos[1]) + 6, s.pos[1] + 12, s.color, 30, 70);
-      this.sites[s.id] = { g, beam, b };
+      this.lamp(this.top, s.pos[0], this.heightAt(s.pos[0], s.pos[1]) + 6, s.pos[1] + 12, s.color, 30, 70);
+      this.sites[s.id] = { g, beam, b, whole, hurt, mast };
     }
   }
 
@@ -645,8 +718,8 @@ export class World {
     { const c = rc('water'); this.waterTanks = []; for (let i = 0; i < 2; i++) { this.waterTanks.push(add('water', this.cyl(2, 2, 4.8, M.tankW.clone(), 20), c.x0 + 3.4 + i * 5.2, 2.4, c.z1 - 3)); hard(c.x0 + 3.4 + i * 5.2, c.z1 - 3, 2.2); } add('water', this.box(4.4, 2.2, 1.1, M.white), c.cx + 2, 1.1, c.cz - 1); this.waterGlow = add('water', this.box(3.6, 0.3, 0.1, M.cyan.clone()), c.cx + 2, 1.7, c.cz - 1.57); add('water', this.cyl(0.18, 0.18, 6, M.metal, 8), c.cx + 1, 3, c.cz + 1, 0, 0, 1.5708); hard(c.cx + 2, c.cz - 1, 2); }
     // Animal Bay: hen coop, feed sacks, fish tank
     { const c = rc('animal'), px = c.x0 + 5, pz = c.cz + 2.5; add('animal', this.cyl(3.6, 3.6, 0.12, M.straw, 24), px, 0.1, pz); for (let i = 0; i < 14; i++) { const a = (i / 14) * 6.283; add('animal', this.cyl(0.05, 0.05, 1, M.white, 5), px + Math.cos(a) * 3.6, 0.5, pz + Math.sin(a) * 3.6); } add('animal', new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.04, 5, 36), M.white), px, 1.0, pz, Math.PI / 2); add('animal', this.box(2.2, 1.3, 1.4, M.red), px, 0.65, pz + 2.2);
-      this.hens = []; for (let i = 0; i < 6; i++) { const h = new THREE.Group(); const b = this.sph(0.34, M.hen, 10, 8); b.scale.set(1, 0.9, 1.25); h.add(b); this.put(h, this.sph(0.17, M.hen, 8, 6), 0, 0.34, 0.3); this.put(h, new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 5), M.orange), 0, 0.32, 0.5, Math.PI / 2); this.put(h, this.box(0.05, 0.12, 0.12, M.red), 0, 0.52, 0.3); const wings = [-1, 1].map((sx) => { const w = new THREE.Group(); w.position.set(0.3 * sx, 0.1, -0.02); this.put(w, this.box(0.05, 0.2, 0.38, M.hen), 0.04 * sx, -0.06, 0); h.add(w); return w; });
-        h.position.set(px, 0.42, pz); R.animal.props.add(h); const a = i * 1.05, r = 0.8 + (i % 3) * 0.8; this.hens.push({ g: h, wings, x: Math.cos(a) * r, z: Math.sin(a) * r * 0.8, tx: 0, tz: 0, face: -a, st: 'idle', t: i * 0.4, u: 0 }); }
+      this.hens = []; for (let i = 0; i < 6; i++) { const { g: h, wings } = this._hen(i);
+        h.position.set(px, HEN_Y, pz); R.animal.props.add(h); const a = i * 1.05, r = 0.8 + (i % 3) * 0.8; this.hens.push({ g: h, wings, x: Math.cos(a) * r, z: Math.sin(a) * r * 0.8, tx: 0, tz: 0, face: -a, st: 'idle', t: i * 0.4, u: 0 }); }
       this.henPod = add('animal', this.sph(1.1, M.white, 14, 10), px, 0.9, pz); this.henPod.scale.set(1.3, 0.8, 1); this.henPos = new V3(px, 0, pz);
       this.sacks = []; for (let i = 0; i < 5; i++) this.sacks.push(add('animal', this.box(0.9, 0.5, 0.6, M.straw), c.x0 + 1.2 + (i % 2) * 1, 0.25 + Math.floor(i / 2) * 0.5, c.z0 + 6));
       const tx = c.x1 - 3.6, tz = c.z0 + 7; add('animal', this.box(4.6, 0.7, 2.2, M.dark), tx, 0.35, tz); add('animal', this.box(4.4, 1.6, 2.0, M.water), tx, 1.5, tz); add('animal', this.box(4.5, 1.7, 2.1, M.glass.clone()), tx, 1.5, tz); this.fishes = []; for (let i = 0; i < 5; i++) { const f = this.sph(0.16, M.fish, 8, 6); f.scale.set(1.8, 1, 0.6); f.position.set(tx, 1.5, tz); R.animal.props.add(f); this.fishes.push({ m: f, ph: i * 1.3, tx, tz }); } hard(tx, tz, 2.2); hard(px, pz + 2.2, 1.4); }
@@ -938,7 +1011,7 @@ export class World {
       const cp = this.mineCable.geometry.attributes.position; cp.setXYZ(0, this.mineMast.x, this.mineMast.y, this.mineMast.z); cp.setXYZ(1, this.dig.position.x, this.dig.position.y + 2.6, this.dig.position.z); cp.needsUpdate = true;
     }
     this.dig.visible = topZ;
-    const hitK = this.baseHit ? 0.1 : 1; if (hitK !== this._hitK) { this._hitK = hitK; for (const b of this.baseGlow) b.m.emissiveIntensity = b.k * hitK; this.baseDamage.visible = !!this.baseHit; }
+    const hitK = this.baseHit ? 0.1 : 1; if (hitK !== this._hitK) { this._hitK = hitK; for (const b of this.baseGlow) b.m.emissiveIntensity = b.k * hitK; this.baseDamage.visible = !!this.baseHit; for (const id in this.sites) { const o = this.sites[id]; o.whole.visible = !this.baseHit; o.hurt.visible = !!this.baseHit; o.mast.rotation.z = this.baseHit ? 0.32 : 0; } }   // the other stations were hit too
     if (S) {
       for (const p of this.pads) { const v = S[p.k], on = v.charging; p.ring.material.emissive.setHex(on ? 0x49e6ff : 0x2a5560); p.ring.material.emissiveIntensity = on ? 2 + Math.sin(t * 6) : 1; p.led.material.emissive.setHex(v.charge > 0.5 ? 0x4dff88 : v.charge > 0.2 ? 0xffa424 : 0xff3b30); }
       this.carLed.material.emissive.setHex(S.car.charge > 0.5 ? 0x4dff88 : S.car.charge > 0.2 ? 0xffa424 : 0xff3b30); this.shipLed.material.emissive.setHex(S.ship.charge > 0.5 ? 0x4dff88 : S.ship.charge > 0.2 ? 0xffa424 : 0xff3b30);
@@ -1011,7 +1084,7 @@ export class World {
         if (h.st === 'walk') { const dx = h.tx - h.x, dz = h.tz - h.z, d = Math.hypot(dx, dz), v = fed ? 0.75 : 0.3; if (d < 0.08) h.t = 0; else { h.x += (dx / d) * v * dt; h.z += (dz / d) * v * dt; let dy = Math.atan2(dx, dz) - h.face; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); h.face += dy * Math.min(1, dt * 7); bob = Math.abs(Math.sin(t * 9 + i)) * 0.05; dip = Math.sin(t * 9 + i) * 0.06; } }
         else if (h.st === 'peck') dip = Math.max(0, Math.sin(h.u * 9)) * 0.75;
         else if (h.st === 'flap') { const k = Math.min(1, h.u / 1.3); hop = Math.sin(k * Math.PI) * 0.6; wing = 0.35 + Math.abs(Math.sin(h.u * 20)) * 1.0; }
-        h.g.position.set(this.henPos.x + h.x, 0.42 + bob + hop, this.henPos.z + h.z); h.g.rotation.y = h.face; h.g.rotation.x += (dip - h.g.rotation.x) * Math.min(1, dt * 14);
+        h.g.position.set(this.henPos.x + h.x, HEN_Y + bob + hop, this.henPos.z + h.z); h.g.rotation.y = h.face; h.g.rotation.x += (dip - h.g.rotation.x) * Math.min(1, dt * 14);
         h.wings[0].rotation.z += (-wing - h.wings[0].rotation.z) * Math.min(1, dt * 30); h.wings[1].rotation.z += (wing - h.wings[1].rotation.z) * Math.min(1, dt * 30); });
       this.sacks.forEach((s, i) => { if (s.visible) s.visible = S.feed > i * 1.1; }); this.fishes.forEach((fi) => { if (fi.m.visible) { fi.m.visible = S.fish; fi.m.position.set(fi.tx + Math.sin(t * 0.6 + fi.ph) * 1.7, 1.5 + Math.sin(t * 0.9 + fi.ph * 2) * 0.45, fi.tz + Math.cos(t * 0.5 + fi.ph) * 0.6); fi.m.rotation.y = Math.cos(t * 0.6 + fi.ph) > 0 ? 0 : Math.PI; } });
       this.canStacks.forEach((c, i) => { if (c.visible) c.visible = S.cans > i * 2; }); this.stove.material.emissiveIntensity = ctx.cooking ? 2.5 : 0.15;

@@ -59,9 +59,32 @@ export function drawStation(c, S, w, h, o = {}) {
   if (o.player) { c.fillStyle = '#fff'; c.beginPath(); c.arc(X(o.player.x), Z(o.player.z), big ? 7 : 5, 0, 7); c.fill(); c.strokeStyle = '#ffb347'; c.lineWidth = 2; c.stroke(); }
   if (o.target) { c.strokeStyle = '#ffb347'; c.lineWidth = 3; c.beginPath(); c.arc(X(o.target.x), Z(o.target.z), 9 + Math.sin(t * 5) * 2, 0, 7); c.stroke(); }
 }
-export function drawSurface(c, G, w, h, range = 170, cx = 0, cz = 0) {
+// A shaded picture of the ground for the big map: sunlight from the north-west, so craters show as dimples. It is slow to
+// work out (one height for every dot), so each view is drawn once and kept.
+const reliefs = new Map();
+function relief(world, range, cx, cz) {
+  const key = range + ',' + cx + ',' + cz; let cv = reliefs.get(key); if (cv) return cv;
+  const n = 220, st = (2 * range) / n, H = new Float32Array((n + 1) * (n + 1)), img = new ImageData(n, n), d = img.data;
+  for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) H[j * (n + 1) + i] = world.heightAt(cx - range + i * st, cz - range + j * st);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const a = H[j * (n + 1) + i], dx = (H[j * (n + 1) + i + 1] - a) / st, dz = (H[(j + 1) * (n + 1) + i] - a) / st, v = 30 + clamp(0.5 + (dx + dz) * 2.2, 0, 1) * 62, k = (j * n + i) * 4; d[k] = v * 0.9; d[k + 1] = v * 0.96; d[k + 2] = v * 1.08; d[k + 3] = 255; }
+  cv = document.createElement('canvas'); cv.width = cv.height = n; cv.getContext('2d').putImageData(img, 0, 0); reliefs.set(key, cv); return cv;
+}
+// A small picture for each of the other stations, in its own colour: a barrel vault, three roofs, a dome on a hall.
+function siteIcon(c, id, x, z, col) {
+  c.save(); c.translate(x, z); c.fillStyle = 'rgba(8,12,18,.88)'; c.strokeStyle = col; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 13, 0, 7); c.fill(); c.stroke(); c.fillStyle = col;
+  if (id === 'aurora') { c.beginPath(); c.arc(0, 5, 8, Math.PI, 0); c.closePath(); c.fill(); }
+  else if (id === 'sakura') { for (const [y, r] of [[-7, 4], [-2, 7], [3, 10]]) { c.beginPath(); c.moveTo(-r, y + 4); c.lineTo(0, y - 1); c.lineTo(r, y + 4); c.closePath(); c.fill(); } }
+  else { c.fillRect(-8, 1, 16, 5); c.beginPath(); c.arc(0, 1, 6, Math.PI, 0); c.fill(); }
+  c.restore();
+}
+// `big` = the Map window: it adds the shaded ground, distance rings, station pictures with distances, and a scale bar.
+export function drawSurface(c, G, w, h, range = 170, cx = 0, cz = 0, big = false) {
   const S = G.S, sc = w / (2 * range), X = (x) => w / 2 + (x - cx) * sc, Z = (z) => h / 2 + (z - cz) * sc, far = range > 300;
   c.fillStyle = '#0b0e12'; c.fillRect(0, 0, w, h); c.textAlign = 'center'; c.textBaseline = 'middle';
+  const gate = STATIONS.find((q) => q.id === 'gate').pos, me = G.player.zone === 'top' ? [G.player.pos.x, G.player.pos.z] : gate;   // distances are from you, or from the elevator when you are underground
+  if (big) { c.imageSmoothingEnabled = true; c.drawImage(relief(G.world, range, cx, cz), 0, 0, w, h);
+    if (far) { c.strokeStyle = 'rgba(255,255,255,.1)'; c.fillStyle = 'rgba(219,231,242,.5)'; c.font = '600 10px Inter,sans-serif'; c.lineWidth = 1; for (const r of [200, 400, 600]) { c.beginPath(); c.arc(X(gate[0]), Z(gate[1]), r * sc, 0, 7); c.stroke(); c.fillText(r + ' m', X(gate[0]), Z(gate[1]) - r * sc - 7); }
+      c.fillStyle = '#ffb347'; c.font = '700 11px Inter,sans-serif'; c.fillText('TRANQUILITY DEEP', X(0), Z(-104)); } }
   c.fillStyle = '#05070a'; c.beginPath(); c.arc(X(PIT.x), Z(PIT.z), PIT.r * sc, 0, 7); c.fill(); c.strokeStyle = '#ffb347'; c.lineWidth = 2; c.stroke();
   MOUNTS.forEach(([x, z], i) => { const st = S.mounts[i]; c.fillStyle = st === 1 ? '#3a78d8' : st === 2 ? '#ff5252' : '#3a3f47'; const bx = X(x) - Math.max(2, 2.4 * sc), by = Z(z) - Math.max(1.5, 1.4 * sc), bw = Math.max(4, 4.8 * sc), bh = Math.max(3, 2.8 * sc); c.fillRect(bx, by, bw, bh); if (st === 2) { c.strokeStyle = '#fff'; c.lineWidth = 1; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx + bw, by + bh); c.stroke(); } });   // brokenMark
   c.strokeStyle = '#6f7f8f'; c.fillStyle = 'rgba(120,140,160,.22)'; c.lineWidth = 1.5; for (const k of ['hub', 'green']) { const [x, z, r] = BASE[k]; c.beginPath(); c.arc(X(x), Z(z), r * sc, 0, 7); c.fill(); c.stroke(); }
@@ -71,12 +94,15 @@ export function drawSurface(c, G, w, h, range = 170, cx = 0, cz = 0) {
     x = clamp(x, 12, w - 12); z = clamp(z, 12, h - 12); if (off) { c.fillStyle = '#9fdcff'; c.beginPath(); c.moveTo(x, z - 8); c.lineTo(x + 7, z); c.lineTo(x, z + 8); c.lineTo(x - 7, z); c.closePath(); c.fill(); c.fillStyle = '#dbe7f2'; c.font = '600 10px Inter,sans-serif'; c.fillText('ICE MINE', clamp(x, 34, w - 34), clamp(z + (z > h / 2 ? -14 : 16), 10, h - 10)); } }
   for (const s of STATIONS) if (s.zone === 'top') dot(s.pos[0], s.pos[1], '#49e6ff', far ? '' : s.name, far ? 2.5 : 4);
   for (const [k, p] of [['car', CAR_PAD], ['ship', SHIP_PAD]]) { c.strokeStyle = S[k].charging ? '#49e6ff' : '#55616d'; c.lineWidth = 2; c.beginPath(); c.arc(X(p[0]), Z(p[1]), Math.max(4, 5 * sc), 0, 7); c.stroke(); }
-  for (const s of SITES) { const col = '#' + s.color.toString(16).padStart(6, '0'), done = S.rescued.includes(s.id); let x = X(s.pos[0]), z = Z(s.pos[1]); const off = x < 12 || x > w - 12 || z < 12 || z > h - 12; x = clamp(x, 12, w - 12); z = clamp(z, 12, h - 12); c.fillStyle = col; c.beginPath(); if (off) { c.moveTo(x, z - 8); c.lineTo(x + 8, z + 6); c.lineTo(x - 8, z + 6); } else c.arc(x, z, 8, 0, 7); c.fill(); if (!off || far) { c.fillStyle = '#fff'; c.font = '600 11px Inter,sans-serif'; c.fillText(s.name + (done ? ' ✓' : ''), x, z + 18); } }
+  for (const s of SITES) { const col = '#' + s.color.toString(16).padStart(6, '0'), done = S.rescued.includes(s.id); let x = X(s.pos[0]), z = Z(s.pos[1]); const off = x < 12 || x > w - 12 || z < 12 || z > h - 12; x = clamp(x, 12, w - 12); z = clamp(z, 12, h - 12); c.fillStyle = col; c.beginPath(); if (off) { c.moveTo(x, z - 8); c.lineTo(x + 8, z + 6); c.lineTo(x - 8, z + 6); c.fill(); } else if (big) siteIcon(c, s.id, x, z, col); else { c.arc(x, z, 8, 0, 7); c.fill(); }
+    if (!off || far) { c.fillStyle = '#fff'; c.font = '600 11px Inter,sans-serif'; c.fillText(s.name + (done ? ' ✓' : ''), x, z + (big ? 23 : 18)); if (big) { c.fillStyle = '#9bb0c3'; c.font = '600 10px Inter,sans-serif'; c.fillText(Math.round(Math.hypot(s.pos[0] - me[0], s.pos[1] - me[1]) / 10) * 10 + ' m away', x, z + 36); } } }
   for (const it of G.items) if (it.zone === 'top' && it.where === 'ground') { c.fillStyle = it.type.startsWith('panel') ? '#7fb0ff' : '#ffb347'; c.fillRect(X(it.x) - 2.5, Z(it.z) - 2.5, 5, 5); }
   const veh = (v, col, label) => { c.save(); c.translate(X(v.x), Z(v.z)); c.rotate(-v.yaw + Math.PI); c.fillStyle = col; c.fillRect(-4, -7, 8, 14); c.restore(); if (!far) { c.fillStyle = col; c.font = '700 10px Inter,sans-serif'; c.fillText(label, X(v.x), Z(v.z) + 15); } };
   veh(G.car, '#ff9a3d', 'ROVER'); veh(G.ship, '#2ad0c0', 'HOPPER');
   const tg = G.world.target; if (tg && tg.zone === 'top') { c.strokeStyle = '#ffb347'; c.lineWidth = 3; c.beginPath(); c.arc(clamp(X(tg.x), 10, w - 10), clamp(Z(tg.z), 10, h - 10), 10, 0, 7); c.stroke(); }
-  const p = G.player; c.save(); c.translate(X(p.pos.x), Z(p.pos.z)); c.rotate(-G.cam.yaw); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(0, -11); c.lineTo(8, 9); c.lineTo(0, 4); c.lineTo(-8, 9); c.closePath(); c.fill(); c.restore();
+  const p = G.player; if (big && tg && tg.zone === 'top' && p.zone === 'top') { c.strokeStyle = 'rgba(255,179,71,.7)'; c.lineWidth = 2; c.setLineDash([6, 6]); c.beginPath(); c.moveTo(X(p.pos.x), Z(p.pos.z)); c.lineTo(X(tg.x), Z(tg.z)); c.stroke(); c.setLineDash([]); }   // the way to where the guide beam points
+  c.save(); c.translate(X(p.pos.x), Z(p.pos.z)); c.rotate(-G.cam.yaw); c.fillStyle = '#fff'; c.strokeStyle = '#0b0e12'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -11); c.lineTo(8, 9); c.lineTo(0, 4); c.lineTo(-8, 9); c.closePath(); c.fill(); c.stroke(); c.restore();
+  if (big) { const L = far ? 200 : 50, px = L * sc, y = h - 16; c.strokeStyle = '#dbe7f2'; c.lineWidth = 2; c.beginPath(); c.moveTo(16, y - 5); c.lineTo(16, y); c.lineTo(16 + px, y); c.lineTo(16 + px, y - 5); c.stroke(); c.fillStyle = '#dbe7f2'; c.font = '600 11px Inter,sans-serif'; c.fillText(L + ' m', 16 + px / 2, y - 10); }
   c.fillStyle = '#9bb0c3'; c.font = '600 12px Inter,sans-serif'; c.fillText('N', w / 2, 10);
 }
 
@@ -152,10 +178,11 @@ export class UI {
   }
 
   // ---------- modal windows ----------
+  // img: a picture name in assets/img. "first|second" shows the second if the first file is not there yet.
   window({ title, html, wide = false, closable = true, img = null, onMount }) {
     return new Promise((resolve) => {
       const m = $('#modal'); this.modalStack++; this._closable = closable; document.exitPointerLock?.(); m.classList.toggle('in', m.classList.contains('hidden') && performance.now() - (this._closedAt || 0) > 300); m.classList.remove('hidden');
-      m.innerHTML = `<div class="win ${wide ? 'wide' : ''}">${img ? `<img class="card-img" src="assets/img/${img}.jpg" alt="" onerror="this.remove()">` : ''}<div class="win-h"><h2>${title}</h2>${closable ? '<button class="x">Close ✕</button>' : ''}</div><div class="win-b">${html}</div></div>`;
+      m.innerHTML = `<div class="win ${wide ? 'wide' : ''}">${img ? `<img class="card-img" src="assets/img/${img.split('|')[0]}.jpg" data-fb="${img.split('|')[1] || ''}" alt="" onerror="if (this.dataset.fb) { this.src = 'assets/img/' + this.dataset.fb + '.jpg'; this.dataset.fb = ''; } else this.remove()">` : ''}<div class="win-h"><h2>${title}</h2>${closable ? '<button class="x">Close ✕</button>' : ''}</div><div class="win-b">${html}</div></div>`;
       this._resolve = (v) => { clearInterval(this._tick); this._closedAt = performance.now(); m.classList.add('hidden'); m.innerHTML = ''; this.modalStack = Math.max(0, this.modalStack - 1); this._resolve = null; resolve(v); };
       if (closable) m.querySelector('.x').onclick = () => this.close(); onMount?.(m.querySelector('.win'));
     });
@@ -322,8 +349,8 @@ export class UI {
       if (view === 'real') { clearInterval(this._tick); w.querySelector('.win-b').innerHTML = `<div class="tabs">${TABS.map(([k, v]) => `<button data-v="${k}" class="${k === view ? 'on' : ''}">${v}</button>`).join('')}</div>${this.realMoon()}`; w.querySelectorAll('.tabs button').forEach((b) => (b.onclick = () => { view = b.dataset.v; render(w); })); return; }
       w.querySelector('.win-b').innerHTML = `<div class="tabs">${TABS.map(([k, v]) => `<button data-v="${k}" class="${k === view ? 'on' : ''}">${v}</button>`).join('')}</div>
         <div class="grid2"><canvas id="bm" width="${view === 'deep' ? 1000 : 720}" height="${view === 'deep' ? 340 : 720}" style="width:100%;border-radius:12px;border:1px solid var(--line)"></canvas>
-        <div><h4 class="h4">Point the guide beam at…</h4><div class="places">${places.map(([id, n]) => `<button class="mini-b" data-go="${id}">${n}</button>`).join('')}</div><div class="learn">The orange beam shows the way. On the map: blue = working panel, red = broken, grey = empty mount. Coloured circles are the other stations.</div></div></div>`;
-      const cv = w.querySelector('#bm'), c = cv.getContext('2d'), paint = () => (view === 'deep' ? drawStation(c, G.S, 1000, 340, { big: true, player: G.player.zone === 'deep' ? { x: G.player.pos.x, z: G.player.pos.z } : null, target: G.world.target && G.world.target.zone === 'deep' ? G.world.target : null }) : drawSurface(c, G, 720, 720, view === 'base' ? 190 : 700, view === 'base' ? 0 : 0, view === 'base' ? 0 : 20));
+        <div><h4 class="h4">Point the guide beam at…</h4><div class="places">${places.map(([id, n]) => `<button class="mini-b" data-go="${id}">${n}</button>`).join('')}</div><div class="learn">The orange beam shows the way. On the map: blue = working panel, red = broken, grey = empty mount. The coloured pictures are the other stations, with how far each one is from you. The faint rings are 200 m apart.</div></div></div>`;
+      const cv = w.querySelector('#bm'), c = cv.getContext('2d'), paint = () => (view === 'deep' ? drawStation(c, G.S, 1000, 340, { big: true, player: G.player.zone === 'deep' ? { x: G.player.pos.x, z: G.player.pos.z } : null, target: G.world.target && G.world.target.zone === 'deep' ? G.world.target : null }) : drawSurface(c, G, 720, 720, view === 'base' ? 190 : 700, 0, view === 'base' ? 0 : 20, true));
       paint(); clearInterval(this._tick); this._tick = setInterval(paint, 300);
       w.querySelectorAll('.tabs button').forEach((b) => (b.onclick = () => { view = b.dataset.v; render(w); })); w.querySelectorAll('[data-go]').forEach((b) => (b.onclick = () => { G.pointTo(b.dataset.go); this.close(); }));
     };
