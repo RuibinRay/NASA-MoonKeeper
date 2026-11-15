@@ -61,9 +61,11 @@ export const MODES = {
 // Topside: x = east, z = south (metres). The Deep (lava tube station) has its own x/z, x runs along the tunnel.
 export const PIT = { x: 0, z: 118, r: 50 };
 export const SPAWN = { x: 52, z: 22 };
-export const TUBE = { halfLen: 125, halfWidth: 40, height: 44, y: -300, skyX: -72, skyR: 15 };
+export const TUBE = { halfLen: 125, halfWidth: 40, height: 44, y: -300, skyX: -104, skyR: 15 };
 export const HALL = { x0: -60, x1: 76, z0: -2.6, z1: 2.6, h: 4.6 };
-export const LOBBY = { x0: -84, x1: -60, z0: -9, z1: 9, h: 7 };
+// The airlock is the station's front door: outside it is the open cave (no air, a steady 17°C).
+export const AIRLOCK = { x0: -70, x1: -60, z0: -5, z1: 5, h: 5 };
+export const CAVE_C = 17, INDOOR_C = 21;
 export const ROOM_H = 6.2;
 export const ROOMS = [
   { id: 'workshop', name: 'Workshop',       side: -1, x0: -56, x1: -32, door: -44, mat: 4, hours: 4, what: 'the Fix-It bench and the robot-arm builder' },
@@ -87,6 +89,8 @@ export const BENCH = [-50, -19], FAB = [-37, -19], FAB_OUT = [-37, -11];
 export const MOUNTS = []; for (let row = 0; row < 4; row++) for (let i = 0; i < 6; i++) MOUNTS.push([-40 + i * 16, -58 - row * 14]);
 export const CAR_PAD = [-24, 40], SHIP_PAD = [-48, 46];
 
+// The surface base: [x, z, radius] for domes, [x, z] for buildings. Laid out west and east of the road from the Solar Field to the Pit Elevator.
+export const BASE = { hub: [-34, -8, 11], green: [26, -10, 8], tower: [-34, -31], batt: [-58, -28], garage: [-40, 15], lab: [28, 14], water: [46, -12], mine: [86, -30], comm: [-78, -18] };
 export const STATIONS = [
   { id: 'gate',  zone: 'top',  name: 'Pit Elevator',        ico: 'lift',   pos: [0, 60],    r: 7 },
   { id: 'depot', zone: 'top',  name: 'Cargo Depot',         ico: 'box',    pos: [16, 52],   r: 6 },
@@ -94,9 +98,17 @@ export const STATIONS = [
   { id: 'dish',  zone: 'top',  name: 'Earth Link Dish',     ico: 'dish',   pos: [-58, -4],  r: 8 },
   { id: 'yard',  zone: 'top',  name: 'Heater Hub',          ico: 'temp',   pos: [-78, -48], r: 8 },
   { id: 'isru',  zone: 'top',  name: 'Moon-Dust Oxygen Plant', ico: 'fire', pos: [56, -30],  r: 8 },
-  { id: 'park',  zone: 'top',  name: 'Charging Pads',       ico: 'bolt',   pos: [-36, 34],  r: 6 },
+  { id: 'park',  zone: 'top',  name: 'Rover Garage Pads',   ico: 'bolt',   pos: [-36, 34],  r: 6 },
   { id: 'pad',   zone: 'top',  name: 'Landing Pad',         ico: 'rocket', pos: [72, 34],   r: 9 },
-  { id: 'lift',  zone: 'deep', name: 'Elevator to Surface', ico: 'lift',   pos: [-72, 0],   r: 6 },
+  { id: 'hab',   zone: 'top',  name: 'Habitat Dome',        ico: 'room',   pos: [-20.5, -6],  r: 5, info: 'The big glass dome is the heart of the surface base: a garden, a meeting place and a window on Earth. Tube corridors join it to every other building, so nobody has to put a suit on to visit a neighbour.', hit: 'The meteor shower punched holes in the glass. With no air inside, nobody can live up here now — which is why the food, the beds and the Control Center are all safe underground.' },
+  { id: 'tower', zone: 'top',  name: 'Command Tower',       ico: 'room',   pos: [-26.5, -31], r: 5, info: 'From the round deck at the top you can see the whole base, the landing pad and every rover. It talks to ships that are coming in to land.', hit: 'Its windows are dark. All its jobs have moved to the Control Center underground.' },
+  { id: 'batt',  zone: 'top',  name: 'Battery Bank',        ico: 'bolt',   pos: [-58, -35],   r: 5, info: 'Solar panels only work in sunshine, and a lunar night lasts two weeks. Big batteries save up daytime power for the dark.', hit: 'These cells were cracked by flying rock. The battery racks that still work are in the Battery Store underground.' },
+  { id: 'green', zone: 'top',  name: 'Greenhouse Dome',     ico: 'room',   pos: [26, -21.5],  r: 5, info: 'Plants make food and fresh oxygen, and they recycle water. Real astronauts have grown lettuce, radishes and chilli peppers in space.', hit: 'The glass is holed and the plants froze in minutes. Your potatoes and tomatoes now grow underground, under lamps.' },
+  { id: 'lab',   zone: 'top',  name: 'Research Lab',        ico: 'room',   pos: [19, 14],     r: 5, info: 'Scientists here study moon rock, test new building materials and look for ice. Everything we learn makes the next base better.', hit: 'The lab is sealed and dark until the rescue ship brings a repair crew.' },
+  { id: 'wplant', zone: 'top', name: 'Water Plant',         ico: 'room',   pos: [46, -18],    r: 4.5, info: 'Water is the most useful thing on the Moon: you can drink it, grow food with it, and split it into oxygen to breathe and hydrogen for rocket fuel. There is ice in the cold, dark craters near the Moon\'s poles.', hit: 'The pipes are cracked. The water you have left is in the tanks underground, so recycle every drop.' },
+  { id: 'mine',  zone: 'top',  name: 'Moon-Dust Mine',      ico: 'room',   pos: [78, -23],    r: 6, info: 'Diggers scoop up moon soil and a conveyor carries it to the Oxygen Plant next door. Nearly half the weight of moon soil is oxygen, locked inside the rock.', hit: 'The digger still works. Repair the Oxygen Plant and it will feed it again.' },
+  { id: 'lift',  zone: 'deep', name: 'Elevator to Surface', ico: 'lift',   pos: [TUBE.skyX, 0], r: 6 },
+  { id: 'suit',  zone: 'deep', name: 'Suit Lockers',        ico: 'room',   pos: [-65.2, -1.6], r: 3.3 },
   { id: 'bench', zone: 'deep', name: 'Fix-It Bench',        ico: 'wrench', pos: BENCH,      r: 4.5 },
   { id: 'fab',   zone: 'deep', name: 'Robot-Arm Builder',   ico: 'arm',    pos: FAB,        r: 4.5 },
   ...ROOMS.filter((r) => r.id !== 'workshop').map((r) => ({ id: r.id, zone: 'deep', name: r.name, ico: 'room', pos: roomSpot(r), r: 4.2, room: true })),

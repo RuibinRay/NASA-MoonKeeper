@@ -36,11 +36,16 @@ export async function tutorial(G) {
   await G.waitFor(() => !P.in && Math.hypot(G.car.x, G.car.z - 60) < 22 && near(0, 60, 26), 'Drive the rover to the <b>Pit Elevator</b> and get out', 'gate');
   await G.waitFor(() => P.zone === 'deep' && P.carry, 'Press <b>Q</b> at the rover to take the panel out, drag it to the <b>elevator</b> and press <b>E</b>', 'gate');
   await say([
-    { who: 'okoro', text: 'Welcome inside! Red walls, just like a space station. The rock above us blocks radiation and meteoroids, and it is always 17°C down here.' },
-    { who: 'okoro', text: 'The Workshop is the first door on the left. Put the panel on the <b>Fix-It Bench</b>. The robot arm does the fixing, but it takes time and uses one of our materials.' },
+    { who: 'okoro', text: 'Welcome to the cave! This is a lava tube: a tunnel that flowing lava left behind. The rock above us blocks radiation and meteoroids, and it is always 17°C in here. But there is no air, so your suit stays on.' },
+    { who: 'okoro', text: 'That building ahead is our station. Follow the blue lights to the orange airlock door. Inside, the Workshop is the first door on the left. Put the panel on the <b>Fix-It Bench</b>: the robot arm does the fixing, but it takes time and uses one of our materials.' },
   ]);
-  await G.waitFor(() => S.bench.some(Boolean), 'Drag the panel to the <b>Fix-It Bench</b> in the Workshop and press <b>E</b>', 'bench');
-  await say([{ who: 'okoro', text: 'On a real day that takes two hours. Time never stops here — every job costs some. While the arm works, the Commander wants you in the Control Center, next door.' }]);
+  await G.waitFor(() => S.bench.some(Boolean), 'Drag the panel through the airlock to the <b>Fix-It Bench</b> in the Workshop and press <b>E</b>', 'bench');
+  await say([
+    { who: 'okoro', text: 'On a real day that takes two hours. Time never stops here — every job costs some.' },
+    { who: 'okoro', text: 'Now, you are indoors and the air in here is good. Go back to the <b>Suit Lockers</b> in the airlock and take that heavy suit off. Jobs are quicker without big gloves — and nobody cooks dinner in a helmet!' },
+  ]);
+  await G.waitFor(() => !S.suitOn, 'Take your suit off at the <b>Suit Lockers</b> in the airlock (press <b>E</b>)', 'suit');
+  await say([{ who: 'vasquez', text: 'Much better. While the arm works on your panel, come and find me in the Control Center. It is the second door on the left.' }]);
   await G.goTo('control', 'Walk to the <b>Control Center</b> (next room along the hall)');
   G.paintCC();
   await say([
@@ -64,7 +69,9 @@ export async function tutorial(G) {
     { who: 'okoro', text: 'Your panel should be fixed by now. Take it from the Fix-It Bench, carry it back up, and put it on the empty mount. Then you have done the whole loop!' },
   ]);
   await G.waitFor(() => P.carry && P.carry.type === 'panel', 'Take the fixed panel from the <b>Fix-It Bench</b> (press <b>E</b>)', 'bench');
-  await G.waitFor(() => S.mounts[BM] === 1, 'Carry the panel up the elevator, to the <b>empty mount</b> in the Solar Field, and press <b>E</b>', { zone: 'top', x: mx, z: mz, name: 'the empty mount', r: 0.5 });
+  if (!S.suitOn) { await say([{ who: 'okoro', text: 'Wait! Before you step outside, put your suit back on at the lockers. Past the airlock door there is no air at all. This is the rule that keeps you alive: <b>suit on before you go out.</b>' }]);
+    await G.waitFor(() => S.suitOn, 'Put your suit back on at the <b>Suit Lockers</b> (press <b>E</b>)', 'suit'); }
+  await G.waitFor(() => S.mounts[BM] === 1, 'Carry the panel out through the cave, up the elevator, to the <b>empty mount</b> in the Solar Field, and press <b>E</b>', { zone: 'top', x: mx, z: mz, name: 'the empty mount', r: 0.5 });
   await say([
     { who: 'flight', text: 'Tranquility Deep, this is Mission Control on Earth. Nice work, rookie! Notice the pause before I answer? Your voice takes 1.3 seconds to reach us, and mine takes 1.3 more to reach you.' },
     { who: 'flight', text: 'Stand by… all stations, stand by. We are seeing something on the long-range radar.' },

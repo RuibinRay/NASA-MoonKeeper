@@ -22,7 +22,7 @@ export function createSim(modeKey = 'pilot', seed = (Date.now() >>> 0)) {
     P: K.AIR_KPA, rooms: {}, mounts: MOUNTS.map((_, i) => (i < 8 ? 1 : 0)),   // 0 empty, 1 working, 2 broken
     lv: { o2gen: 1, isru: 0, recycler: 2, farm: 1, heat: 1, comms: 1 },
     f: { commsDown: false, isruDown: false, heater: false, scrubber: false, leakWater: 0, mold: false },
-    extraKw: {}, safeMode: 0, storm: null, zone: 'top',
+    extraKw: {}, safeMode: 0, storm: null, zone: 'top', suitOn: true, here: null,
     helpers: [{ id: 'bolt1', kind: 'bot', name: 'BOLT-1', role: 'idle', img: 'c_bot' }, { id: 'bolt2', kind: 'bot', name: 'BOLT-2', role: 'idle', img: 'c_bot' }],
     perks: {}, rescued: [],
     car: { charge: 1, charging: false }, ship: { charge: 0.4, charging: false },
@@ -200,6 +200,8 @@ export function step(S, dt) {
   if (hungry) { dh -= 1.4 * dt; S.hurt.food += dt; mark(S, 'foodZero'); }
   if (S.air < 0.35) { dh -= 3 * dt; S.hurt.co2 += dt; mark(S, 'co2High'); }
   if (S.dose >= K.DOSE_LIMIT) { dh -= 6 * dt; S.hurt.rad += dt; mark(S, 'doseLimit'); }
+  // no suit in thin air: the air pressure where you stand is what your body feels
+  if (!S.suitOn && S.zone === 'deep') { const pr = S.here && S.rooms[S.here] ? S.rooms[S.here].p : S.P; if (pr < 45) { dh -= 40 * (1 - pr / 45) * dt; S.hurt.air += dt; } }
   if (dh === 0) dh = 1.2 * dt;
   S.health = clamp(S.health + dh, 0, 100);
   S.t += dt;

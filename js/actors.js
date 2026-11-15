@@ -9,15 +9,23 @@ export class Astronaut {
     const g = this.group = new THREE.Group();
     const white = std({ color: 0xecece7, roughness: 0.85 }), grey = std({ color: 0x8b8f96, roughness: 0.9 }), dark = std({ color: 0x2a2c30, roughness: 0.6 });
     const acc = std({ color: accent, roughness: 0.65 }), gold = std({ color: 0xffb62e, metalness: 0.95, roughness: 0.16, emissive: 0x4a3200, emissiveIntensity: 0.9 });
-    this.body = new THREE.Group(); g.add(this.body);
-    const torso = mesh(new THREE.CapsuleGeometry(0.3, 0.42, 6, 14), white, 0, 1.24, 0); torso.scale.set(1.1, 1, 0.86); this.body.add(torso);
-    this.body.add(mesh(new THREE.BoxGeometry(0.32, 0.22, 0.1), grey, 0, 1.3, 0.27));
-    this.body.add(mesh(new THREE.BoxGeometry(0.54, 0.74, 0.27), white, 0, 1.34, -0.31));
-    this.body.add(mesh(new THREE.BoxGeometry(0.07, 0.2, 0.02), std({ color: 0x111111, emissive: 0x49e6ff, emissiveIntensity: 2.4 }), 0, 1.5, -0.455));
-    this.body.add(mesh(new THREE.TorusGeometry(0.2, 0.035, 8, 20), grey, 0, 1.63, 0).rotateX(Math.PI / 2));
+    this.body = new THREE.Group(); g.add(this.body); this.mats = { white, dark }; this.suitParts = []; this.suitOn = true; const sp = (m) => { this.suitParts.push(m); return m; };
+    const torso = mesh(new THREE.CapsuleGeometry(0.3, 0.42, 6, 14), white, 0, 1.24, 0); torso.scale.set(1.1, 1, 0.86); this.body.add(torso); this.torso = torso;
+    const pack = std({ color: 0xecece7, roughness: 0.85 });
+    this.body.add(sp(mesh(new THREE.BoxGeometry(0.32, 0.22, 0.1), grey, 0, 1.3, 0.27)));
+    this.body.add(sp(mesh(new THREE.BoxGeometry(0.54, 0.74, 0.27), pack, 0, 1.34, -0.31)));
+    this.body.add(sp(mesh(new THREE.BoxGeometry(0.07, 0.2, 0.02), std({ color: 0x111111, emissive: 0x49e6ff, emissiveIntensity: 2.4 }), 0, 1.5, -0.455)));
+    this.body.add(sp(mesh(new THREE.TorusGeometry(0.2, 0.035, 8, 20), grey, 0, 1.63, 0).rotateX(Math.PI / 2)));
     this.head = new THREE.Group(); this.head.position.y = 1.86; this.body.add(this.head);
-    this.head.add(mesh(new THREE.SphereGeometry(0.275, 22, 16), white));
-    const visor = mesh(new THREE.SphereGeometry(0.245, 22, 16), gold, 0, 0.0, 0.06); visor.scale.set(1, 0.92, 1); this.head.add(visor);
+    this.head.add(sp(mesh(new THREE.SphereGeometry(0.275, 22, 16), pack)));
+    const visor = mesh(new THREE.SphereGeometry(0.245, 22, 16), gold, 0, 0.0, 0.06); visor.scale.set(1, 0.92, 1); this.head.add(sp(visor));
+    // what you look like indoors: a cartoon head with a cap in your team colour
+    const face = this.face = new THREE.Group(); face.visible = false; face.position.y = -0.05; this.head.add(face);
+    const skin = std({ color: 0xe0a878, roughness: 0.8 }), ink = std({ color: 0x20242a, roughness: 0.6 });
+    face.add(mesh(new THREE.SphereGeometry(0.2, 18, 14), skin)); face.add(mesh(new THREE.SphereGeometry(0.21, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.47), acc, 0, 0.02, 0)); face.add(mesh(new THREE.BoxGeometry(0.26, 0.03, 0.16), acc, 0, 0.06, 0.19));
+    for (const ex of [-0.075, 0.075]) face.add(mesh(new THREE.SphereGeometry(0.026, 8, 6), ink, ex, -0.01, 0.185));
+    face.add(mesh(new THREE.BoxGeometry(0.07, 0.014, 0.01), ink, 0, -0.085, 0.188)); face.add(mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.12, 10), skin, 0, -0.2, 0));
+    this.skin = skin;
     const limb = (len, r) => new THREE.CapsuleGeometry(r, len, 5, 10);
     this.legs = []; this.arms = [];
     for (const s of [-1, 1]) {
@@ -29,6 +37,13 @@ export class Astronaut {
     this.lamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.5, 0.7, 1); this.lamp.position.set(0, 1.9, 0.3); this.lamp.target.position.set(0, 0.4, 14); g.add(this.lamp, this.lamp.target);
     this.phase = 0;
   }
+  // Suit on: helmet, visor, backpack. Suit off (indoors): blue jumpsuit, bare hands, cartoon head with a cap.
+  setSuit(on) {
+    if (on === this.suitOn) return; this.suitOn = on;
+    for (const m of this.suitParts) m.visible = on; this.face.visible = !on;
+    this.mats.white.color.set(on ? 0xecece7 : 0x3d6fa8); this.mats.dark.color.set(on ? 0x2a2c30 : 0xe0a878);
+    this.torso.scale.set(on ? 1.1 : 0.98, 1, on ? 0.86 : 0.74);
+  }
   // pose: 'walk' (default), 'wave', 'work' (hammering), 'carry' (box held in front), 'drag' (pulling something behind), 'sit'
   update(dt, speed = 0, air = false, pose = 'walk') {
     this.phase += dt * (2.2 + speed * 0.75);
@@ -36,11 +51,11 @@ export class Astronaut {
     this.legs[0].rotation.x = pose === 'sit' ? -1.4 : air ? -0.35 : sw; this.legs[1].rotation.x = pose === 'sit' ? -1.4 : air ? 0.25 : -sw;
     if (pose === 'work') { L.rotation.x = -1.2 + Math.sin(this.phase * 4.5) * 0.55; R.rotation.x = -1.2 + Math.sin(this.phase * 4.5 + 1.6) * 0.55; }
     else if (pose === 'carry') { L.rotation.x = R.rotation.x = -1.25; }
-    else if (pose === 'drag') { L.rotation.x = R.rotation.x = 0.95; }
+    else if (pose === 'drag') { const heave = Math.sin(this.phase * 2) * 0.09 * k; L.rotation.x = 1.0 + heave; R.rotation.x = 1.0 - heave; }   // both hands behind, hauling
     else if (pose === 'sit') { L.rotation.x = R.rotation.x = -1.0; }
     else { L.rotation.x = air ? -0.9 : -sw * 0.8; R.rotation.x = pose === 'wave' ? -2.6 + Math.sin(this.phase * 3) * 0.3 : air ? -0.9 : sw * 0.8; }
     this.body.position.y = pose === 'sit' ? -0.35 : air ? 0 : Math.abs(Math.sin(this.phase)) * 0.07 * k + Math.sin(this.phase * 0.35) * 0.012;
-    this.body.rotation.x = pose === 'work' ? 0.3 + Math.sin(this.phase * 4.5) * 0.06 : pose === 'drag' ? 0.28 : k * 0.12;
+    this.body.rotation.x = pose === 'work' ? 0.3 + Math.sin(this.phase * 4.5) * 0.06 : pose === 'drag' ? 0.24 + 0.2 * k + Math.sin(this.phase * 2) * 0.035 * k : k * 0.12;   // lean into the load, harder the faster you pull
   }
 }
 

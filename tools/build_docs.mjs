@@ -50,6 +50,8 @@ ${facts.map(row).join('\n')}
 | **Oxygen from water or from moon soil.** | Electrolysis costs 1.125 L of water per kg of oxygen (chemistry). Lunar regolith is about 45% oxygen by mass, but freeing it takes a lot of energy. |
 | **Water recycling up to 98%.** | The level reached on the International Space Station in 2023. |
 | **Radiation dose topside, storms, shelter underground.** | 1,369 µSv per day measured on the lunar surface; solar particle events can deliver far more in hours; rock overhead is the best shield. |
+| **Spacesuit on outside, off indoors.** The cave and the surface have no air, so you suit up in the airlock before leaving; indoors you work, cook and sleep without it. | A spacesuit is a one-person spacecraft: it holds air pressure, controls temperature and blocks sunlight. Inside a sealed, heated habitat (like the International Space Station, kept near 22°C) crews wear ordinary clothes. (Game simplification: suiting up takes 15 game minutes; real suit-up and airlock cycles take hours.) |
+| **Surface base and underground station.** Domes, labs, garage, water plant and mine on the surface; food, beds and the Control Center under the rock. | Rock overhead is the best shield against radiation and meteoroids, so the places where people spend most hours go underground. Water ice exists in permanently shadowed craters near the lunar poles, and can be split into oxygen and hydrogen. Peppers, lettuce and radishes have been grown on the ISS. |
 | **Lava tube station at 17°C.** | LRO Diviner measured about 17°C in shaded pit areas, against 127°C / −173°C on the open surface. |
 | **Radio delay.** Mission Control answers after 1.3 s; aiming the dish uses a 2.6 s echo. | Light-speed over 384,400 km. |
 | **Potatoes, tomatoes, hens, fish.** | Crops have been grown on the ISS (lettuce 33 days, radishes 27 days); plants sprouted in real Apollo soil but grew slowly (OSD-476). Quail eggs have hatched and fish have lived on space stations. Hens on the Moon are our imagination. |
@@ -58,6 +60,7 @@ ${facts.map(row).join('\n')}
 ## 4. What we simplified (and say so in the game's "Real or made up?" page)
 
 - A meteor shower wrecking every station at once is the story, not a forecast.
+- A real lava-tube cave would be near 17°C but airless, exactly as in the game; the indoor 21°C is the station's own heating.
 - One game hour passes in 7–9 real seconds; building a panel takes 3 game hours.
 - Machine power sizes, crop speed (about one tray a day) and the three storm strength levels are tuned for play.
 - Earth is drawn 2.5× larger than real so its phase is visible.
@@ -66,11 +69,13 @@ ${facts.map(row).join('\n')}
 
 - **Lava tube size.** No one has measured the inside of a lunar lava tube. Radar hints at one about 50 km long (Marius Hills); models allow tubes a kilometre or more wide; under the Mare Tranquillitatis pit only tens of metres are confirmed. The game says exactly that.
 - **Underground temperature.** The steady 17°C comes from LRO Diviner measurements of shaded pits, not from Chang'e samples. (Chang'e 5 returned samples in 2020, Chang'e 6 in 2024.) Plain soil a metre down is about −20°C (Apollo heat-flow probes).
+- **Light in the cave.** A visible shaft of light needs air or dust to scatter it. The lava tube is in vacuum, so the game and its pictures show only a hard bright patch on the floor under the skylight, and none at all during the two-week night. No sunlight reaches the station, so its farms grow under LED lamps and its modules have small portholes, not glass walls.
+- **Earth in the sky.** From the base (8.3°N, 33.2°E) Earth hangs high overhead, not on the horizon; the surface-base picture is cropped so that it shows no sky.
 - **Dust storms.** The Moon has none. Dust events in the game are static-cling dust, impact spray and the real sunset "horizon glow".
 
 ## 6. Art
 
-All character art, comic panels and event pictures were generated with the Higgsfield API (\`tools/gen_art.mjs\`; prompts in \`tools/art_jobs.json\` and \`tools/art_jobs_v2.json\`). REGO and BOLT are original robot designs. The API key is read from the \`HF_KEY\` environment variable and is never stored in the project.
+All character art, comic panels and event pictures were generated with the Higgsfield API (\`tools/gen_art.mjs\`; prompts in \`tools/art_jobs.json\` and \`tools/art_jobs_v2.json\`). The station interior pictures, the cave and surface-base pictures, and the wall, floor, ceiling and door textures come from \`tools/art_jobs_v3.json\` (\`tools/web_art.mjs\` shrinks them for the web; it needs ffmpeg). REGO and BOLT are original robot designs. The API key is read from the \`HF_KEY\` environment variable and is never stored in the project.
 `;
 fs.mkdirSync(path.join(ROOT, 'docs'), { recursive: true });
 fs.writeFileSync(path.join(ROOT, 'docs', 'SCIENCE_AND_SOURCES.md'), md);
