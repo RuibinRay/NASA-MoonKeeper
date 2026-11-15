@@ -126,7 +126,7 @@ Everything is done by hand in the world, not from a menu: you walk there, carry 
 | Kitchen | Cook raw food into hot meals. Herbs make a batch go further |
 | Water | A recycler, a waste digester that makes plant food, and a Water Plant on the surface that extracts ice from polar soil with a dashboard, sliders and a live graph |
 | Polar Ice Mine | A dark crater with a drivable digger. Dig frosty patches, tip two scoops into the filler, haul the sealed canister home |
-| Vehicles | A six-wheel rover and a hopper, both of which need charging on their pads. The rover's wheels steer and ride the ground; it leaves tracks. The hopper's legs take its weight on landing, its jets follow the throttle and blow dust when it is low, and a ring on the ground and a small readout guide the landing |
+| Vehicles | A six-wheel rover and a hopper, both of which need charging on their pads. The rover's wheels steer and ride the ground; it leaves tracks. The hopper's legs take its weight on landing, its jets follow the throttle and blow dust when it is low, and a ring on the ground and a small readout guide the landing. The astronaut lopes in long, floating strides, as people do in one-sixth gravity, and hops in and out of vehicles |
 | Crew | Two helper robots that cost electricity. Three astronauts to rescue from other stations, who cost food and each bring a skill |
 | Control Center | One screen that shows every room, every error, every door, and who is doing which job |
 | Life-support loop | A moving diagram of oxygen, CO₂, water and plant food, with made-against-used bars and trend graphs |

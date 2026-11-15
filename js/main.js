@@ -310,8 +310,10 @@ function updatePlayer(dt) {
   if (free && k[' '] && P.ground && !heavy) { P.vy = 3.4; P.ground = false; G.audio.play('step'); }   // real lunar gravity
   if (!P.ground) { P.vy -= K.GRAVITY * dt; P.pos.y += P.vy * dt; if (P.pos.y <= gy) { P.pos.y = gy; P.vy = 0; P.ground = true; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x, P.pos.z, 14, P.vel.x * 0.2, P.vel.z * 0.2, 1.5, 2.6); } } else P.pos.y = gy;
   const sp = Math.hypot(P.vel.x, P.vel.z); if (sp > 0.4 && !G.jobTick) { let d = Math.atan2(P.vel.x, P.vel.z) - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 9); }
-  const g = G.astro.group; g.position.copy(P.pos); g.rotation.set(0, P.face, 0); g.visible = !cam.fp; G.astro.update(dt, G.jobbing && G.jobbing.speed ? G.jobbing.speed : sp, !P.ground, G.jobbing ? G.jobbing.pose : heavy ? 'drag' : P.carry ? 'carry' : 'walk', G.jobbing);
-  if (sp > 1.5 && P.ground) { G.stepT += dt * sp; if (G.stepT > 4.2) { G.stepT = 0; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x - Math.sin(P.face) * 0.3, P.pos.z - Math.cos(P.face) * 0.3, 4, -P.vel.x * 0.12, -P.vel.z * 0.12, 0.9, 0.8); } }
+  const g = G.astro.group; g.position.copy(P.pos); g.rotation.set(0, P.face, 0); g.visible = !cam.fp;
+  const hop = G.xfer && G.xfer.kind === 'out' ? G.xfer : null; if (hop) { hop.u = Math.min(1, hop.u + dt / 0.42); const e = hop.u * hop.u * (3 - 2 * hop.u); g.position.lerpVectors(hop.from, P.pos, e); g.position.y += Math.sin(Math.PI * hop.u) * 0.7; if (hop.u >= 1) G.xfer = null; }
+  G.astro.update(dt, G.jobbing && G.jobbing.speed ? G.jobbing.speed : sp, !P.ground || !!hop, G.jobbing ? G.jobbing.pose : heavy ? 'drag' : P.carry ? 'carry' : 'walk', G.jobbing);
+  if (sp > 1.5 && P.ground && G.astro.footfall) { G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x - Math.sin(P.face) * 0.3, P.pos.z - Math.cos(P.face) * 0.3, 4, -P.vel.x * 0.12, -P.vel.z * 0.12, 0.9, 0.8); }
 }
 function updateVehicle(dt, free) {
   const S = G.S, k = G.keys, thr = free ? (k.w || k.ArrowUp ? 1 : 0) - (k.s || k.ArrowDown ? 1 : 0) + G.stick.y : 0, st = free ? (k.a || k.ArrowLeft ? 1 : 0) - (k.d || k.ArrowRight ? 1 : 0) - G.stick.x : 0, perk = S.perks.pilot ? 0.7 : 1;
@@ -344,7 +346,9 @@ function updateVehicle(dt, free) {
     S.ship.charge = Math.max(0, S.ship.charge - ((sp * dt) / 4200 + (fly ? dt / 420 : 0)) * perk); S.stats.km += (sp * dt) / 1000;
     P.pos.set(s.x, s.y, s.z); P.face = s.yaw;
   }
-  G.astro.group.visible = false; G.astro.update(dt, 0, false, 'sit');
+  { const hop = G.xfer && G.xfer.kind === 'in' ? G.xfer : null, g = G.astro.group; g.visible = !!hop && !cam.fp;
+    if (hop) { hop.u = Math.min(1, hop.u + dt / 0.42); const v = G[P.in], e = hop.u * hop.u * (3 - 2 * hop.u), seat = TMP.set(v.x, (P.in === 'ship' ? v.y : world.heightAt(v.x, v.z)) + 1.1, v.z); g.position.lerpVectors(hop.from, seat, e); g.position.y += Math.sin(Math.PI * hop.u) * 0.8; g.rotation.set(0, Math.atan2(v.x - hop.from.x, v.z - hop.from.z), 0); if (hop.u >= 1) G.xfer = null; }
+    G.astro.update(dt, 0, !!hop, hop ? 'walk' : 'sit'); }
   if ((thr || st) && (!G.camT || performance.now() - G.camT > 1500)) { let d = P.face + Math.PI - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); cam.yaw += d * Math.min(1, dt * 2.2); }
 }
 function placeVehicles(dt) {
