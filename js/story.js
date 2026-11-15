@@ -78,6 +78,7 @@ export async function tutorial(G) {
   // in the mission that follows: the hopper's charge, the food store and the hopper's place on its pad are put back after it.
   const flying = await ui.card({ good: true, title: tt('One more lesson: the hopper'), body: tt('Three other countries have stations a short flight away: <b>Aurora</b>, <b>Sakura</b> and <b>Chandra</b>. The Commander wants you to fly to Sakura Outpost, meet a neighbour, and bring a crate home. It takes about five minutes.'),
     learn: tt('Engineers have built small rocket "hoppers" for the Moon. A hop crosses craters and boulder fields that a rover would have to drive around, and can reach crater floors a rover could never climb out of.'),
+    advice: 0, adviceText: tt('Take the lesson. A few minutes of practice now can save you a long walk home later.'),
     choices: [{ label: tt('Fly to Sakura Outpost'), sub: tt('Learn to take off, steer, land and carry crates.') }, { label: tt('Skip the flying lesson'), sub: tt('REGO reminds you of the keys the first time you climb in.') }] });
   if (flying === 0) {
     const site = SITES.find((q) => q.id === 'sakura'), [sx, sz] = site.pos, ship = G.ship, charge0 = S.ship.charge, cans0 = S.cans, far = (x, z) => Math.hypot(ship.x - x, ship.z - z);
@@ -91,7 +92,7 @@ export async function tutorial(G) {
     await G.waitFor(() => ship.alt > 20, tt('Hold <b>Space</b> to climb above <b>20 m</b>'));
     await say([{ who: 'vasquez', text: tt('Good. Now <b>W</b> pushes you forward and <b>A</b> and <b>D</b> turn you. See the purple beam of light? That is Sakura Outpost. Flying drains the battery the whole time you are in the air, so go straight there.') }]);
     await G.waitFor(() => far(sx, sz) < 80, tt('Fly to the <b>purple light</b>: <b>W</b> forward, <b>A</b> and <b>D</b> to turn'), 'sakura');
-    await say([{ who: 'vasquez', text: tt('There is the tower with the red gate. Come down in front of it: hold <b>C</b>. The ring on the ground under you turns green where it is safe to land.') }]);
+    await say([{ who: 'vasquez', text: tt('One more thing before you land. The hopper keeps gliding after you let go of <b>W</b>. Press <b>S</b> to slow down before you land.') }, { who: 'vasquez', text: tt('There is the tower with the red gate. Come down in front of it: hold <b>C</b>. The ring on the ground under you turns green where it is safe to land.') }]);
     await G.waitFor(() => !P.in && near(sx + 5, sz + 14, 45), tt('Hold <b>C</b> to land in front of the tower, then press <b>E</b> to get out'), { zone: 'top', x: sx + 4, z: sz + 26, name: tt('Sakura Outpost') });
     await say([
       { who: 'kenji', text: tt('Welcome to Sakura Outpost, neighbour! I am Kenji, the engineer here. Commander Vasquez said a rookie was learning to fly. That was a fine landing.') },

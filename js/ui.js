@@ -37,6 +37,17 @@ const GAUGES = [
 export function roomState(S, id) { const r = S.rooms[id]; if (r.hole > 0 && r.door) return 'leak'; if (r.hole > 0) return 'sealed'; if (r.built < 1) return 'wreck'; if (r.p < 60) return 'low'; return 'ok'; }
 const RCOL = { ok: '#3b9b7b', leak: '#ab2b2b', sealed: '#1f3451', wreck: '#7b3fa6', low: '#aa8909' };
 const RTXT = { ok: tt('OK'), leak: tt('LEAK!'), sealed: tt('SEALED · NO AIR'), wreck: tt('BROKEN'), low: tt('LOW AIR') };
+// Words that stay inside a room's box on the station map. First the letters shrink a little; if that is not enough the words
+// break into two lines at the space or dot nearest the middle; then they shrink again. Returns the lines and the letter size.
+function fitText(c, text, maxW, px, weight) {
+  const font = (s) => { c.font = `${weight} ${s}px Inter,sans-serif`; }, wide = (t) => c.measureText(t).width, min = Math.max(7, Math.round(px * 0.6));
+  for (let s = px; s >= Math.round(px * 0.85); s--) { font(s); if (wide(text) <= maxW) return { lines: [text], size: s }; }
+  const cuts = []; text.replace(/ · | /g, (m, i) => { cuts.push([i, i + m.length]); return m; });
+  if (!cuts.length) { for (let s = px; s > min; s--) { font(s); if (wide(text) <= maxW) return { lines: [text], size: s }; } return { lines: [text], size: min }; }
+  const mid = text.length / 2, [a, b] = cuts.sort((p, q) => Math.abs((p[0] + p[1]) / 2 - mid) - Math.abs((q[0] + q[1]) / 2 - mid))[0], lines = [text.slice(0, a), text.slice(b)];
+  for (let s = px; s > min; s--) { font(s); if (Math.max(wide(lines[0]), wide(lines[1])) <= maxW) return { lines, size: s }; }
+  return { lines, size: min };
+}
 export function drawStation(c, S, w, h, o = {}) {
   const fsc = o.focus ? w / o.span : 0, X = o.focus ? (x) => w / 2 + (x - o.focus.x) * fsc : (x) => ((x + 114) / 196) * w, Z = o.focus ? (z) => h / 2 + (z - o.focus.z) * fsc : (z) => ((z + 28) / 56) * h, t = performance.now() / 1000, big = o.big;
   c.fillStyle = '#071018'; c.fillRect(0, 0, w, h);
@@ -54,8 +65,11 @@ export function drawStation(c, S, w, h, o = {}) {
     c.fillStyle = '#22313f'; c.fillRect(X(d.door - 2), d.side < 0 ? Z(q.z1) : Z(HALL.z1), X(d.door + 2) - X(d.door - 2), Z(6.4) - Z(2.6));
     c.fillStyle = r.door ? '#58e08a' : '#ff5252'; c.fillRect(X(d.door - 2.4), Z(d.side * 4.5) - 2.5, X(d.door + 2.4) - X(d.door - 2.4), 5);
     if (!r.door) { c.fillStyle = '#fff'; c.fillRect(X(d.door) - 1.5, Z(d.side * 4.5) - 5.5, 3, 11); }   // lockMark
-    c.fillStyle = '#fff'; c.font = `700 ${big ? 17 : 11}px Inter,sans-serif`; c.fillText(d.name, x + ww / 2, y + hh / 2 - (big ? 12 : 8));
-    c.font = `600 ${big ? 14 : 10}px Inter,sans-serif`; c.fillStyle = st === 'ok' ? '#bfeed2' : '#fff'; c.fillText(st === 'ok' ? `${r.p.toFixed(0)} kPa` : RTXT[st], x + ww / 2, y + hh / 2 + (big ? 12 : 8));
+    // the room's name and its state, each made to fit the box (a narrow room gets smaller letters or two lines, never words that run into the next room)
+    const maxW = Math.max(10, Math.abs(ww) - (big ? 8 : 6)), nm = fitText(c, d.name, maxW, big ? 17 : 11, 700), sx = fitText(c, st === 'ok' ? `${r.p.toFixed(0)} kPa` : RTXT[st], maxW, big ? 14 : 10, 600);
+    const lhN = nm.size * 1.12, lhS = sx.size * 1.15, gapY = big ? 5 : 3; let ty = y + hh / 2 - (nm.lines.length * lhN + gapY + sx.lines.length * lhS) / 2;
+    c.fillStyle = '#fff'; c.font = `700 ${nm.size}px Inter,sans-serif`; for (const ln of nm.lines) { c.fillText(ln, x + ww / 2, ty + lhN / 2, maxW); ty += lhN; }
+    ty += gapY; c.font = `600 ${sx.size}px Inter,sans-serif`; c.fillStyle = st === 'ok' ? '#bfeed2' : '#fff'; for (const ln of sx.lines) { c.fillText(ln, x + ww / 2, ty + lhS / 2, maxW); ty += lhS; }
   }
   if (o.player) { c.fillStyle = '#fff'; c.beginPath(); c.arc(X(o.player.x), Z(o.player.z), big ? 7 : 5, 0, 7); c.fill(); c.strokeStyle = '#ffb347'; c.lineWidth = 2; c.stroke(); }
   if (o.target) { c.strokeStyle = '#ffb347'; c.lineWidth = 3; c.beginPath(); c.arc(X(o.target.x), Z(o.target.z), 9 + Math.sin(t * 5) * 2, 0, 7); c.stroke(); }
@@ -117,6 +131,7 @@ export class UI {
     document.addEventListener('pointerover', (e) => { const t = e.target.closest?.('[data-tip]'); if (!t) { tip.style.opacity = 0; return; } tip.textContent = t.dataset.tip; tip.style.opacity = 1; const r = t.getBoundingClientRect(); tip.style.left = clamp(r.left, 8, innerWidth - 310) + 'px'; tip.style.top = (r.bottom + 8 > innerHeight - 90 ? r.top - tip.offsetHeight - 8 : r.bottom + 8) + 'px'; });
     $('#rego').onclick = () => $('#rego').classList.add('hidden'); $('#dialog').onclick = () => this._dlgNext?.(); addEventListener('click', (e) => { if (this.dialogOpen && !this.modalStack && !e.target.closest('#dialog, #modal, #comic, button')) this._dlgNext?.(); });
     this.mm = $('#minimap').getContext('2d');
+    { const hm = el('div', 'hidden'); hm.id = 'home'; $('#you').insertAdjacentElement('afterend', hm); }   // one line under the health bar: the charge the rover or hopper needs to get home
   }
   get busy() { return this.modalStack > 0 || this.dialogOpen || this.comicOpen; }
   showHud(on) { const h = $('#hud'); if (on && h.classList.contains('hidden')) { h.classList.add('enter'); clearTimeout(this._hudT); this._hudT = setTimeout(() => h.classList.remove('enter'), 900); } h.classList.toggle('hidden', !on); }
@@ -179,7 +194,7 @@ export class UI {
         if (w.delay) { delay.classList.remove('hidden'); const bar = delay.querySelector('i'); bar.style.transition = 'none'; bar.style.width = '0'; requestAnimationFrame(() => { bar.style.transition = `width ${K.LIGHT_DELAY_S}s linear`; bar.style.width = '100%'; }); typing = 1; setTimeout(() => { delay.classList.add('hidden'); this.G.audio?.play('radio'); type(); }, K.LIGHT_DELAY_S * 1000); }
         else { delay.classList.add('hidden'); type(); }
       };
-      const next = () => { if (typing && typing !== 1) { clearInterval(typing); typing = null; text.innerHTML = full; return; } if (typing === 1) return; if (++i >= lines.length) { box.classList.add('hidden'); this.dialogOpen = false; this._dlgNext = null; this.G.rego?.setMood('happy'); this.G.voice?.stop(); done(); return; } show(); };
+      const next = () => { if (typing && typing !== 1) { clearInterval(typing); typing = null; text.innerHTML = full; return; } if (typing === 1) return; if (++i >= lines.length) { box.classList.add('hidden'); this.dialogOpen = false; this._dlgNext = null; this._dlgAt = performance.now(); this.G.rego?.setMood('happy'); this.G.voice?.stop(); done(); return; } show(); };
       this._dlgNext = next; next();
     });
   }
@@ -357,13 +372,34 @@ export class UI {
     return this.window({ title: tt('Power Board — who gets the electricity?'), html: '', wide: true, onMount: (w) => { render(w); if (opts.goal) w.querySelector('.x').disabled = true; } });
   }
 
+  // Guide mode in the Control Center: the one crew job REGO would change now, and why. Returns { h, r, why } or null.
+  // Short of power, a working robot rests (it is 1 kW saved at once). Otherwise a helper with nothing to do gets the job nobody is
+  // doing: Farm duty, then Cook when raw food is waiting, then Panel cleaner when the panels are dusty; a person can also build.
+  // A robot is only put to work when there is power to spare.
+  crewHint(S, F) {
+    const H = S.helpers, has = (role) => H.some((q) => q.role === role), short = F.eff < 1 || (F.net < 0 && F.battHours < 10);
+    if (short) { const b = H.find((q) => q.kind === 'bot' && q.role !== 'idle' && hasWork(S, q.role)); if (b) return { h: b.id, r: 'idle', why: tt('The battery is running out, and a working robot uses 1 kW. Let it rest until there is power to spare.') }; }
+    const ripe = S.racks.some((q) => q.ripe && roomOk(S, q.room));
+    const jobFor = (q) => {
+      if (q.kind === 'bot' && (short || F.net <= 2)) return null;
+      if (!has('farm') && hasWork(S, 'farm')) return ['farm', ripe ? tt('Crops are ripe and nobody is picking them.') : tt('Nobody is looking after the crops and the hens.')];
+      if (!has('cook') && hasWork(S, 'cook') && S.raw >= 2) return ['cook', tt('Raw food is waiting, and cooked food is worth twice as much.')];
+      if (!has('clean') && F.sun.up && S.dust > 0.25) return ['clean', tt('Dust is building up on the solar panels.')];
+      if (q.kind !== 'bot' && !has('build')) return ['build', tt('A builder makes every fix and repair faster, and a person uses no electricity.')];
+      return null;
+    };
+    const free = [...H.filter((q) => q.role !== 'idle' && !hasWork(S, q.role)), ...H.filter((q) => q.role === 'idle' && q.kind !== 'bot'), ...H.filter((q) => q.role === 'idle' && q.kind === 'bot')];
+    for (const q of free) { const j = jobFor(q); if (j) return { h: q.id, r: j[0], why: j[1] }; }
+    return null;
+  }
   // ---------- Control Center: where is the error? + door locks + crew jobs ----------
   control() {
     const G = this.G, S = G.S, here = roomOk(S, 'control');
     const render = (w) => {
-      const al = G.alerts(), F = computeFlows(S);
+      const al = G.alerts(), F = computeFlows(S), hint = G.guide ? this.crewHint(S, F) : null, hintWho = hint && S.helpers.find((q) => q.id === hint.h);
       const doors = ROOMS.map((d) => { const r = S.rooms[d.id], st = roomState(S, d.id); return `<div class="stat"><span><i class="dotc" style="background:${RCOL[st]}"></i>${d.name} <small>${st === 'ok' ? r.p.toFixed(0) + ' kPa' : RTXT[st]}</small></span><button class="mini-b ${r.door ? '' : 'off'}" data-door="${d.id}" ${here ? '' : 'disabled'}>${r.door ? IC.door + tt(' Open') : IC.lock + tt(' Locked')}</button></div>`; }).join('');
-      const crew = S.helpers.map((hp) => `<div class="crew"><img src="assets/img/${hp.img}.jpg" alt=""><div><b>${hp.name}</b><small>${hp.kind === 'bot' ? tt('Robot · uses 1 kW while working') : tt('Astronaut · eats 3 meals a day, no electricity')}</small>${hp.role !== 'idle' && !hasWork(S, hp.role) ? `<small style="color:#ffb347">${tt`Nothing to do: ${hp.role === 'farm' ? tt('no farm and no Animal Bay is working') : tt('the Kitchen is not working')}.${hp.kind === 'bot' ? tt(' It is standing still and uses no power.') : ''}`}</small>` : ''}<div class="roles">${Object.entries(ROLES).map(([k, r]) => `<button data-h="${hp.id}" data-r="${k}" class="${hp.role === k ? 'on' : ''}" data-tip="${r.tip}">${r.name}</button>`).join('')}</div></div></div>`).join('');
+      const crew = S.helpers.map((hp) => `<div class="crew"><img src="assets/img/${hp.img}.jpg" alt=""><div><b>${hp.name}</b><small>${hp.kind === 'bot' ? tt('Robot · uses 1 kW while working') : tt('Astronaut · eats 3 meals a day, no electricity')}</small>${hp.role !== 'idle' && !hasWork(S, hp.role) ? `<small style="color:#ffb347">${tt`Nothing to do: ${hp.role === 'farm' ? tt('no farm and no Animal Bay is working') : tt('the Kitchen is not working')}.${hp.kind === 'bot' ? tt(' It is standing still and uses no power.') : ''}`}</small>` : ''}<div class="roles">${Object.entries(ROLES).map(([k, r]) => `<button data-h="${hp.id}" data-r="${k}" class="${hp.role === k ? 'on' : ''}${hint && hint.h === hp.id && hint.r === k ? ' guide-rec' : ''}" data-tip="${r.tip}">${r.name}</button>`).join('')}</div></div></div>`).join('');
+      const crewRec = hint ? `<div class="rec-banner"><img src="assets/img/c_rego.jpg" alt=""><div><b>${tt('REGO: press the glowing job')}</b>${hintWho.name} → ${ROLES[hint.r].name}. ${hint.why}</div></div>` : '';
       w.querySelector('.win-b').innerHTML = `<div class="grid2"><div><canvas id="cc-map" width="900" height="300"></canvas>
           <div class="legend">${Object.entries(RTXT).map(([k, v]) => `<span><i style="background:${RCOL[k]}"></i>${v}</span>`).join('')}</div>
           <h4 class="h4">${tt`Where is the error?`}</h4>${al.length ? al.map((a) => `<div class="alert ${a.kind || ''}" data-go="${a.go || ''}">${IC.alert} ${a.text}<small>${a.sub || ''}</small></div>`).join('') : ('<div class="learn">' + tt('No errors. Everything is running.') + '</div>')}
@@ -372,7 +408,7 @@ export class UI {
           <div class="stat"><span>${tt`Other stations`}</span><b>${SITES.map((s) => s.short + (S.rescued.includes(s.id) ? ' ✓' : ' ?')).join(' · ')}</b></div>
           <div class="row"><button class="ghost" id="cc-power">${tt`${IC.bolt} Power Board`}</button><button class="ghost" id="cc-map2">${tt`${IC.map} World map`}</button></div></div>
         <div><h4 class="h4">${tt`Bulkhead doors`}</h4>${here ? ('<div class="mini">' + tt('Lock a door to stop a leak spreading. The room behind it loses its air and freezes.') + '</div>') : ('<div class="note bad">' + tt('The Control Center is damaged. Use the switch beside each door.') + '</div>')}${doors}
-          <h4 class="h4" style="margin-top:12px">${tt`Crew jobs`}</h4><div class="mini">${tt`Robots cost electricity. Rescued astronauts cost food. Nobody works for free.`}</div>${crew}</div></div>`;
+          <h4 class="h4" style="margin-top:12px">${tt`Crew jobs`}</h4><div class="mini">${tt`Robots cost electricity. Rescued astronauts cost food. Nobody works for free.`}</div>${crewRec}${crew}</div></div>`;
       const cv = w.querySelector('#cc-map'), paint = () => drawStation(cv.getContext('2d'), S, 900, 300, { big: true, player: G.player.zone === 'deep' ? { x: G.player.pos.x, z: G.player.pos.z } : null }); paint(); clearInterval(this._tick); this._tick = setInterval(paint, 250);
       w.querySelectorAll('[data-door]').forEach((b) => (b.onclick = () => { G.toggleDoor(b.dataset.door); render(w); }));
       w.querySelectorAll('.roles button').forEach((b) => (b.onclick = () => { S.helpers.find((x) => x.id === b.dataset.h).role = b.dataset.r; G.audio?.play('click'); render(w); }));
@@ -436,10 +472,12 @@ export class UI {
   hud(dt) {
     const G = this.G, S = G.S; if (!S) return; this.t += dt; this._labels();
     if (this.t < 0.2) return; this.t = 0;
+    // The small line under a gauge: what comes after " · " goes in its own span, so a narrow tile can show the first half whole
+    // and leave the second half out (see .g-x in the style sheet) in place of a line cut off in mid-word.
     const F = S.flow, sun = F.sun, set = (id, v, bar, sub, state) => { const gv = this._gv || (this._gv = {}), q = gv[id] || (gv[id] = {}), mm = /^(-?\d+(?:\.\d+)?)(.*)$/.exec(v), gEl = $('#g-' + id);
       if (mm) { const tgt = Number(mm[1]), dec = (mm[1].split('.')[1] || '').length, step = Math.pow(10, -dec); if (q.n === undefined || q.tail !== mm[2] || Math.abs(tgt - q.n) <= step * 1.5) q.n = tgt; else q.n += (tgt - q.n) * 0.42; q.tail = mm[2]; v = q.n.toFixed(dec) + mm[2]; } else q.n = undefined;
       if (q.bar !== undefined && Math.abs(bar - q.bar) > 0.035) { gEl.classList.remove('up', 'down'); void gEl.offsetWidth; gEl.classList.add(bar > q.bar ? 'up' : 'down'); } q.bar = bar;
-      $(`#g-${id}-v`).textContent = v; $(`#g-${id}-b`).style.width = clamp(bar * 100, 0, 100) + '%'; const s = $(`#g-${id}-s`); if (s.dataset.h !== sub) { s.dataset.h = sub; s.innerHTML = sub; } const g = $('#g-' + id); g.classList.toggle('warn', state === 1); g.classList.toggle('crit', state === 2); };
+      $(`#g-${id}-v`).textContent = v; $(`#g-${id}-b`).style.width = clamp(bar * 100, 0, 100) + '%'; const s = $(`#g-${id}-s`); if (s.dataset.h !== sub) { s.dataset.h = sub; const cut = sub.indexOf(' · '); s.innerHTML = cut > 0 ? `${sub.slice(0, cut)}<span class="g-x">${sub.slice(cut)}</span>` : sub; } const g = $('#g-' + id); g.classList.toggle('warn', state === 1); g.classList.toggle('crit', state === 2); };
     const bp = S.battery / F.cap, rn = (id) => ROOMS.find((r) => r.id === id).name;
     set('power', Math.round(bp * 100) + '%', bp, F.net >= 0 ? tt`+${F.net.toFixed(1)} kW · ${F.nOk} panels` : tt`${F.net.toFixed(1)} kW · ${fmt.hrs(Math.floor(Math.min(F.battHours, 99)))} left`, F.eff < 1 ? 2 : F.net < 0 && bp < 0.12 ? 2 : F.net < 0 && bp < 0.3 ? 1 : 0);
     const sealed = ROOMS.filter((r) => S.rooms[r.id].hole > 0 && !S.rooms[r.id].door).length;
@@ -458,22 +496,41 @@ export class UI {
     const st = S.storm, ts = $('#tl-storm'); ts.style.display = st ? 'block' : 'none'; if (st) { ts.style.left = clamp(((st.start - S.t0) / this._tl) * 100, 0, 100) + '%'; ts.style.width = Math.max(((st.end - st.start) / this._tl) * 100, 1.2) + '%'; }
     $('#hp').style.width = S.health + '%'; $('#hp').style.background = S.health > 60 ? 'var(--green)' : S.health > 30 ? 'var(--amber)' : 'var(--red)';
     const v = G.player.in, cc = G.player.carry; $('#carry').innerHTML = v === 'dig' ? tt`${IC.box} Digger ${G.dig.load}/${MINE.bucket}` : v ? `${IC[v]} ${v === 'car' ? tt('Rover') : tt('Hopper')} ${Math.round(S[v].charge * 100)}%` : cc ? `${IC.box} ${cc.type.startsWith('panel') ? 'panel' : cc.type}` : `${IC.crew} ${F.people}`;
+    // The charge it takes to get the rover or the hopper back to its pad, while you ride it or stand beside it. Near the pad, with the guide
+    // pointing somewhere far away, it is the charge for that whole trip, there and back. Amber when it is only just enough, red when it is not.
+    { const hm = $('#home'), p = G.player, pc = (x) => Math.max(0, Math.round(x * 100)) + '%'; let k = v === 'car' || v === 'ship' ? v : null, txt = '', cls = '';
+      if (!k && !v && p.zone === 'top' && G.planet !== 'mars') { const dc = Math.hypot(p.pos.x - G.car.x, p.pos.z - G.car.z), ds = Math.hypot(p.pos.x - G.ship.x, p.pos.z - G.ship.z); if (Math.min(dc, ds) < 9) k = dc <= ds ? 'car' : 'ship'; }
+      if (k && G.homeNeed) { const ch = S[k].charge, o = G[k], hn = G.homeNeed(S, k, o), T = G.world.target, there = T && T.zone === 'top' ? Math.hypot(T.x - o.x, T.z - o.z) : 0, name = k === 'car' ? tt('Rover') : tt('Hopper'); let need = 0, bit = '';
+        if (hn.home > 20) { need = hn.need; bit = tt`${pc(need)} gets you home`; } else if (there > 150) { need = G.homeNeed(S, k, { x: T.x, z: T.z }, there).need; bit = tt`${pc(need)} for the trip there and back`; }
+        txt = v ? bit : bit ? `${name} ${pc(ch)} · ${bit}` : `${name} ${pc(ch)}`; cls = !bit ? '' : ch < need ? 'bad' : ch < need * 1.25 + 0.04 ? 'low' : ''; }
+      if (hm && hm.dataset.h !== cls + txt) { hm.dataset.h = cls + txt; hm.textContent = txt; hm.className = txt ? cls : 'hidden'; } }
     const rank = (a) => (a.key ? 0 : a.kind ? 2 : 1);   // emergencies first, then other serious alerts, warnings last: only five fit on screen
     const al = (G.alerts ? G.alerts() : []).sort((a, b) => rank(a) - rank(b)), key = al.map((a) => a.text + a.sub).join('|');
     if (key !== this._alKey) { this._alKey = key; const box = $('#alerts'); box.innerHTML = ''; const seen = this._alSeen || new Set(), nowSeen = new Set(); al.slice(0, 5).forEach((a) => { const id = a.key || a.text.replace(/[\d.]+/g, '#'); nowSeen.add(id); const d = el('div', 'alert ' + (a.kind || '') + (this._alSeen && !seen.has(id) ? ' new' : ''), `${a.text}<small>${a.sub || ''}</small>`); d.onclick = () => a.go && G.pointTo(a.go); box.appendChild(d); }); this._alSeen = nowSeen; }
     this._minimap();
   }
   _labels() {
-    const G = this.G, cam = G.world.camera, v = this._v || (this._v = G.world.stationPos('solar').clone()), w = innerWidth, h = innerHeight, bad = G.badPlaces ? G.badPlaces() : {}, tid = G.world.target && G.world.target.id;
+    const G = this.G, cam = G.world.camera, v = this._v || (this._v = G.world.stationPos('solar').clone()), w = innerWidth, h = innerHeight, bad = G.badPlaces ? G.badPlaces() : {}, tid = G.world.target && G.world.target.id, now = performance.now(), list = [];
+    if (!this._hudR || now - this._hudAt > 400) { this._hudAt = now; this._hudR = ['#clock', '#gauges', '#side', '#alerts'].map((q) => $(q).getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0); }   // where the HUD is, looked up a few times a second
     const each = (s, name) => {
       const l = this.labels[s.id]; if (s.zone !== G.player.zone) { l.classList.add('hidden'); return; }
       v.copy(G.world.stationPos(s.id)); const dist = Math.hypot(v.x - G.player.pos.x, v.z - G.player.pos.z); v.y += s.zone === 'top' ? 5 : 3.2; v.project(cam);
       const goal = tid === s.id, hid = s.zone === 'deep' && !goal && G.inside === (s.id === 'lift'), show = !hid && v.z < 1 && Math.abs(v.x) < 1.1 && (goal || bad[s.id] || (s.site ? dist < 900 : dist < (s.zone === 'top' ? 85 : 22)));
-      l.classList.toggle('hidden', !show); if (!show) return;
-      l.style.transform = `translate(${((v.x + 1) / 2) * w}px,${((1 - v.y) / 2) * h}px) translate(-50%,-100%)`; const txt = `${name}<small>${dist.toFixed(0)} m</small>`; if (l.dataset.t !== txt) { l.dataset.t = txt; l.innerHTML = txt; }
-      l.classList.toggle('goal', goal); l.classList.toggle('bad', !!bad[s.id] && !goal);
+      if (!show) { l.classList.add('hidden'); return; }
+      list.push({ l, name, dist, goal, bad: !!bad[s.id] && !goal, x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h });
     };
     for (const s of STATIONS) each(s, s.name); for (const s of SITES) each({ id: s.id, zone: 'top', site: true }, s.name);
+    // The place the guide points at goes first and is always shown. Every other label is left out when it would lie under the top of
+    // the HUD or the alert list, or on top of the label of a nearer place.
+    list.sort((a, b) => (b.goal - a.goal) || a.dist - b.dist);
+    const taken = [], over = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    for (const q of list) { const l = q.l, lw = l._w || 64 + q.name.length * 7, lh = l._h || 24, box = { left: q.x - lw / 2 - 3, right: q.x + lw / 2 + 3, top: q.y - lh - 2, bottom: q.y + 2 };
+      if (!q.goal && (this._hudR.some((r) => over(box, r)) || taken.some((r) => over(box, r)))) { l.classList.add('hidden'); continue; }
+      taken.push(box); l.classList.remove('hidden');
+      l.style.transform = `translate(${q.x}px,${q.y}px) translate(-50%,-100%)`; const txt = `${q.name}<small>${q.dist.toFixed(0)} m</small>`; if (l.dataset.t !== txt) { l.dataset.t = txt; l.innerHTML = txt; if (l._n !== txt.length) { l._n = txt.length; l._w = 0; } }
+      l.classList.toggle('goal', q.goal); l.classList.toggle('bad', q.bad);
+      if (!l._w) { l._w = l.offsetWidth; l._h = l.offsetHeight; }   // measured once for each length of text, not every frame
+    }
   }
   _minimap() {
     const G = this.G, c = this.mm, W = 340, p = G.player;

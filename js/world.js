@@ -14,6 +14,16 @@ function canvasTex(w, h, draw, rep) { const c = document.createElement('canvas')
 const std = (o) => new THREE.MeshStandardMaterial(o);
 const glow = (color, intensity = 1.5) => new THREE.MeshStandardMaterial({ color: 0x111111, emissive: color, emissiveIntensity: intensity });
 const PANEL_W = 5, PANEL_D = 2.8, HEN_Y = 0.52;   // HEN_Y: how high a hen's body sits so that its feet touch the floor
+// A soft round dot for sparks, dust, flying rock and vapour. Without a picture every point is drawn as a hard little square.
+let dotTex = null;
+const softDot = () => dotTex || (dotTex = canvasTex(64, 64, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }));
+// Where a hen may stand, measured from the middle of the pen: inside the fence, and not in the red coop at the far side.
+const HEN_GAP = 0.95;
+const henClear = (p) => {
+  if (Math.abs(p.x) < 1.5 && p.z > 1.1) { if (1.5 - Math.abs(p.x) < p.z - 1.1) p.x = p.x < 0 ? -1.5 : 1.5; else p.z = 1.1; }
+  const d = Math.hypot(p.x, p.z); if (d > 3) { p.x *= 3 / d; p.z *= 3 / d; }
+  return p;
+};
 
 // Earth in the lunar sky for 8.3355°N 33.222°E with a typical libration tilt: azimuth 248°, elevation 57°. It stays there.
 export const EARTH_DIR = new V3(-0.5017, 0.8409, 0.2027).normalize();
@@ -202,6 +212,8 @@ export class World {
       return { g, head, tilt, mat, ok, bad, cap, seed: hash(i, 3), state: -1 };
     });
     const sIn = this.group(T, 0, -46); this.put(sIn, this.box(2.2, 1.5, 0.9, M.dark), 0, 0.75, 0); this.put(sIn, new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.9), M.screen), 0, 1.0, 0.46); this.solid('top', 0, -46, 1.4);
+    // the Solar Field console is seen mostly from the panel side, where it was a plain dark box: an orange band round the top, and on the back a lit screen and a cyan strip
+    this.put(sIn, this.box(2.28, 0.14, 0.98, M.orange), 0, 1.38, 0); this.put(sIn, this.box(1.5, 0.6, 0.03, M.screen), 0, 1.0, -0.46); this.put(sIn, this.box(1.9, 0.07, 0.03, M.cyan), 0, 0.42, -0.46);
     this.lamp(T, 0, 7, -46, 0xcfe4ff, 26);
     // --- Earth link dish
     const d = this.group(T, -64, -10); this.put(d, this.cyl(0.5, 0.9, 9, M.white), 0, 4.5, 0); this.put(d, this.box(3, 1.2, 3, M.grey), 0, 0.6, 0);
@@ -305,7 +317,7 @@ export class World {
     const tr = new THREE.Group(); tr.position.set(8.5, 0, 5.4); wp.add(tr); this.put(tr, this.cyl(0.9, 1.0, 4.6, M.tankW, 16), 0, 2.3, 0); for (let i = 0; i < 6; i++) this.put(tr, this.cyl(1.25, 1.25, 0.08, M.metal, 16), 0, 0.9 + i * 0.62, 0);
     X.frostM = std({ color: 0xffffff, roughness: 0.9, emissive: 0x9fdcff, emissiveIntensity: 0.25 }); X.frost = this.put(tr, this.cyl(1.12, 1.12, 3.6, X.frostM, 16), 0, 2.4, 0); X.frost.scale.set(1, 0.02, 1); this.solid('top', wx0 + 8.5, wz0 + 5.4, 1.7);
     this.put(wp, new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 3.4, 12, 1, true), M.glass), 8.5, 3.9, 2.9, Math.PI / 2); for (const pz of [1.2, 4.6]) this.put(wp, this.cyl(0.3, 0.3, 0.9, M.grey, 10), 8.5, 3.5, pz);                  // see-through vapour pipe
-    const vg = new THREE.BufferGeometry(); vg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(36 * 3), 3)); X.vapor = new THREE.Points(vg, new THREE.PointsMaterial({ color: 0xdff4ff, size: 0.16, transparent: true, opacity: 0, depthWrite: false })); X.vapor.frustumCulled = false; wp.add(X.vapor); X.vph = Array.from({ length: 36 }, (_, i) => i / 36);
+    const vg = new THREE.BufferGeometry(); vg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(36 * 3), 3)); X.vapor = new THREE.Points(vg, new THREE.PointsMaterial({ color: 0xdff4ff, size: 0.24, map: softDot(), transparent: true, opacity: 0, depthWrite: false })); X.vapor.frustumCulled = false; wp.add(X.vapor); X.vph = Array.from({ length: 36 }, (_, i) => i / 36);
     this.put(wp, this.cyl(0.14, 0.14, 6.4, M.tankW, 8), 5.4, 0.6, 5.4, 0, 0, Math.PI / 2); this.put(wp, this.cyl(0.14, 0.14, 5.4, M.tankW, 8), 2.4, 0.6, 2.7, Math.PI / 2);                                                                         // meltwater line to the tanks
     const mr = new THREE.Group(); mr.position.set(13.5, 0, -1.5); wp.add(mr); this.put(mr, this.cyl(0.18, 0.26, 4, M.grey, 8), 0, 2, 0); X.mirror = new THREE.Group(); X.mirror.position.y = 4.2; mr.add(X.mirror);
     const mpts = []; for (let i = 0; i <= 10; i++) { const rr = (i / 10) * 2.6; mpts.push(new THREE.Vector2(rr, rr * rr * 0.09)); } const dishM = std({ color: 0xdfe8f0, roughness: 0.12, metalness: 0.95, side: THREE.DoubleSide }); X.mirror.add(new THREE.Mesh(new THREE.LatheGeometry(mpts, 28), dishM)); this.solid('top', wx0 + 13.5, wz0 - 1.5, 1.2);
@@ -578,7 +590,12 @@ export class World {
       for (let k = 0; k < 2; k++) strip(g, x0 + (x1 - x0) * (0.3 + k * 0.4), ROOM_H - 0.05, (z0 + z1) / 2, 1, (z1 - z0) * 0.6, light);
       const door = this.put(g, this.box(3.9, DH - 0.1, 0.3, M.door), def.door, DH / 2, s * 4.5); this.put(door, new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M.cyan), 0, 0.5, 0.16); this.put(door, new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M.cyan), 0, 0.5, -0.16, 0, Math.PI);
       const [sx, sz] = doorSpot(def), sw = this.put(g, this.box(0.3, 1.4, 0.5, M.dark), def.door + 1.86, 1.2, sz), swLed = this.put(g, this.box(0.06, 0.5, 0.3, M.greenG.clone()), def.door + 1.68, 1.4, sz);
-      const [cx, cz] = roomSpot(def), con = new THREE.Group(); con.position.set(cx + 2.6, 0, cz - s * 1.2); g.add(con); this.put(con, this.box(1.2, 1.1, 0.7, M.dark), 0, 0.55, 0); this.put(con, new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.6), M.screen), 0, 1.45, 0, -0.3, s < 0 ? 0 : Math.PI);
+      const [cx, cz] = roomSpot(def), con = new THREE.Group(); con.position.set(cx + 2.6, 0, cz - s * 1.2); g.add(con); this.put(con, this.box(1.2, 1.1, 0.7, M.dark), 0, 0.55, 0); this.put(con, new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.6), M.screen), 0, 1.45, 0, s * 0.3, s < 0 ? 0 : Math.PI);
+      // The room console must read as a console from every side, not as a dark box: an orange band round the cabinet, a grey casing
+      // behind the screen (the screen leans back toward whoever walks in), and on the back a small lit screen over a cyan strip.
+      // No lights are added: these glow by themselves. Four small parts a room, none of them casting a shadow.
+      this.put(con, fix(this.box(1.26, 0.12, 0.76, M.orange)), 0, 0.98, 0); this.put(con, fix(this.box(1.12, 0.72, 0.06, M.grey)), 0, 1.45, s * 0.05, s * 0.3);
+      this.put(con, fix(this.box(0.7, 0.3, 0.02, M.screen)), 0, 0.6, s * 0.36); this.put(con, fix(this.box(0.9, 0.05, 0.02, M.cyan)), 0, 0.32, s * 0.36);
       const props = new THREE.Group(); g.add(props); const debris = new THREE.Group(); g.add(debris); const rnd = seeded(def.door * 7 + 91);
       for (let i = 0; i < 12; i++) { const b = this.box(0.4 + rnd() * 1.6, 0.2 + rnd() * 0.7, 0.4 + rnd() * 1.4, i % 3 ? M.grey : M.red); b.position.set(x0 + 2 + rnd() * (x1 - x0 - 4), 0.3, z0 + 2 + rnd() * (z1 - z0 - 4)); b.rotation.set(rnd(), rnd() * 3, rnd()); debris.add(b); }
       const hx = x0 + (x1 - x0) * 0.72, hole = new THREE.Group(); hole.position.set(hx, ROOM_H - 0.06, zf - s * 3); g.add(hole);
@@ -709,14 +726,15 @@ export class World {
         }
         this.put(g, this.box(0.5, 0.35, 0.08, M.dark), -L / 2 + 0.6, 0.45, 1.13); this.put(g, this.sph(0.09, led, 8, 6), -L / 2 + 0.6, 0.45, 1.19);
         const plants = new THREE.Group(); plants.position.y = 0.78; g.add(plants);
-        if (!gap) for (let k = -1; k <= 1; k++) hard(x + k * (L / 2 - 1.2), z, soil ? 1.0 : 1.3);
-        this.rackViews.push({ room: id, b, soil, L, gap, g, plants, lamp, led, kind: undefined, cur: 0, list: [], leaf: null, fruit: null }); }
+        const cols = []; if (!gap) for (let k = -1; k <= 1; k++) cols.push(hard(x + k * (L / 2 - 1.2), z, soil ? 1.0 : 1.3));
+        // cols: the moon-soil bed only stands there once it is researched. Until then nothing may block the way (see update: its colliders are switched off)
+        this.rackViews.push({ room: id, b, soil, L, gap, g, plants, lamp, led, cols: soil ? cols : null, kind: undefined, cur: 0, list: [], leaf: null, fruit: null }); }
       // the walkway's edges, painted on the floor from the door to the back wall
       if (AISLE[id]) { const w = AISLE[id] / 2 - 0.35, zd = c.s < 0 ? c.z1 : c.z0, zb = c.s < 0 ? c.z0 : c.z1, zm = (zd + zb) / 2, zl = Math.abs(zb - zd) - 1.6; for (const e of [-1, 1]) add(id, this.box(0.1, 0.02, zl, M.yellow), c.cx + e * w, 0.012, zm); }
       // the moon-soil experiment: three pots of thale cress on a bench by the wall
       const ex = new THREE.Group(); ex.position.set(c.x0 + 1.6, 0, c.cz); R[id].props.add(ex); this.put(ex, this.box(1.4, 0.9, 4.6, M.white), 0, 0.45, 0); this.put(ex, this.box(1.2, 0.06, 0.4, M.pink), 0, 2.4, 0, 0, Math.PI / 2); for (const e of [-2, 2]) this.put(ex, this.box(0.08, 1.5, 0.08, M.metal), 0, 1.65, e);
       const pots = [[M.tankW, 0x58c26a], [M.soil, 0x7fae4f], [M.grey, 0x8a4a52]].map(([pm, col], i) => { const p = new THREE.Group(); p.position.set(0, 0.9, (i - 1) * 1.4); ex.add(p); this.put(p, this.cyl(0.36, 0.28, 0.4, pm, 12), 0, 0.2, 0); const lm = std({ color: col, roughness: 0.8 }), pl = new THREE.Group(); pl.position.y = 0.4; p.add(pl); this.put(pl, this.cyl(0.26, 0.26, 0.04, lm, 9), 0, 0.03, 0); this.put(pl, this.cyl(0.015, 0.015, 0.5, lm, 5), 0, 0.28, 0); this.put(pl, this.sph(0.05, lm, 6, 5), 0, 0.54, 0); return pl; });
-      hard(c.x0 + 1.6, c.cz, 1.5); this.expViews[id] = { g: ex, pots }; }
+      this.expViews[id] = { g: ex, pots, col: hard(c.x0 + 1.6, c.cz, 1.5) }; }   // col: solid only while the experiment bench is really there
 
     // Battery Store
     { const c = rc('storage'); this.battBars = []; for (let i = 0; i < 4; i++) { const x = c.x0 + 2.6 + i * 3.6; add('storage', this.box(3, 3.4, 1.6, M.dark), x, 1.7, c.z1 - 1.5); this.battBars.push(add('storage', this.box(0.35, 2.6, 0.08, M.greenG.clone()), x, 1.7, c.z1 - 2.34)); add('storage', this.box(3.1, 0.2, 1.7, M.orange), x, 3.5, c.z1 - 1.5); hard(x, c.z1 - 1.5, 1.7); }
@@ -731,7 +749,7 @@ export class World {
     // Animal Bay: hen coop, feed sacks, fish tank
     { const c = rc('animal'), px = c.x0 + 5, pz = c.cz + 2.5; add('animal', this.cyl(3.6, 3.6, 0.12, M.straw, 24), px, 0.1, pz); for (let i = 0; i < 14; i++) { const a = (i / 14) * 6.283; add('animal', this.cyl(0.05, 0.05, 1, M.white, 5), px + Math.cos(a) * 3.6, 0.5, pz + Math.sin(a) * 3.6); } add('animal', new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.04, 5, 36), M.white), px, 1.0, pz, Math.PI / 2); add('animal', this.box(2.2, 1.3, 1.4, M.red), px, 0.65, pz + 2.2);
       this.hens = []; for (let i = 0; i < 6; i++) { const { g: h, wings } = this._hen(i);
-        h.position.set(px, HEN_Y, pz); R.animal.props.add(h); const a = i * 1.05, r = 0.8 + (i % 3) * 0.8; this.hens.push({ g: h, wings, x: Math.cos(a) * r, z: Math.sin(a) * r * 0.8, tx: 0, tz: 0, face: -a, st: 'idle', t: i * 0.4, u: 0 }); }
+        h.position.set(px, HEN_Y, pz); R.animal.props.add(h); const a = i * 1.05, r = 1.2 + (i % 3) * 0.75, at = henClear({ x: Math.cos(a) * r, z: Math.sin(a) * r }); this.hens.push({ g: h, wings, x: at.x, z: at.z, tx: at.x, tz: at.z, face: -a, st: 'idle', t: i * 0.4, u: 0 }); }   // spread round the pen from the start, each with room to itself
       this.henPod = add('animal', this.sph(1.1, M.white, 14, 10), px, 0.9, pz); this.henPod.scale.set(1.3, 0.8, 1); this.henPos = new V3(px, 0, pz);
       this.sacks = []; for (let i = 0; i < 5; i++) this.sacks.push(add('animal', this.box(0.9, 0.5, 0.6, M.straw), c.x0 + 1.2 + (i % 2) * 1, 0.25 + Math.floor(i / 2) * 0.5, c.z0 + 6));
       const tx = c.x1 - 3.6, tz = c.z0 + 7; add('animal', this.box(4.6, 0.7, 2.2, M.dark), tx, 0.35, tz); add('animal', this.box(4.4, 1.6, 2.0, M.water), tx, 1.5, tz); add('animal', this.box(4.5, 1.7, 2.1, M.glass.clone()), tx, 1.5, tz); this.fishes = []; for (let i = 0; i < 5; i++) { const f = this.sph(0.16, M.fish, 8, 6); f.scale.set(1.8, 1, 0.6); f.position.set(tx, 1.5, tz); R.animal.props.add(f); this.fishes.push({ m: f, ph: i * 1.3, tx, tz }); } hard(tx, tz, 2.2); hard(px, pz + 2.2, 1.4); }
@@ -843,14 +861,14 @@ export class World {
   }
   _fx() {
     this.flash = new THREE.PointLight(0xfff0d0, 0, 300, 1.2); this.top.add(this.flash);
-    const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(240 * 3), 3)); this.debris = new THREE.Points(dg, new THREE.PointsMaterial({ color: 0xd8d4cc, size: 0.5, transparent: true, opacity: 0 })); this.debris.frustumCulled = false; this.top.add(this.debris); this.debrisV = [];
-    const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(60 * 3), 3)); this.sparkPts = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffd27a, size: 0.14, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); this.sparkPts.frustumCulled = false; this.scene.add(this.sparkPts);
+    const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(240 * 3), 3)); this.debris = new THREE.Points(dg, new THREE.PointsMaterial({ color: 0xd8d4cc, size: 0.62, map: softDot(), transparent: true, opacity: 0, depthWrite: false })); this.debris.frustumCulled = false; this.top.add(this.debris); this.debrisV = [];
+    const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(60 * 3), 3)); this.sparkPts = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffd27a, size: 0.22, map: softDot(), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); this.sparkPts.frustumCulled = false; this.scene.add(this.sparkPts);
     const sgeo = new THREE.CircleGeometry(0.3, 8); sgeo.rotateX(-Math.PI / 2); this.scuffs = new THREE.InstancedMesh(sgeo, new THREE.MeshBasicMaterial({ color: 0x4f4c49, transparent: true, opacity: 0.28, depthWrite: false }), 240); this.scuffs.frustumCulled = false; this.scuffI = 0;
     const far = new THREE.Matrix4().makeTranslation(0, -9999, 0); for (let i = 0; i < 240; i++) this.scuffs.setMatrixAt(i, far); this.top.add(this.scuffs);
     const trTex = canvasTex(64, 64, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(40,38,36,0.95)'; g.lineWidth = 7; g.lineCap = 'round'; for (const y of [10, 32, 54]) { g.beginPath(); g.moveTo(8, y + 9); g.lineTo(32, y - 9); g.lineTo(56, y + 9); g.stroke(); } });
     const tgeo = new THREE.PlaneGeometry(0.52, 0.62); tgeo.rotateX(-Math.PI / 2); this.tracks = new THREE.InstancedMesh(tgeo, new THREE.MeshBasicMaterial({ map: trTex, transparent: true, opacity: 0.5, depthWrite: false }), 900); this.tracks.frustumCulled = false; this.trackI = 0;
     const tfar = new THREE.Matrix4().makeTranslation(0, -9999, 0); for (let i = 0; i < 900; i++) this.tracks.setMatrixAt(i, tfar); this.top.add(this.tracks);
-    const dn = 220, dgeo = new THREE.BufferGeometry(); dgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(dn * 3).fill(-9999), 3)); this.dustPts = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0xc9c5bd, size: 0.2, transparent: true, opacity: 0.85, depthWrite: false })); this.dustPts.frustumCulled = false; this.top.add(this.dustPts);
+    const dn = 220, dgeo = new THREE.BufferGeometry(); dgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(dn * 3).fill(-9999), 3)); this.dustPts = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0xc9c5bd, size: 0.3, map: softDot(), transparent: true, opacity: 0.85, depthWrite: false })); this.dustPts.frustumCulled = false; this.top.add(this.dustPts);
     this.dustV = Array.from({ length: dn }, () => [0, 0, 0, 0]); this.dustI = 0;
     this.sparkV = Array.from({ length: 60 }, () => [0, 0, 0, 0]); this.sparkAt = null; this.sparkLight = new THREE.PointLight(0xffc27a, 0, 14, 1.5); this.scene.add(this.sparkLight);
   }
@@ -1084,7 +1102,7 @@ export class World {
       const w = S.water / S.waterCap; this.waterTanks.forEach((tk) => tk.material.emissive.setRGB(0, 0.1 * w, 0.35 * w)); this.waterGlow.material.emissive.setHex(S.f.leakWater ? 0xff3b30 : 0x49e6ff);
       const lit = S.lv.farm * S.flow.eff; M.pink.emissiveIntensity = 0.25 + 0.6 * lit; this.farmLights[0].intensity = S.rooms.potato.built >= 1 ? 6 + 6 * lit : 0; this.farmLights[1].intensity = S.rooms.tomato.built >= 1 ? 6 + 6 * lit : 0;
       for (const v of this.rackViews) {
-        const rs = S.racks.filter((q) => q.room === v.room), r = v.soil ? rs.find((q) => q.soil) : rs.filter((q) => !q.soil)[v.b]; v.g.visible = v.g.visible && !!r; if (!r) continue;
+        const rs = S.racks.filter((q) => q.room === v.room), r = v.soil ? rs.find((q) => q.soil) : rs.filter((q) => !q.soil)[v.b]; v.g.visible = v.g.visible && !!r; if (v.cols) for (const q of v.cols) q.r = r ? 1.0 : 0; if (!r) continue;
         if ((r.kind || null) !== v.kind) this._replant(v, r.kind || null);
         v.lamp.emissiveIntensity = r.kind ? 0.25 + 0.6 * lit : 0.04; v.led.emissive.setHex(r.ripe ? 0x4dff88 : r.hp < 0.5 ? 0xff3b30 : 0x224433); v.led.emissiveIntensity = r.ripe ? 1.5 + Math.sin(t * 5) : 1;
         if (!r.kind) continue;
@@ -1094,16 +1112,23 @@ export class World {
         for (const q of v.list) { const sw = Math.sin(t * 0.9 + q.ph); q.p.scale.setScalar(v.cur * q.s * (1 + 0.025 * Math.sin(t * 1.7 + q.ph * 2))); q.p.rotation.z = sw * 0.045 + droop; q.p.rotation.x = Math.cos(t * 0.7 + q.ph) * 0.03;
           for (const f of q.p.userData.fr) { f.visible = fk > 0.02; if (f.visible) { const b0 = f.userData.s0 || (f.userData.s0 = f.scale.clone()); f.scale.copy(b0).multiplyScalar(0.25 + 0.75 * fk); } } }
       }
-      for (const id in this.expViews) { const x = S.exp, v = this.expViews[id], on = !!x && x.room === id; v.g.visible = v.g.visible && on; if (on) v.pots.forEach((p, i) => p.scale.setScalar(0.08 + x.g * [1, 0.7, 0.38][i] * 1.25)); }
+      for (const id in this.expViews) { const x = S.exp, v = this.expViews[id], on = !!x && x.room === id; v.g.visible = v.g.visible && on; v.col.r = on ? 1.5 : 0; if (on) v.pots.forEach((p, i) => p.scale.setScalar(0.08 + x.g * [1, 0.7, 0.38][i] * 1.25)); }
       const ok = S.rooms.animal.built >= 1 && !S.rooms.animal.frozen && S.rooms.animal.p > 55; this.henPod.visible = this.henPod.visible && !ok;
       this.hens.forEach((h, i) => { if (!h.g.visible) return; h.g.visible = ok && i < S.hens; const fed = S.feed > 0; h.t -= dt; h.u += dt;   // each hen wanders, stops, pecks at the floor, and now and then flaps into a slow, high Moon hop
         if (h.t <= 0) { const r = Math.random(); h.u = 0;
-          if (r < 0.45) { const a = Math.random() * 6.283, d = 0.5 + Math.random() * 1.9; h.tx = Math.cos(a) * d; h.tz = Math.sin(a) * d * 0.8; h.st = 'walk'; h.t = 6; }
+          if (r < 0.45) { let best = null, room = -1;   // a new place to walk to: of five tries anywhere in the pen, the one with the most room from the other hens and from where they are heading
+            for (let k = 0; k < 5; k++) { const a = Math.random() * 6.283, d = 0.4 + Math.sqrt(Math.random()) * 2.6, p = henClear({ x: Math.cos(a) * d, z: Math.sin(a) * d }); let m = 9; for (const o of this.hens) if (o !== h && o.g.visible) m = Math.min(m, Math.hypot(o.x - p.x, o.z - p.z), Math.hypot(o.tx - p.x, o.tz - p.z)); if (m > room) { room = m; best = p; } }
+            h.tx = best.x; h.tz = best.z; h.st = 'walk'; h.t = 6; }
           else if (r < 0.8) { h.st = 'peck'; h.t = 1.2 + Math.random() * 1.2; } else if (r < 0.9 && fed) { h.st = 'flap'; h.t = 1.3; } else { h.st = 'idle'; h.t = 0.6 + Math.random() * 1.2; } }
         let bob = 0, hop = 0, dip = 0, wing = 0;
         if (h.st === 'walk') { const dx = h.tx - h.x, dz = h.tz - h.z, d = Math.hypot(dx, dz), v = fed ? 0.75 : 0.3; if (d < 0.08) h.t = 0; else { h.x += (dx / d) * v * dt; h.z += (dz / d) * v * dt; let dy = Math.atan2(dx, dz) - h.face; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); h.face += dy * Math.min(1, dt * 7); bob = Math.abs(Math.sin(t * 9 + i)) * 0.05; dip = Math.sin(t * 9 + i) * 0.06; } }
         else if (h.st === 'peck') dip = Math.max(0, Math.sin(h.u * 9)) * 0.75;
         else if (h.st === 'flap') { const k = Math.min(1, h.u / 1.3); hop = Math.sin(k * Math.PI) * 0.6; wing = 0.35 + Math.abs(Math.sin(h.u * 20)) * 1.0; }
+        // hens keep a body's width apart: one that is too close to another steps away from it and stays inside the pen. The step away is a
+        // little faster than a hen walks, so two that meet head-on stop face to face and never walk through each other; a hen that is
+        // walking and finds another in its way soon gives up and does something else
+        for (const o of this.hens) { if (o === h || !o.g.visible) continue; const ex = h.x - o.x, ez = h.z - o.z, e = Math.hypot(ex, ez); if (e >= HEN_GAP) continue; const k = Math.min((HEN_GAP - e) * 0.5, dt), far = e > 0.01; if (h.st === 'walk') h.t = Math.min(h.t, 1.2); h.x += (far ? ex / e : Math.cos(i * 2.4)) * k; h.z += (far ? ez / e : Math.sin(i * 2.4)) * k; }
+        henClear(h);
         h.g.position.set(this.henPos.x + h.x, HEN_Y + bob + hop, this.henPos.z + h.z); h.g.rotation.y = h.face; h.g.rotation.x += (dip - h.g.rotation.x) * Math.min(1, dt * 14);
         h.wings[0].rotation.z += (-wing - h.wings[0].rotation.z) * Math.min(1, dt * 30); h.wings[1].rotation.z += (wing - h.wings[1].rotation.z) * Math.min(1, dt * 30); });
       this.sacks.forEach((s, i) => { if (s.visible) s.visible = S.feed > i * 1.1; }); this.fishes.forEach((fi) => { if (fi.m.visible) { fi.m.visible = S.fish; fi.m.position.set(fi.tx + Math.sin(t * 0.6 + fi.ph) * 1.7, 1.5 + Math.sin(t * 0.9 + fi.ph * 2) * 0.45, fi.tz + Math.cos(t * 0.5 + fi.ph) * 0.6); fi.m.rotation.y = Math.cos(t * 0.6 + fi.ph) > 0 ? 0 : Math.PI; } });
