@@ -201,6 +201,8 @@ table.t{width:100%;border-collapse:collapse;font-size:13px}table.t td,table.t th
 @media (max-width:900px){#gauges{flex-wrap:wrap}.gauge{flex:0 0 104px;padding:5px 6px}.gauge .g-sub{display:none}#minimap{width:110px;height:110px}#you{width:110px}#clock{min-width:170px}#btns small{display:none}#btns button{min-width:42px}.grid2,.datacards,#modes{grid-template-columns:1fr}#dlg-img{width:78px;height:78px}#alerts{top:150px}}
 /* 601 to 900 px wide and not a phone on its side: the seven gauges always make two rows, four and three, however wide the clock is (at 800 px they used to wrap into three) */
 @media (min-width:601px) and (max-width:900px) and (min-height:481px){#gauges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.gauge{max-width:none}}
+/* narrower than 720 px, four in a row are too thin for their names: as many columns as fit at 62 px each */
+@media (min-width:601px) and (max-width:719px) and (min-height:481px){#gauges{grid-template-columns:repeat(auto-fit,minmax(62px,1fr))}}
 
 /* ---------- v2 additions ---------- */
 .ic{width:1.15em;height:1.15em;vertical-align:-0.2em;flex:none}
@@ -513,9 +515,10 @@ html[data-dir="rtl"] #modal .win,html[data-dir="rtl"] #dlg-box,html[data-dir="rt
 .lv button{width:auto;min-width:38px;padding:0 5px;white-space:nowrap}
 .gauge .g-top{flex-wrap:wrap;row-gap:0}.gauge .g-top span{min-width:0;overflow:hidden;text-overflow:ellipsis}.gauge .g-top b{flex:none}   /* a narrow tile keeps its name and puts the number on the line below, not "Pa…" */
 .gauge{container-type:inline-size}@container (max-width:84px){.gauge .g-top .ic{display:none}}   /* too narrow for icon and name on one line: the name is enough */
-@container (max-width:104px){.gauge .g-x{display:none}}   /* a narrow tile shows the first half of its small line whole ("+5.9 kW") and leaves the second half out, where it used to be cut off in mid-word ("+5.9 kW · 7 pan…") */
+@container (max-width:104px){.gauge .g-x{display:none}.gauge .g-sub{white-space:normal;line-height:1.15}}
+@container (max-width:70px){.gauge .g-top span{font-size:11px;letter-spacing:-.02em}}   /* a very narrow tile: the name a little smaller, so "Radiation" and "Materials" are whole */   /* a narrow tile shows the first half of its small line whole ("+5.9 kW") and leaves the second half out, where it used to be cut off in mid-word ("+5.9 kW · 7 pan…") */
 /* one line under the health bar: the charge the rover or hopper needs to get home. Amber when it is only just enough, red when it is not */
-#home{align-self:stretch;padding:3px 8px;font-size:11px;line-height:1.25;text-align:center;color:var(--mute);background:var(--panel);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(8px)}
+#home{width:150px;box-sizing:border-box;padding:3px 8px;font-size:11px;line-height:1.25;text-align:center;color:var(--mute);background:var(--panel);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(8px)}
 #home.low{color:var(--amber);border-color:rgba(255,179,71,.5)}#home.bad{color:var(--red);border-color:rgba(255,82,82,.6)}
 /* Control Center, guide mode: the crew job REGO would press */
 .roles button.guide-rec{border-color:#ffd21f;color:#ffe36b;background:rgba(64,48,4,.95);box-shadow:0 0 0 2px rgba(255,210,31,.5),0 0 14px rgba(255,210,31,.5);animation:recGlow 1.6s ease-in-out infinite}

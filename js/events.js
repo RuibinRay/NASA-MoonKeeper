@@ -154,7 +154,7 @@ export function installEvents(G) {
     await ui.card({ good: true, title: right ? tt('That is right!') : tt('Not quite'), body: (right ? '' : `${tt`The answer is: <b>${q.a[0]}</b>.`}<br><br>`) + q.why, choices: [{ label: tt('Carry on'), gains: right ? [tt('+1 research')] : [] }] });
     return right;
   };
-  G.scheduleNext = () => { const s = G.S, g = s.m.gap; G.nextEventAt = s.t + (g[0] + rng() * (g[1] - g[0])) * 24 * 1.25; };   // a quarter longer than the mission's gap: about 15 game hours apart on Pilot, where it was 12
+  G.scheduleNext = () => { const s = G.S, g = s.m.gap; G.nextEventAt = s.t + (g[0] + rng() * (g[1] - g[0])) * 24; };
   // A new emergency waits while the player still has two jobs open from the last ones, for an hour after arriving somewhere new
   // (the first job there comes first), and for good once oxygen or water is gone: piling faults on a lost run teaches nothing.
   G.openJobs = () => { const s = G.S, f = s.f; return (s.flow.leaks || []).length + (f.pump ? 1 : 0) + (f.led ? 1 : 0) + (f.mold ? 1 : 0) + (f.scrubber && !s.extraKw.backup ? 1 : 0) + (f.leakWater ? 1 : 0) + (f.heater ? 1 : 0); };
