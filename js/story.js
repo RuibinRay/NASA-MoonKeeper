@@ -81,9 +81,33 @@ export async function tutorial(G) {
   await ui.fade(true); G.clearNpcs(); await ui.fade(false);
 }
 
+// The meteor shower seen from the surface: rocks hit the solar field while the camera circles. Used by both tellings of the story.
+async function showerScene(G) {
+  const ui = G.ui, S = G.S, world = G.world;
+  // --- the scene on the surface
+  await ui.fade(true); ui.showHud(false); const zone0 = G.player.zone; world.setZone('top'); let t = 0, next = 0.6; const cam = world.camera, old = S.mounts.slice();
+  await new Promise((res) => { G.cineTick = (dt) => { t += dt; const a = 0.4 + t * 0.06; cam.position.set(Math.sin(a) * 58, world.heightAt(0, -30) + 13 + t * 0.5, -40 + Math.cos(a) * 58); cam.lookAt(0, 3, -66); G.shake = Math.max(G.shake, 0);
+    if (t > next && t < 9.5) { next = t + 0.28 + Math.random() * 0.4; const far = Math.random() < 0.45, x = far ? (Math.random() - 0.5) * 220 : MOUNTS[(Math.random() * 8) | 0][0] + 3, z = far ? -60 + (Math.random() - 0.5) * 200 : MOUNTS[(Math.random() * 8) | 0][1]; world.impactAt(x, z); G.audio?.play('boom'); if (!far) { const i = S.mounts.findIndex((m, k) => m === 1 && k < 8 && Math.random() < 0.5); if (i >= 0) S.mounts[i] = 2; } cam.position.x += (Math.random() - 0.5) * 2; cam.position.y += (Math.random() - 0.5) * 1.5; }
+    if (t > 11) res(); }; setTimeout(() => ui.fade(false), 80); });
+  await ui.fade(true); G.cineTick = null; S.mounts = old; world.setZone(zone0); await ui.fade(false);
+}
+// Unlimited mode: no comic, and nobody is lost. The Commander and the Engineer get underground in time and stay as your crew.
+async function disasterFree(G, skipped) {
+  const ui = G.ui;
+  if (skipped) return ui.say([{ who: 'rego', text: 'Quick lesson, since we skipped training: a meteor shower hit the base, but everyone got underground in time. <b>Commander Vasquez and Engineer Okoro are here with us</b> — give them jobs at the Control Center. Press <b>E</b> to do things: the bar at the bottom says what. <b>Tab</b> is the Power Board, <b>M</b> is the map, <b>H</b> asks me.' }]);
+  await ui.say([{ who: 'vasquez', text: 'Meteor shower incoming! Everybody underground, now. Tobi has already shut the fuel valves topside.' }, { who: 'rego', text: 'So many… and so fast!', mood: 'alert' }]);
+  await showerScene(G);
+  await ui.say([
+    { who: 'vasquez', text: 'Head count… everyone is here. <b>Nobody is hurt.</b>' },
+    { who: 'okoro', text: 'The base took a beating, though: panels smashed, rooms holed, the dish knocked over. Good thing we have all the materials we could want.' },
+    { who: 'flight', text: 'Glad you are all safe, Tranquility Deep. No rescue needed. Rebuild — and make it a place where many people can live.' },
+    { who: 'vasquez', text: 'You know the ropes now, rookie, so you are in charge of the rebuild. <b>Give Tobi and me jobs at the Control Center</b> and tell us what to do first.' },
+  ]);
+}
 // The meteor shower: comic → a scene on the surface → comic. `skipped` = the player skipped training.
 export async function disaster(G, skipped) {
   const ui = G.ui, S = G.S, world = G.world, days = S.m.days, lim = S.hours !== Infinity;
+  if (S.mode === 'unlimited') return disasterFree(G, skipped);
   const quick = { who: 'rego', text: 'Quick lesson, since we skipped training: a meteor shower wrecked the base and I am all you have. Press <b>E</b> to do things — the bar at the bottom says what. Pull a broken solar panel off its mount, take it down to the <b>Fix-It Bench</b>, then put it back. <b>Tab</b> is the Power Board, <b>M</b> is the map, <b>H</b> asks me.' };
   if (skipped) return ui.say([quick]);
   await ui.comic([{ title: 'Chapter 2 · The Warning', btn: 'Watch ▸', panels: [
@@ -91,12 +115,7 @@ export async function disaster(G, skipped) {
     { img: 'cm06', cap: cap('On the Moon there is no air to burn space rocks up. Every one of them reaches the ground.'), say: [by('REGO', 'So many… and so fast!', 1)] },
     { img: 'cm07', cap: cap('The Commander and the Engineer run for the elevator. Someone has to shut the fuel valves topside before the rocks arrive.'), say: [by('Commander Vasquez', 'Stay here with REGO. That is an order!', 0)] },
   ] }]);
-  // --- the scene on the surface
-  await ui.fade(true); ui.showHud(false); const zone0 = G.player.zone; world.setZone('top'); let t = 0, next = 0.6; const cam = world.camera, old = S.mounts.slice();
-  await new Promise((res) => { G.cineTick = (dt) => { t += dt; const a = 0.4 + t * 0.06; cam.position.set(Math.sin(a) * 58, world.heightAt(0, -30) + 13 + t * 0.5, -40 + Math.cos(a) * 58); cam.lookAt(0, 3, -66); G.shake = Math.max(G.shake, 0);
-    if (t > next && t < 9.5) { next = t + 0.28 + Math.random() * 0.4; const far = Math.random() < 0.45, x = far ? (Math.random() - 0.5) * 220 : MOUNTS[(Math.random() * 8) | 0][0] + 3, z = far ? -60 + (Math.random() - 0.5) * 200 : MOUNTS[(Math.random() * 8) | 0][1]; world.impactAt(x, z); G.audio?.play('boom'); if (!far) { const i = S.mounts.findIndex((m, k) => m === 1 && k < 8 && Math.random() < 0.5); if (i >= 0) S.mounts[i] = 2; } cam.position.x += (Math.random() - 0.5) * 2; cam.position.y += (Math.random() - 0.5) * 1.5; }
-    if (t > 11) res(); }; setTimeout(() => ui.fade(false), 80); });
-  await ui.fade(true); G.cineTick = null; S.mounts = old; world.setZone(zone0); await ui.fade(false);
+  await showerScene(G);
   await ui.comic([{ title: 'Chapter 3 · Alone', btn: lim ? 'Begin the mission ▸' : 'Start building ▸', panels: [
     { img: 'cm08', wide: true, cap: cap('The meteor shower lasts four minutes. It hits every station on the Moon.') },
     { img: 'cm09', cap: cap('Then, silence. Up top, nothing moves. The Commander and the Engineer do not come back.'), say: [by('REGO', 'I… I cannot find their signals.', 2)] },

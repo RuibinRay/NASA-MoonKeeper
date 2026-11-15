@@ -1175,5 +1175,93 @@
   "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd1c-eed5-7cf7-be7d-26ad7f20dc87/08a1f2e5-cda4-4b4a-a27b-17036815c310.png",
   "bytes": 14213443,
   "seconds": 46
+ },
+ "mg_bolts": {
+  "request_id": "01a1dd29-9a8a-7ebe-907d-0256147f252e",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dd29-9a8a-7ebe-907d-0256147f252e/status",
+  "prompt": "A solar panel mount on the lunar surface seen from very close: the aluminium frame and mounting rail of a dark blue solar panel, a cable gland, grey regolith dust on the lower edge, hard sunlight and a black sky at the top edge. Close-up inside or just outside a realistic lunar habitat, seen straight on like a technician looking at the equipment they are about to work on. Same design language as the rest of the station: matte white and warm light-grey composite panels with rounded corners and visible fasteners, brushed aluminium, dark graphite surfaces, safety-orange handles and accents, thin cyan status lights. Grounded space-agency engineering realism, every part functional and bolted down. Photorealistic, soft even practical lighting, shallow depth of field with the centre of the frame calm, plain and uncluttered so that game controls can be drawn on top of it. Ultra detailed, natural film color grade. No people, no hands, no text, no letters, no numbers, no labels, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mg/mg_bolts.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd29-9a8a-7ebe-907d-0256147f252e/72eea5ca-260e-4f6f-8d67-c5bc48f46cdb.png",
+  "bytes": 6257685,
+  "seconds": 33
+ },
+ "mg_weld": {
+  "request_id": "01a1dd29-9a92-72e7-a883-993bc049c3ae",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dd29-9a92-72e7-a883-993bc049c3ae/status",
+  "prompt": "An interior wall of the habitat seen from very close: a bare brushed metal pressure-hull plate with rivet lines and weld seams, scorch marks around the edges, insulation and pipes visible at the far left and right. Close-up inside or just outside a realistic lunar habitat, seen straight on like a technician looking at the equipment they are about to work on. Same design language as the rest of the station: matte white and warm light-grey composite panels with rounded corners and visible fasteners, brushed aluminium, dark graphite surfaces, safety-orange handles and accents, thin cyan status lights. Grounded space-agency engineering realism, every part functional and bolted down. Photorealistic, soft even practical lighting, shallow depth of field with the centre of the frame calm, plain and uncluttered so that game controls can be drawn on top of it. Ultra detailed, natural film color grade. No people, no hands, no text, no letters, no numbers, no labels, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mg/mg_weld.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd29-9a92-72e7-a883-993bc049c3ae/a62cf3cc-848f-4267-a44d-ef920d6d1cfd.png",
+  "bytes": 6108251,
+  "seconds": 34
+ },
+ "mg_stir": {
+  "request_id": "01a1dd29-9a7b-739b-979d-97433aaafaa9",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dd29-9a7b-739b-979d-97433aaafaa9/status",
+  "prompt": "The galley worktop of the habitat seen from directly above: a brushed steel counter with an induction hob ring, a chopping board, a few potatoes and tomatoes and two food tins at the edges, warm light. Close-up inside or just outside a realistic lunar habitat, seen straight on like a technician looking at the equipment they are about to work on. Same design language as the rest of the station: matte white and warm light-grey composite panels with rounded corners and visible fasteners, brushed aluminium, dark graphite surfaces, safety-orange handles and accents, thin cyan status lights. Grounded space-agency engineering realism, every part functional and bolted down. Photorealistic, soft even practical lighting, shallow depth of field with the centre of the frame calm, plain and uncluttered so that game controls can be drawn on top of it. Ultra detailed, natural film color grade. No people, no hands, no text, no letters, no numbers, no labels, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mg/mg_stir.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd29-9a7b-739b-979d-97433aaafaa9/62533604-cd3e-499d-b4f4-b878db17ce08.png",
+  "bytes": 5079896,
+  "seconds": 34
+ },
+ "mg_stack": {
+  "request_id": "01a1dd29-9a76-7d9a-8da1-77b24bd903ca",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dd29-9a76-7d9a-8da1-77b24bd903ca/status",
+  "prompt": "A cargo depot rack of the habitat seen straight on: heavy aluminium shelving with cargo straps and tie-down rings, empty shelf bays in the middle, a few white and orange cargo crates at the far edges. Close-up inside or just outside a realistic lunar habitat, seen straight on like a technician looking at the equipment they are about to work on. Same design language as the rest of the station: matte white and warm light-grey composite panels with rounded corners and visible fasteners, brushed aluminium, dark graphite surfaces, safety-orange handles and accents, thin cyan status lights. Grounded space-agency engineering realism, every part functional and bolted down. Photorealistic, soft even practical lighting, shallow depth of field with the centre of the frame calm, plain and uncluttered so that game controls can be drawn on top of it. Ultra detailed, natural film color grade. No people, no hands, no text, no letters, no numbers, no labels, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mg/mg_stack.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd29-9a76-7d9a-8da1-77b24bd903ca/79c362e7-7748-486e-8a5e-38bfb7833a66.png",
+  "bytes": 5414372,
+  "seconds": 34
+ },
+ "mg_plant": {
+  "request_id": "01a1dd2a-1d0c-7eab-af11-11f1000f2dbe",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dd2a-1d0c-7eab-af11-11f1000f2dbe/status",
+  "prompt": "A hydroponic growing rack of the habitat seen from above at an angle: long white growing channels with round planting holes, thin water tubes, magenta-pink LED grow light spilling over everything, a few small green seedlings at the edges. Close-up inside or just outside a realistic lunar habitat, seen straight on like a technician looking at the equipment they are about to work on. Same design language as the rest of the station: matte white and warm light-grey composite panels with rounded corners and visible fasteners, brushed aluminium, dark graphite surfaces, safety-orange handles and accents, thin cyan status lights. Grounded space-agency engineering realism, every part functional and bolted down. Photorealistic, soft even practical lighting, shallow depth of field with the centre of the frame calm, plain and uncluttered so that game controls can be drawn on top of it. Ultra detailed, natural film color grade. No people, no hands, no text, no letters, no numbers, no labels, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mg/mg_plant.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd2a-1d0c-7eab-af11-11f1000f2dbe/29635038-f790-41e7-84a4-a70e4fc56054.png",
+  "bytes": 4443521,
+  "seconds": 33
+ },
+ "mg_suit": {
+  "request_id": "01a1dd2a-1e68-741c-8eb1-c45acfa6d8f6",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dd2a-1e68-741c-8eb1-c45acfa6d8f6/status",
+  "prompt": "The inside of an open spacesuit locker in the airlock, seen straight on: grey locker walls with hooks, an air hose coiled on the left, a helmet shelf at the top right, boots on the floor at the right, an orange handle on the door edge. The middle of the locker is empty. Close-up inside or just outside a realistic lunar habitat, seen straight on like a technician looking at the equipment they are about to work on. Same design language as the rest of the station: matte white and warm light-grey composite panels with rounded corners and visible fasteners, brushed aluminium, dark graphite surfaces, safety-orange handles and accents, thin cyan status lights. Grounded space-agency engineering realism, every part functional and bolted down. Photorealistic, soft even practical lighting, shallow depth of field with the centre of the frame calm, plain and uncluttered so that game controls can be drawn on top of it. Ultra detailed, natural film color grade. No people, no hands, no text, no letters, no numbers, no labels, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mg/mg_suit.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd2a-1e68-741c-8eb1-c45acfa6d8f6/8eab25b4-989f-4cfa-8289-0ed0312b9eaa.png",
+  "bytes": 4652841,
+  "seconds": 33
+ },
+ "mg_safe": {
+  "request_id": "01a1dd2a-1f3a-7f93-853e-cbe1be88798f",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dd2a-1f3a-7f93-853e-cbe1be88798f/status",
+  "prompt": "An open electrical distribution cabinet of the habitat seen straight on: thick insulated cables in orange and black entering from the top, busbars and cable ducts at the left and right edges, a plain dark grey mounting plate in the middle, small green status lights. Close-up inside or just outside a realistic lunar habitat, seen straight on like a technician looking at the equipment they are about to work on. Same design language as the rest of the station: matte white and warm light-grey composite panels with rounded corners and visible fasteners, brushed aluminium, dark graphite surfaces, safety-orange handles and accents, thin cyan status lights. Grounded space-agency engineering realism, every part functional and bolted down. Photorealistic, soft even practical lighting, shallow depth of field with the centre of the frame calm, plain and uncluttered so that game controls can be drawn on top of it. Ultra detailed, natural film color grade. No people, no hands, no text, no letters, no numbers, no labels, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mg/mg_safe.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd2a-1f3a-7f93-853e-cbe1be88798f/0dbbd4b4-be21-4f1c-8cfd-02b3723868c5.png",
+  "bytes": 5207024,
+  "seconds": 32
+ },
+ "mg_gauge": {
+  "request_id": "01a1dd2a-1f9e-776e-a40f-a20a3cbc75f1",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dd2a-1f9e-776e-a40f-a20a3cbc75f1/status",
+  "prompt": "A pipe manifold wall of the habitat seen straight on: insulated steel pipes running left to right, flanges and small valves at the edges, a plain white panel behind the middle, faint condensation, cyan status strip at the bottom. Close-up inside or just outside a realistic lunar habitat, seen straight on like a technician looking at the equipment they are about to work on. Same design language as the rest of the station: matte white and warm light-grey composite panels with rounded corners and visible fasteners, brushed aluminium, dark graphite surfaces, safety-orange handles and accents, thin cyan status lights. Grounded space-agency engineering realism, every part functional and bolted down. Photorealistic, soft even practical lighting, shallow depth of field with the centre of the frame calm, plain and uncluttered so that game controls can be drawn on top of it. Ultra detailed, natural film color grade. No people, no hands, no text, no letters, no numbers, no labels, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/mg/mg_gauge.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd2a-1f9e-776e-a40f-a20a3cbc75f1/96fe517b-f05d-4ebc-b474-a1cd5f5f840c.png",
+  "bytes": 5828184,
+  "seconds": 39
  }
 }
