@@ -429,7 +429,7 @@ export function playMini(G, kind, opts = {}) {
       const loop = (now) => {
         const dt = Math.min(0.05, (now - last) / 1000); last = now;
         if (!result) {
-          s.t += dt; s.left -= dt; result = def.update(s, dt) || (window.__mgSkip ? { win: true, score: 0.8 } : null); // __mgSkip: test hook
+          s.t += dt; s.left -= dt; result = def.update(s, dt) || (window.__mgSkip ? (window.__mgSkip === 'fail' ? { win: false, score: 0 } : { win: true, score: typeof window.__mgSkip === 'number' ? window.__mgSkip : 0.8 }) : null); // __mgSkip: test hook (true, a score, or 'fail')
           if (result) { result.stars = result.win ? (result.score > 0.8 ? 3 : result.score > 0.55 ? 2 : 1) : 0; endT = 3.2; s.ptr.down = false; G.audio?.play(result.win ? 'win' : 'bad'); }
         } else endT -= dt;
         TXT = clamp(0.7 / (cv.clientWidth / W || 1), 1, 2); c.clearRect(0, 0, W, H); const bg = backdrop(def.bg || kind); s.hasBg = !!bg; if (bg) { const k = Math.max(W / bg.naturalWidth, H / bg.naturalHeight), bw = bg.naturalWidth * k, bh = bg.naturalHeight * k; c.drawImage(bg, (W - bw) / 2, (H - bh) / 2, bw, bh); c.fillStyle = 'rgba(4,9,15,.58)'; c.fillRect(0, 0, W, H); } def.draw(s, c);
