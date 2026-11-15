@@ -57,12 +57,13 @@ MOONKEEPER was made with SI tools, directed by a human designer who chose what t
 | What | SI tool | Where |
 |---|---|---|
 | Code, tests, tools and documents | Claude (Anthropic), through Claude Code | `js/`, `tools/`, `css/`, `index.html`, `teachers.html`, `docs/` |
-| Pictures | Higgsfield image model, run by `tools/gen_art.mjs` | all 83 pictures in `assets/img/`; the interior textures `assets/tex/wall3`, `floor3`, `ceil3`, `door3` |
+| Pictures | Higgsfield image model, run by `tools/gen_art.mjs` | all 111 pictures in `assets/img/` (83 for the Moon, 28 for Mars in `assets/img/mars/`); the interior textures `assets/tex/wall3`, `floor3`, `ceil3`, `door3` |
+| Demo video | Higgsfield Seedance 2.5 (image to video for the opening shot, video edit for the hopper shot); a Higgsfield picture for the Mars title card; planned and edited with Claude | `demo/moonkeeper-demo.mp4`: ten of its fourteen shots are recorded straight from the game |
 | Translations | Claude (Anthropic) | `lang/*.json`, checked by machine, not yet by native speakers |
 
-**Watermark:** every picture from `assets/img/` shows a visible "SI-generated" mark wherever the game shows it (`js/simark.js`; the title, mission and end backgrounds in `css/style.css`; the job games draw theirs on the canvas). The home screen also says the game was made with SI tools. The interior textures are tiled across the 3D walls and floors and carry no mark of their own.
+**Watermark:** every picture from `assets/img/` shows a visible "SI-generated" mark wherever the game shows it (`js/simark.js`; the title, mission and end backgrounds in `css/style.css`; the job games draw theirs on the canvas). The home screen also says the game was made with SI tools. The demo video carries a visible "SI-generated" mark for its whole length, and its file metadata says how it was made. The interior textures are tiled across the 3D walls and floors and carry no mark of their own.
 
-**Not SI:** the Earth and Moon textures are NASA images (Blue Marble, CGI Moon Kit); the storms, moonquakes and meteorites come from NASA datasets (`data/raw`, `js/nasa-events.js`); REGO's voice is the speech built into the player's device.
+**Not SI:** the Earth and Moon textures are NASA images (Blue Marble, CGI Moon Kit); the storms, moonquakes and meteorites come from NASA datasets (`data/raw`, `js/nasa-events.js`); REGO's voice is the speech built into the player's device; the demo video's music is synthesised with FFmpeg.
 
 ## Project layout
 
