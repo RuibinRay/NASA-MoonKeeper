@@ -10,7 +10,7 @@ With REGO the robot you must keep the **power on** and the **air in** until resc
 
 - **On this computer:** double-click `play.bat` (needs Node.js), or run `node tools/serve.mjs 8130` and open http://localhost:8130
 - **Online:** upload the folder to any static web host (GitHub Pages, Netlify, itch.io…). No build step, no login, nothing to install. The mission saves itself in the browser.
-- **Mars (preview):** on the mission page choose **Mars** to explore a second world: a Mars map built from NASA elevation data and a working outpost of 14 buildings. It is the first step of the Mars expansion; see [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and [docs/MARS_SCIENCE.md](docs/MARS_SCIENCE.md) for where every number comes from. Shortcuts: `?go=mars` to explore, `?go=mars-survive` for the survival mission (`&load=1` continues a saved one).
+- **Mars (preview):** on the mission page choose **Mars** to explore a second world: a Mars map built from NASA elevation data and a working outpost of 14 buildings. It is the first step of the Mars expansion; see [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and [docs/MARS_SCIENCE.md](docs/MARS_SCIENCE.md) for where every number comes from. Shortcuts: `?go=mars` to explore, `?go=mars-survive` for the survival mission (`&load=1` continues a saved one), `?go=mars-train` or `&train=1` to start with the training.
 - Testing shortcut: add `?go=cadet`, `?go=pilot`, `?go=commander` or `?go=unlimited` to the address to skip the comic and training (`&seed=123` repeats a mission).
 
 | Key | Does |
@@ -98,6 +98,8 @@ js/mars/game.js       Mars: what E does, the building panels, HUD, alerts, REGO'
 tools/build_mars.mjs  downloads the MOLA files from NASA's Planetary Data System and builds `js/mars/mola.js` (`--check` fails if it is out of date)
 js/mars/map.js        Mars: the corner map and the Map window (the outpost, the region and the planet from NASA data, "Why here?")
 tools/mars_test.mjs   161 checks on the Mars data, the Sun and dust model, every building's effect, the layout, the yellow guide line's routes, the Map's readings, and the scenery
+js/mars/training.js   Mars: training, eleven short steps each finished by doing the thing (walk, open a building, switch it off, see what dust does, mend, drive)
+tools/mars_training_test.mjs  40 checks: the training walked through with a stand-in player, step by step
 js/mars/survive.js    Mars: the survival mission's rules: the storm, the breakdowns, repairs, winning and losing (pure logic)
 js/mars/mission.js    Mars: the survival mission as the player meets it: warnings, repair buttons, advice, the end screen
 tools/mars_survive_test.mjs  52 checks, playing the mission out for 24 seeds: doing nothing loses, never mending loses, a careful player wins

@@ -540,8 +540,8 @@ Every Mars number, its class and its source are in [MARS_SCIENCE.md](MARS_SCIENC
 |---|---|---|
 | 1. Research and map | The site, the real elevation data, the Mars ground, sky, dust and light; walking and driving | **Built** (this section) |
 | 2. Mars station | The 14 buildings, each with a job in the outpost's balance | **First version built**: outsides, panels, switches and effects. Rooms you can walk into, building scenes and repairs are not built |
-| 3. Survival on Mars | A mission that can be won and lost: storms that arrive by themselves, breakdowns, EVA limits | Not built |
-| 4. Training and story | Mars lessons, REGO's Mars lines, the radio delay in conversations | Not built (REGO gives advice and a tour only) |
+| 3. Survival on Mars | A mission that can be won and lost: storms that arrive by themselves, breakdowns, EVA limits | **First mission built** ("Survive on Mars", below). No surprise event cards, crew jobs or hands-on repairs yet |
+| 4. Training and story | Mars lessons, REGO's Mars lines, the radio delay in conversations | **Training built** ("Mars training", below). The crew can be talked to. No story yet |
 | 5. Moon ↔ Mars in Unlimited | Rocket flights between the worlds under real launch windows (about every 26 months, about 7 months each way) | Not built |
 | 6. Cinematics | Landing, storm and sunset scenes | Not built |
 | 7. Full check | Playtests on all devices, translation of the Mars texts | Not built |
@@ -620,3 +620,15 @@ Mars can now be won and lost. The mission page offers two ways to play Mars: **E
 - mending everything but never switching anything off still wins, but with about 23 hours of brownout, rooms down to 4°C and a clearly lower grade. Load-shedding costs comfort and grade in this first mission; it does not yet decide life and death.
 
 **Not in this mission.** No surprise event cards, no crew jobs, no training, no story, and the supply lander is not shown landing. Repairs are a wait with a progress bar, not a hands-on job. The new texts are in English only.
+
+### Mars training (milestone 4, first part)
+
+The survival mission dropped a new player in with only REGO's hints. Mars now has a training, offered on the mission page for both ways of playing ("Skip the training" is ticked for you once you have finished it).
+
+**Eleven steps, each finished by doing the thing:** walk to the Command Habitat along the yellow line; press E at its door; press Tab to see the power; switch the Research Laboratory off and on again; make the sky a regional storm at the Power Station and watch the solar power fall (REGO quotes the real before and after figures); make it clear again; a practice alarm, then mend the heat pump; get into the rover; drive to the lander; unpack the spare parts; drive back and park on the charging pad.
+
+**How it behaves.** It runs in the real outpost, with the real panels and the real rover. The bar at the top says "Training 3 of 11" and what to do; the yellow line leads to each place; H repeats the current step; a "Skip training" button ends it. Nothing can go wrong: it keeps to daytime, the sky changes at once, the practice breakdown needs no spare part, and nothing is saved until it is over. Afterwards exploring simply carries on, and a survival mission starts from a fresh outpost.
+
+**Also fixed here.** A repair made outside the survival mission (the practice one) stopped with an error after mending; it now finishes properly.
+
+**Checked.** `node tools/mars_training_test.mjs`: 40 checks, walking a stand-in player through every step: each step finishes when the thing is done and not before, in order. In the browser: all eleven steps played through to the end, the skip button, the hand-over to a fresh survival mission, and the mission page's tick box. Not done: a child has not tried it, and it has not been played on a phone. The texts are in English only.

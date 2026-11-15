@@ -56,7 +56,7 @@ export function surviveStep(S, dt) {
 export const repairHours = (S, id) => FAULTS[id].hours * (S.tau > 2 ? 1.5 : 1);
 export const canRepair = (S, id) => !!S.fault[id] && S.mat >= FAULTS[id].parts;
 // Finish a repair (the time it took has already passed). Returns false if there were not enough parts.
-export function repair(S, id) { if (!canRepair(S, id)) return false; S.mat -= FAULTS[id].parts; delete S.fault[id]; delete S.faultAt[id]; S.stats.repairs++; return true; }
+export function repair(S, id) { if (!canRepair(S, id)) return false; S.mat -= FAULTS[id].parts; delete S.fault[id]; if (S.faultAt) delete S.faultAt[id]; S.stats.repairs = (S.stats.repairs || 0) + 1; return true; }
 // Unpack the spare parts still in the lander. Once.
 export function unpackCargo(S) { const n = S.cargo || 0; S.mat += n; S.cargo = 0; return n; }
 // What to switch off first when power is short: the things the crew can do without for a few sols. Never life support, heat, oxygen or water.
