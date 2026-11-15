@@ -139,7 +139,10 @@ export function installEvents(G) {
   // After an emergency is settled: one short question about why it happened, asked once per kind in a mission.
   // A right answer earns a research point. A wrong one costs nothing: the card explains, and the game goes on.
   G.askQuestion = async (type) => {
-    const q = QUIZ[type], s = G.S; if (!q || G.quiz === false || G.done['q_' + type] || s.over) return null; G.done['q_' + type] = true;
+    const q = QUIZ[type], s = G.S; if (!q || G.quiz === false || G.done['q_' + type] || s.over) return null;
+    const urgent = G.alerts().some((a) => a.key || a.text.startsWith('AIR LEAK') || (a.text.startsWith('SOLAR STORM —') && P.zone === 'top'));   // air escaping, power out, life support nearly gone, or caught in a storm
+    if (urgent || (G._quizT !== undefined && s.t - G._quizT < 18)) return null;   // a question can wait: not now, and not more than about one a day
+    G.done['q_' + type] = true; G._quizT = s.t;
     const order = [0, 1, 2].sort(() => Math.random() - 0.5), i = await ui.card({ good: true, title: 'Quick question', body: q.q, choices: order.map((k) => ({ label: q.a[k] })) }), right = order[i] === 0;
     s.stats.asked = (s.stats.asked || 0) + 1; if (right) { s.stats.right = (s.stats.right || 0) + 1; s.sci += 1; note(s, 'Answered a question correctly: +1 research.', 'good'); }
     await ui.card({ good: true, title: right ? 'That is right!' : 'Not quite', body: (right ? '' : `The answer is: <b>${q.a[0]}</b>.<br><br>`) + q.why, choices: [{ label: 'Carry on', gains: right ? ['+1 research'] : [] }] });
