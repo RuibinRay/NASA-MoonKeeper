@@ -688,6 +688,25 @@ export class World {
   // Where the orange guide beam stands: { zone, x, z, id }
   setTarget(t) { this.target = t; if (!t) { this.beacon.visible = false; return; } const p = this.at(t.zone, t.x, t.z); this.beacon.position.set(p.x, p.y + 30, p.z); }
   setZone(z) { this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; this.earth.visible = this.sunSprite.visible = z === 'top'; }
+  // Compile every shader and upload every texture while the title screen is up, so the first frame on the surface,
+  // in the cave, in first person or in a vehicle does not freeze for seconds. Safe to call again: it runs once.
+  warmup() {
+    if (this._warm) return this._warm;
+    const r = this.renderer, s = this.scene, cam = this.camera, z0 = this.zone, sh0 = this.sunLight.castShadow, forced = [];
+    const PASSES = [['top', true], ['top', false], ['deep', false]];   // the sun casts shadows by day; at night and underground it does not, and that is a different set of shaders
+    const setPass = ([z, sh]) => { this.setZone(z); this.sunLight.castShadow = sh; showAll(); };
+    const showAll = () => s.traverse((o) => { if (!o.isLight && !o.visible && o !== this.top && o !== this.deep) { forced.push(o); o.visible = true; } });   // lights stay as they are: their count is part of every shader
+    const breathe = () => new Promise((res) => (window.requestIdleCallback ? requestIdleCallback(() => res(), { timeout: 400 }) : setTimeout(res, 30)));
+    return (this._warm = (async () => {
+      try {
+        for (const p of PASSES) { setPass(p); if (r.compileAsync) await r.compileAsync(s, cam); else r.compile(s, cam); }   // in the background, without blocking
+        const tex = new Set(); s.traverse((o) => { for (const m of [].concat(o.material || [])) for (const k in m) if (m[k] && m[k].isTexture) tex.add(m[k]); });
+        await breathe(); for (const t of tex) r.initTexture(t);
+        for (const p of PASSES) { await breathe(); setPass(p); r.render(s, cam); }   // the canvas sits behind the opaque title screen, so nobody sees these frames
+      } catch (e) { console.warn('warmup skipped', e); }
+      finally { for (const o of forced) o.visible = false; this.sunLight.castShadow = sh0; this.setZone(z0); this.warmDone = true; }
+    })());
+  }
   // Press one tyre print into the dust at (x, z), pointing along yaw.
   track(x, z, yaw) { const m = (this._tm || (this._tm = new THREE.Matrix4())).makeRotationY(yaw); m.setPosition(x, this.heightAt(x, z) + 0.045, z); this.tracks.setMatrixAt(this.trackI++ % 900, m); this.tracks.instanceMatrix.needsUpdate = true; }
   // Kick up n grains of dust at (x, z). dx, dz = which way it is thrown; they fly as far as their speed takes them and drop straight back.

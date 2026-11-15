@@ -4,8 +4,11 @@ import * as THREE from '../lib/three.module.min.js';
 const std = (o) => new THREE.MeshStandardMaterial(o);
 const mesh = (g, m, x = 0, y = 0, z = 0) => { const k = new THREE.Mesh(g, m); k.position.set(x, y, z); k.castShadow = true; return k; };
 
+// Put everything except the lamp in a body group, so the model can be hidden while the lamp still counts as a light.
+function wrapBody(o) { const g = o.group, body = (o.body = new THREE.Group()); for (const c of [...g.children]) if (c !== o.lamp && c !== o.lamp?.target) body.add(c); g.add(body); }
+
 export class Astronaut {
-  constructor(accent = 0xff7a1a) {
+  constructor(accent = 0xff7a1a, { lamp = true } = {}) {
     const g = this.group = new THREE.Group();
     const white = std({ color: 0xecece7, roughness: 0.85 }), grey = std({ color: 0x8b8f96, roughness: 0.9 }), dark = std({ color: 0x2a2c30, roughness: 0.6 });
     const acc = std({ color: accent, roughness: 0.65 }), gold = std({ color: 0xffb62e, metalness: 0.95, roughness: 0.16, emissive: 0x4a3200, emissiveIntensity: 0.9 });
@@ -52,9 +55,10 @@ export class Astronaut {
     } };
     this.tools.L.stir.children[1].rotation.x = Math.PI / 2; this.hot = hot; this.tool = null;
     for (const t of Object.values(this.tools.R)) this.arms[1].add(t); for (const t of Object.values(this.tools.L)) this.arms[0].add(t);
-    this.lamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.5, 0.7, 1); this.lamp.position.set(0, 1.9, 0.3); this.lamp.target.position.set(0, 0.4, 14); g.add(this.lamp, this.lamp.target);
-    this.phase = 0;
+    if (lamp) { this.lamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.5, 0.7, 1); this.lamp.position.set(0, 1.9, 0.3); this.lamp.target.position.set(0, 0.4, 14); g.add(this.lamp, this.lamp.target); }   // only the player's suit lights the way
+    this.phase = 0; wrapBody(this);
   }
+  show(v) { this.body.visible = v; }   // hides the model but not its lamp: a light that comes and goes makes every shader recompile
   // Suit on: helmet, visor, backpack. Suit off (indoors): blue jumpsuit, bare hands, cartoon head with a cap.
   setSuit(on) {
     if (on === this.suitOn) return; this.suitOn = on;
@@ -120,8 +124,9 @@ export class Rego {
     this.head.add(mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 6), dark, 0.1, 0.3, 0));
     this.tipMat = std({ color: 0x221100, emissive: 0xffa424, emissiveIntensity: 2 }); this.head.add(mesh(new THREE.SphereGeometry(0.035, 8, 6), this.tipMat, 0.1, 0.41, 0));
     this.lamp = new THREE.SpotLight(0xffe6c0, 0, 30, 0.6, 0.7, 1); this.lamp.position.set(0, 0.6, 0.25); this.lamp.target.position.set(0, 0, 7); g.add(this.lamp, this.lamp.target);
-    this.mood = 'happy'; this.t = 0; this.blinkAt = 2; this.wave = 0; this.work = false; this.drawEyes('happy');
+    this.mood = 'happy'; this.t = 0; this.blinkAt = 2; this.wave = 0; this.work = false; this.drawEyes('happy'); wrapBody(this);
   }
+  show(v) { this.body.visible = v; }
   setMood(m) { if (m !== this.mood) { this.mood = m; this.drawEyes(m); } }
   drawEyes(m) {
     const c = this.eyeCanvas.getContext('2d'), W = 256, H = 128; c.fillStyle = '#05090d'; c.fillRect(0, 0, W, H);
