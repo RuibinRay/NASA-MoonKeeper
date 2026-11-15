@@ -410,3 +410,40 @@ Up to a day later, panels still make no difference. Beyond that a small differen
 - **Checks.** The planned player has a fifth plan, `store` (Bathroom, Battery Store, then panels), which `sim_test` now runs in every mode: it wins in all three, with 32 hours of power cuts on Pilot against 61 for the plain plan. Three yardstick plans (`nopanels`, `storeonly`, `storefirst`) can be run by name for comparisons like the ones above.
 
 **Not done:** nothing here was played by a person. The first objectives of a mission still lead to the Solar Field; REGO's new line appears once the battery is full with power to spare.
+
+### A whole Pilot mission, played from start to rescue
+
+Played by a script through the game's own controls (E and Q, the panels, the Power Board, the Control Center), paying walking time for every trip and choosing REGO's recommended answer on every emergency card. Job games were switched off in Settings. Build: main at pull request 48. Seed 1920914870.
+
+**Result: rescued** on Day 8, 08:01. Survivor rank, 3,823 points, 12 emergencies, 6 of 6 questions right, 20 jobs, 3.5 mSv. Health 100 throughout. No power cut, no frost, no script errors. At rescue: battery 23 of 380 kWh, oxygen 1.1 kg, water 0.7 L, food 12.6 meals, 2 panels and 7 of 11 rooms working.
+
+| When | What happened |
+| --- | --- |
+| Day 1 | Heaters to what the day needs. Suit on. Bathroom patched and rebuilt, then the Battery Store (REGO suggested it by itself once the battery was 92% full). Robots put on Farm duty and Cook: food rose from 14.5 to 26 meals by Day 3. |
+| Day 2 | Two broken panels pulled, carried down, fixed on the bench. Dusty panels: dust shield. Air leak in the Potato Farm while topside with no materials: locked, lost. |
+| Day 3 | Both panels installed: five working, battery full at 380 kWh by 17:00. A meteoroid holed the Water Room: locked, lost, recycling at zero. A moonquake split a seam in the Animal Bay: locked, lost. Sunset. |
+| Day 3 to 5 | Rover to Sakura Outpost by night with the heaters at the level the night needs (no frost; rover at 74% on arrival). Four material crates loaded, driven home, delivered: 16 materials. |
+| Day 5 | Water Room patched and rebuilt; a cracked pipe sealed. Robots rested, Earth Link off, recycler at 1: battery good for 64 hours against 61 to rescue. Solar storm sat out underground in safe mode. |
+| Day 6 to 7 | A second meteoroid holed the Water Room; REGO said lock, and it froze. Water fell to 4.4 L with 36 hours to go. Patched and rebuilt again, a second cracked pipe sealed. |
+| Day 8 | Rescue. |
+
+**What it confirmed from this week's changes:** REGO was never inside a wall or a machine at any of the twelve points checked, including beside the rover and after elevator rides and getting in and out of the rover; REGO's Battery Store advice appeared in normal play; the night-cold rule cost nothing to a player who keeps the heaters at the needed level; the pipe repair is logged; at night the meteor card recommended leaving the panel; the clock and the end screen read correctly.
+
+**What it found, now fixed:**
+
+- **Locking a room you cannot live without.** REGO's rule for leaks counted only oxygen, so it said "lock" for the Water Room, which froze it and ended water recycling. Now the Water Room and Oxygen Room are patched on a thinner margin of oxygen (0.3 kg left, against 1 kg for other rooms), and every leak card's "lock" choice says what is lost and what the rebuild costs.
+- **Silence while water ran out.** At Day 3, 17:00 the water was good for 2.7 days and rescue was 4.6 days away; REGO talked about the dish. Now REGO and a yellow alert speak as soon as oxygen, water or food will not last until rescue.
+- **Wrong water advice.** "Turn the Water Recycler up" was said with the recycler's room sealed, and a leaking pipe was never mentioned. REGO now names the dead recycler or the pipe first, and says when the repair needs more materials than you have.
+- **The elevator in a storm.** Its prompt now warns while a storm is on.
+- **"The battery is full"** at 92%: now "nearly full".
+
+**Seen and not changed:**
+
+- **Many holed rooms.** Five rooms were holed in one Pilot mission. With no spare materials each one is lost, and materials are spent by Day 2 on the Bathroom, the Battery Store and two panels. A person may find this too harsh.
+- **Heaters in the last nights.** Once the rover trip was over, nothing the player still used needed the heaters; keeping them on was a choice, not a need.
+- **Robots on Farm duty with both farms sealed** keep drawing power; nothing says so.
+
+**Honest limits of this run:**
+
+- Two earlier attempts were thrown away because of the test tooling, not the game: the hidden test browser throttles timers and never fires animation frames, and a timed-out step kept running behind the next. In the final run, a steering loop that tried to park closer to the depot than the cargo yard allows cost about eight game hours on Day 4.
+- Not covered: rescuing an astronaut, the Polar Ice Mine, the Water Plant, the hopper, the robot-arm builder, the job games, sound, and anything a child would do differently from a script.
