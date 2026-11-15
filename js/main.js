@@ -29,7 +29,8 @@ G.audio = new Sound(); G.voice = new Voice(() => G.audio.on); G.world = new Worl
 G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.astro.lamp.visible = true; G.world.scene.add(G.astro.group, G.rego.group);
 G.lampMounts = [G.astro, G.rego].map((a) => { const m = new THREE.Group(); m.add(a.lamp, a.lamp.target); G.world.scene.add(m); return [m, a.group]; });   // lamps outside the bodies: hiding a body must not change the light count
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
-world.onPart = () => G.audio.play('step');   // a part dropping into place during a build
+world.onPart = () => G.audio.play('step');
+world.onLock = (kind) => { G.audio.play(kind); if (kind === 'hiss' && !G._lockTip && G.state === 'play') { G._lockTip = 1; ui.toast('Airlock: the door behind you shuts, the air is pumped back into the tanks, and only then does the next door open. The two doors are never open together.'); } };   // a part dropping into place during a build
 G.dig = { x: MINE.x - 10, z: MINE.z + 9, yaw: 2.3, v: 0, load: 0, prog: 0, boom: 0, dig: 0, dry: 0 };   // the digger at the Polar Ice Mine
 const groundY = (zone, x, z) => (zone === 'top' ? world.heightAt(x, z) : TUBE.y);
 $('#b-power').innerHTML = IC.bolt + '<small>Power<kbd>Tab</kbd></small>'; $('#b-map').innerHTML = IC.map + '<small>Map<kbd>M</kbd></small>'; $('#b-ask').innerHTML = IC.bot + '<small>Ask REGO<kbd>H</kbd></small>'; $('#b-data').innerHTML = IC.book + '<small>Guide<kbd>N</kbd></small>';
@@ -479,7 +480,7 @@ function frame(now, manual) {
   updatePlayer(dt); if (G.S) placeVehicles(dt); updateRego(dt); updateActors(dt); if (G.cineTick) G.cineTick(dt); else updateCamera(dt);
   if (G.S) { tickSim(dt); updateRad(dt); if (G.state !== 'over') updateGoal(); }
   placeItems();
-  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook', sleeping: G.sleepLeft > 0, shipThrust: G.ship.dyn ? G.ship.dyn.thr : 0 });
+  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook', sleeping: G.sleepLeft > 0, suitK: G.suitK, suitShow: G.suitShow, shipThrust: G.ship.dyn ? G.ship.dyn.thr : 0 });
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
   { const S = G.S; G._radioT = (G._radioT ?? 25) - dt;
     if (S && G._radioT <= 0) { const quiet = G.state === 'play' && !ui.busy && !G.eventBusy && !G.inJob && !G.riding && !G.paused && G.sleepLeft <= 0, line = quiet ? radioLine(S) : null;
