@@ -85,7 +85,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | --- | --- | --- |
 | 1 | **Speed and a graphics setting.** Fewer lights for the shaders to work through, lighter shadows on lower settings, the zone you are not in left out of the scene, a Graphics setting with Auto, and a frame-rate counter. | Done (see below) |
 | 2 | **Remaining verification.** Commander with the Water Plant and the ice mine in the planned player. Saving and loading during a job, in a vehicle and in an emergency. | Done (see below). A full touch play-through is still to do |
-| 3 | **Station interiors.** Moving machinery in each of the 11 rooms, emergency and power-out lighting, one consistent material pass, new textures. | Part done: lighting and the first machinery (see below). Material pass and new textures to do |
+| 3 | **Station interiors.** Moving machinery in each of the 11 rooms, emergency and power-out lighting, one consistent material pass, new textures. | Lighting and machinery done in all 11 rooms (see below). Material pass and new textures to do |
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
 | 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | To do |
 | 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | To do |
@@ -151,4 +151,14 @@ Nothing here adds a light for the graphics card to work through: everything is g
 
 Cost at the same view in the Control Center: 366 draw calls, was 352.
 
-Still to do in step 3: machinery of their own for the Kitchen, Bunk Room, Bathroom, Animal Bay and Workshop (they have the fan, and the Workshop's arm and the hens and fish already move); one consistent material pass; new textures.
+Still to do in step 3: one consistent material pass, and new textures.
+
+### Step 3, second part: the other five rooms
+
+| Room | What moves | It follows |
+| --- | --- | --- |
+| Workshop | The overhead hoist travels along its rail and its hook swings | Runs while the Fix-It Bench is repairing a panel; stops where it is when the work or the power stops |
+| Kitchen | Steam rises from the pot into the hood; a light on the water dispenser | Steam only while a meal is cooking. The light is green, amber below 6 L of water, flashing red below 2 L |
+| Bunk Room | Five bars of air quality on the wall; a night light on each ladder | The bars follow how fresh the air is and flash while the air cleaner is broken. The night lights breathe and the room dims while you sleep |
+| Bathroom | Rings slide along the used-water pipe toward the recycler | Their speed is the share of water the recycler is saving. This water is not thrown away |
+| Animal Bay | Bubbles rise in the fish tank | Only while the fish are alive and the pump has power |
