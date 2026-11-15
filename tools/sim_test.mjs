@@ -17,7 +17,7 @@ const sensible = (S, c) => {
   if (S.t > 30 && S.f.commsDown) S.f.commsDown = false;
   S.lv.heat = F.heatNeed; S.lv.recycler = up ? 3 : 2; S.lv.comms = S.battery > 60 ? 1 : 0;
   S.lv.o2gen = S.o2 < 2 ? 2 : S.o2 < 6 ? 1 : 0; S.lv.farm = up ? (F.net > 6 ? 3 : 2) : S.battery > 150 ? 1 : F.foodDays < 1.5 ? 1 : 0;
-  for (const id of ['potato', 'tomato']) if (S.crops[id].ripe >= 1) harvest(S, id, 0.8);
+  for (const id of ['potato', 'tomato']) if (S.racks.some((r) => r.room === id && r.ripe)) harvest(S, id, 0.8);
   if (S.eggs >= 3) collectEggs(S); if (S.raw >= 6 && roomOk(S, 'kitchen')) cookBatch(S);
   if (S.dust > 0.4) S.dust = 0.05;
   S.helpers[0].role = S.battery > 80 ? 'farm' : 'idle';

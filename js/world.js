@@ -148,6 +148,7 @@ export class World {
     const g = new THREE.Group(), M = this.M;
     if (type === 'panel' || type === 'panelB') { this.put(g, this.box(PANEL_W, 0.12, PANEL_D, type === 'panel' ? M.panel : M.panelB), 0, 0.1, 0); this.put(g, this.box(PANEL_W + 0.2, 0.08, PANEL_D + 0.2, M.grey), 0, 0.02, 0); if (type === 'panelB') g.children[0].rotation.z = 0.05; }
     else if (type === 'battery') { this.put(g, this.box(1.3, 1.0, 0.9, M.dark), 0, 0.5, 0); this.put(g, this.box(1.0, 0.12, 0.05, M.greenG), 0, 0.7, 0.46); this.put(g, this.box(1.34, 0.1, 0.94, M.orange), 0, 1.02, 0); }
+    else if (type === 'ice') { this.put(g, this.cyl(0.42, 0.42, 1.0, M.white, 14), 0, 0.5, 0); this.put(g, this.cyl(0.44, 0.44, 0.22, M.cyan, 14), 0, 0.5, 0); this.put(g, this.cyl(0.3, 0.44, 0.12, M.grey, 14), 0, 1.06, 0); }
     else if (type === 'water') { this.put(g, this.cyl(0.5, 0.5, 1.1, M.tankW, 14), 0, 0.55, 0); this.put(g, this.cyl(0.52, 0.52, 0.1, M.white, 14), 0, 1.1, 0); }
     else { this.put(g, this.box(1.1, 0.9, 1.1, type === 'cans' ? M.green : M.orange), 0, 0.45, 0); this.put(g, this.box(1.14, 0.12, 1.14, M.white), 0, 0.5, 0); this.put(g, this.box(0.5, 0.3, 0.04, type === 'cans' ? M.warm : M.cyan), 0, 0.55, 0.56); }
     return g;
@@ -255,10 +256,27 @@ export class World {
     const [lx, lz] = B.lab, lab = module(lx, lz, 12, 4, 7, winC); module(lx, lz + 8, 8, 3.4, 6, winC); this.put(lab, new THREE.Mesh(new THREE.SphereGeometry(1.7, 16, 8, 0, 6.2832, 0, 1.5708), M.white), -3, 4.2, 0); this.put(lab, this.cyl(0.07, 0.07, 3.4, M.grey, 6), 4, 5.9, 1.5); this.put(lab, this.box(2.2, 0.9, 1.6, M.grey), 2.5, 4.7, -1.5); tube(lx, lz + 3.6, lx, lz + 4.9);
     // --- Water Plant
     const [wx0, wz0] = B.water, wp = this.group(T, wx0, wz0); for (const s of [-1, 1]) { this.put(wp, this.cyl(2, 2, 5.6, M.tankW, 20), s * 2.4, 3, 0); this.put(wp, new THREE.Mesh(new THREE.SphereGeometry(2, 20, 8, 0, 6.2832, 0, 1.5708), M.tankW), s * 2.4, 5.8, 0); this.put(wp, new THREE.Mesh(new THREE.CylinderGeometry(2.04, 2.04, 0.4, 20, 1, true), cell), s * 2.4, 1.4, 0); this.solid('top', wx0 + s * 2.4, wz0, 2.4); }
+    // ice-extraction line: cold store -> sealed chamber -> glass vapour pipe -> cold trap -> tanks, plus a Sun mirror
+    const X = this.wxv = {}; X.status = this.put(wp, this.sph(0.3, M.greenG.clone()), 4.2, 4.2, 0);
+    this.put(wp, this.box(4.4, 1.5, 3, M.white), 8.5, 0.75, -7); this.put(wp, this.box(4.6, 0.2, 3.2, M.cyan), 8.5, 1.6, -7); this.solid('top', wx0 + 8.5, wz0 - 7, 2.6);            // cold store
+    X.cans = []; for (let i = 0; i < 6; i++) { const cnt = new THREE.Group(); cnt.position.set(6.2 + (i % 3) * 1.0, 0, -4.2 - Math.floor(i / 3) * 0.95); wp.add(cnt); this.put(cnt, this.cyl(0.38, 0.38, 0.95, M.white, 12), 0, 0.48, 0); this.put(cnt, this.cyl(0.4, 0.4, 0.2, M.cyan, 12), 0, 0.48, 0); X.cans.push(cnt); }
+    const ch = new THREE.Group(); ch.position.set(8.5, 0, 0); wp.add(ch); this.put(ch, this.cyl(1.5, 1.5, 5, M.white, 20), 0, 1.9, 0, Math.PI / 2); for (const e of [-2.6, 2.6]) this.put(ch, this.cyl(1.6, 1.6, 0.3, M.grey, 20), 0, 1.9, e, Math.PI / 2);
+    for (const e of [-1.6, 1.6]) this.put(ch, this.box(2.4, 0.9, 0.5, M.dark), 0, 0.45, e); this.put(ch, this.box(1.4, 1.2, 1.4, M.orange), 0, 3.8, -1.2); this.put(ch, this.cyl(0.5, 0.5, 0.7, M.grey, 12), 0, 3.3, -1.2);
+    X.glowM = glow(0xff7a1a, 0); X.win = this.put(ch, new THREE.Mesh(new THREE.CircleGeometry(0.62, 20), X.glowM), -1.52, 1.9, 0.4, 0, -Math.PI / 2); this.put(ch, new THREE.Mesh(new THREE.RingGeometry(0.62, 0.8, 20), M.grey), -1.53, 1.9, 0.4, 0, -Math.PI / 2);
+    this.put(ch, new THREE.Mesh(new THREE.CircleGeometry(0.62, 20), X.glowM), 1.52, 1.9, 0.4, 0, Math.PI / 2); X.rods = this.put(ch, new THREE.Mesh(new THREE.CylinderGeometry(1.53, 1.53, 3.4, 20, 1, true), X.glowM), 0, 1.9, 0, Math.PI / 2); X.rods.visible = false;
+    this.solid('top', wx0 + 8.5, wz0 - 1.4, 2); this.solid('top', wx0 + 8.5, wz0 + 1.4, 2);
+    const tr = new THREE.Group(); tr.position.set(8.5, 0, 5.4); wp.add(tr); this.put(tr, this.cyl(0.9, 1.0, 4.6, M.tankW, 16), 0, 2.3, 0); for (let i = 0; i < 6; i++) this.put(tr, this.cyl(1.25, 1.25, 0.08, M.metal, 16), 0, 0.9 + i * 0.62, 0);
+    X.frostM = std({ color: 0xffffff, roughness: 0.9, emissive: 0x9fdcff, emissiveIntensity: 0.25 }); X.frost = this.put(tr, this.cyl(1.12, 1.12, 3.6, X.frostM, 16), 0, 2.4, 0); X.frost.scale.set(1, 0.02, 1); this.solid('top', wx0 + 8.5, wz0 + 5.4, 1.7);
+    this.put(wp, new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 3.4, 12, 1, true), M.glass), 8.5, 3.9, 2.9, Math.PI / 2); for (const pz of [1.2, 4.6]) this.put(wp, this.cyl(0.3, 0.3, 0.9, M.grey, 10), 8.5, 3.5, pz);                  // see-through vapour pipe
+    const vg = new THREE.BufferGeometry(); vg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(36 * 3), 3)); X.vapor = new THREE.Points(vg, new THREE.PointsMaterial({ color: 0xdff4ff, size: 0.16, transparent: true, opacity: 0, depthWrite: false })); X.vapor.frustumCulled = false; wp.add(X.vapor); X.vph = Array.from({ length: 36 }, (_, i) => i / 36);
+    this.put(wp, this.cyl(0.14, 0.14, 6.4, M.tankW, 8), 5.4, 0.6, 5.4, 0, 0, Math.PI / 2); this.put(wp, this.cyl(0.14, 0.14, 5.4, M.tankW, 8), 2.4, 0.6, 2.7, Math.PI / 2);                                                                         // meltwater line to the tanks
+    const mr = new THREE.Group(); mr.position.set(13.5, 0, -1.5); wp.add(mr); this.put(mr, this.cyl(0.18, 0.26, 4, M.grey, 8), 0, 2, 0); X.mirror = new THREE.Group(); X.mirror.position.y = 4.2; mr.add(X.mirror);
+    const mpts = []; for (let i = 0; i <= 10; i++) { const rr = (i / 10) * 2.6; mpts.push(new THREE.Vector2(rr, rr * rr * 0.09)); } const dishM = std({ color: 0xdfe8f0, roughness: 0.12, metalness: 0.95, side: THREE.DoubleSide }); X.mirror.add(new THREE.Mesh(new THREE.LatheGeometry(mpts, 28), dishM)); this.solid('top', wx0 + 13.5, wz0 - 1.5, 1.2);
+    X.spot = this.put(ch, new THREE.Mesh(new THREE.CircleGeometry(0.7, 16), glow(0xfff4c0, 0)), 1.56, 2.6, -0.9, 0, Math.PI / 2);                                                                                                                  // where the mirror's light lands (no beam: there is no air)
     this.put(wp, this.box(3, 1.8, 2.2, M.grey), 0, 0.9, 3.2); this.put(wp, this.cyl(0.18, 0.18, 4.8, M.metal, 8), 0, 2.2, 2.2, 0, 0, Math.PI / 2); this.solid('top', wx0, wz0 + 3.2, 1.9);
     // --- Moon-Dust Mine: soil piles, a digger, and a conveyor to the Oxygen Plant
     const [mx, mz] = B.mine, mi = this.group(T, mx, mz); for (const [px, pz, pr] of [[0, 0, 5], [7, -7, 4], [-2, -9, 3.4]]) { this.put(mi, new THREE.Mesh(new THREE.ConeGeometry(pr, pr * 0.72, 14), pile), px, pr * 0.36, pz); this.solid('top', mx + px, mz + pz, pr * 0.8); }
-    const dg = new THREE.Group(); dg.position.set(7, 0, 3); dg.rotation.y = -0.7; mi.add(dg); this.put(dg, this.box(2.6, 1.3, 3.6, M.yellow), 0, 1.5, 0); this.put(dg, this.box(2.9, 0.8, 4, M.dark), 0, 0.5, 0); this.put(dg, this.box(1.5, 1.2, 1.5, M.dark), 0.3, 2.7, -0.6); this.put(dg, this.box(0.4, 0.4, 4, M.yellow), 0, 3, 2.4, -0.5, 0, 0); this.put(dg, this.box(0.35, 0.35, 2.6, M.yellow), 0, 3.3, 4.6, 0.9, 0, 0); this.put(dg, this.box(1.2, 0.9, 0.9, M.grey), 0, 2, 5.4); this.solid('top', mx + 7, mz + 3, 2.6);
+    const dg = this.digger = new THREE.Group(); dg.position.set(7, 0, 3); dg.rotation.y = -0.7; mi.add(dg); this.put(dg, this.box(2.6, 1.3, 3.6, M.yellow), 0, 1.5, 0); this.put(dg, this.box(2.9, 0.8, 4, M.dark), 0, 0.5, 0); this.put(dg, this.box(1.5, 1.2, 1.5, M.dark), 0.3, 2.7, -0.6); this.put(dg, this.box(0.4, 0.4, 4, M.yellow), 0, 3, 2.4, -0.5, 0, 0); this.put(dg, this.box(0.35, 0.35, 2.6, M.yellow), 0, 3.3, 4.6, 0.9, 0, 0); this.put(dg, this.box(1.2, 0.9, 0.9, M.grey), 0, 2, 5.4); this.solid('top', mx + 7, mz + 3, 2.6);
     { const a = this.at('top', mx - 5, mz - 2, 2.2), b = this.at('top', 69, -37, 5.4), d = b.clone().sub(a), cv = this.box(1.1, 0.3, d.length(), M.grey); cv.position.copy(a).add(b).multiplyScalar(0.5); cv.lookAt(b); T.add(cv); for (const t of [0.25, 0.7]) { const p = a.clone().addScaledVector(d, t); this.put(T, this.box(0.25, p.y - this.heightAt(p.x, p.z), 0.25, M.grey), p.x, (p.y + this.heightAt(p.x, p.z)) / 2, p.z); } }
     // --- Comms mast beside the big dish, cargo containers by the depot
     const [cx, cz] = B.comm, cm = this.group(T, cx, cz); const lat = new THREE.LineSegments(new THREE.WireframeGeometry(new THREE.CylinderGeometry(0.35, 2.2, 22, 4, 6, true)), frame); lat.position.y = 11; cm.add(lat);
@@ -417,6 +435,30 @@ export class World {
     [[-73.5, 7.2, 0, M.white], [-73.5, 7.2, 1.3, M.orange], [-75.6, 8.4, 0, M.orange], [-73.2, 9.6, 0, M.white]].forEach(([cx, cz, cy, m]) => { this.put(sh, this.box(1.8, 1.3, 1.8, m), cx, cy + 0.65, cz); if (!cy) this.solid('deep', cx, cz, 1.3); });   // cargo waiting by the airlock
     this._props();
   }
+  // One little plant of each crop. Leaves share the rack's own leaf material (so sick racks can turn brown); "fruits" appear late.
+  _plant(kind, leaf, fruit, rnd) {
+    const g = new THREE.Group(), fr = [], put = (m, x, y, z, sx = 1, sy = 1, sz = 1) => { m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = false; g.add(m); return m; };
+    const G = this._pg || (this._pg = { blob: new THREE.SphereGeometry(0.5, 7, 5), small: new THREE.SphereGeometry(0.14, 6, 5), stalk: new THREE.CylinderGeometry(0.03, 0.035, 1, 5), cone: new THREE.ConeGeometry(0.18, 0.6, 6), disc: new THREE.CylinderGeometry(0.3, 0.3, 0.05, 9), ear: new THREE.BoxGeometry(0.07, 0.3, 0.07) });
+    const mk = (geo, mat) => new THREE.Mesh(geo, mat), j = () => (rnd() - 0.5);
+    if (kind === 'potato') put(mk(G.blob, leaf), 0, 0.3, 0, 1.1, 0.8, 1.1);
+    else if (kind === 'wheat') for (let i = 0; i < 6; i++) { const x = j() * 0.7, z = j() * 0.9, h = 1.3 + rnd() * 0.5; put(mk(G.stalk, leaf), x, h / 2, z, 1, h, 1); fr.push(put(mk(G.ear, fruit), x, h + 0.12, z)); }
+    else if (kind === 'soybean') { put(mk(G.blob, leaf), 0, 0.35, 0, 0.9, 0.85, 0.9); for (let i = 0; i < 4; i++) fr.push(put(mk(G.small, fruit), j() * 0.6, 0.25 + rnd() * 0.3, j() * 0.6, 0.6, 1.5, 0.6)); }
+    else if (kind === 'peas') { put(mk(G.stalk, leaf), 0, 0.9, 0, 1, 1.8, 1); for (let i = 0; i < 4; i++) put(mk(G.blob, leaf), j() * 0.3, 0.3 + i * 0.42, j() * 0.3, 0.42, 0.3, 0.42); for (let i = 0; i < 3; i++) fr.push(put(mk(G.small, fruit), j() * 0.4, 0.5 + i * 0.4, j() * 0.4, 0.5, 1.6, 0.5)); }
+    else if (kind === 'tomato') { put(mk(G.stalk, leaf), 0, 1.0, 0, 1.3, 2.0, 1.3); put(mk(G.blob, leaf), 0, 1.25, 0, 0.9, 1.5, 0.9); for (let i = 0; i < 3; i++) fr.push(put(mk(G.small, fruit), j() * 0.7, 0.6 + i * 0.5, j() * 0.7, 1.4, 1.4, 1.4)); }
+    else if (kind === 'lettuce') put(mk(G.blob, leaf), 0, 0.2, 0, 0.9, 0.5, 0.9);
+    else if (kind === 'spinach') for (let i = 0; i < 3; i++) put(mk(G.blob, leaf), j() * 0.4, 0.16, j() * 0.4, 0.45, 0.32, 0.6);
+    else if (kind === 'radish') { fr.push(put(mk(G.small, fruit), 0, 0.06, 0, 1.2, 1.2, 1.2)); for (let i = 0; i < 3; i++) put(mk(G.blob, leaf), j() * 0.25, 0.3, j() * 0.25, 0.22, 0.5, 0.12); }
+    else if (kind === 'herbs') for (let i = 0; i < 3; i++) put(mk(G.cone, leaf), j() * 0.5, 0.3, j() * 0.5, 1, 0.8 + rnd() * 0.6, 1);
+    else { put(mk(G.disc, leaf), 0, 0.03, 0, 0.8, 1, 0.8); put(mk(G.stalk, leaf), 0, 0.25, 0, 0.5, 0.5, 0.5); fr.push(put(mk(G.small, fruit), 0, 0.52, 0, 0.4, 0.4, 0.4)); }
+    g.userData.fr = fr; return g;
+  }
+  _replant(v, kind) {
+    v.kind = kind; v.cur = 0; v.list = []; while (v.plants.children.length) v.plants.remove(v.plants.children[0]);
+    if (!kind) return; const LEAF = { potato: 0x3f9b46, wheat: 0x9fbf4a, soybean: 0x5fae4f, peas: 0x5fbe5f, tomato: 0x3f9b46, lettuce: 0x8fe06a, spinach: 0x2f7f3a, radish: 0x4faa4f, herbs: 0x4fbf8a, arabidopsis: 0x9fd0a0 }, FRUIT = { wheat: 0xe0c060, soybean: 0xb9d070, peas: 0x9fe07a, tomato: 0xe5362b, radish: 0xe0527a, arabidopsis: 0xffffff };
+    v.base = new THREE.Color(LEAF[kind] || 0x3f9b46); v.leaf = std({ color: v.base.getHex(), roughness: 0.85 }); v.fruit = std({ color: FRUIT[kind] || 0xffffff, roughness: 0.5 });
+    const gap = { wheat: 1.0, lettuce: 1.2, spinach: 1.2, radish: 0.9, herbs: 1.0, arabidopsis: 0.9 }[kind] || 1.75, n = Math.max(3, Math.floor((v.L - 1.6) / gap)), rnd = seeded(v.b * 31 + kind.length * 7 + (v.room === 'potato' ? 1 : 5));
+    for (let k = 0; k < n; k++) { const p = this._plant(kind, v.leaf, v.fruit, rnd); p.position.set(-v.L / 2 + 0.8 + (k + 0.5) * ((v.L - 1.6) / n), 0, (rnd() - 0.5) * 0.7); p.rotation.y = rnd() * 6.28; v.plants.add(p); v.list.push({ p, ph: rnd() * 6.28, s: 0.85 + rnd() * 0.3 }); }
+  }
   // Furniture and machines. Anything added to a room's `props` group is hidden while the room is wrecked and comes back step by step as it is rebuilt.
   _props() {
     const M = this.M, R = this.rooms, add = (id, mesh, x, y, z, rx = 0, ry = 0, rz = 0) => this.put(R[id].props, mesh, x, y, z, rx, ry, rz), hard = (x, z, r) => this.solid('deep', x, z, r);
@@ -441,11 +483,23 @@ export class World {
     { const c = rc('oxygen'); this.o2Tanks = []; for (let i = 0; i < 3; i++) { this.o2Tanks.push(add('oxygen', this.sph(1.7, M.tankO2.clone(), 18, 12), c.x0 + 3 + i * 4.2, 2.0, c.z0 + 2.4)); add('oxygen', this.cyl(0.5, 0.8, 0.6, M.grey, 10), c.x0 + 3 + i * 4.2, 0.3, c.z0 + 2.4); hard(c.x0 + 3 + i * 4.2, c.z0 + 2.4, 1.9); }
       add('oxygen', this.box(5, 2.6, 1.4, M.grey), c.cx, 1.3, c.cz + 2.5); this.o2Glow = add('oxygen', this.box(4.2, 0.35, 0.1, M.cyan.clone()), c.cx, 2.0, c.cz + 3.22); add('oxygen', this.cyl(0.18, 0.18, 5, M.metal, 8), c.cx, 2.9, c.cz + 2.5, 0, 0, 1.5708); hard(c.cx - 1.4, c.cz + 2.5, 1.5); hard(c.cx + 1.4, c.cz + 2.5, 1.5); }
     // Potato farm: soil beds with bushy plants
-    { const c = rc('potato'); this.potatoes = []; const pg = new THREE.SphereGeometry(0.55, 7, 5);
-      for (let b = 0; b < 3; b++) { const z = c.z0 + 3 + b * 5; add('potato', this.box(25, 0.7, 2.4, M.white), c.cx, 0.35, z); add('potato', this.box(24.6, 0.2, 2.0, M.soil), c.cx, 0.75, z); add('potato', this.box(25, 0.1, 0.5, M.pink), c.cx, ROOM_H - 1.2, z); for (let k = 0; k < 14; k++) { const p = new THREE.Mesh(pg, k % 3 ? M.green : M.greenD); p.position.set(c.x0 + 3.4 + k * 1.75, 1.05, z + (hash(k, b) - 0.5) * 0.8); R.potato.props.add(p); this.potatoes.push({ m: p, ph: hash(k, b + 9) }); } hard(c.cx - 8, z, 1.4); hard(c.cx, z, 1.4); hard(c.cx + 8, z, 1.4); } }
-    // Tomato farm: vines with red fruit
-    { const c = rc('tomato'); this.tomatoes = []; const tg = new THREE.SphereGeometry(0.2, 7, 5);
-      for (let b = 0; b < 3; b++) { const z = c.z0 + 3 + b * 5; add('tomato', this.box(19, 0.7, 1.8, M.white), c.cx, 0.35, z); add('tomato', this.box(19, 0.1, 0.5, M.pink), c.cx, ROOM_H - 1.2, z); for (let k = 0; k < 10; k++) { const x = c.x0 + 3.2 + k * 1.95; add('tomato', this.cyl(0.05, 0.05, 2.6, M.greenD, 5), x, 2.0, z); const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.5, 6, 5), M.green); leaf.position.set(x, 2.3, z); leaf.scale.set(1, 1.6, 1); R.tomato.props.add(leaf); for (let f = 0; f < 3; f++) { const t = new THREE.Mesh(tg, M.tomato); t.position.set(x + (hash(k, f) - 0.5) * 0.7, 1.3 + f * 0.55, z + (hash(f, k) - 0.5) * 0.7); R.tomato.props.add(t); this.tomatoes.push(t); } } hard(c.cx - 6, z, 1.2); hard(c.cx, z, 1.2); hard(c.cx + 6, z, 1.2); } }
+    // --- the two farms: three hydroponic racks each, plus one bed of treated moon soil once that is researched.
+    // Each rack is one group; its plants are rebuilt when it is replanted and grow, sway and fruit with the simulation.
+    this.rackViews = []; this.expViews = {};
+    for (const id of ['potato', 'tomato']) { const c = rc(id), len = c.x1 - c.x0 - 5;
+      for (let b = 0; b < 4; b++) { const soil = b === 3, L = soil ? 9 : len, x = soil ? (c.s < 0 ? c.x0 + 5.5 : c.x1 - 6) : c.cx, z = soil ? c.z1 - 1.8 : c.z0 + 3 + b * 5, g = new THREE.Group(); g.position.set(x, 0, z); R[id].props.add(g);
+        const lamp = M.pink.clone(), led = M.greenG.clone(); this.put(g, this.box(L, 0.7, soil ? 1.6 : 2.2, soil ? M.grey : M.white), 0, 0.35, 0);
+        if (soil) this.put(g, this.box(L - 0.3, 0.2, 1.3, M.soil), 0, 0.72, 0); else { this.put(g, this.box(L - 0.4, 0.06, 1.7, M.dark), 0, 0.72, 0); this.put(g, this.box(L - 0.6, 0.05, 0.35, M.water), 0, 0.76, 0); this.put(g, this.cyl(0.07, 0.07, L, M.tankW, 8), 0, 0.5, 1.16, 0, 0, Math.PI / 2); }
+        this.put(g, this.box(L, 0.1, 0.5, lamp), 0, ROOM_H - 1.2, 0); for (const e of [-1, 1]) this.put(g, this.box(0.1, ROOM_H - 1.9, 0.1, M.metal), e * (L / 2 - 0.1), (ROOM_H - 0.5) / 2, 0);
+        this.put(g, this.box(0.5, 0.35, 0.08, M.dark), -L / 2 + 0.6, 0.45, 1.13); this.put(g, this.sph(0.09, led, 8, 6), -L / 2 + 0.6, 0.45, 1.19);
+        const plants = new THREE.Group(); plants.position.y = 0.78; g.add(plants);
+        for (let k = -1; k <= 1; k++) hard(x + k * (L / 2 - 1.2), z, soil ? 1.0 : 1.3);
+        this.rackViews.push({ room: id, b, soil, L, g, plants, lamp, led, kind: undefined, cur: 0, list: [], leaf: null, fruit: null }); }
+      // the moon-soil experiment: three pots of thale cress on a bench by the wall
+      const ex = new THREE.Group(); ex.position.set(c.x0 + 1.6, 0, c.cz); R[id].props.add(ex); this.put(ex, this.box(1.4, 0.9, 4.6, M.white), 0, 0.45, 0); this.put(ex, this.box(1.2, 0.06, 0.4, M.pink), 0, 2.4, 0, 0, Math.PI / 2); for (const e of [-2, 2]) this.put(ex, this.box(0.08, 1.5, 0.08, M.metal), 0, 1.65, e);
+      const pots = [[M.tankW, 0x58c26a], [M.soil, 0x7fae4f], [M.grey, 0x8a4a52]].map(([pm, col], i) => { const p = new THREE.Group(); p.position.set(0, 0.9, (i - 1) * 1.4); ex.add(p); this.put(p, this.cyl(0.36, 0.28, 0.4, pm, 12), 0, 0.2, 0); const lm = std({ color: col, roughness: 0.8 }), pl = new THREE.Group(); pl.position.y = 0.4; p.add(pl); this.put(pl, this.cyl(0.26, 0.26, 0.04, lm, 9), 0, 0.03, 0); this.put(pl, this.cyl(0.015, 0.015, 0.5, lm, 5), 0, 0.28, 0); this.put(pl, this.sph(0.05, lm, 6, 5), 0, 0.54, 0); return pl; });
+      hard(c.x0 + 1.6, c.cz, 1.5); this.expViews[id] = { g: ex, pots }; }
+
     // Battery Store
     { const c = rc('storage'); this.battBars = []; for (let i = 0; i < 4; i++) { const x = c.x0 + 2.6 + i * 3.6; add('storage', this.box(3, 3.4, 1.6, M.dark), x, 1.7, c.z1 - 1.5); this.battBars.push(add('storage', this.box(0.35, 2.6, 0.08, M.greenG.clone()), x, 1.7, c.z1 - 2.34)); add('storage', this.box(3.1, 0.2, 1.7, M.orange), x, 3.5, c.z1 - 1.5); hard(x, c.z1 - 1.5, 1.7); }
       this.modSlots = []; for (let i = 0; i < 6; i++) { const m = add('storage', this.box(1.3, 1.0, 0.9, M.dark), c.x0 + 1.6 + (i % 3) * 1.7, 0.5 + Math.floor(i / 3) * 1.05, c.z0 + 6); this.modSlots.push(m); } }
@@ -481,6 +535,8 @@ export class World {
     const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(60 * 3), 3)); this.sparkPts = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0xffd27a, size: 0.14, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })); this.sparkPts.frustumCulled = false; this.scene.add(this.sparkPts);
     const sgeo = new THREE.CircleGeometry(0.3, 8); sgeo.rotateX(-Math.PI / 2); this.scuffs = new THREE.InstancedMesh(sgeo, new THREE.MeshBasicMaterial({ color: 0x4f4c49, transparent: true, opacity: 0.28, depthWrite: false }), 240); this.scuffs.frustumCulled = false; this.scuffI = 0;
     const far = new THREE.Matrix4().makeTranslation(0, -9999, 0); for (let i = 0; i < 240; i++) this.scuffs.setMatrixAt(i, far); this.top.add(this.scuffs);
+    const dn = 220, dgeo = new THREE.BufferGeometry(); dgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(dn * 3).fill(-9999), 3)); this.dustPts = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0xc9c5bd, size: 0.2, transparent: true, opacity: 0.85, depthWrite: false })); this.dustPts.frustumCulled = false; this.top.add(this.dustPts);
+    this.dustV = Array.from({ length: dn }, () => [0, 0, 0, 0]); this.dustI = 0;
     this.sparkV = Array.from({ length: 60 }, () => [0, 0, 0, 0]); this.sparkAt = null; this.sparkLight = new THREE.PointLight(0xffc27a, 0, 14, 1.5); this.scene.add(this.sparkLight);
   }
   // world position (THREE.Vector3) of a point given in a zone's own coordinates
@@ -489,6 +545,9 @@ export class World {
   // Where the orange guide beam stands: { zone, x, z, id }
   setTarget(t) { this.target = t; if (!t) { this.beacon.visible = false; return; } const p = this.at(t.zone, t.x, t.z); this.beacon.position.set(p.x, p.y + 30, p.z); }
   setZone(z) { this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; this.earth.visible = this.sunSprite.visible = z === 'top'; }
+  // Kick up n grains of dust at (x, z). dx, dz = which way it is thrown; they fly as far as their speed takes them and drop straight back.
+  puff(x, z, n = 6, dx = 0, dz = 0, up = 1.6, spread = 1.2) { const p = this.dustPts.geometry.attributes.position, y = this.heightAt(x, z) + 0.05;
+    for (let k = 0; k < n; k++) { const i = this.dustI++ % this.dustV.length, v = this.dustV[i]; p.setXYZ(i, x + (Math.random() - 0.5) * 0.3, y, z + (Math.random() - 0.5) * 0.3); v[0] = dx + (Math.random() - 0.5) * spread; v[1] = up * (0.5 + Math.random()); v[2] = dz + (Math.random() - 0.5) * spread; v[3] = 1; } p.needsUpdate = true; }
   // drag marks in the dust (the Moon keeps every track: there is no wind to blow them away)
   scuff(x, z, yaw) { const m = new THREE.Matrix4().makeRotationY(yaw); m.scale(new V3(1.5, 1, 4.4)); m.setPosition(x, this.heightAt(x, z) + 0.06, z); this.scuffs.setMatrixAt(this.scuffI++ % 240, m); this.scuffs.instanceMatrix.needsUpdate = true; }
   // The deep zone has two kinds of floor: the open cave, and the station building that stands in it.
@@ -533,6 +592,17 @@ export class World {
     this.isruGlow.material.emissiveIntensity = S && S.flow.use.isru > 0 ? 2.4 + Math.sin(t * 5) * 0.5 : 0.05;
     this.heaterGlow.material.emissiveIntensity = S ? 0.3 + S.lv.heat * 0.9 * (S.f.heater ? 0.3 + 0.3 * Math.sin(t * 12) : 1) : 0.4;
     this.reactorBeacon.material.emissiveIntensity = 1.5 + Math.sin(t * 2.2) * 1.2; this.towerBeacon.material.emissiveIntensity = this.commBeacon.material.emissiveIntensity = Math.sin(t * 2.6) > 0.3 ? 3 : 0.3;
+    if (S && S.wx && topZ) {   // the Water Plant at work
+      const X = this.wxv, w = S.wx, b = w.batch, hot = b ? clamp((b.T + 150) / (b.mode === 'ilm' ? 1050 : 190), 0, 1) : 0, sub = b && b.mode === 'ice' && b.rate > 0.05;
+      X.cans.forEach((c, i) => (c.visible = i < w.ice)); X.glowM.emissive.setHex(!b ? 0x331a08 : b.mode === 'ilm' ? 0xff3a10 : b.method === 'mw' ? 0xb070ff : b.method === 'solar' ? 0xfff0b0 : 0xff7a1a); X.glowM.emissiveIntensity = b ? 0.4 + 2.4 * hot + (sub ? 0.4 * Math.sin(t * 9) : 0) : 0.05;
+      X.rods.visible = !!b && b.mode === 'ilm' && hot > 0.6; X.status.material.emissive.setHex(w.cond < 0.5 || w.seal < 0.9 ? 0xff3b30 : b ? 0xffa424 : 0x4dff88); X.status.material.emissiveIntensity = b ? 1.6 + Math.sin(t * 6) : 1.6;
+      const fr = b ? clamp(b.got / Math.max(0.1, b.max), 0.02, 1) : 0.02; X.frost.scale.y += (fr - X.frost.scale.y) * Math.min(1, dt * 2); X.frost.position.y = 0.6 + 1.8 * X.frost.scale.y; X.frostM.emissiveIntensity = 0.2 + (sub ? 0.5 + 0.3 * Math.sin(t * 4) : 0);
+      const vp = X.vapor.geometry.attributes.position; X.vapor.material.opacity += ((sub ? 0.85 : 0) - X.vapor.material.opacity) * Math.min(1, dt * 3);
+      if (X.vapor.material.opacity > 0.02) { for (let i = 0; i < 36; i++) { const u = (X.vph[i] + t * 0.22) % 1; vp.setXYZ(i, 8.5 + Math.sin(i * 7.3 + t * 3) * 0.14, 3.9 + Math.cos(i * 5.1 + t * 2.3) * 0.14, 1.3 + u * 3.3); } vp.needsUpdate = true; }
+      const sunOn = !!b && b.method === 'solar' && b.mode === 'ice'; if (sunOn || !X.aimed) { X.aimed = true; this.wxDir = (this.wxDir || new V3()).copy(this.sunDir).setY(Math.max(0.15, this.sunDir.y)).normalize(); X.mirror.quaternion.slerp((this.wxQ || (this.wxQ = new THREE.Quaternion())).setFromUnitVectors(this.yUp, this.wxDir), sunOn ? Math.min(1, dt * 1.5) : 1); }
+      X.spot.material.emissiveIntensity = sunOn ? 2.5 * sn.factor : 0;
+      const digging = (b && b.mode === 'ilm') || (S.flow.use.isru > 0); this.digT = (this.digT || 0) + (digging ? dt : 0); this.digger.rotation.y = -0.7 + Math.sin(this.digT * 0.6) * 0.7; this.digger.position.y = Math.abs(Math.sin(this.digT * 1.2)) * 0.05;
+    }
     const hitK = this.baseHit ? 0.1 : 1; if (hitK !== this._hitK) { this._hitK = hitK; for (const b of this.baseGlow) b.m.emissiveIntensity = b.k * hitK; this.baseDamage.visible = !!this.baseHit; }
     if (S) {
       for (const p of this.pads) { const v = S[p.k], on = v.charging; p.ring.material.emissive.setHex(on ? 0x49e6ff : 0x2a5560); p.ring.material.emissiveIntensity = on ? 2 + Math.sin(t * 6) : 1; p.led.material.emissive.setHex(v.charge > 0.5 ? 0x4dff88 : v.charge > 0.2 ? 0xffa424 : 0xff3b30); }
@@ -557,8 +627,18 @@ export class World {
       const o = S.o2 / S.o2Cap; this.o2Tanks.forEach((tk, i) => tk.material.emissive.setRGB(0, 0.3 * clamp(o * 3 - i, 0, 1), 0.12 * clamp(o * 3 - i, 0, 1))); this.o2Glow.material.emissive.setHex(S.flow.o2Elec > 0 ? 0x49e6ff : 0x333333);
       const w = S.water / S.waterCap; this.waterTanks.forEach((tk) => tk.material.emissive.setRGB(0, 0.1 * w, 0.35 * w)); this.waterGlow.material.emissive.setHex(S.f.leakWater ? 0xff3b30 : 0x49e6ff);
       const lit = S.lv.farm * S.flow.eff; M.pink.emissiveIntensity = 0.25 + 0.6 * lit; this.farmLights[0].intensity = S.rooms.potato.built >= 1 ? 6 + 6 * lit : 0; this.farmLights[1].intensity = S.rooms.tomato.built >= 1 ? 6 + 6 * lit : 0;
-      const cp = S.crops.potato, gp = clamp(0.35 + cp.g * 0.6 + (cp.ripe ? 0.35 : 0), 0.3, 1.25) * (0.4 + 0.6 * cp.hp); this.potatoes.forEach((p) => { if (p.m.visible) p.m.scale.set(gp + p.ph * 0.2, gp * 0.8, gp + p.ph * 0.2); });
-      const ct = S.crops.tomato, ripeN = Math.floor(this.tomatoes.length * clamp((ct.ripe + ct.g * 0.7) / 2, 0, 1)); this.tomatoes.forEach((m, i) => { if (m.visible) m.visible = i < ripeN; });
+      for (const v of this.rackViews) {
+        const rs = S.racks.filter((q) => q.room === v.room), r = v.soil ? rs.find((q) => q.soil) : rs.filter((q) => !q.soil)[v.b]; v.g.visible = v.g.visible && !!r; if (!r) continue;
+        if ((r.kind || null) !== v.kind) this._replant(v, r.kind || null);
+        v.lamp.emissiveIntensity = r.kind ? 0.25 + 0.6 * lit : 0.04; v.led.emissive.setHex(r.ripe ? 0x4dff88 : r.hp < 0.5 ? 0xff3b30 : 0x224433); v.led.emissiveIntensity = r.ripe ? 1.5 + Math.sin(t * 5) : 1;
+        if (!r.kind) continue;
+        const e = 1 - Math.pow(1 - clamp(r.g, 0, 1), 2), want = 0.14 + 0.86 * e; v.cur += (want - v.cur) * Math.min(1, dt * (want < v.cur ? 6 : 1.5));            // grows smoothly; drops fast when picked
+        v.leaf.color.copy(v.base).lerp(this._brown || (this._brown = new THREE.Color(0x8a7438)), clamp(1 - r.hp, 0, 1) * 0.85); if (v.kind === 'wheat') v.leaf.color.lerp(this._gold || (this._gold = new THREE.Color(0xd9b84a)), clamp((r.g - 0.6) * 2.2, 0, 1) * r.hp);
+        const fk = clamp((r.g - 0.55) / 0.45, 0, 1), droop = clamp((0.6 - r.hp) * 0.8, 0, 0.4);
+        for (const q of v.list) { const sw = Math.sin(t * 0.9 + q.ph); q.p.scale.setScalar(v.cur * q.s * (1 + 0.025 * Math.sin(t * 1.7 + q.ph * 2))); q.p.rotation.z = sw * 0.045 + droop; q.p.rotation.x = Math.cos(t * 0.7 + q.ph) * 0.03;
+          for (const f of q.p.userData.fr) { f.visible = fk > 0.02; if (f.visible) { const b0 = f.userData.s0 || (f.userData.s0 = f.scale.clone()); f.scale.copy(b0).multiplyScalar(0.25 + 0.75 * fk); } } }
+      }
+      for (const id in this.expViews) { const x = S.exp, v = this.expViews[id], on = !!x && x.room === id; v.g.visible = v.g.visible && on; if (on) v.pots.forEach((p, i) => p.scale.setScalar(0.08 + x.g * [1, 0.7, 0.38][i] * 1.25)); }
       const ok = S.rooms.animal.built >= 1 && !S.rooms.animal.frozen && S.rooms.animal.p > 55; this.henPod.visible = this.henPod.visible && !ok;
       this.hens.forEach((h, i) => { if (!h.g.visible) return; h.g.visible = ok && i < S.hens; h.a += dt * h.sp * (S.feed > 0 ? 1 : 0.3); h.g.position.set(this.henPos.x + Math.cos(h.a) * h.r, 0.42 + Math.abs(Math.sin(t * 5 + i)) * 0.06, this.henPos.z + Math.sin(h.a) * h.r * 0.8); h.g.rotation.y = -h.a; h.g.rotation.x = Math.sin(t * 3 + i * 2) > 0.8 ? 0.6 : 0; });
       this.sacks.forEach((s, i) => { if (s.visible) s.visible = S.feed > i * 1.1; }); this.fishes.forEach((fi) => { if (fi.m.visible) { fi.m.visible = S.fish; fi.m.position.set(fi.tx + Math.sin(t * 0.6 + fi.ph) * 1.7, 1.5 + Math.sin(t * 0.9 + fi.ph * 2) * 0.45, fi.tz + Math.cos(t * 0.5 + fi.ph) * 0.6); fi.m.rotation.y = Math.cos(t * 0.6 + fi.ph) > 0 ? 0 : Math.PI; } });
@@ -576,6 +656,9 @@ export class World {
     // effects
     if (this.flash.intensity > 1) this.flash.intensity *= Math.pow(0.02, dt);
     if (this.debris.material.opacity > 0.01) { this.debrisT += dt; const p = this.debris.geometry.attributes.position; for (let i = 0; i < this.debrisV.length; i++) { const v = this.debrisV[i]; v[1] -= K.GRAVITY * dt; p.setXYZ(i, p.getX(i) + v[0] * dt, Math.max(p.getY(i) + v[1] * dt, -200), p.getZ(i) + v[2] * dt); } p.needsUpdate = true; this.debris.material.opacity = clamp(1 - this.debrisT / 14, 0, 1); }
+    if (this.zone === 'top') { const p = this.dustPts.geometry.attributes.position; let any = false;
+      for (let i = 0; i < this.dustV.length; i++) { const v = this.dustV[i]; if (!v[3]) continue; any = true; v[1] -= K.GRAVITY * dt; const x = p.getX(i) + v[0] * dt, y = p.getY(i) + v[1] * dt, z = p.getZ(i) + v[2] * dt; if (v[1] < 0 && y <= this.heightAt(x, z) + 0.03) { v[3] = 0; p.setXYZ(i, 0, -9999, 0); } else p.setXYZ(i, x, y, z); }
+      if (any) p.needsUpdate = true; }
     if (this.sparkAt) {
       const p = this.sparkPts.geometry.attributes.position, a = this.sparkAt;
       for (let i = 0; i < 60; i++) { const v = this.sparkV[i]; v[3] -= dt; if (v[3] <= 0) { p.setXYZ(i, a.x + (Math.random() - 0.5) * 0.6, a.y + 0.8 + Math.random() * 0.8, a.z + (Math.random() - 0.5) * 0.6); v[0] = (Math.random() - 0.5) * 3; v[1] = 1 + Math.random() * 3; v[2] = (Math.random() - 0.5) * 3; v[3] = 0.25 + Math.random() * 0.5; } else { v[1] -= 4 * dt; p.setXYZ(i, p.getX(i) + v[0] * dt, p.getY(i) + v[1] * dt, p.getZ(i) + v[2] * dt); } }

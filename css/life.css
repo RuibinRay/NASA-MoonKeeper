@@ -1,0 +1,58 @@
+/* MOONKEEPER — farms, Water Plant, life-support loop, research and experiment screens (js/lifeui.js) */
+.lf-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.lf-tabs button{background:#0c1622;border:1px solid var(--line);color:var(--ink,#dbe7f2);border-radius:20px;padding:6px 14px;font-family:var(--head);font-size:13px;cursor:pointer}
+.lf-tabs button.on{background:rgba(73,230,255,.16);border-color:var(--cyan);color:#fff}
+.lf-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+.lf-grid.even{grid-template-columns:1fr 1fr}
+@media (max-width:900px){.lf-grid,.lf-grid.even{grid-template-columns:1fr}}
+.lf-card{background:#0c1622;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.lf-card h4{margin:0 0 8px;font-family:var(--head);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan)}
+.lf-env{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px}
+.lf-env div{background:#0a121c;border:1px solid var(--line);border-radius:10px;padding:7px 9px;font-size:12px;color:var(--mute)}
+.lf-env b{display:block;font-size:16px;color:#fff;font-family:var(--head);margin-top:2px}
+.lf-env .pm{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle}
+.lf-env .pm button,.lf-step button{width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:#13202e;color:#fff;cursor:pointer;font-weight:700;line-height:1}
+.lf-env .warn b{color:var(--amber)}.lf-env .bad b{color:var(--red)}
+.lf-rack{display:grid;grid-template-columns:14px 1.3fr 1fr 1fr auto;gap:10px;align-items:center;padding:8px 2px;border-top:1px solid var(--line)}
+.lf-rack:first-of-type{border-top:0}
+.lf-rack .chip{width:14px;height:34px;border-radius:5px}
+.lf-rack .nm b{display:block;font-size:14px}.lf-rack .nm small{color:var(--mute);font-size:11.5px;line-height:1.25;display:block}
+.lf-rack .nm small.ripe{color:var(--green);font-weight:700}.lf-rack .nm small.slow{color:var(--amber)}.lf-rack .nm small.sick{color:var(--red)}
+.lf-rack label{font-size:10.5px;color:var(--mute);display:block;margin-bottom:3px}
+.lf-bar{display:block;height:8px;border-radius:5px;background:#101c2a;overflow:hidden}.lf-bar i{display:block;height:100%;border-radius:5px;transition:width .4s}
+.lf-btn{background:#13202e;border:1px solid var(--line);color:#fff;border-radius:9px;padding:6px 11px;font-size:12.5px;cursor:pointer;font-family:var(--head)}
+.lf-btn:hover{border-color:var(--cyan)}.lf-btn.go{background:linear-gradient(180deg,#5ff0ff,#1fb8d8);color:#04222c;border-color:#8ff6ff;font-weight:700}
+.lf-btn[disabled]{opacity:.45;cursor:not-allowed}
+.lf-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.lf-crops{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.lf-crop{background:#0c1622;border:1px solid var(--line);border-radius:12px;padding:10px 11px;cursor:pointer;text-align:left;color:inherit;font:inherit;border-left:5px solid var(--c,#49e6ff)}
+.lf-crop:hover{border-color:var(--cyan);background:#101d2b}
+.lf-crop b{font-family:var(--head);font-size:15px;display:block}
+.lf-crop .tags{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0}
+.lf-crop .tags span{font-size:10.5px;background:#0a121c;border:1px solid var(--line);border-radius:10px;padding:1px 7px;color:#cfe3f3}
+.lf-crop .m{display:grid;grid-template-columns:62px 1fr;gap:6px;align-items:center;font-size:10.5px;color:var(--mute);margin:2px 0}
+.lf-crop p{margin:6px 0 0;font-size:11.5px;line-height:1.35;color:#cfdbe6}
+.lf-crop em{display:block;font-style:normal;font-size:10.5px;color:var(--mute);margin-top:5px}
+.lf-sl{display:grid;grid-template-columns:118px 1fr 76px;gap:8px;align-items:center;margin:7px 0;font-size:12.5px}
+.lf-sl input[type=range]{width:100%;accent-color:#49e6ff}
+.lf-sl b{font-family:var(--head);text-align:right}
+.lf-seg{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+.lf-seg button{flex:1;min-width:92px;background:#0a121c;border:1px solid var(--line);color:#dbe7f2;border-radius:9px;padding:6px 8px;font-size:12px;cursor:pointer}
+.lf-seg button.on{border-color:var(--cyan);background:rgba(73,230,255,.14);color:#fff}
+.lf-g{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.lf-g div{background:#0a121c;border:1px solid var(--line);border-radius:10px;padding:6px 8px;font-size:11px;color:var(--mute)}
+.lf-g b{display:block;font-family:var(--head);font-size:17px;color:#fff}
+.lf-steps{display:flex;gap:4px;margin:8px 0;flex-wrap:wrap}
+.lf-steps span{flex:1;min-width:78px;font-size:10.5px;text-align:center;padding:5px 4px;border-radius:8px;background:#0a121c;border:1px solid var(--line);color:var(--mute);line-height:1.2}
+.lf-steps span.on{background:rgba(255,179,71,.18);border-color:var(--amber);color:#ffe2b5}
+.lf-steps span.done{color:#9fe8b8;border-color:rgba(88,224,138,.45)}
+.lf-pred{font-size:12.5px;line-height:1.5}.lf-pred b{color:#fff;font-family:var(--head)}
+.lf-warn{color:var(--amber);font-size:12px;margin-top:4px}.lf-ok{color:var(--green);font-size:12px;margin-top:4px}
+.lf-cv{width:100%;border-radius:10px;border:1px solid var(--line);background:#081019;display:block}
+.lf-tech{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 2px;border-top:1px solid var(--line)}
+.lf-tech:first-of-type{border-top:0}.lf-tech b{font-family:var(--head)}.lf-tech small{display:block;color:#cfdbe6;font-size:12px;line-height:1.35;margin-top:2px}
+.lf-tech .got{color:var(--green);font-family:var(--head);font-size:12.5px}
+.lf-bal{display:grid;grid-template-columns:96px 1fr 1fr 74px;gap:8px;align-items:center;font-size:12px;padding:5px 0;border-top:1px solid var(--line)}
+.lf-bal:first-of-type{border-top:0}.lf-bal small{color:var(--mute);display:block;font-size:10.5px}.lf-bal .net{font-family:var(--head);text-align:right}
+.lf-real{display:inline-block;font-size:10px;font-family:var(--head);letter-spacing:.05em;border-radius:8px;padding:0 6px;margin-right:5px;border:1px solid}
+.lf-real.r{color:#9fe8b8;border-color:rgba(88,224,138,.5)}.lf-real.l{color:#8fd8ff;border-color:rgba(73,230,255,.5)}.lf-real.c{color:#ffd9a0;border-color:rgba(255,179,71,.5)}.lf-real.g{color:#d8b4ff;border-color:rgba(176,112,255,.5)}

@@ -2,6 +2,7 @@
   "outDir": "assets/art/v3",
   "resolution": "4k",
   "quality": "high",
+  "thumbW": 560,
   "styles": {
     "station": "Design language of this one lunar habitat, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, safety-orange accents only on handles, hatch wheels and bulkhead door frames, each bulkhead door a rounded-rectangle orange-framed pressure hatch with one round porthole lit cyan, recessed warm-white ceiling light strips plus thin cyan status lighting at floor level, labelled-looking cable trays and insulated pipes overhead, cargo straps and handrails, pale blue translucent holographic displays floating above consoles showing only abstract graphs and schematics. Grounded space-agency engineering realism, like a real orbital station and a real lunar habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm anamorphic lens, eye-level camera, deep perspective, soft volumetric haze, practical lighting, natural film color grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no logos, no flags, no watermark.",
     "exterior": "Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film: white modular habitat buildings with visible panel seams and orange accents, believable scale, real lunar regolith with rover tracks and footprints, hard low sunlight with long black shadows, pure black sky. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
@@ -174,7 +175,8 @@
       "resolution": "2k",
       "web": "assets/tex/floor3.jpg",
       "webW": 1024,
-      "prompt": "Deck floor of a realistic lunar habitat seen from directly above: a grid of four by four dark graphite-grey anti-slip metal deck plates with fine raised stud pattern, thin seams, flush corner screws, light scuff wear along walking paths, and one thin amber guide line running straight across the middle from edge to edge."
+      "prompt": "Deck floor of a realistic lunar habitat seen from directly above: a grid of four by four dark graphite-grey anti-slip metal deck plates with fine raised stud pattern, thin seams, flush corner screws, light scuff wear along walking paths, and one thin amber guide line running straight across the middle from edge to edge.",
+      "webFilter": "eq=gamma=1.55:contrast=0.92"
     },
     {
       "id": "tex3_ceil",

@@ -14,7 +14,7 @@ export function installEvents(G) {
   const stormReal = (r) => `<b>${fmt.date(r.t)}</b>: the Sun really fired a <b>${r.cls}</b>-class solar flare${r.ar ? ' from sunspot group ' + r.ar : ''}. ${r.sep ? `Spacecraft near Earth and the Moon then measured a storm of fast particles${/100 MeV/.test(r.sep.inst) ? ' — the most powerful kind' : ''}. ` : 'That time, no strong particle storm reached the Moon. '}${r.cme ? `A cloud of hot gas left the Sun at ${r.cme.v.toLocaleString()} km every second. ` : ''}${r.kp >= 7 ? 'Days later it lit up the northern lights on Earth.' : ''}`;
   // After a hole appears: lock the door, or run and patch it?
   const breachCard = async (id, title, art, real, how) => {
-    const s = G.S, remote = roomOk(s, 'control'), crops = s.crops[id] ? ' The plants in there will die.' : id === 'animal' ? ' The hens will hide in their safety pod and stop laying.' : '';
+    const s = G.S, remote = roomOk(s, 'control'), crops = id === 'potato' || id === 'tomato' ? ' The plants in there will die.' : id === 'animal' ? ' The hens will hide in their safety pod and stop laying.' : '';
     const i = await ui.card({ art, title, real, body: `${how} <b>Air is rushing out of the ${rn(id)}!</b> The tanks are pouring air in to keep the pressure up, so your oxygen is draining fast.<br><br>Every room is a bubble of air behind a bulkhead door. What do you do?`,
       learn: 'In space there is no air outside, so the air inside pushes out through any hole. Real stations are built in sealed sections for exactly this reason: lose one room, save the rest.', advice: s.o2 > 2 && s.mat >= 1 ? 1 : 0, adviceText: s.o2 > 2 && s.mat >= 1 ? 'You have air to spare. Run and patch it — but if oxygen drops below 1 kg, lock the door.' : 'Lock it. You cannot afford to lose that much air.',
       choices: [{ label: remote ? 'Lock that door from here' : 'Run and lock that door by hand', sub: remote ? 'The Control Center can shut any bulkhead.' : 'The Control Center is broken, so use the switch beside the door.', costs: [`The ${rn(id)} loses its air and freezes.${crops}`, 'It must be patched and rebuilt later'], gains: ['The rest of the station keeps its air'] },
@@ -77,10 +77,28 @@ export function installEvents(G) {
       if (i === 0) G.pointTo('oxygen'); else { s.extraKw.backup = 3; note(s, 'Running the backup air cleaner (+3 kW).'); }
     },
     async mold() {
-      const s = G.S, c = s.crops.tomato; G.done.mold = true; s.f.mold = true; note(s, 'Mold on the tomatoes.', 'bad');
+      const s = G.S; G.done.mold = true; s.f.mold = true; note(s, 'Mold on the tomatoes.', 'bad');
       const i = await ui.card({ art: 'ev2_crops', title: 'Mold on the Tomatoes', body: 'Fuzzy grey spots are spreading across the tomato leaves. The air in that farm is too damp. If it spreads, the plants will slowly die.', learn: 'This really happened on the Space Station in 2015. Flowers got mouldy from too much water and too little moving air. An astronaut saved them with fans and careful care.', advice: s.flow.net > 2 ? 0 : 1, adviceText: s.flow.net > 2 ? 'You have power to spare. Use the fans.' : 'Power is tight. Cut the sick plants.',
         choices: [{ label: 'Fans on full for two days', costs: ['+2 kW for 48 h'], gains: ['Keep every plant'] }, { label: 'Cut out the sick plants', costs: ['Lose the ripe tomato trays'], gains: ['No extra power'] }, { label: 'Do nothing', costs: ['The tomatoes keep getting sicker'] }] });
-      if (i === 0) { s.f.mold = false; s.extraKw.fans = 2; s.fansUntil = s.t + 48; } else if (i === 1) { s.f.mold = false; c.ripe = 0; c.g = 0; c.hp = Math.max(0.5, c.hp); }
+      if (i === 0) { s.f.mold = false; s.extraKw.fans = 2; s.fansUntil = s.t + 48; } else if (i === 1) { s.f.mold = false; for (const r of s.racks) if (r.room === 'tomato') { r.ripe = 0; r.g = 0; r.hp = Math.max(0.5, r.hp); } }
+    },
+    async pump() {
+      const s = G.S, room = roomOk(s, 'potato') ? 'potato' : 'tomato'; G.done.pump = true; s.f.pump = room; note(s, `The farm pump failed in the ${rn(room)}.`, 'bad');
+      const i = await ui.card({ art: 'rm_' + room, title: 'The Farm Pump Has Stopped', body: `The pump that carries water and plant food to the racks in the ${rn(room)} has seized. The roots are starting to dry.`, learn: 'Hydroponic plants have no soil to hold water. It is clean, fast and light to launch — but if the pump stops, roots dry out in hours. Growing without soil never forgives a broken machine.',
+        choices: [{ label: 'Go and fix it', costs: ['1 material', '1 h'], disabled: s.mat < 1 }, { label: 'Not now', costs: ['The plants in that farm wilt'] }] });
+      if (i === 0) G.pointTo(room);
+    },
+    async led() {
+      const s = G.S, room = roomOk(s, 'tomato') ? 'tomato' : 'potato'; G.done.led = true; s.f.led = room; note(s, `Lamps failed in the ${rn(room)}.`, 'bad');
+      const i = await ui.card({ art: 'rm_' + room, title: 'Half the Lamps Went Dark', body: `A power surge burned out half the grow lamps in the ${rn(room)}. Underground, lamps are the only sunshine the plants will ever see.`, learn: 'A leaf is a tiny solar panel. Half the light means about half the growth — and for light-hungry crops like wheat, even less.',
+        choices: [{ label: 'Go and replace them', costs: ['1 material', '1 h'], disabled: s.mat < 1 }, { label: 'Not now', costs: ['Crops there grow at half speed'] }] });
+      if (i === 0) G.pointTo(room);
+    },
+    async seal() {
+      const s = G.S; G.done.seal = true; s.wx.seal = 0.6; note(s, 'A door seal is leaking at the Water Plant.', 'bad');
+      const i = await ui.card({ art: 'rm_surface', title: 'A Seal Is Leaking at the Water Plant', body: 'Moon dust has worn the door seal of the extraction chamber. Now some of the water vapour escapes into space before the cold trap can catch it.', learn: 'Moon dust is not like beach sand. With no wind or water to round it off, every grain is sharp, like crushed glass. It scratches visors, jams joints and chews through seals.',
+        choices: [{ label: 'Go and service it', costs: ['1 material', '1 h'], disabled: s.mat < 1 }, { label: 'Not now', costs: ['Every batch gives 40% less water'] }] });
+      if (i === 0) G.pointTo('wplant');
     },
     async drift() { const s = G.S; G.done.drift = true; s.f.commsDown = true; note(s, 'The dish drifted off Earth.', 'bad');
       const i = await ui.card({ art: 'ev2_comms', title: 'Signal Lost', body: 'The dish motor slipped and the beam slid off Earth. Earth has not moved — it never does in our sky — but the dish must point at it almost perfectly.', learn: 'Your signal takes 1.3 seconds to reach Earth and the reply takes 1.3 more. On Mars the wait is 4 to 24 minutes each way.', choices: [{ label: 'Go and aim the dish again', costs: ['1 h topside'] }, { label: 'Leave it for now', costs: ['No storm warnings'], gains: ['Saves 2 kW'] }] }); if (i === 0) G.pointTo('dish'); },
@@ -101,7 +119,7 @@ export function installEvents(G) {
     if (!type) {
       if (!G.done.distress) type = 'distress';
       else if (!G.done.breach && s.stats.events >= 2) type = 'breach';
-      else { const c = []; if (!s.storm) c.push(['storm', G.done.bigStorm ? 2 : 3.2]); c.push(['meteor', 2.4], ['quake', 1.8], ['breach', 1.2]); if (up || s.flow.sun.nightHours < 20) c.push(['dust', 1.8]); if (!G.done.fire && roomOk(s, 'kitchen')) c.push(['fire', 1]); if (!G.done.co2 && !s.f.scrubber && roomOk(s, 'oxygen')) c.push(['co2', 1.1]); if (roomOk(s, 'tomato') && !G.done.mold) c.push(['mold', 1.1]); if (s.flow.commsOn && !G.done.drift) c.push(['drift', 0.8]); if (!up && !G.done.freeze) c.push(['freeze', 1.6]);
+      else { const c = []; if (!s.storm) c.push(['storm', G.done.bigStorm ? 2 : 3.2]); c.push(['meteor', 2.4], ['quake', 1.8], ['breach', 1.2]); if (up || s.flow.sun.nightHours < 20) c.push(['dust', 1.8]); if (!G.done.fire && roomOk(s, 'kitchen')) c.push(['fire', 1]); if (!G.done.co2 && !s.f.scrubber && roomOk(s, 'oxygen')) c.push(['co2', 1.1]); if (roomOk(s, 'tomato') && !G.done.mold) c.push(['mold', 1.1]); if (!G.done.pump && (roomOk(s, 'potato') || roomOk(s, 'tomato'))) c.push(['pump', 1]); if (!G.done.led && (roomOk(s, 'potato') || roomOk(s, 'tomato'))) c.push(['led', 0.8]); if (!G.done.seal && s.wx.runs > 0) c.push(['seal', 1.2]); if (s.flow.commsOn && !G.done.drift) c.push(['drift', 0.8]); if (!up && !G.done.freeze) c.push(['freeze', 1.6]);
         const list = c.filter((x) => x[0] !== G.lastEvent); let tot = list.reduce((a, b) => a + b[1], 0), r = rng() * tot; for (const [k, w] of list) { r -= w; if (r <= 0) { type = k; break; } } type = type || 'meteor'; }
     }
     G.lastEvent = type; s.stats.events++; G.sleepLeft = 0; await E[type](); G.scheduleNext(); G.save?.();
@@ -115,7 +133,11 @@ export function installEvents(G) {
       else if (ev.startsWith('froze:')) { const id = ev.slice(6); ui.bubble(`The <b>${rn(id)}</b> has lost all its air and frozen solid. Everything in it is broken. Patch the hole, then rebuild the room at its console.`, 'sad', 12); note(s, `The ${rn(id)} froze.`, 'bad'); }
       else if (ev === 'nofeed') ui.bubble('The hens are out of dry feed, so they have stopped laying. <b>Pick potatoes or tomatoes</b>: the leaves and peels become new feed.', 'worried', 12);
       else if (ev === 'fishlost') { ui.toast('The fish tank froze. The fish are gone.', 'bad'); note(s, 'Lost the fish.', 'bad'); }
-      else if (ev.startsWith('ripe:') && !s.helpers.some((h) => h.role === 'farm')) { const id = ev.slice(5); if (s.crops[id].ripe === 1) ui.bubble(`A tray of <b>${id === 'potato' ? 'potatoes' : 'tomatoes'}</b> is ripe! Pick it — or put a helper on Farm duty.`, 'joy', 8); }
+      else if (ev.startsWith('ripe:') && !s.helpers.some((h) => h.role === 'farm')) { const id = ev.slice(5); if (!G._ripeT || s.t - G._ripeT > 3) { G._ripeT = s.t; ui.bubble(`A rack is ripe in the <b>${rn(id)}</b>! Pick it — or put a helper on Farm duty.`, 'joy', 8); } }
+      else if (ev === 'wxdone') { const r = s.wx.last; ui.toast(`Water Plant: batch finished. ${r.kept.toFixed(1)} L of clean water in the tank (${Math.round(r.eff * 100)}% recovered, ${r.kwh.toFixed(0)} kWh).${r.spilled > 0.1 ? ' The tank was full, so ' + r.spilled.toFixed(1) + ' L was lost!' : ''}${r.sci ? ' +' + r.sci + ' research.' : ''}`, 'good'); note(s, `Water Plant made ${r.kept.toFixed(1)} L.`, 'good'); }
+      else if (ev === 'expdone') { ui.bubble('The <b>moon-soil experiment</b> is finished! All three pots sprouted, but they do not look the same at all. Go and see: it earned 3 research.', 'joy', 12); note(s, 'Finished the moon-soil experiment.', 'good'); }
+      else if (ev === 'damp') { ui.bubble('The farm air is too damp: nothing is drying it, so <b>mold</b> has started in the Tomato Farm. Plants breathe out almost all the water they drink. Turn the Water Recycler on to catch it.', 'worried', 12); note(s, 'Mold from damp air.', 'bad'); }
+      else if (ev === 'nonutri') ui.bubble('The <b>plant food</b> tank is empty. Crops will crawl until you make more: run the waste digester in the Water Room.', 'worried', 10);
     }
     if (p.includes('stormEnd') && s.storm) {
       const st = s.storm; s.storm = null; let msg = `Storm over. You soaked up <b>${s.stats.stormDose.toFixed(1)} mSv</b> from storms so far. `;

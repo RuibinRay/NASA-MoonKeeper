@@ -11,6 +11,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const data = Object.values(SRC).filter((s) => s.kind === 'data');
 const facts = Object.values(SRC).filter((s) => s.kind === 'fact');
 const row = (s) => `| ${s.use} | [${s.title}](${s.url}) | ${s.org} |`;
+const life = facts.filter((s) => s.status), old = facts.filter((s) => !s.status);
+const rowS = (s) => `| ${s.use} | **${s.status}** | [${s.title}](${s.url}) | ${s.org} |`;
 
 const md = `# MOONKEEPER — science notes and data sources
 
@@ -39,7 +41,7 @@ Rebuild the data: \`node tools/fetch_donki.mjs\` then \`node tools/build_data.mj
 
 | Used for | Source | Publisher |
 |---|---|---|
-${facts.map(row).join('\n')}
+${old.map(row).join('\n')}
 
 ## 3. How the main mechanics map to real limits of living in space
 
@@ -54,8 +56,33 @@ ${facts.map(row).join('\n')}
 | **Surface base and underground station.** Domes, labs, garage, water plant and mine on the surface; food, beds and the Control Center under the rock. | Rock overhead is the best shield against radiation and meteoroids, so the places where people spend most hours go underground. Water ice exists in permanently shadowed craters near the lunar poles, and can be split into oxygen and hydrogen. Peppers, lettuce and radishes have been grown on the ISS. |
 | **Lava tube station at 17°C.** | LRO Diviner measured about 17°C in shaded pit areas, against 127°C / −173°C on the open surface. |
 | **Radio delay.** Mission Control answers after 1.3 s; aiming the dish uses a 2.6 s echo. | Light-speed over 384,400 km. |
-| **Potatoes, tomatoes, hens, fish.** | Crops have been grown on the ISS (lettuce 33 days, radishes 27 days); plants sprouted in real Apollo soil but grew slowly (OSD-476). Quail eggs have hatched and fish have lived on space stations. Hens on the Moon are our imagination. |
+| **Crops, hens, fish.** | Crops have been grown on the ISS (lettuce 33 days, radishes 27 days); plants sprouted in real Apollo soil but grew slowly (OSD-476). Quail eggs have hatched and fish have lived on space stations. Hens on the Moon are our imagination. Section 3b has the detail. |
 | **Low-gravity hops, Earth fixed in the sky, Earth's phases.** | Gravity 1.62 m/s²; the Moon is tidally locked; Earth's phase follows the real Sun direction for the base's coordinates (8.3355°N, 33.222°E). |
+
+## 3b. Farming, water and the closed loop
+
+Every claim below carries the **status of its evidence**, because "a lab has done it" and "it works on the Moon" are very different things.
+**MOON** = measured on or from the Moon · **FLOWN** = done in space · **LAB** = shown in a laboratory on Earth · **CONCEPT** = a design nobody has built on the Moon.
+
+| What the game teaches | Status | Source | Publisher |
+|---|---|---|---|
+${life.map(rowS).join('\n')}
+
+**How the game uses these numbers** (calculations live in \`js/life.js\` and are checked by \`node tools/life_test.mjs\`, 60 checks):
+
+| In the game | Real number behind it | Game simplification |
+|---|---|---|
+| **Ten crops** with different speed, harvest, light, water and plant-food needs. | Cycle lengths and the ranking of yield, water and light come from NASA's crop-chamber tables (BVAD). Wheat really needs about four times a potato's light and three times its water. | One game day of growing stands for about 100 real days. Harvest sizes are scaled for play. Temperature ranges are ours. Herbs are our own addition; spinach, peas and soybeans are candidate crops, not yet proven in space by a source we could open. |
+| **Plant health = the scarcest of light, water, plant food, warmth and air** (Liebig's law). | The law of the minimum is standard plant science. Crops like 1,000–2,000 ppm of CO₂. | Five factors, each from 0 to 1. More people in the station means more CO₂ for the plants. |
+| **Plants supplement the air, they do not replace the machines.** Six racks give less than a quarter of one person's oxygen. | About 20–25 m² of crops per person for oxygen, about 50 m² for food. | Rack oxygen is sized so a full farm at full light stays under half of one person's need. Plants take in 1.375 kg of CO₂ per kg of oxygen (44/32, chemistry). |
+| **Water loop.** Plants breathe out nearly all the water they drink; the recycler or condensers catch it. | 98% water recovery on the Space Station. Secondary sources put transpiration at 97–99.5% of uptake; we found no NASA page for that figure. | Farm water comes back at the recycler's rate, or 97% with condensers. |
+| **Crew breathing.** 0.84 kg of oxygen in, 1.00 kg of CO₂ out per person per day. | NASA's ECLSS mass balance. The newer BVAD figures are 0.895 and 1.085 kg. | We kept the older pair because the rest of the game is balanced on it. |
+| **Electrolysis.** 1.125 L of water and 0.125 kg of hydrogen per kg of oxygen. | Chemistry (2 H₂O → 2 H₂ + O₂). Really about 7 kWh per kg of oxygen. | The Oxygen Maker's power draw is a game size, about ten times the real figure, so that the choice hurts. |
+| **Ice extraction.** Seal icy soil in a chamber, pump out the air, warm it, the ice turns straight to vapour, a cold trap freezes the vapour, melt and filter. | 5.6% water in polar crater soil (LCROSS). Triple point 611.657 Pa. Sublimation takes 2.83 MJ per kg of ice. Ice vapour-pressure curve: −61°C at 1 Pa, −42°C at 10 Pa, −20°C at 100 Pa. | Thermal mining is a **concept**; microwave extraction is **lab-proven**; neither has run on the Moon. Canister size (120 kg), cold-trap capacity, heater efficiencies and wear are game numbers. Above 611 Pa the game gives 35% recovery because the meltwater soaks into the soil. |
+| **Icy soil is hauled in canisters from a polar mine.** | There is no ice at the base's latitude (8°N); surface ice is confined to within 20° of the poles. | The polar mine and its canisters are story. |
+| **Water from rock (experimental).** Hydrogen plus ilmenite at about 1,000°C gives water. | FeTiO₃ + H₂ → Fe + TiO₂ + H₂O at 900–1,100°C, shown on real Apollo soil in the lab; ilmenite is 8–10% of local soil and 10.5% of it is removable oxygen. | 150 kg batches, up to 80% conversion: about 1.3 L for roughly 80 kWh. That is some fifteen times the energy per litre of ice extraction, which is the lesson. |
+| **Moon-soil experiment.** Three pots: water and plant food, treated moon soil, raw moon soil. | The 2022 Apollo-soil study (real Moon soil) and later work on imitation soil. | Final plant sizes of 100%, 70% and 38% are a simplified picture of the result. Treatment has only been tried on imitation soil. |
+| **Nothing grows on the open surface.** | No air, no liquid water, a 300-degree day-night swing, and radiation. | The game never offers it. |
 
 ## 4. What we simplified (and say so in the game's "Real or made up?" page)
 
