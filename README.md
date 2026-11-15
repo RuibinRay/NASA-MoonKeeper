@@ -54,6 +54,7 @@ js/story.js           comic pages, training, meteor-shower scene, endings
 js/sim.js             the survival simulation (pure logic; `node tools/sim_test.mjs` checks that every mission can be won)
 js/radio.js           what Mission Control says on the radio, and when (pure logic; `node tools/radio_test.mjs`)
 tools/frost_test.mjs  what unheated cold does at night: vehicle batteries, chargers, the Water Plant (31 checks on `js/sim.js`)
+tools/holes_test.mjs  the limits on how often surprise events may hole a room (21 checks on `js/sim.js`)
 js/moonmap.js         the real Moon to scale: real positions, distances, and the drawing for the Map's "The real Moon" page (pure logic; `node tools/moonmap_test.mjs` runs 42 checks)
 js/life.js            crops, plant health, plant food, Water Plant, experiment, research (pure logic; `node tools/life_test.mjs` runs 71 checks)
 js/lifeui.js          farm, Water Plant, life-support loop, research and experiment screens

@@ -439,7 +439,7 @@ Played by a script through the game's own controls (E and Q, the panels, the Pow
 
 **Seen and not changed:**
 
-- **Many holed rooms.** Five rooms were holed in one Pilot mission. With no spare materials each one is lost, and materials are spent by Day 2 on the Bathroom, the Battery Store and two panels. A person may find this too harsh.
+- **Many holed rooms.** Five rooms were holed in one Pilot mission. With no spare materials each one is lost, and materials are spent by Day 2 on the Bathroom, the Battery Store and two panels. (Changed afterwards: see "Fewer holed rooms".)
 - **Heaters in the last nights.** Once the rover trip was over, nothing the player still used needed the heaters; keeping them on was a choice, not a need.
 - **Robots on Farm duty with both farms sealed** keep drawing power; nothing says so.
 
@@ -447,3 +447,28 @@ Played by a script through the game's own controls (E and Q, the panels, the Pow
 
 - Two earlier attempts were thrown away because of the test tooling, not the game: the hidden test browser throttles timers and never fires animation frames, and a timed-out step kept running behind the next. In the final run, a steering loop that tried to park closer to the depot than the cargo yard allows cost about eight game hours on Day 4.
 - Not covered: rescuing an astronaut, the Polar Ice Mine, the Water Plant, the hopper, the robot-arm builder, the job games, sound, and anything a child would do differently from a script.
+
+### Fewer holed rooms
+
+Three kinds of emergency can hole a room: an air leak, a meteoroid through the roof, and a moonquake that splits a seam. Nothing limited them, so a mission could lose room after room; the played Pilot mission lost five, the Water Room twice.
+
+**The rules now** (`holeTargets` in `js/sim.js`):
+
+- **A limit for each mission:** one room on Cadet, two on Pilot, three on Commander. Unlimited has no limit on the number.
+- **A day and a half** of game time between two holed rooms.
+- **Never the same room twice** in a mission.
+- **Never the Water Room or the Oxygen Room while you have no material for a patch.** Those two hold machines nobody can live without, and without a patch the only answer is to lock the door and lose them.
+
+When a hole is not allowed, the emergency still happens but does something else: a meteoroid hits the dish or a panel, a moonquake knocks the dish or cracks a pipe, and the plain air leak drops out of the draw.
+
+**Measured:** 60 simulated missions of each kind, before and after, with a player who patches and rebuilds every holed room. The number of emergencies in a mission is unchanged (about 7, 14 and 21).
+
+| Mission | Rooms holed before: average (most) | After: average (most) |
+| --- | --- | --- |
+| Cadet | 2.0 (4) | 1.0 (1) |
+| Pilot | 3.4 (5) | 1.9 (2) |
+| Commander | 5.2 (7) | 3.0 (3) |
+
+- **Checks.** `node tools/holes_test.mjs` runs 21 checks on the rules, including a mission saved before this change.
+- **Tried in the game** (Pilot): a leak; a second one straight after became a dust event; after the gap a second leak hit a different room; past the limit, a leak became dust, a meteoroid smashed panels and a moonquake cracked a pipe.
+- **Not done:** nobody has played a mission with these limits. They are story numbers chosen from the measurements above, not from watching children play.

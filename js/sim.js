@@ -135,6 +135,17 @@ export function doseRate(S) {
   return r;
 }
 const mark = (S, k) => { if (S.marks[k] === undefined) S.marks[k] = S.t; };
+// Which rooms a surprise event may hole right now. STORY rules, so that one mission is not a string of lost rooms:
+// a limit for each mission, a day and a half between two holes, never the same room twice, and never the Water Room
+// or the Oxygen Room while there is no material for a patch (those two hold machines nobody can live without).
+export const HOLE_GAP_H = 36;
+export function holeTargets(S) {
+  if ((S.stats.holes || 0) >= (S.m.holes ?? Infinity)) return [];
+  if (S.lastHole !== undefined && S.t - S.lastHole < HOLE_GAP_H) return [];
+  const done = S.holed || [];
+  return ROOMS.filter((d) => S.rooms[d.id].built >= 1 && S.rooms[d.id].hole === 0 && !done.includes(d.id) && !(S.mat < 1 && (d.id === 'water' || d.id === 'oxygen')));
+}
+export function holeRoom(S, id) { S.rooms[id].hole = 1; S.stats.holes = (S.stats.holes || 0) + 1; S.lastHole = S.t; (S.holed = S.holed || []).push(id); }
 export function note(S, text, kind = 'info') { S.log.push({ t: S.t, text, kind }); if (S.log.length > 120) S.log.shift(); }
 
 export function step(S, dt) {
