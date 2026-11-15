@@ -45,6 +45,7 @@ Modes: **Cadet** (4 days), **Pilot** (7 days), **Commander** (10 days, scarce ma
 
 ```
 index.html            page shell and HUD
+teachers.html         the teacher's page, ready to print (written by `node tools/build_teachers.mjs`; do not edit by hand)
 css/style.css         all styling
 js/main.js            game loop, player, rover, hopper, carrying, build scenes, saving
 js/actions.js         what E does everywhere, room panels, alerts, REGO's advice
@@ -57,6 +58,7 @@ js/life.js            crops, plant health, plant food, Water Plant, experiment, 
 js/lifeui.js          farm, Water Plant, life-support loop, research and experiment screens
 docs/GAME_OVERVIEW.md  what the game is, what it teaches, how to play, the data behind it, test results, what to improve
 docs/ROADMAP.md       what is built, what comes next, and which real data each plan uses
+docs/TEACHERS.md      the teacher's page: learning goals, a 40-minute lesson, the questions the game asks (written by `node tools/build_teachers.mjs`, which takes the missions and questions from the game; `--check` fails if it is out of date)
 js/world.js           3D world (surface base, other stations, the cave, the white-panelled station, vehicles)
 js/actors.js          astronaut, REGO, BOLT robots
 js/ui.js, icons.js    interface and hand-drawn icons
@@ -71,5 +73,7 @@ assets/img, assets/tex        what the game loads   ·   assets/art   full-size 
 
 The game shows no logos or citations so the screen stays clean for young players.
 All data sources, real numbers and simplifications are in [docs/SCIENCE_AND_SOURCES.md](docs/SCIENCE_AND_SOURCES.md).
+
+**For teachers:** a 40-minute lesson plan, the learning goals and the questions the game asks are in [docs/TEACHERS.md](docs/TEACHERS.md), and ready to print at `teachers.html` on the live site.
 
 Not an official NASA product.

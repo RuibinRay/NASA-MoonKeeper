@@ -286,3 +286,12 @@ The game draws the Polar Ice Mine about 620 m from the pit. On the real Moon the
 - **Where the numbers come from.** `js/moonmap.js` holds the real positions and works out every distance; nothing on the page is typed in by hand. `node tools/moonmap_test.mjs` runs 42 checks on the distances, the drawing and the numbers shown.
 - **What is simplified.** The seas are round patches at their real positions and widths, not their true ragged shapes. The Ocean of Storms is drawn at half its length.
 - **Not done.** The ground in the game is still hand-made hills. Shaping it from measured elevation maps of the pit region is a separate piece of work.
+
+### A page for teachers
+
+The overview listed "a teacher's page" as the third most useful thing after play-testing with children. It now exists: `docs/TEACHERS.md` to read, and `teachers.html` on the live site to print.
+
+- **What is on it.** Five things pupils should be able to do afterwards; what to prepare; a 40-minute lesson in five steps; prompts to ask while pupils play; an exit question with what a good answer contains; all 14 questions the game asks, with the right answers; questions for talking afterwards in three age bands; a short table of what is real and what is story; what to do when something goes wrong; the keys.
+- **It cannot drift from the game.** `node tools/build_teachers.mjs` writes both files. It takes the missions and their lengths from `js/config.js` and the questions from `js/quiz.js`, and stops if a question has no emergency name. `node tools/build_teachers.mjs --check` fails when the files on disk are out of date.
+- **Printed size.** About two sheets, printed on both sides: the lesson on the first, the questions and reference on the second. This is an estimate from the page's layout; it has not been printed.
+- **Not done.** Nobody has taught with it. The timings are estimates. The game itself has no link to the page yet.

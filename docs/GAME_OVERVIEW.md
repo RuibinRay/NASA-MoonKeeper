@@ -360,7 +360,7 @@ The list is in order of how much each item would help the goal: children learnin
 
 1. **Play-test with children aged 7 to 18.** This is the largest unknown. Watch where they get stuck, which words they do not know, and whether they can explain day and night on the Moon afterwards. Everything below should be re-ordered by what those sessions show.
 2. **Ask a question after each emergency.** A one-line "What did you do, and why did it work?" with three answers would show whether the calm-thinking lesson landed, and gives teachers something to discuss.
-3. **A teacher's page.** One sheet with the learning goals, a 40-minute lesson plan, and the questions above.
+3. **A teacher's page.** Done: [the teacher's page](https://ruibinray.github.io/NASA-MoonKeeper/teachers.html) has the learning goals, a 40-minute lesson plan, the 14 questions the game asks with their answers, and questions for talking afterwards. It has not yet been tried in a classroom.
 
 ### Second: make it work for more players
 
