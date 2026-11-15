@@ -89,7 +89,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
 | 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | Done: the hopper, the gait and the hops in and out of vehicles (see below) |
 | 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | Done: sound, music and the radio (see below); reactive lighting was done in step 3 |
-| 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | Questions, REGO's voice and the Day and night page done (see below). Ice picture and map to do |
+| 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | Questions, REGO's voice, the Day and night page and the ice picture done (see below). Map to do |
 
 ### Step 1: what changed and what was measured
 
@@ -260,3 +260,12 @@ On the Moon a person does not walk as on Earth: each step is a small flight, so 
 - **Turning** leans the body into the turn; the trunk twists slightly against the legs.
 - **Footsteps and dust land with the feet.** They used to come every 4.2 m whatever the legs were doing.
 - **Vehicles.** The astronaut hops up into the rover, digger or hopper in 0.4 seconds, and hops down to the ground on getting out. Before, the figure simply vanished and reappeared.
+
+### Step 7, third part: an honest picture of the ice
+
+The Polar Ice Mine's picture used to show clear lumps of ice and a splash, as if the digger had struck a frozen pond. Nothing measured on the Moon looks like that. Where a probe struck a dark crater, the soil held about 5.6% water by weight: frost between the grains.
+
+- **The new picture** shows dry, dark soil that is a little paler in the icy patches. The digger has cut a trench, the spoil is frozen clods, and dust falls straight down from the bucket (there is no air to carry it).
+- **The mine's note in the game** now says: "You will not see lumps of ice: it is frost between the grains, so icy soil only looks a little paler."
+- **What is measured and what is a guess.** Orbiters found the coldest south-polar crater floors slightly brighter, which fits a thin frost. How pale that looks to the eye is the artist's guess, and `docs/SCIENCE_AND_SOURCES.md` says so.
+- **How it was made.** One picture from the recipe `rm_icemine` in `tools/art_jobs_v4.json`. The picture has three floodlight masts in view where the recipe asks for four.
