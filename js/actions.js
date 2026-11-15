@@ -300,7 +300,7 @@ export function installActions(G) {
   G.advise = (short) => {
     const s = G.S, F = computeFlows(s), f = s.f, st = s.storm, top = P.zone === 'top'; let t = null, go = null, mood = 'happy';
     const leak = F.leaks[0], wreck = ROOMS.find((d) => s.rooms[d.id].built < 1), sealedHole = ROOMS.find((d) => s.rooms[d.id].hole > 0 && !s.rooms[d.id].door), nb = s.mounts.filter((x) => x === 2).length, empty = s.mounts.filter((x) => x === 0).length;
-    const thin = !s.suitOn && (s.here && s.rooms[s.here] ? s.rooms[s.here].p : s.P) < 60, night = G.nightPlan();
+    const thin = !s.suitOn && (s.here && s.rooms[s.here] ? s.rooms[s.here].p : s.P) < 60, night = G.nightPlan(); let nightLine = null;
     const daysLeft = s.hours === Infinity ? 0 : (s.hours - (s.t - s.t0)) / 24, soon = (d) => (d * 24 < 36 ? fmt.hrs(Math.max(1, Math.round(d * 24))) : tt`${d.toFixed(1)} days`);   // days until the rescue ship lands
     // By day, a battery that is full wastes the sunshine. More room for power helps the night far more than more panels do, so say that first.
     // The Bathroom's materials are kept back: without it the water recycler works badly.
@@ -334,8 +334,8 @@ export function installActions(G) {
     else if (P.carry && P.carry.type === 'panelB') { t = tt('Bring that broken panel to the Fix-It Bench in the Workshop, down in the station.'); go = 'bench'; }
     else if (P.carry && P.carry.type === 'panel') { t = tt('Carry that panel to an empty mount in the Solar Field and press E.'); go = 'solar'; }
     // The night ahead, in the last day before sunset. Said at most once every six game hours, so REGO's other advice still gets its turn; the Power Board always shows it.
-    else if (night && (short || G._nightT === undefined || Math.abs(s.t - G._nightT) >= 6)) { if (!short) G._nightT = s.t;
-      t = tt`<b>Tonight the power will run short.</b> The Sun sets in ${fmt.hrs(Math.max(1, Math.round(night.toSunset)))}. After that only the reactor makes power: ${night.reactor} kW, and the base needs about ${night.need.toFixed(1)} kW. ` + (night.batt < 5 ? tt('The battery will be nearly empty by then.') : tt`The battery can fill the gap for about ${fmt.hrs(Math.max(1, Math.round(night.lasts)))}, but the dark lasts ${fmt.days(night.dark / 24)}.`) + (night.say ? ' ' + night.say : '') + tt` When the Sun goes down, open the Power Board: turn the Topside Heaters up to level ${night.heat}, and the farm lights and the robots down.`; go = night.go; mood = 'think'; }
+    else if (night && (short || G._nightT === undefined || Math.abs(s.t - G._nightT) >= 6)) {
+      t = nightLine = tt`<b>Tonight the power will run short.</b> The Sun sets in ${fmt.hrs(Math.max(1, Math.round(night.toSunset)))}. After that only the reactor makes power: ${night.reactor} kW, and the base needs about ${night.need.toFixed(1)} kW. ` + (night.batt < 5 ? tt('The battery will be nearly empty by then.') : tt`The battery can fill the gap for about ${fmt.hrs(Math.max(1, Math.round(night.lasts)))}, but the dark lasts ${fmt.days(night.dark / 24)}.`) + (night.say ? ' ' + night.say : '') + tt` When the Sun goes down, open the Power Board: turn the Topside Heaters up to level ${night.heat}, and the farm lights and the robots down.`; go = night.go; mood = 'think'; }
     else if (storeTip) { t = storeTip; go = 'storage'; mood = 'think'; }
     else if (nb && F.sun.up && F.sun.toSunset > 6 && s.mat >= 1) { t = (nb > 1 ? tt`<b>${nb} solar panels are broken.</b> Pull one off its mount (E), load it on the rover, take it down to the Fix-It Bench, then bring it back. More panels means more power.` : tt`<b>${nb} solar panel is broken.</b> Pull one off its mount (E), load it on the rover, take it down to the Fix-It Bench, then bring it back. More panels means more power.`); go = 'solar'; }
     else if (sealedHole && s.mat >= 1) { t = tt`The ${sealedHole.name} is sealed off with a hole in it. Go in, patch the hole, then rebuild the room.`; go = sealedHole.id; }
@@ -358,6 +358,7 @@ export function installActions(G) {
     // When air, water, food or power is running short, that advice comes first, but the line still leads to the chosen job if the advice has no place of its own.
     const cj = G.chosenJob && G.chosenJob(); if (cj && mood !== 'alert') { const short = F.eff < 1 || (F.net < 0 && F.battHours < (F.sun.up ? 12 : 24)) || F.o2Days < 1 || F.waterDays < 1 || F.foodDays < 1; if (!short) { t = cj.say; go = cj.t; mood = 'think'; } else if (!go) go = cj.t; }
     if (!t) t = tt`All systems look steady. Did you know? ${FACTS[G.factI++ % FACTS.length]}`;
+    if (!short && nightLine && t === nightLine) G._nightT = s.t;   // the night line was really said: it rests for six game hours
     if (short) return t; ui.bubble(t, mood, 13); if (go) { G.pointTo(go); if (G.goal) G.goal.sticky = true; }   // sticky: stays until "Stop guiding" is clicked
   };
 }
