@@ -10,7 +10,7 @@ import { radioLine } from './radio.js';
 import { IC } from './icons.js';
 import { playProcedure, playMini } from './minigames.js';
 import { jobEffect } from './jobfx.js';
-import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, BASE, MINE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, roomSpot, fmt } from './config.js';
+import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, HALL, ROOM_H, BASE, MINE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, roomSpot, fmt } from './config.js';
 import { createSim, step, computeFlows, applyDisaster, jobHours, addHelper, serialize, deserialize } from './sim.js';
 import { installActions } from './actions.js';
 import { patchAt, scoop } from './life.js';
@@ -282,7 +282,7 @@ let drag = null;
 canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; if (e.pointerType === 'touch') G.touch = true; });
 addEventListener('pointerup', () => (drag = null));
 addEventListener('pointermove', (e) => { if (ui.busy || G.jobTick) return; let dx = 0, dy = 0; if (document.pointerLockElement === canvas) { dx = e.movementX; dy = e.movementY; } else if (drag && e.pointerId === drag.id) { dx = (e.clientX - drag.x) * 1.6; dy = (e.clientY - drag.y) * 1.6; drag.x = e.clientX; drag.y = e.clientY; } if (dx || dy) G.camT = performance.now(); cam.yaw -= dx * 0.0026; cam.pitch = clamp(cam.pitch + dy * 0.0026, cam.fp ? -1.35 : -0.95, cam.fp ? 1.2 : 1.25); });
-canvas.addEventListener('wheel', (e) => { cam.dist = clamp(cam.dist + Math.sign(e.deltaY) * 0.8, 3.5, 22); }, { passive: true });
+canvas.addEventListener('wheel', (e) => { if (P.zone === 'deep' && G.inside) cam.inDist = clamp((cam.inDist ?? IN_DIST) + Math.sign(e.deltaY) * 0.4, 2.2, IN_DIST); else cam.dist = clamp(cam.dist + Math.sign(e.deltaY) * 0.8, 3.5, 22); }, { passive: true });   // indoors the wheel zooms in, never out past IN_DIST; the outdoor zoom is kept for later
 // Earth can only be seen from the surface: down in the cave and in the station the first-person line says what is really there.
 function toggleView() { cam.fp = !cam.fp; cam.pitch = clamp(cam.pitch, -0.9, 1.1); ui.toast(!cam.fp ? tt('Third-person view.') : P.zone === 'top' ? tt('First-person view. Look up to find Earth!') : G.inside ? tt('First-person view. Now you see the station through your own eyes.') : tt('First-person view. Look up at the rock roof of the cave.')); }
 function togglePause() { if (G.state !== 'play') return; G.paused = !G.paused; ui.banner(G.paused ? tt('PAUSED — press P to continue') : null, true); }
@@ -518,15 +518,40 @@ function pullIn(cp, target) {
   }
   if (t < 1) { const k = Math.max(0.05, t - 0.04); cp.x = target.x + dx * k; cp.z = target.z + dz * k; cp.y = target.y + (cp.y - target.y) * k; }   // with a wall right behind you the camera comes almost to your head, as in most third-person games
 }
+// Underground the station is a set of boxes: the hall, the airlock, the eleven rooms and the passages through their doors.
+// Indoors the camera stays inside them (never in a wall or above a ceiling) and comes no further than IN_DIST from you;
+// out in the cave it stays outside the station's walls and below the roof only if it is clear of them.
+const IN_DIST = 4.2, IN_PAD = 0.35, DOOR_H = 4.2;   // DOOR_H: the passages are lower than the rooms (world.js)
+// Built fresh each frame, because doors change: a locked room door, or the airlock's inner door while it is shut, is a wall to the camera too.
+function inBoxes() {
+  const S = G.S, L = world.lock, airOpen = !L || !L.init || L.in >= 0.5, out = [
+    { x0: HALL.x0 - (airOpen ? 1 : 0), x1: HALL.x1, z0: HALL.z0, z1: HALL.z1, h: HALL.h - 0.5 },   // the light strip hangs half a metre under the hall ceiling; with the inner door open the hall reaches 1 m into the airlock, so the two overlap
+    { x0: AIRLOCK.x0, x1: AIRLOCK.x1 + (airOpen ? 1 : 0), z0: AIRLOCK.z0, z1: AIRLOCK.z1, h: AIRLOCK.h },
+  ];
+  for (const d of ROOMS) { const r = roomRect(d), open = !S || S.rooms[d.id].door || (world.rooms[d.id] && world.rooms[d.id].open > 0.5); out.push({ ...r, h: ROOM_H });
+    if (open) out.push(d.side < 0 ? { x0: d.door - 2, x1: d.door + 2, z0: r.z1 - 1, z1: HALL.z0 + 1, h: DOOR_H } : { x0: d.door - 2, x1: d.door + 2, z0: HALL.z1 - 1, z1: r.z0 + 1, h: DOOR_H }); }   // each open passage overlaps its room and the hall by 1 m
+  return out;
+}
+const OUT_BOX = { x0: AIRLOCK.x0 - 0.9, x1: HALL.x1 + 1.8, z0: -25.8, z1: 25.8, h: ROOM_H + 0.6 };   // the station seen from the cave (world.inCave leaves the same block out)
+const inBox = (b, x, y, z, pad) => x > b.x0 + pad && x < b.x1 - pad && z > b.z0 + pad && z < b.z1 - pad && y < TUBE.y + b.h - pad;
+const camOk = (boxes, x, y, z) => (boxes ? boxes.some((b) => inBox(b, x, y, z, IN_PAD)) : !inBox(OUT_BOX, x, y, z, -0.4));
+// Walk from your head towards where the camera wants to be, in 10 cm steps, and stop at the last point that is still clear.
+function clipDeep(cp, target, indoors) {
+  const dx = cp.x - target.x, dy = cp.y - target.y, dz = cp.z - target.z, L = Math.hypot(dx, dy, dz); if (L < 1e-4) return;
+  const n = Math.ceil(L / 0.1), boxes = indoors ? inBoxes() : null; let k = 1;
+  for (let i = 1; i <= n; i++) { const f = i / n; if (!camOk(boxes, target.x + dx * f, target.y + dy * f, target.z + dz * f)) { k = Math.max(0.05, (i - 1) / n); break; } }
+  if (k < 1) { cp.x = target.x + dx * k; cp.y = target.y + dy * k; cp.z = target.z + dz * k; }
+}
 function updateCamera(dt) {
   const c = world.camera; G.shake *= Math.pow(0.25, dt); const veh = P.in === 'car' ? 5 : P.in === 'ship' ? 8 : P.in === 'dig' ? 7 : 0;
   if (cam.fp && !P.in) { c.position.set(P.pos.x, P.pos.y + 1.78, P.pos.z); c.rotation.set(-cam.pitch, cam.yaw, 0, 'YXZ'); }
   else {
-    const pp = Math.max(cam.pitch, 0.06), cp = Math.cos(pp), dist = cam.dist + veh; tmp.set(P.pos.x, P.pos.y + (P.in ? 2.6 : 1.75), P.pos.z);
+    const pp = Math.max(cam.pitch, 0.06), cp = Math.cos(pp), dist = (P.zone === 'deep' && G.inside ? Math.min(cam.dist, cam.inDist ?? IN_DIST) : cam.dist) + veh; tmp.set(P.pos.x, P.pos.y + (P.in ? 2.6 : 1.75), P.pos.z);   // indoors there is no zooming out: the rooms are small
     if (G.jobbing && G.jobbing.site && G.jobbing.focus) { const f = G.jobbing.focus, s = G.jobbing.site; tmp.x += (s.x - P.pos.x) * f; tmp.z += (s.z - P.pos.z) * f; tmp.y += G.jobbing.lift || 0; }
     c.position.set(tmp.x + Math.sin(cam.yaw) * cp * dist, tmp.y + Math.sin(pp) * dist, tmp.z + Math.cos(cam.yaw) * cp * dist);
     if (P.zone === 'top') { pullIn(c.position, tmp); c.position.y = Math.max(c.position.y, world.heightAt(c.position.x, c.position.z) + 0.6); }
-    else { c.position.z = clamp(c.position.z, -TUBE.halfWidth + 3, TUBE.halfWidth - 3); c.position.x = clamp(c.position.x, -TUBE.halfLen + 2, TUBE.halfLen - 2); c.position.y = clamp(c.position.y, TUBE.y + 0.6, TUBE.y + 26); }
+    else { clipDeep(c.position, tmp, !!G.inside); c.position.z = clamp(c.position.z, -TUBE.halfWidth + 3, TUBE.halfWidth - 3); c.position.x = clamp(c.position.x, -TUBE.halfLen + 2, TUBE.halfLen - 2); c.position.y = clamp(c.position.y, TUBE.y + 0.6, TUBE.y + 26); }
+    if (!P.in && c.position.distanceTo(tmp) < 1.3) G.astro.group.visible = false;   // a wall right behind you brings the camera to your head: hide the suit so it does not fill the screen
     c.rotation.order = 'XYZ'; c.lookAt(tmp.x, tmp.y + 0.35, tmp.z); if (cam.pitch < 0.06) c.rotateX((0.06 - cam.pitch) * 1.45);
   }
   if (G.shake > 0.02) { c.position.x += (Math.random() - 0.5) * G.shake * 0.35; c.position.y += (Math.random() - 0.5) * G.shake * 0.35; }
