@@ -339,6 +339,8 @@ The game was played from the title screen to the rescue by a script that presses
 | A robot on Farm duty kept drawing 1 kW with every farm sealed, and nothing said so. | A robot with nothing to do stands still and draws nothing. The Control Center says why, and REGO suggests another job. |
 | The hopper's charger drew 7 kW at the start of a mission and could not be switched off. | The Power Board has a switch for the chargers. |
 | Rescued astronauts walked straight through buildings on the way home. | They follow in a line, each behind the one in front, and go round buildings as REGO does. |
+| The words could not be made bigger. | Settings has a text size: Normal, Large (about a fifth bigger) or Larger (about a third). It scales cards, panels, REGO, hints and alerts, and is remembered. |
+| To a red-green colour-blind player, a cost and a gain on a choice looked the same, and on the station map a leaking room, a broken room and a low-air room could not be told apart. | New room colours and a new gain colour that stay apart in normal sight and in three simulated kinds of colour-blindness. Marks that do not rest on colour were added too: "!" on an emergency, a tick on a gain, a bar on a locked door, a stroke on a broken panel. |
 
 ### Found in a follow-up check of the hardest mode
 
@@ -385,7 +387,7 @@ The list is in order of how much each item would help the goal: children learnin
 4. **Phone layout.** Held upright, the warning list covers the resource bars. Either ask the player to turn the phone sideways or stack the panels. Then play a whole mission with the touch controls.
 5. **Speed.** The surface draws about 260,000 triangles in about 200 separate draw calls. Merging repeated objects such as panels, crates and rocks would help older laptops and phones. Measure on a real computer first.
 6. **Hard mode.** Play Commander through by hand. The computer check says a good player wins with about one kilogram of oxygen left, which may still be too tight once surprise events are added.
-7. **Reading help.** A read-aloud voice for REGO's lines, larger text, a colour-blind check of the warning colours, and other languages.
+7. **Reading help.** Done in part: REGO reads aloud, Settings has a text size (Normal, Large, Larger), and the warning colours were checked against simulated colour-blindness and changed where they failed. Still to do: other languages. Nobody with colour-blindness, and no young reader, has yet tried any of it.
 
 ### Third: use more of the real data
 

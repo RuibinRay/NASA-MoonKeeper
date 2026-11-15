@@ -154,7 +154,7 @@ button.ghost:hover{border-color:var(--cyan)}
 .choice:disabled{opacity:.45;cursor:not-allowed}
 .choice b{font-family:var(--head);display:block;font-size:16px}
 .cost{display:inline-block;font-size:12px;margin:5px 6px 0 0;padding:1px 8px;border-radius:12px;background:rgba(255,82,82,.14);border:1px solid rgba(255,82,82,.4);color:#ffc9c9}
-.cost.gain{background:rgba(88,224,138,.12);border-color:rgba(88,224,138,.4);color:#c5f5d6}
+.cost.gain{background:rgba(88,224,138,.12);border-color:rgba(88,224,138,.4);color:#6afb8e}
 .body{font-size:15.5px;line-height:1.55}
 .term{border-bottom:1.5px dotted var(--cyan);cursor:help}
 #tip{position:fixed;z-index:60;max-width:300px;background:#0b1622;border:1px solid var(--cyan);border-radius:10px;padding:8px 11px;font-size:13px;line-height:1.45;pointer-events:none;opacity:0;transition:opacity .12s}
@@ -480,3 +480,25 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
 @media (max-width:900px){.rm-cards{grid-template-columns:1fr}}
 /* Title screen: the link to the page for teachers, in the small print */
 #link-teach{padding:6px 0;font-size:12px;color:#b9c8d6;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}#link-teach:hover,#link-teach:focus-visible{color:var(--cyan)}
+/* ---- Reading help ---- */
+/* Text size. --tz is 1 for Normal. Windows are zoomed whole; the small boxes on the play screen scale their lettering. */
+body{--tz:1}body[data-text="large"]{--tz:1.18}body[data-text="larger"]{--tz:1.36}
+body[data-text="large"] #modal .win,body[data-text="larger"] #modal .win{zoom:var(--tz);width:min(940px,calc(96vw / var(--tz)));max-height:calc(94vh / var(--tz))}
+body[data-text="large"] #modal .win.wide,body[data-text="larger"] #modal .win.wide{width:min(1120px,calc(97vw / var(--tz)))}
+body[data-text="large"] #modal .win:has(.mg-wrap),body[data-text="larger"] #modal .win:has(.mg-wrap){zoom:1;width:min(940px,96vw);max-height:94vh}   /* job games size their own lettering */
+body[data-text="large"] #rego-text,body[data-text="larger"] #rego-text{font-size:calc(14px * var(--tz))}
+body[data-text="large"] #prompt,body[data-text="larger"] #prompt{font-size:calc(15px * var(--tz))}
+body[data-text="large"] #objective,body[data-text="larger"] #objective{font-size:calc(13px * var(--tz))}
+body[data-text="large"] #alerts .alert,body[data-text="larger"] #alerts .alert{font-size:calc(12.5px * var(--tz))}body[data-text="large"] #alerts,body[data-text="larger"] #alerts{max-width:calc(300px * var(--tz))}
+body[data-text="large"] .toast,body[data-text="larger"] .toast{font-size:calc(13.5px * var(--tz))}body[data-text="large"] #toasts,body[data-text="larger"] #toasts{max-width:calc(360px * var(--tz))}
+body[data-text="large"] #dlg-text,body[data-text="larger"] #dlg-text{font-size:calc(clamp(15px,1.45vw,18.5px) * var(--tz))}
+body[data-text="large"] #job-title,body[data-text="larger"] #job-title{font-size:calc(17px * var(--tz))}body[data-text="large"] #job .row,body[data-text="larger"] #job .row{font-size:calc(13px * var(--tz))}
+body[data-text="large"] #banner,body[data-text="larger"] #banner{font-size:calc(1em * var(--tz))}
+/* Marks that do not rest on colour: an emergency carries a white "!" in a disc, a reminder a small square */
+#alerts .alert::before{content:'!';display:inline-block;width:15px;height:15px;line-height:15px;margin-right:6px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;font-size:11px;text-align:center;vertical-align:1px}
+#alerts .alert.warn::before{content:'';width:7px;height:7px;margin:0 10px 0 4px;border-radius:1px;background:var(--amber);vertical-align:1px}
+/* a gauge that is low or critical carries a mark in front of its number, as well as changing colour */
+.gauge.warn .g-top b::before{content:'!\00a0';color:var(--amber);font-weight:800}
+.gauge.crit .g-top b::before{content:'!!\00a0';color:var(--red);font-weight:800}
+/* a cost is a square-cornered chip with a dashed edge; a gain is a pill with a tick */
+.cost{border-radius:4px;border-style:dashed}.cost.gain{border-radius:12px;border-style:solid}.cost.gain::before{content:'\2713\00a0'}
