@@ -430,7 +430,7 @@ function frame(now, manual) {
   updatePlayer(dt); if (G.S) placeVehicles(dt); updateRego(dt); updateActors(dt); if (G.cineTick) G.cineTick(dt); else updateCamera(dt);
   if (G.S) { tickSim(dt); updateRad(dt); if (G.state !== 'over') updateGoal(); }
   placeItems();
-  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook' });
+  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook', sleeping: G.sleepLeft > 0 });
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
   world.render();
   if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { G._sleepAlerts = G.alerts().filter((a) => a.kind !== 'warn').length; G._sleepBatt = G.S.battery; } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepBatt = undefined; }
