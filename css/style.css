@@ -439,3 +439,33 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
   #toasts{bottom:420px;max-width:60vw}
   #job{bottom:330px}
 }
+
+/* ---------- interface motion: things arrive, count and settle; nothing loops for attention unless it is an emergency ---------- */
+@keyframes fadeIn{from{opacity:0}}
+@keyframes winIn{from{opacity:0;transform:translateY(16px) scale(.97)}}
+@keyframes rowIn{from{opacity:0;transform:translateY(8px)}}
+@keyframes dropIn{from{opacity:0;transform:translateY(-18px)}}
+@keyframes leftIn{from{opacity:0;transform:translateX(-22px)}}
+@keyframes upIn{from{opacity:0;transform:translateY(18px)}}
+@keyframes dlgIn{from{opacity:0;transform:translate(-50%,16px)}}
+@keyframes jobIn{from{opacity:0;transform:translate(-50%,12px)}}
+@keyframes alertIn{0%{opacity:0;transform:translateX(-18px);box-shadow:0 0 0 0 rgba(255,120,120,.75)}35%{opacity:1;transform:none;box-shadow:0 0 0 0 rgba(255,120,120,.75)}100%{box-shadow:0 0 0 12px rgba(255,120,120,0)}}
+@keyframes bumpUp{30%{transform:scale(1.28);color:var(--green)}}
+@keyframes bumpDown{30%{transform:scale(1.28);color:var(--amber)}}
+@keyframes goalIn{0%{opacity:.2;filter:brightness(2.2)}100%{filter:none}}
+#modal.in{animation:fadeIn .18s ease-out}
+#modal.in .win{animation:winIn .26s cubic-bezier(.2,.9,.3,1.12) both}
+#modal.in .choice,#modal.in .set-row{animation:rowIn .24s ease-out both}
+#modal.in .choice:nth-child(2),#modal.in .set-row:nth-child(2){animation-delay:.04s}#modal.in .choice:nth-child(3),#modal.in .set-row:nth-child(3){animation-delay:.08s}
+#modal.in .choice:nth-child(4),#modal.in .set-row:nth-child(4){animation-delay:.12s}#modal.in .choice:nth-child(5),#modal.in .set-row:nth-child(5){animation-delay:.16s}#modal.in .choice:nth-child(n+6),#modal.in .set-row:nth-child(n+6){animation-delay:.2s}
+#hud.enter #top{animation:dropIn .45s ease-out both}#hud.enter #alerts{animation:leftIn .45s .12s ease-out both}#hud.enter #btns{animation:upIn .45s .18s ease-out both}
+#dialog{animation:dlgIn .22s ease-out}
+#job{animation:jobIn .22s ease-out}
+#banner{animation-iteration-count:3}
+.alert.new{animation:alertIn .9s ease-out}
+.gauge.crit{animation:pulse 1s 3}                      /* three beats, then a steady red border: the alert list carries the message */
+.bar i{transition:width .55s cubic-bezier(.2,.8,.3,1)}
+.gauge .g-top b{display:inline-block;transform-origin:right center}
+.gauge.up .g-top b{animation:bumpUp .7s ease-out}.gauge.down .g-top b{animation:bumpDown .7s ease-out}
+#objective.changed{animation:goalIn .6s ease-out}
+@media (prefers-reduced-motion:reduce){#modal.in,#modal.in .win,#modal.in .choice,#modal.in .set-row,#hud.enter #top,#hud.enter #alerts,#hud.enter #btns,#dialog,#job,.alert.new,.gauge.up .g-top b,.gauge.down .g-top b,#objective.changed{animation:none}.bar i{transition:none}}

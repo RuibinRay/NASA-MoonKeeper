@@ -90,12 +90,12 @@ export class UI {
     this.mm = $('#minimap').getContext('2d');
   }
   get busy() { return this.modalStack > 0 || this.dialogOpen || this.comicOpen; }
-  showHud(on) { $('#hud').classList.toggle('hidden', !on); }
+  showHud(on) { const h = $('#hud'); if (on && h.classList.contains('hidden')) { h.classList.add('enter'); clearTimeout(this._hudT); this._hudT = setTimeout(() => h.classList.remove('enter'), 900); } h.classList.toggle('hidden', !on); }
   fade(on) { $('#fade').classList.toggle('on', on); return new Promise((r) => setTimeout(r, 470)); }
   toast(text, kind = '') { const radio = kind === 'radio' || kind === 'radio off', t = el('div', 'toast ' + kind, `<i class="t-ic">${kind === 'bad' ? IC.alert : kind === 'good' ? IC.ok : radio ? IC.dish : IC.bot}</i><span>${gloss(text)}</span>`); $('#toasts').appendChild(t); this.G.audio?.play(kind === 'bad' ? 'bad' : kind === 'good' ? 'ok' : kind === 'radio' ? 'call' : kind === 'radio off' ? 'static' : 'blip'); setTimeout(() => t.remove(), radio ? 10000 : 6500); while ($('#toasts').children.length > 4) $('#toasts').firstChild.remove(); }
   bubble(html, mood = 'happy', secs = 10) { $('#rego-text').innerHTML = gloss(html); this.G.voice?.say(html); $('#rego').classList.remove('hidden'); this.G.rego?.setMood(mood); if (this.G.rego) this.G.rego.wave = 1.2; this.G.audio?.play('chirp'); clearTimeout(this._bt); this._bt = setTimeout(() => { $('#rego').classList.add('hidden'); this.G.rego?.setMood('happy'); }, secs * 1000); }
   banner(text, info = false) { const b = $('#banner'); if (!text) { b.classList.add('hidden'); return; } if (b.dataset.t !== text) { b.dataset.t = text; b.innerHTML = text; } b.classList.remove('hidden'); b.classList.toggle('info', info); }
-  objective(html) { const o = $('#objective'); o.classList.toggle('hidden', !html); if (html && o.dataset.h !== html) { o.dataset.h = html; o.innerHTML = html; } }
+  objective(html) { const o = $('#objective'); o.classList.toggle('hidden', !html); if (html && o.dataset.h !== html) { o.dataset.h = html; o.innerHTML = html; const k = (o.querySelector('b')?.textContent || o.textContent).replace(/[\d.]+/g, ''); if (k !== o.dataset.k) { o.dataset.k = k; o.classList.remove('changed'); void o.offsetWidth; o.classList.add('changed'); } } }
   prompt(html) { const p = $('#prompt'); p.classList.toggle('hidden', !html); if (html && p.dataset.h !== html) { p.dataset.h = html; p.innerHTML = html; } }
   // progress bar shown while a build / fix scene plays by itself
   job(title, k, step, left) { const j = $('#job'); j.classList.toggle('hidden', title === null); if (title === null) return; $('#job-title').textContent = title; $('#job-step').textContent = step; $('#job-bar').style.width = clamp(k * 100, 0, 100) + '%'; $('#job-left').textContent = left; }
@@ -152,9 +152,9 @@ export class UI {
   // ---------- modal windows ----------
   window({ title, html, wide = false, closable = true, img = null, onMount }) {
     return new Promise((resolve) => {
-      const m = $('#modal'); this.modalStack++; this._closable = closable; document.exitPointerLock?.(); m.classList.remove('hidden');
+      const m = $('#modal'); this.modalStack++; this._closable = closable; document.exitPointerLock?.(); m.classList.toggle('in', m.classList.contains('hidden') && performance.now() - (this._closedAt || 0) > 300); m.classList.remove('hidden');
       m.innerHTML = `<div class="win ${wide ? 'wide' : ''}">${img ? `<img class="card-img" src="assets/img/${img}.jpg" alt="" onerror="this.remove()">` : ''}<div class="win-h"><h2>${title}</h2>${closable ? '<button class="x">Close ✕</button>' : ''}</div><div class="win-b">${html}</div></div>`;
-      this._resolve = (v) => { clearInterval(this._tick); m.classList.add('hidden'); m.innerHTML = ''; this.modalStack = Math.max(0, this.modalStack - 1); this._resolve = null; resolve(v); };
+      this._resolve = (v) => { clearInterval(this._tick); this._closedAt = performance.now(); m.classList.add('hidden'); m.innerHTML = ''; this.modalStack = Math.max(0, this.modalStack - 1); this._resolve = null; resolve(v); };
       if (closable) m.querySelector('.x').onclick = () => this.close(); onMount?.(m.querySelector('.win'));
     });
   }
@@ -353,7 +353,10 @@ export class UI {
   hud(dt) {
     const G = this.G, S = G.S; if (!S) return; this.t += dt; this._labels();
     if (this.t < 0.2) return; this.t = 0;
-    const F = S.flow, sun = F.sun, set = (id, v, bar, sub, state) => { $(`#g-${id}-v`).textContent = v; $(`#g-${id}-b`).style.width = clamp(bar * 100, 0, 100) + '%'; const s = $(`#g-${id}-s`); if (s.dataset.h !== sub) { s.dataset.h = sub; s.innerHTML = sub; } const g = $('#g-' + id); g.classList.toggle('warn', state === 1); g.classList.toggle('crit', state === 2); };
+    const F = S.flow, sun = F.sun, set = (id, v, bar, sub, state) => { const gv = this._gv || (this._gv = {}), q = gv[id] || (gv[id] = {}), mm = /^(-?\d+(?:\.\d+)?)(.*)$/.exec(v), gEl = $('#g-' + id);
+      if (mm) { const tgt = Number(mm[1]), dec = (mm[1].split('.')[1] || '').length, step = Math.pow(10, -dec); if (q.n === undefined || q.tail !== mm[2] || Math.abs(tgt - q.n) <= step * 1.5) q.n = tgt; else q.n += (tgt - q.n) * 0.42; q.tail = mm[2]; v = q.n.toFixed(dec) + mm[2]; } else q.n = undefined;
+      if (q.bar !== undefined && Math.abs(bar - q.bar) > 0.035) { gEl.classList.remove('up', 'down'); void gEl.offsetWidth; gEl.classList.add(bar > q.bar ? 'up' : 'down'); } q.bar = bar;
+      $(`#g-${id}-v`).textContent = v; $(`#g-${id}-b`).style.width = clamp(bar * 100, 0, 100) + '%'; const s = $(`#g-${id}-s`); if (s.dataset.h !== sub) { s.dataset.h = sub; s.innerHTML = sub; } const g = $('#g-' + id); g.classList.toggle('warn', state === 1); g.classList.toggle('crit', state === 2); };
     const bp = S.battery / F.cap, rn = (id) => ROOMS.find((r) => r.id === id).name;
     set('power', Math.round(bp * 100) + '%', bp, F.net >= 0 ? `+${F.net.toFixed(1)} kW · ${F.nOk} panels` : `${F.net.toFixed(1)} kW · ${fmt.hrs(Math.floor(Math.min(F.battHours, 99)))} left`, F.eff < 1 ? 2 : F.net < 0 && bp < 0.12 ? 2 : F.net < 0 && bp < 0.3 ? 1 : 0);
     const sealed = ROOMS.filter((r) => S.rooms[r.id].hole > 0 && !S.rooms[r.id].door).length;
@@ -373,7 +376,7 @@ export class UI {
     $('#hp').style.width = S.health + '%'; $('#hp').style.background = S.health > 60 ? 'var(--green)' : S.health > 30 ? 'var(--amber)' : 'var(--red)';
     const v = G.player.in, cc = G.player.carry; $('#carry').innerHTML = v === 'dig' ? `${IC.box} Digger ${G.dig.load}/${MINE.bucket}` : v ? `${IC[v]} ${v === 'car' ? 'Rover' : 'Hopper'} ${Math.round(S[v].charge * 100)}%` : cc ? `${IC.box} ${cc.type.startsWith('panel') ? 'panel' : cc.type}` : `${IC.crew} ${F.people}`;
     const al = G.alerts ? G.alerts() : [], key = al.map((a) => a.text + a.sub).join('|');
-    if (key !== this._alKey) { this._alKey = key; const box = $('#alerts'); box.innerHTML = ''; al.slice(0, 5).forEach((a) => { const d = el('div', 'alert ' + (a.kind || ''), `${a.text}<small>${a.sub || ''}</small>`); d.onclick = () => a.go && G.pointTo(a.go); box.appendChild(d); }); }
+    if (key !== this._alKey) { this._alKey = key; const box = $('#alerts'); box.innerHTML = ''; const seen = this._alSeen || new Set(), nowSeen = new Set(); al.slice(0, 5).forEach((a) => { const id = a.key || a.text.replace(/[\d.]+/g, '#'); nowSeen.add(id); const d = el('div', 'alert ' + (a.kind || '') + (this._alSeen && !seen.has(id) ? ' new' : ''), `${a.text}<small>${a.sub || ''}</small>`); d.onclick = () => a.go && G.pointTo(a.go); box.appendChild(d); }); this._alSeen = nowSeen; }
     this._minimap();
   }
   _labels() {
