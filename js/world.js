@@ -26,7 +26,7 @@ export class World {
     this.camera = new THREE.PerspectiveCamera(62, 1, 0.25, 7000);
     this.top = new THREE.Group(); this.deep = new THREE.Group(); this.deep.position.y = TUBE.y; this.scene.add(this.top, this.deep);
     this.colliders = { top: [], deep: [] }; this.walk = []; this.t = 0; this.zone = 'top'; this.sunDir = new V3(0, 1, 0); this.lamps = [];
-    this._mats(); this._lights(); this._sky(); this._terrain(); this._topside(); this._base(); this._sites(); this._vehicles(); this._tube(); this._station(); this._markers(); this._fx();
+    this._mats(); this._lights(); this._sky(); this._terrain(); this._topside(); this._base(); this._sites(); this._vehicles(); this._tube(); this._station(); this._markers(); this._fx(); this._guide();
     this.setZone('top'); this.resize(); window.addEventListener('resize', () => this.resize());
   }
   resize() { const w = window.innerWidth, h = window.innerHeight; this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
@@ -340,6 +340,8 @@ export class World {
     for (let i = 0; i < fp.count; i++) fp.setY(i, (fbm(fp.getX(i) * 0.08, fp.getZ(i) * 0.08) - 0.5) * 0.1 - 0.06 + smooth(HW - 6, HW + 6, Math.abs(fp.getZ(i))) * 5);
     fg.computeVertexNormals(); D.add(new THREE.Mesh(fg, std({ color: 0x6f6b66, map: this.texRego, roughness: 1 })));
     const rnd = seeded(31); for (const sx of [-1, 1]) for (let i = 0; i < 14; i++) { const b = new THREE.Mesh(new THREE.DodecahedronGeometry(9 + rnd() * 9, 1), M.basalt); b.position.set(sx * (HL + 4 + rnd() * 10), rnd() * HT * 0.9, (rnd() - 0.5) * 2 * HW); b.rotation.set(rnd() * 3, rnd() * 3, 0); D.add(b); }
+    // Both ends of the tube are closed by a solid rockfall, so the black sky never shows between the loose boulders.
+    for (const sx of [-1, 1]) { const plug = new THREE.Mesh(new THREE.DodecahedronGeometry(HW + HT * 0.6, 2), M.basalt); plug.scale.set(0.36, 1, 1.15); plug.position.set(sx * (HL + 1 + (HW + HT * 0.6) * 0.36), HT * 0.35, 0); plug.rotation.x = sx * 0.4; D.add(plug); }
     const shaft = new THREE.Mesh(new THREE.CylinderGeometry(skyR, skyR + 2, 70, 28, 1, true), M.basalt); shaft.position.set(skyX, HT + 30, 0); D.add(shaft);
     // Sunlight through the skylight. The cave has no air, so nothing scatters the light: there is no glowing beam, only a hard bright patch on the floor.
     this.beam = new THREE.Mesh(new THREE.CircleGeometry(skyR * 0.78, 40), new THREE.MeshBasicMaterial({ color: 0xfff3d8, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false })); this.beam.rotation.x = -Math.PI / 2; this.beam.position.set(skyX + 3, 0.14, -2); D.add(this.beam);
@@ -564,7 +566,50 @@ export class World {
   }
 
   // Called every frame. S = sim state (may be null). ctx = { player:{x,z}, zone, carOn, shipOn, shipFly }
+  // ---------- guide mode: a yellow arrow line on the ground from the player to the next place ----------
+  _guide() {
+    const tex = canvasTex(64, 128, (g, w, h) => { g.clearRect(0, 0, w, h); g.lineCap = 'round'; g.lineJoin = 'round'; for (const y of [32, 96]) { g.strokeStyle = 'rgba(120,70,0,.55)'; g.lineWidth = 20; g.beginPath(); g.moveTo(10, y + 16); g.lineTo(32, y - 14); g.lineTo(54, y + 16); g.stroke(); g.strokeStyle = '#ffd21f'; g.lineWidth = 12; g.stroke(); } });
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; this.guideTex = tex;
+    const N = this.guideN = 220, geo = new THREE.BufferGeometry(), idx = [];
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 2 * 3), 3)); geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(N * 2 * 2), 2));
+    for (let i = 0; i < N - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } geo.setIndex(idx); geo.setDrawRange(0, 0);
+    this.guideLine = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+    this.guideLine.frustumCulled = false; this.guideLine.renderOrder = 4; this.guideLine.visible = false; this.scene.add(this.guideLine); this.guideOn = true; this._guideT = 0;
+  }
+  // Corner points of the walk from (px,pz) to (tx,tz). Underground it leaves a room by its door, follows the hall, and enters the target room by its door.
+  _guideRoute(px, pz, tx, tz) {
+    const pts = [[px, pz]]; if (this.zone !== 'deep') return [...pts, [tx, tz]];
+    const roomAt = (x, z) => ROOMS.find((r) => { const q = roomRect(r); return x > q.x0 - 0.4 && x < q.x1 + 0.4 && z > q.z0 - 0.4 && z < q.z1 + 0.4; });
+    const ra = roomAt(px, pz), rb = roomAt(tx, tz), caveA = !this.indoors(px, pz), caveB = !this.indoors(tx, tz), gate = [AIRLOCK.x0 - 1.6, 0];
+    if (!(ra && ra === rb) && !(caveA && caveB)) {
+      if (ra) pts.push([ra.door, ra.side * 5.6], [ra.door, 0]); else if (caveA) pts.push(gate, [AIRLOCK.x0 + 1.5, 0]);
+      if (rb) pts.push([rb.door, 0], [rb.door, rb.side * 5.6]); else if (caveB) pts.push([AIRLOCK.x0 + 1.5, 0], gate);
+    }
+    pts.push([tx, tz]); return pts.filter((p, i) => !i || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 0.3);
+  }
+  _guideUpdate(dt, p) {
+    const L = this.guideLine, T = this.target; if (!L) return;
+    if (!this.guideOn || !T || !p || T.zone !== this.zone) { L.visible = false; return; }
+    this.guideTex.offset.y -= dt * 0.9; this._guideT -= dt; if (this._guideT > 0) return; this._guideT = 0.12;
+    const top = this.zone === 'top', route = this._guideRoute(p.x, p.z, T.x, T.z), step = top ? 1.6 : 1.0, N = this.guideN, S = [];
+    let skip = 1.4, budget = top ? 150 : 400;                         // start a little ahead of the feet; topside only draw the first 150 m
+    for (let i = 0; i < route.length - 1 && S.length < N && budget > 0; i++) {
+      const [ax, az] = route[i], [bx, bz] = route[i + 1], len = Math.hypot(bx - ax, bz - az); if (len < 1e-3) continue;
+      let d = skip; if (d > len) { skip -= len; continue; } skip = 0;
+      for (; d <= len && S.length < N && budget > 0; d += step, budget -= step) S.push([ax + ((bx - ax) * d) / len, az + ((bz - az) * d) / len]);
+      if (S.length < N && budget > 0 && i === route.length - 2) S.push([bx, bz]);
+    }
+    if (S.length < 2) { L.visible = false; return; }
+    const pos = L.geometry.attributes.position, uv = L.geometry.attributes.uv, hw = top ? 0.55 : 0.34; let run = 0;
+    for (let i = 0; i < S.length; i++) {
+      const a = S[Math.max(0, i - 1)], b = S[Math.min(S.length - 1, i + 1)], dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1, nx = -dz / l, nz = dx / l;
+      if (i) run += Math.hypot(S[i][0] - S[i - 1][0], S[i][1] - S[i - 1][1]);
+      for (const s of [-1, 1]) { const x = S[i][0] + nx * hw * s, z = S[i][1] + nz * hw * s, y = top ? this.heightAt(x, z) + 0.16 : TUBE.y + (this.indoors(x, z) ? 0.07 : 0.2), k = i * 2 + (s > 0 ? 1 : 0); pos.setXYZ(k, x, y, z); uv.setXY(k, s > 0 ? 1 : 0, run / (top ? 2.6 : 1.7)); }
+    }
+    pos.needsUpdate = true; uv.needsUpdate = true; L.geometry.setDrawRange(0, (S.length - 1) * 6); L.visible = true;
+  }
   update(dt, S, focus, ctx = {}) {
+    this._guideUpdate(dt, ctx.player || focus);
     this.t += dt; const t = this.t, M = this.M;
     const sn = S ? S.flow.sun : { e: -0.5, u: 0.6, n: -0.1, factor: 1, up: true, elev: 37 };
     this.sunDir.set(sn.e, sn.u, -sn.n).normalize(); const topZ = this.zone === 'top', night = !sn.up;

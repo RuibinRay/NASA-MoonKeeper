@@ -19,6 +19,7 @@ Legend for evidence: **MOON** measured on or from the Moon · **FLOWN** done in 
 | Experiment | Thale cress three ways: hydroponics, treated moon soil, raw moon soil. | `EXP_POTS` |
 | Research | Points from first harvests, new heating methods and the experiment buy five upgrades. | `TECH` |
 | Tests | 60 checks of mass balance, energy balance, crop timing, routing, saving. | `tools/life_test.mjs` |
+| Animation, step 2 | Walk-in before every job, aimed arms and head, six hand tools, REGO working beside you, crew tools by role. | `G.job` in `js/main.js`, `js/actors.js` |
 | Animation, step 1 | Eased astronaut poses, idle look-around and breathing, landing squash, hip roll; dust from boots, landings, rover wheels and dragged panels that flies in arcs; growing, swaying, fruiting plants; Water Plant glow, vapour, frost, tracking mirror, digger. | `js/actors.js`, `js/world.js` |
 
 ## 2. Animation quality, step by step
@@ -28,8 +29,8 @@ Each step is small enough to ship and check on its own.
 | Step | What changes | Why it matters | Status |
 |---|---|---|---|
 | 1 | Pose easing, idle life, landing squash, ballistic dust, plant growth, Water Plant machinery | Nothing snaps; the world reacts to you | **Done** |
-| 2 | Hands that reach: arms aim at the thing being worked on (panel bolts, rack, hopper); REGO's arms mirror the job; tools appear in hand | Jobs read as work, not hammering the air | Next |
-| 3 | Rover: suspension bounce per wheel, wheel steer angle, body lean in turns, wheel tracks left in the dust | Driving is most of the surface time | Planned |
+| 2 | Hands that reach: you walk up to the job; arms and head aim at the work point (up for a ceiling patch, down for a rack); a tool appears in hand (wrench, welder, picker and basket, spoon and pan, brush); REGO comes round beside the work, points at it and lights it; crew use the tool for their role | Jobs read as work, not hammering the air | **Done** |
+| 3 | Rover: suspension bounce per wheel, wheel steer angle, body lean in turns, wheel tracks left in the dust | Driving is most of the surface time | Next |
 | 4 | Hopper: gimballed thruster plumes with no flame trail (vacuum), landing-leg compression, dust blown outward on landing in straight rays | A real difference between flying on the Moon and on Earth | Planned |
 | 5 | Build scenes: parts fly in and bolt on in order, with a camera path per job instead of one orbit | The 5–15 second scenes are the game's showpieces | Planned |
 | 6 | Doors and airlock: a pressure-cycle animation with a gauge, suit lockers that open, the suit lifting off its stand | The airlock is the rule the game teaches hardest | Planned |

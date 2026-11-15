@@ -34,6 +34,24 @@ export class Astronaut {
       const arm = new THREE.Group(); arm.position.set(0.44 * s, 1.52, 0); arm.rotation.z = 0.12 * s; this.body.add(arm);
       arm.add(mesh(limb(0.46, 0.105), white, 0, -0.3, 0)); arm.add(mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.1, 12), acc, 0, -0.14, 0)); arm.add(mesh(new THREE.SphereGeometry(0.115, 10, 8), dark, 0, -0.64, 0)); this.arms.push(arm);
     }
+    // Hand tools: shown only while working. Right hand = the tool, left hand = what it works on or carries.
+    const tm = (g, m, x, y, z, sx = 1, sy = 1, sz = 1) => { const k = new THREE.Mesh(g, m); k.position.set(x, y, z); k.scale.set(sx, sy, sz); return k; };
+    const steel = std({ color: 0xb9bec6, roughness: 0.35, metalness: 0.8 }), hot = std({ color: 0x111111, emissive: 0x9fe8ff, emissiveIntensity: 3 }), wood = std({ color: 0xd9b45a, roughness: 0.9 });
+    const bx = new THREE.BoxGeometry(1, 1, 1), cy = new THREE.CylinderGeometry(1, 1, 1, 10), sp2 = new THREE.SphereGeometry(1, 10, 8);
+    const mk = (parts) => { const t = new THREE.Group(); t.position.set(0, -0.7, 0.03); t.visible = false; for (const p of parts) t.add(p); return t; };
+    this.tools = { R: {
+      wrench: mk([tm(bx, steel, 0, -0.14, 0, 0.05, 0.36, 0.035), tm(bx, steel, 0, -0.34, 0, 0.14, 0.09, 0.04), tm(bx, dark, 0, -0.34, 0, 0.06, 0.05, 0.05)]),
+      weld:   mk([tm(cy, dark, 0, -0.1, 0, 0.04, 0.28, 0.04), tm(cy, acc, 0, -0.02, 0, 0.05, 0.06, 0.05), tm(cy, steel, 0, -0.3, 0, 0.018, 0.14, 0.018), tm(sp2, hot, 0, -0.38, 0, 0.045, 0.045, 0.045)]),
+      stir:   mk([tm(cy, wood, 0, -0.16, 0, 0.018, 0.42, 0.018), tm(sp2, wood, 0, -0.38, 0, 0.06, 0.03, 0.045)]),
+      brush:  mk([tm(cy, wood, 0, -0.12, 0, 0.022, 0.3, 0.022), tm(bx, steel, 0, -0.3, 0, 0.3, 0.07, 0.05), tm(bx, dark, 0, -0.37, 0, 0.3, 0.08, 0.03)]),
+      pick:   mk([tm(bx, steel, 0.02, -0.12, 0, 0.02, 0.24, 0.03), tm(bx, steel, -0.02, -0.12, 0, 0.02, 0.24, 0.03), tm(bx, acc, 0, 0, 0, 0.06, 0.1, 0.05)]),
+    }, L: {
+      weld:   mk([tm(bx, steel, 0, -0.1, 0.02, 0.3, 0.3, 0.03)]),
+      stir:   mk([tm(cy, dark, 0, -0.06, 0.2, 0.2, 0.06, 0.2), tm(cy, dark, 0, -0.06, 0.02, 0.025, 0.2, 0.025)]),
+      pick:   mk([tm(bx, wood, 0, -0.12, 0.1, 0.34, 0.2, 0.26), tm(bx, acc, 0, -0.02, 0.1, 0.36, 0.03, 0.28)]),
+    } };
+    this.tools.L.stir.children[1].rotation.x = Math.PI / 2; this.hot = hot; this.tool = null;
+    for (const t of Object.values(this.tools.R)) this.arms[1].add(t); for (const t of Object.values(this.tools.L)) this.arms[0].add(t);
     this.lamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.5, 0.7, 1); this.lamp.position.set(0, 1.9, 0.3); this.lamp.target.position.set(0, 0.4, 14); g.add(this.lamp, this.lamp.target);
     this.phase = 0;
   }
@@ -44,20 +62,30 @@ export class Astronaut {
     this.mats.white.color.set(on ? 0xecece7 : 0x3d6fa8); this.mats.dark.color.set(on ? 0x2a2c30 : 0xe0a878);
     this.torso.scale.set(on ? 1.1 : 0.98, 1, on ? 0.86 : 0.74);
   }
-  // pose: 'walk' (default), 'wave', 'work' (hammering), 'carry' (box held in front), 'drag' (pulling something behind), 'sit'
-  update(dt, speed = 0, air = false, pose = 'walk') {
+  setTool(name) { if (name === this.tool) return; this.tool = name; for (const side of ['R', 'L']) for (const k in this.tools[side]) this.tools[side][k].visible = k === name; }
+  // pose: 'walk' (default), 'wave', 'work', 'carry' (box held in front), 'drag' (pulling something behind), 'sit'
+  // opt (while working): { tool: 'wrench' | 'weld' | 'pick' | 'stir' | 'brush' | 'suit', aim: how far above (+) or below (-) the shoulders the work is, in radians }
+  update(dt, speed = 0, air = false, pose = 'walk', opt = null) {
+    this.setTool(pose === 'work' && opt && opt.tool && this.tools.R[opt.tool] ? opt.tool : null);
     this.phase += dt * (2.2 + speed * 0.75);
     const k = Math.min(1, speed / 5), idle = 1 - k, ph = this.phase, sw = Math.sin(ph) * 0.62 * k, [L, R] = this.arms, T = this._t || (this._t = { ll: 0, lr: 0, al: 0, ar: 0, azl: 0.12, azr: -0.12, by: 0, bx: 0, hy: 0, hx: 0 });
     // 1. where every joint wants to be for this pose
     T.ll = pose === 'sit' ? -1.4 : air ? -0.35 : sw; T.lr = pose === 'sit' ? -1.4 : air ? 0.25 : -sw; T.azl = -0.12; T.azr = 0.12;
-    if (pose === 'work') { T.al = -1.2 + Math.sin(ph * 4.5) * 0.55; T.ar = -1.2 + Math.sin(ph * 4.5 + 1.6) * 0.55; }
+    const aim = opt && opt.aim !== undefined ? Math.max(-1.1, Math.min(1.25, opt.aim)) : -0.25, tool = opt && opt.tool, reach = -(Math.PI / 2 + aim);   // arm angle that points the hand at the work
+    if (pose === 'work' && tool === 'wrench') { T.ar = reach + Math.sin(ph * 5) * 0.11; T.al = reach * 0.86 + Math.sin(ph * 2.5) * 0.03; T.azl = 0.22; T.azr = -0.16 + Math.sin(ph * 5 + 1.5) * 0.1; }                // turn, turn, turn
+    else if (pose === 'work' && tool === 'weld') { T.ar = reach + Math.sin(ph * 13) * 0.015; T.al = reach * 0.8; T.azl = 0.3; T.azr = -0.12; }                                                                       // a steady hand, a shield in the other
+    else if (pose === 'work' && tool === 'pick') { const u = 0.5 + 0.5 * Math.sin(ph * 2.2); T.ar = -0.95 + (reach + 0.95) * u; T.al = -1.05 + Math.sin(ph * 2.2) * 0.04; T.azl = 0.25; T.azr = -0.1 - 0.2 * u; }   // reach in, bring it back to the basket
+    else if (pose === 'work' && tool === 'stir') { T.ar = reach + Math.sin(ph * 4) * 0.1; T.azr = -0.1 + Math.cos(ph * 4) * 0.16; T.al = reach * 0.9; T.azl = 0.25; }                                               // round and round
+    else if (pose === 'work' && tool === 'brush') { T.ar = reach + Math.sin(ph * 3) * 0.06; T.azr = Math.sin(ph * 5) * 0.4; T.al = reach * 0.7; T.azl = 0.15; }                                                     // sweep side to side
+    else if (pose === 'work' && tool === 'suit') { T.al = -2.35 + Math.sin(ph * 3) * 0.22; T.ar = -2.35 + Math.sin(ph * 3 + 2) * 0.22; T.azl = 0.5; T.azr = -0.5; }                                                 // hands at the helmet ring
+    else if (pose === 'work') { T.al = -1.2 + Math.sin(ph * 4.5) * 0.55; T.ar = -1.2 + Math.sin(ph * 4.5 + 1.6) * 0.55; }
     else if (pose === 'carry') { T.al = T.ar = -1.25 + Math.sin(ph) * 0.05 * k; T.azl = 0.1; T.azr = -0.1; }
     else if (pose === 'drag') { const heave = Math.sin(ph * 2) * 0.09 * k; T.al = 1.0 + heave; T.ar = 1.0 - heave; T.azl = 0.05; T.azr = -0.05; }   // both hands behind, hauling
     else if (pose === 'sit') { T.al = T.ar = -1.0; }
     else { T.al = air ? -0.9 : -sw * 0.8 + Math.sin(ph * 0.5) * 0.05 * idle; T.ar = pose === 'wave' ? -2.6 + Math.sin(ph * 3) * 0.3 : air ? -0.9 : sw * 0.8 - Math.sin(ph * 0.5) * 0.05 * idle; if (pose === 'wave') T.azr = 0.35; if (air) { T.azl = -0.5; T.azr = 0.5; } }
     T.by = pose === 'sit' ? -0.35 : air ? 0 : Math.abs(Math.sin(ph)) * 0.07 * k + Math.sin(ph * 0.35) * 0.014;
-    T.bx = pose === 'work' ? 0.3 + Math.sin(ph * 4.5) * 0.06 : pose === 'drag' ? 0.24 + 0.2 * k + Math.sin(ph * 2) * 0.035 * k : k * 0.12;   // lean into the load, harder the faster you pull
-    T.hy = pose === 'walk' ? Math.sin(ph * 0.31) * 0.32 * idle : 0; T.hx = pose === 'work' ? 0.25 : air ? -0.15 : Math.sin(ph * 0.23) * 0.06 * idle;   // standing still, you look around
+    T.bx = pose === 'work' && tool ? (tool === 'suit' ? 0.02 : 0.2 - aim * 0.24 + Math.sin(ph * 2.5) * 0.02) : pose === 'work' ? 0.3 + Math.sin(ph * 4.5) * 0.06 : pose === 'drag' ? 0.24 + 0.2 * k + Math.sin(ph * 2) * 0.035 * k : k * 0.12;   // lean into the load, harder the faster you pull
+    T.hy = pose === 'walk' ? Math.sin(ph * 0.31) * 0.32 * idle : 0; T.hx = pose === 'work' ? (tool && tool !== 'suit' ? 0.12 - aim * 0.55 : 0.25) : air ? -0.15 : Math.sin(ph * 0.23) * 0.06 * idle;   // standing still, you look around
     // 2. ease toward it (quick for the stride, softer when the pose itself changes), plus a squash when you land
     const e = 1 - Math.exp(-dt * 16), es = 1 - Math.exp(-dt * 9), m = (a, b, f) => a + (b - a) * f;
     this.legs[0].rotation.x = m(this.legs[0].rotation.x, T.ll, e); this.legs[1].rotation.x = m(this.legs[1].rotation.x, T.lr, e);
@@ -65,6 +93,7 @@ export class Astronaut {
     if (this._air && !air) this._sq = 1; this._air = air; this._sq = Math.max(0, (this._sq || 0) - dt * 3.2); const sq = Math.sin(Math.min(1, this._sq) * Math.PI) * 0.16;
     this.body.position.y = m(this.body.position.y, T.by - sq * 0.9, e); this.body.rotation.x = m(this.body.rotation.x, T.bx, es); this.body.rotation.z = Math.sin(ph) * 0.035 * k;   // hips roll a little with each step
     this.body.scale.set(1 + sq * 0.5, 1 - sq + Math.sin(ph * 0.35) * 0.008 * idle, 1 + sq * 0.5);                                                                              // breathing; squash on landing
+    if (this.tool === 'weld') this.hot.emissiveIntensity = 2.2 + Math.random() * 3; if (this.tool === 'wrench') this.tools.R.wrench.rotation.y = Math.sin(ph * 5) * 0.9;
     this.head.rotation.y = m(this.head.rotation.y, T.hy, es); this.head.rotation.x = m(this.head.rotation.x, T.hx, es);
   }
 }
@@ -110,14 +139,15 @@ export class Rego {
     this.eyeTex.needsUpdate = true;
   }
   update(dt, speed = 0, lookYaw = 0) {
-    this.t += dt;
+    this.t += dt; const aim = this.work && this.workAim !== undefined ? Math.max(-0.6, Math.min(1.2, this.workAim)) : null;
     if (this.t > this.blinkAt) { this.drawEyes('blink'); this.blinkAt = this.t + 2.5 + Math.random() * 3; setTimeout(() => this.drawEyes(this.mood), 130); }
     this.body.position.y = 0.55 + Math.sin(this.t * 2.4) * 0.012 + Math.min(speed, 6) * 0.004 * Math.sin(this.t * 22) + (this.work ? Math.abs(Math.sin(this.t * 9)) * 0.05 : 0);
     this.head.rotation.y += (lookYaw - this.head.rotation.y) * Math.min(1, dt * 5); this.head.rotation.z = Math.sin(this.t * 0.9) * 0.05;
     this.tipMat.emissiveIntensity = this.mood === 'alert' || this.mood === 'worried' ? 2 + Math.sin(this.t * 14) * 2 : 1.2 + Math.sin(this.t * 2) * 0.8;
-    if (this.work) { this.arms[0].rotation.x = -1.3 + Math.sin(this.t * 11) * 0.5; this.arms[1].rotation.x = -1.3 + Math.sin(this.t * 11 + 2) * 0.5; this.arms[0].rotation.z = -0.25; this.arms[1].rotation.z = 0.25; }
+    if (this.work && aim !== null) { const reach = -(Math.PI / 2 + aim), e = Math.min(1, dt * 10); this.arms[0].rotation.x += (reach + Math.sin(this.t * 6) * 0.07 - this.arms[0].rotation.x) * e; this.arms[1].rotation.x += (reach * 0.9 + Math.sin(this.t * 6 + 2) * 0.1 - this.arms[1].rotation.x) * e; this.arms[0].rotation.z = -0.12; this.arms[1].rotation.z = 0.12; this.head.rotation.x += (-aim * 0.5 - this.head.rotation.x) * e; }   // both hands on the job, eyes on it too
+    else if (this.work) { this.arms[0].rotation.x = -1.3 + Math.sin(this.t * 11) * 0.5; this.arms[1].rotation.x = -1.3 + Math.sin(this.t * 11 + 2) * 0.5; this.arms[0].rotation.z = -0.25; this.arms[1].rotation.z = 0.25; }
     else if (this.wave > 0) { this.wave -= dt; this.arms[1].rotation.z = 2.4 + Math.sin(this.t * 14) * 0.35; this.arms[0].rotation.z = this.mood === 'joy' ? -2.4 - Math.sin(this.t * 14) * 0.35 : -0.25; }
-    else { this.arms[1].rotation.z += (0.25 - this.arms[1].rotation.z) * 0.15; this.arms[0].rotation.z += (-0.25 - this.arms[0].rotation.z) * 0.15; this.arms[0].rotation.x = this.arms[1].rotation.x = Math.sin(this.t * 3) * 0.1 * Math.min(1, speed); }
+    else { this.head.rotation.x *= 0.85; this.arms[1].rotation.z += (0.25 - this.arms[1].rotation.z) * 0.15; this.arms[0].rotation.z += (-0.25 - this.arms[0].rotation.z) * 0.15; this.arms[0].rotation.x = this.arms[1].rotation.x = Math.sin(this.t * 3) * 0.1 * Math.min(1, speed); }
   }
 }
 
