@@ -6,7 +6,8 @@
     "cartoon": "Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark.",
     "comic": "Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
     "texture": "Seamless tileable game texture, flat orthographic top-down view, even soft lighting with no strong shadows, no perspective, fills the whole frame edge to edge. No text, no letters, no logos, no watermark.",
-    "comic_in": "Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark."
+    "comic_in": "Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+    "cartoon_in": "Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), lit by warm white ceiling light strips. There are NO windows to the outside: never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, porthole, door or opening. Everyone stands or sits with their feet on the floor (Moon gravity: nobody floats). No text, no letters, no numbers, no logos, no flags, no watermark."
   },
   "jobs": [
     {
@@ -241,21 +242,21 @@
     },
     {
       "id": "lose2",
-      "style": "cartoon",
+      "style": "cartoon_in",
       "aspect_ratio": "16:9",
       "refs": [
         "c_rego_sheet"
       ],
-      "prompt": "Gentle sad cartoon scene: a dark red-walled Moon station corridor with the lights off and one small red emergency lamp. The small helper robot sits alone on the floor with dim droopy cyan eyes, its chest lamp making a little pool of light. Quiet, not scary."
+      "prompt": "Gentle sad cartoon scene: a long white-panelled station corridor deep underground with the main lights off, lit only by one small red emergency lamp on the wall and the soft glow of the helper robot. The small helper robot sits alone on the floor with dim droopy cyan eyes, its chest lamp making a little pool of light. Closed doors along the walls. Quiet, not scary."
     },
     {
       "id": "ev2_solar",
-      "style": "cartoon",
+      "style": "cartoon_in",
       "aspect_ratio": "16:9",
       "refs": [
         "c_rego_sheet"
       ],
-      "prompt": "A red-walled control room during a space-weather alert: a big screen shows the orange Sun with one super-bright flare bursting from its edge. The small helper robot points at the screen with wide alarmed cyan eyes. Amber warning lights."
+      "prompt": "A white-panelled underground control room during a space-weather alert: a big flat wall-mounted monitor screen with a thin black bezel and small graphs around it shows a picture of the orange Sun with one super-bright flare bursting from its edge. No people at all: the small helper robot is alone in the room. It points at the screen with wide alarmed cyan eyes. Amber warning lights blink on the consoles."
     },
     {
       "id": "ev2_meteor",
@@ -274,40 +275,43 @@
     },
     {
       "id": "ev2_breach",
-      "style": "cartoon",
+      "style": "cartoon_in",
       "aspect_ratio": "16:9",
-      "prompt": "Inside an empty red-walled space station tunnel with no people and no characters: air is rushing out through a small jagged hole in the ceiling where stars are visible, a white misty stream with green leaves and sheets of paper flying up toward the hole. A big round steel bulkhead door with yellow-black stripes is sliding shut. A red warning lamp spins. Urgent but not scary."
+      "prompt": "Inside an empty white-panelled station tunnel deep underground, with no people and no characters: air is rushing out through a small jagged crack in the ceiling panels (behind the crack there is only darkness and grey cave rock), a white misty stream with green leaves and sheets of paper flying up toward the crack. A big round steel bulkhead door with yellow-black stripes is sliding shut. A red warning lamp spins on the wall. Urgent but not scary."
     },
     {
       "id": "ev2_quake",
-      "style": "cartoon",
+      "style": "cartoon_in",
       "aspect_ratio": "16:9",
-      "prompt": "A moonquake shakes a red-walled space station corridor: ceiling lamps swinging, wobble lines, a silver pipe joint cracked and spraying a jet of water mist, a toolbox sliding across the floor. Amber warning lights."
+      "prompt": "A moonquake shakes a white-panelled station corridor deep underground: ceiling lamps swinging, wobble lines, a silver pipe joint cracked and spraying a jet of water mist, a red toolbox sliding across the floor. The small helper robot grips a wall handrail with both hands, its tracks firmly on the floor, wide surprised cyan eyes. Amber warning lights.",
+      "refs": [
+        "c_rego_sheet"
+      ]
     },
     {
       "id": "ev2_fire",
-      "style": "cartoon",
+      "style": "cartoon_in",
       "aspect_ratio": "16:9",
       "refs": [
         "c_rookie_sheet",
         "c_rego_sheet"
       ],
-      "prompt": "A small fire in a red-walled space station kitchen: round slow blue-and-orange flames on a cooker, grey smoke along the ceiling. The young astronaut hero in the white suit with orange bands aims a red fire extinguisher at the base of the flames. The small helper robot covers its eyes with one hand, peeking."
+      "prompt": "A small fire in a white-panelled underground station kitchen with steel counters: round slow blue-and-orange flames on a cooker, grey smoke along the ceiling. The young astronaut hero in the white suit with orange bands aims a red fire extinguisher at the base of the flames. The small helper robot covers its eyes with one hand, peeking."
     },
     {
       "id": "ev2_co2",
-      "style": "cartoon",
+      "style": "cartoon_in",
       "aspect_ratio": "16:9",
-      "prompt": "Close-up on a workbench in a red-walled space station: two gloved hands build a homemade air filter by fitting a square white box onto a round hose with grey duct tape, a plastic bag and a piece of card. Tools and a checklist lie nearby. A wall gauge shows a rising orange bar."
+      "prompt": "Close-up on a workbench in a white-panelled underground station workshop: two gloved hands build a homemade air filter by fitting a square white box onto a round hose with grey duct tape, a plastic bag and a piece of card. Tools and a checklist lie nearby. A wall gauge shows a rising orange bar."
     },
     {
       "id": "ev2_crops",
-      "style": "cartoon",
+      "style": "cartoon_in",
       "aspect_ratio": "16:9",
       "refs": [
         "c_rego_sheet"
       ],
-      "prompt": "Inside a space farm with pink grow lights: tomato vines with red tomatoes, some leaves showing fuzzy grey mold spots. The small helper robot inspects a sick leaf closely with worried cyan eyes, holding a tiny magnifying glass."
+      "prompt": "Inside an underground space farm with white-panelled walls and rows of pink LED grow lights over the racks: tomato vines with red tomatoes, some leaves showing fuzzy grey mold spots. The small helper robot inspects a sick leaf closely with worried cyan eyes, holding a tiny magnifying glass."
     },
     {
       "id": "ev2_comms",
@@ -334,21 +338,21 @@
     },
     {
       "id": "ev2_hens",
-      "style": "cartoon",
+      "style": "cartoon_in",
       "aspect_ratio": "16:9",
       "refs": [
         "c_rego_sheet"
       ],
-      "prompt": "Inside a red-walled space station animal room: four plump brown hens look up hopefully at an almost empty sack of dry feed pellets. The small helper robot holds a little scoop and scratches its head. A glass fish tank with orange fish glows in the background. Funny and cute."
+      "prompt": "Inside a white-panelled underground station animal room with a straw-covered pen: four plump brown hens look up hopefully at an almost empty sack of dry feed pellets. The small helper robot holds a little scoop and scratches its head. A glass fish tank with orange fish glows against the back wall. Funny and cute."
     },
     {
       "id": "ev2_supply",
-      "style": "cartoon",
+      "style": "cartoon_in",
       "aspect_ratio": "16:9",
       "refs": [
         "c_rego_sheet"
       ],
-      "prompt": "An open supply case full of neatly packed spare parts, cables and food tins, glowing softly from inside, on the floor of a red-walled space station storage room. The small helper robot lifts one arm in delight, cyan eyes curved happily."
+      "prompt": "An open supply case full of neatly packed spare parts, cables and food tins, glowing softly from inside, on the floor of a white-panelled underground station storage room with plain shelves of boxes. The small helper robot lifts one arm in delight, cyan eyes curved happily."
     },
     {
       "id": "tex_wall",
