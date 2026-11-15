@@ -530,3 +530,13 @@ body.mars #suit{color:#ffd9bf}
 .pill.prop{color:#d7a6ff;border-color:rgba(215,166,255,.5);background:none;margin:0;padding:0 7px}
 .pill.game{background:none;margin:0;padding:0 7px}
 .stat .pill{white-space:nowrap;font-weight:600;font-size:11.5px}
+/* ---- SI-generated marks ---- */
+/* Every SI-made picture shows a visible "SI-generated" mark (NASA Space Apps rules). js/simark.js places one over each picture
+   from assets/img/; the three pictures used as backgrounds get theirs here; the job games draw theirs on the canvas. */
+.si-mark{position:absolute;z-index:3;pointer-events:none;font:700 10.5px/1.25 var(--body);font-style:normal;letter-spacing:.02em;color:#fff;background:rgba(0,0,0,.55);padding:2px 6px;border-radius:5px;white-space:nowrap;text-shadow:none}
+.si-mark.tiny{font-size:8px;padding:1px 3px;border-radius:4px;letter-spacing:0}
+.title-bg::before,.mission-bg::before,.end-bg::before{content:var(--t-si,'SI-generated');position:absolute;z-index:2;font:700 11px/1.25 var(--body);color:#fff;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:6px;pointer-events:none}
+.title-bg::before{right:16px;bottom:14px}
+.mission-bg::before{right:16px;top:14px}
+.end-bg::before{right:16px;top:14px}
+#mission.mars .mission-bg::before{content:none}   /* the Mars mission page has a drawn gradient, not an SI picture */

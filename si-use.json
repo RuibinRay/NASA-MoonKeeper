@@ -1,0 +1,27 @@
+{
+  "about": "How Super Intelligence (SI) tools were used to make MOONKEEPER. NASA Space Apps asks that SI-made images and video carry a visible watermark, and that SI-made code and data say so in text and metadata. This file is that metadata; README.md says the same in words.",
+  "direction": "A human designer chose what to build, asked for every change, and decided what went in.",
+  "code": {
+    "si_generated": true,
+    "tool": "Claude (Anthropic), through Claude Code",
+    "covers": ["js/", "tools/", "css/", "index.html", "teachers.html", "docs/"],
+    "checked_by": "automatic tests in tools/*_test.mjs, and play-throughs in a browser"
+  },
+  "images": {
+    "si_generated": true,
+    "tool": "Higgsfield image model (marketing-studio/image/sunburst), run by tools/gen_art.mjs",
+    "covers": ["assets/img/*.jpg (all 83 pictures: comic, characters, event cards, rooms, job games, title, endings)", "assets/tex/wall3.jpg, floor3.jpg, ceil3.jpg, door3.jpg (interior textures)"],
+    "watermark": "Every picture from assets/img shows a visible 'SI-generated' mark in the game (js/simark.js, css/style.css, js/minigames.js). The interior textures are tiled across 3D walls and floors and carry no mark of their own."
+  },
+  "translations": {
+    "si_generated": true,
+    "tool": "Claude (Anthropic)",
+    "covers": ["lang/*.json (15 languages)"],
+    "checked_by": "node tools/i18n.mjs check (markup, key names and number places); not read by native speakers"
+  },
+  "not_si": [
+    "assets/tex/earth.jpg and assets/tex/moon.jpg: NASA images (Blue Marble, CGI Moon Kit)",
+    "data/raw and js/nasa-events.js: NASA datasets (DONKI, Apollo seismic catalog, Meteorite Landings), processed by tools/build_data.mjs",
+    "REGO's voice: the speech built into the player's own device"
+  ]
+}
