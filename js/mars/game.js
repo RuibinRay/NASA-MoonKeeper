@@ -95,7 +95,7 @@ export function installMars(G, deps) {
     if (F.wNet < 0 && (F.waterDays * 24) / MARS.SOL_H < 5) a.push({ key: 'water', text: tt('Water running out'), sub: sols((F.waterDays * 24) / MARS.SOL_H), go: 'water' });
     if (S.co2 > 1.5) a.push({ key: 'co2', text: tt('Stale air indoors'), sub: tt`${S.co2.toFixed(1)}% carbon dioxide`, go: 'lifesupport' });
     if (S.habTemp < 12) a.push({ key: 'cold', text: tt('The rooms are getting cold'), sub: `${Math.round(S.habTemp)}°C`, go: 'thermal' });
-    if (S.tau > 2) a.push({ text: tt('Dust storm'), sub: tt`dust ${S.tau.toFixed(1)} · solar power ${Math.round((F.solar / Math.max(F.solarClear, 0.1)) * 100)}% of a clear day`, kind: 'warn', go: 'power' });
+    if (S.tau > 2) a.push({ text: tt('Dust storm'), sub: F.sun.up ? tt`dust ${S.tau.toFixed(1)} · solar power ${Math.round((F.solar / Math.max(F.solarClear, 0.1)) * 100)}% of a clear day` : tt`dust ${S.tau.toFixed(1)} · night: no solar power until sunrise`, kind: 'warn', go: 'power' });   // at night the panels make nothing anyway: don't blame the dust
     if (S.panelDust > 0.15) a.push({ text: tt('Solar panels are dusty'), sub: tt`${Math.round(S.panelDust * 100)}% of their power lost`, kind: 'warn', go: 'power' });
     for (const id in LOADS) if (!S.on[id]) a.push({ text: tt`${INFO[id].name} is switched off`, sub: tt('Switch it on at its door'), kind: 'warn', go: id });
     if (S.car.charge < 0.2) a.push({ text: tt('Rover battery low'), sub: `${Math.round(S.car.charge * 100)}%`, kind: 'warn', go: 'garage' });
@@ -268,7 +268,7 @@ export function installMars(G, deps) {
     $('#carry').innerHTML = P.in === 'car' ? `${IC.car} ${tt('Rover')} ${Math.round(S.car.charge * 100)}%` : `${IC.crew} ${S.crew}`;
     const al = G.alerts().sort((x, y) => (x.key ? 0 : 1) - (y.key ? 0 : 1)), ak = al.map((x) => x.text + x.sub).join('|');
     if (ak !== hud.al) { hud.al = ak; const box = $('#alerts'); box.innerHTML = ''; al.slice(0, 5).forEach((x) => { const d = el('div', 'alert ' + (x.kind || ''), `${x.text}<small>${x.sub || ''}</small>`); d.onclick = () => x.go && G.pointTo(x.go); box.appendChild(d); }); }
-    ui.banner(S.tau > 2.5 ? tt('DUST STORM · the solar field is making very little power') : null, true);
+    ui.banner(S.tau > 2.5 ? (S.flow.sun.up ? tt('DUST STORM · the solar field is making very little power') : tt('DUST STORM · after sunrise the solar field will make very little power')) : null, true);
     MAP.mini(ui.mm, 340, 340);
   }
   function goal() {

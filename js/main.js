@@ -486,6 +486,21 @@ function updateRego(dt) {
   let look = (js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z)) - g.rotation.y; look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -1.1, 1.1); G.rego.update(dt, sp, look);
   const dark = P.zone === 'deep' ? !G.inside || (G.S && G.S.flow.eff < 1) : G.inCrater || (G.S && !G.S.flow.sun.up); for (const [m, g] of G.lampMounts) { m.position.copy(g.position); m.quaternion.copy(g.quaternion); } G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = (dark || js) && !P.in ? (js ? 9 : 5) : 0;   // REGO lights the work
 }
+// On the surface, if a building stands between the player and the camera, move the camera in front of it: without this
+// the view could sit inside a wall, half the screen grey. Only buildings count (colliders over 2 m across), not rocks or posts.
+let bigCols = null, bigFrom = null, bigN = -1;
+function pullIn(cp, target) {
+  const all = world.planet === 'mars' ? world.mars?.colliders : world.colliders.top; if (!all) return;
+  if (all !== bigFrom || all.length !== bigN) { bigFrom = all; bigN = all.length; bigCols = all.filter((q) => q.r >= 2); }
+  const dx = cp.x - target.x, dz = cp.z - target.z, a = dx * dx + dz * dz; if (a < 1e-6) return; let t = 1;
+  for (const q of bigCols) {
+    const fx = target.x - q.x, fz = target.z - q.z, d0 = Math.hypot(fx, fz), R = Math.min(q.r + 0.7, d0 - 0.05); if (R < 1.5) continue;   // standing in a doorway (inside the circle): the camera may come no deeper than you
+    const c = d0 * d0 - R * R;
+    const b = 2 * (fx * dx + fz * dz), disc = b * b - 4 * a * c; if (disc < 0) continue;
+    const t1 = (-b - Math.sqrt(disc)) / (2 * a); if (t1 > 0 && t1 < t) t = t1;
+  }
+  if (t < 1) { const k = Math.max(0.05, t - 0.04); cp.x = target.x + dx * k; cp.z = target.z + dz * k; cp.y = target.y + (cp.y - target.y) * k; }   // with a wall right behind you the camera comes almost to your head, as in most third-person games
+}
 function updateCamera(dt) {
   const c = world.camera; G.shake *= Math.pow(0.25, dt); const veh = P.in === 'car' ? 5 : P.in === 'ship' ? 8 : P.in === 'dig' ? 7 : 0;
   if (cam.fp && !P.in) { c.position.set(P.pos.x, P.pos.y + 1.78, P.pos.z); c.rotation.set(-cam.pitch, cam.yaw, 0, 'YXZ'); }
@@ -493,7 +508,7 @@ function updateCamera(dt) {
     const pp = Math.max(cam.pitch, 0.06), cp = Math.cos(pp), dist = cam.dist + veh; tmp.set(P.pos.x, P.pos.y + (P.in ? 2.6 : 1.75), P.pos.z);
     if (G.jobbing && G.jobbing.site && G.jobbing.focus) { const f = G.jobbing.focus, s = G.jobbing.site; tmp.x += (s.x - P.pos.x) * f; tmp.z += (s.z - P.pos.z) * f; tmp.y += G.jobbing.lift || 0; }
     c.position.set(tmp.x + Math.sin(cam.yaw) * cp * dist, tmp.y + Math.sin(pp) * dist, tmp.z + Math.cos(cam.yaw) * cp * dist);
-    if (P.zone === 'top') c.position.y = Math.max(c.position.y, world.heightAt(c.position.x, c.position.z) + 0.6);
+    if (P.zone === 'top') { pullIn(c.position, tmp); c.position.y = Math.max(c.position.y, world.heightAt(c.position.x, c.position.z) + 0.6); }
     else { c.position.z = clamp(c.position.z, -TUBE.halfWidth + 3, TUBE.halfWidth - 3); c.position.x = clamp(c.position.x, -TUBE.halfLen + 2, TUBE.halfLen - 2); c.position.y = clamp(c.position.y, TUBE.y + 0.6, TUBE.y + 26); }
     c.rotation.order = 'XYZ'; c.lookAt(tmp.x, tmp.y + 0.35, tmp.z); if (cam.pitch < 0.06) c.rotateX((0.06 - cam.pitch) * 1.45);
   }
