@@ -122,7 +122,7 @@ export function installEvents(G) {
       else { const c = []; if (!s.storm) c.push(['storm', G.done.bigStorm ? 2 : 3.2]); c.push(['meteor', 2.4], ['quake', 1.8], ['breach', 1.2]); if (up || s.flow.sun.nightHours < 20) c.push(['dust', 1.8]); if (!G.done.fire && roomOk(s, 'kitchen')) c.push(['fire', 1]); if (!G.done.co2 && !s.f.scrubber && roomOk(s, 'oxygen')) c.push(['co2', 1.1]); if (roomOk(s, 'tomato') && !G.done.mold) c.push(['mold', 1.1]); if (!G.done.pump && (roomOk(s, 'potato') || roomOk(s, 'tomato'))) c.push(['pump', 1]); if (!G.done.led && (roomOk(s, 'potato') || roomOk(s, 'tomato'))) c.push(['led', 0.8]); if (!G.done.seal && s.wx.runs > 0) c.push(['seal', 1.2]); if (s.flow.commsOn && !G.done.drift) c.push(['drift', 0.8]); if (!up && !G.done.freeze) c.push(['freeze', 1.6]);
         const list = c.filter((x) => x[0] !== G.lastEvent); let tot = list.reduce((a, b) => a + b[1], 0), r = rng() * tot; for (const [k, w] of list) { r -= w; if (r <= 0) { type = k; break; } } type = type || 'meteor'; }
     }
-    G.lastEvent = type; s.stats.events++; G.sleepLeft = 0; await E[type](); G.scheduleNext(); G.save?.();
+    G.lastEvent = type; s.stats.events++; G.sleepLeft = 0; await E[type](); G.scheduleNext(); G.save?.(true);   // the emergency is settled: save its outcome
   };
   // things the simulation asks the game to handle
   G.processPending = async () => {

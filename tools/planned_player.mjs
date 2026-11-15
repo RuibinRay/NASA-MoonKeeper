@@ -5,16 +5,17 @@
 //   node tools/planned_player.mjs [mode] [travel factor] [plan] [trace]
 //
 // travel factor: 1 = perfect routes, 1.5 = a good player, 2 = a slow one, 3 = lost half the time.
-// Not modelled: surprise events, the Water Plant, the oxygen-from-soil plant, rescued astronauts, cooking by hand.
+// Not modelled: surprise events, the oxygen-from-soil plant, rescued astronauts, cooking by hand.
 import { createSim, applyDisaster, step, computeFlows, harvest, collectEggs, spend, roomOk, jobHours, runDustShield } from '../js/sim.js';
-import { ROOMS, SITES } from '../js/config.js';
+import { ROOMS, SITES, MINE } from '../js/config.js';
+import { planBatch, startBatch } from '../js/life.js';
 
 const GATE = [0, 60];                 // top of the pit elevator
-export const PLANS = ['basics', 'salvage', 'early'];
+export const PLANS = ['basics', 'salvage', 'early', 'water'];
 
 export function runPlanned(mode, f = 1.5, planName = 'basics', trace = false) {
   const S = createSim(mode, 42); applyDisaster(S); S.zone = 'deep';
-  const hl = S.m.hourLen, c = { tray: 0, where: 'deep', log: [], o2On: false };
+  const hl = S.m.hourLen, c = { tray: 0, where: 'deep', log: [], o2On: false, cans: S.m.ice || 0 };   // cans: canisters of icy soil waiting on the surface
   // a task: real seconds of walking and driving, game hours of work, where it happens, when it can start, what it changes
   const T = (name, secs, hours, zone, pre, done) => ({ name, secs, hours, zone, pre, done });
   const broken = () => S.mounts.filter((x) => x === 2).length;
@@ -32,16 +33,26 @@ export function runPlanned(mode, f = 1.5, planName = 'basics', trace = false) {
   // drive the rover to another station, load up to four crates, bring them back to the depot
   const salvage = (id, want) => { const s = SITES.find((q) => q.id === id), dist = Math.hypot(s.pos[0] - GATE[0], s.pos[1] - GATE[1]), need = (2 * dist) / 2600;
     return T('rover trip to ' + id, (2 * dist) / 13 + 8 * want.length, 0, 'top', () => c.where === 'top' && S.car.charge >= need + 0.03,
-      () => { S.car.charge -= need; S.car.charging = true; for (const w of want) { if (w === 'mat') S.mat += 4; else if (w === 'cans') S.cans += 8; else if (w === 'water') S.water = Math.min(S.waterCap, S.water + 12); } }); };
+      () => { S.car.charge -= need; S.car.charging = true; for (const w of want) { if (w === 'mat') S.mat += 4; else if (w === 'cans') S.cans += 8; else if (w === 'water') S.water = Math.min(S.waterCap, S.water + 12); else if (w === 'ice') c.cans++; } }); };
+  // carry n canisters to the Water Plant and start the shortest recipe that gets most of the ice out
+  const batch = (n) => T(`water batch from ${n} canister${n > 1 ? 's' : ''}`, 14 + 6 * n, 0, 'top', () => c.where === 'top' && c.cans >= n && !S.wx.batch,
+    () => { let hours = 18; for (let h = 3; h <= 18; h++) { const p = planBatch(S, { mode: 'ice', method: 'elec', n, kw: 4, hours: h, pa: 10 }, S.flow.sun.factor); if (p.eff >= 0.84) { hours = h; break; } }
+      c.cans -= n; S.wx.ice += n; c.log.push(`      recipe: ${n} canister${n > 1 ? 's' : ''}, 4 kW for ${hours} h -> ${startBatch(S, { mode: 'ice', method: 'elec', n, kw: 4, hours, pa: 10 })}`); });
+  // drive to the Polar Ice Mine, dig k canisters (two scoops each) and bring them home; the cold drains the parked rover
+  const mine = (k) => { const dist = Math.hypot(MINE.x - GATE[0], MINE.z - GATE[1]), digSecs = k * (MINE.perCan * (MINE.digSec + 6) + 8), need = (2 * dist) / 2600 + MINE.drain * ((digSecs * f) / hl);
+    return T(`ice mine trip for ${k} canisters`, (2 * dist) / 13 + digSecs + 8 * k, 0, 'top', () => c.where === 'top' && S.car.charge >= need + 0.03,
+      () => { S.car.charge = Math.max(0, S.car.charge - need); S.car.charging = true; c.cans += k; }); };
   const fabBattery = () => T('start a battery module', 6, 0, 'deep', () => c.where === 'deep' && !S.fab && S.mat >= 6, () => { spend(S, 6); S.fab = { what: 'battery', left: 4, total: 4 }; });
   const plug = () => T('plug in the battery module', 15, 1, 'deep', () => c.where === 'deep' && c.tray > 0 && roomOk(S, 'storage'), () => { c.tray--; S.mods++; });
-  const later = (t) => (t.name.startsWith('two fixed') ? S.bench.some((b) => b && b.left > 0) : t.name.startsWith('plug') ? !!S.fab && roomOk(S, 'storage') : t.name.startsWith('rover') ? S.car.charging : false);
+  const later = (t) => (t.name.startsWith('two fixed') ? S.bench.some((b) => b && b.left > 0) : t.name.startsWith('plug') ? !!S.fab && roomOk(S, 'storage') : t.name.startsWith('rover') || t.name.startsWith('ice mine') ? S.car.charging : t.name.startsWith('water batch') ? !!S.wx.batch : false);
 
   const plans = {
     // only what the base starts with: the Bathroom (so water is recycled properly), then four panels
     basics: [room('bathroom'), up(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), down()],
     // the same, then fetch materials for the Battery Store and a module, then a second trip for water and food
     salvage: [room('bathroom'), up(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), salvage('sakura', ['mat', 'mat', 'mat', 'mat']), down(), room('storage'), fabBattery(), wait(4, 'wait for the builder'), plug(), up(), salvage('chandra', ['water', 'cans', 'cans', 'mat']), down()],
+    // basics, with water: the canister at the base goes into the Water Plant at once, then two more from the ice mine (a good player cannot bring back four: the cold drains the parked rover)
+    water: [room('bathroom'), up(), batch(Math.min(1, c.cans)), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), mine(2), batch(2), down()],
     // four panels, then materials, then the last two panels with the Battery Store and modules on the side
     early: [room('bathroom'), up(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), salvage('sakura', ['mat', 'mat', 'mat', 'mat']), panelsDown(), room('storage'), fabBattery(), panelsUp(), down(), plug(), fabBattery(), wait(4, 'wait for the builder'), plug()],
   };
@@ -78,7 +89,7 @@ export function runPlanned(mode, f = 1.5, planName = 'basics', trace = false) {
     minO2 = Math.min(minO2, S.o2); minW = Math.min(minW, S.water);
   }
   const F = S.flow, win = !!S.over?.win;
-  return { S, win, log: c.log, minO2, minW, text: `${S.over ? (win ? 'WIN ' : 'FAIL') : 'ALIVE'} day ${((S.t - S.t0) / 24).toFixed(1).padStart(4)} cause ${(S.over?.cause || '-').padEnd(5)} hp ${S.health.toFixed(0).padStart(3)} o2 ${S.o2.toFixed(1)} w ${S.water.toFixed(0).padStart(2)} food ${F.foodTotal.toFixed(0).padStart(2)} mat ${S.mat} panels ${F.nOk} rooms ${ROOMS.filter((r) => roomOk(S, r.id)).length}/11 brownout ${S.stats.brownHours.toFixed(0)} h` };
+  return { S, win, log: c.log, minO2, minW, made: S.wx.made, text: `${S.over ? (win ? 'WIN ' : 'FAIL') : 'ALIVE'} day ${((S.t - S.t0) / 24).toFixed(1).padStart(4)} cause ${(S.over?.cause || '-').padEnd(5)} hp ${S.health.toFixed(0).padStart(3)} o2 ${S.o2.toFixed(1)} w ${S.water.toFixed(0).padStart(2)} food ${F.foodTotal.toFixed(0).padStart(2)} mat ${S.mat} panels ${F.nOk} rooms ${ROOMS.filter((r) => roomOk(S, r.id)).length}/11 brownout ${S.stats.brownHours.toFixed(0)} h${S.wx.made > 0 ? ` · Water Plant made ${S.wx.made.toFixed(0)} L` : ''}` };
 }
 
 if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('tools/planned_player.mjs')) {
