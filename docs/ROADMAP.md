@@ -88,7 +88,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | 3 | **Station interiors.** Moving machinery in each of the 11 rooms, emergency and power-out lighting, one consistent material pass, new textures. | Lighting and machinery done in all 11 rooms (see below). Material pass and new textures to do |
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
 | 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | Hopper done (see below). Gait and transitions to do |
-| 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | To do |
+| 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | Sound and music done (see below); reactive lighting was done in step 3. Radio chatter to do |
 | 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | To do |
 
 ### Step 1: what changed and what was measured
@@ -176,3 +176,22 @@ Still to do in step 3: one consistent material pass, and new textures.
 | Flight readout | Height, climb or descent rate, speed, and the same landing advice in words |
 
 The legs, dust and ring are for the eye only. The one change to how the hopper flies is the slower final descent.
+
+### Step 6: sound
+
+All of it is made in the browser; there are no audio files. It was checked by measuring the sound the game puts out, not by ear: nobody has listened to it yet.
+
+| What | How it behaves | Measured output |
+| --- | --- | --- |
+| The station's air and machines | A soft rush of air and a low hum indoors. Both sink and slow in a power cut, and come back with the power | 23 at full power. Before a small volume change it read 29 at full power and 15 in a power cut; the power cut was not measured again afterwards |
+| Silence outside | On the surface nothing reaches you through space. Standing still, you hear only your own breathing | 1 |
+| The helmet | With the helmet on, world sounds pass through a filter that keeps only what is below about 620 Hz, as a suit would. Interface sounds, alarms and the radio are inside the helmet and stay clear | Filter at 620 Hz with the helmet on, 16,000 Hz off |
+| Breathing | A quiet hiss in the helmet, faster when you run | |
+| Footsteps | A shoe on the deck indoors; a dull thump through the boot in the suit | |
+| Rover, digger and hopper | Felt through the seat: the rover's motor rises with speed, the hopper rumbles with its throttle, the digger growls while it digs. A thud when the hopper's feet come down | Hopper: 26 climbing, 10 hovering, 3 landed |
+| Music | Four slow voices drift through calm chords. One emergency is enough to pull them into close, uneasy chords and bring in a low pulse. When the danger passes, a short rising phrase plays and the calm chords return | Chord change confirmed for a leak and its repair |
+| Settings | Sound and Music are separate switches; both are remembered | |
+
+Output figures are average level times 1,000, read from the game's own audio output in the test browser.
+
+Still to do in step 6: radio chatter with Mission Control.
