@@ -625,9 +625,9 @@
   "seconds": 52
  },
  "cm03": {
-  "request_id": "01a1ddad-c2ce-774f-926f-97f35cd2eab4",
-  "status_url": "https://api.higgsfield.ai/requests/01a1ddad-c2ce-774f-926f-97f35cd2eab4/status",
-  "prompt": "Inside an underground Moon station that looks like the inside of a space station: bright RED padded wall panels with white trim on every wall, a closed round red bulkhead door, floor lights. The engineer with blue shoulder stripes, helmet off, proudly shows the young astronaut hero a farm room glowing with pink grow lights: rows of leafy potato plants and tomato vines with red tomatoes, and a small coop with three brown hens. The helper robot watches a hen curiously. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is bright RED padded panels with white trim, and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "request_id": "01a1ddb5-efb6-7225-9add-443b6f93ed7d",
+  "status_url": "https://api.higgsfield.ai/requests/01a1ddb5-efb6-7225-9add-443b6f93ed7d/status",
+  "prompt": "Inside an underground Moon station that looks like the inside of a space station: matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents on every wall, a closed round orange-framed bulkhead door, floor lights. The engineer with blue shoulder stripes, helmet off, proudly shows the young astronaut hero a farm room glowing with pink grow lights: rows of leafy potato plants and tomato vines with red tomatoes, and a small coop with three brown hens. The helper robot watches a hen curiously. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
   "model": "marketing-studio/image/sunburst",
   "refs": [
    "c_rookie_sheet",
@@ -635,14 +635,14 @@
    "c_rego_sheet"
   ],
   "file": "assets/art/v2/cm03.png",
-  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddad-c2ce-774f-926f-97f35cd2eab4/c332d15f-6b5f-47e1-82c5-a8ee16c946b8.png",
-  "bytes": 5144382,
-  "seconds": 45
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddb5-efb6-7225-9add-443b6f93ed7d/44af168e-c4f7-4a8d-84e5-184f94c01fcd.png",
+  "bytes": 4509246,
+  "seconds": 52
  },
  "cm04": {
-  "request_id": "01a1ddad-c2e3-723e-9198-ac9615366a4f",
-  "status_url": "https://api.higgsfield.ai/requests/01a1ddad-c2e3-723e-9198-ac9615366a4f/status",
-  "prompt": "Inside a red-walled underground control center. One whole wall is a huge glowing screen showing a floor-plan map of the underground station: one long corridor with rooms on both sides, drawn in green. The commander with red shoulder stripes, helmet off, points forward with a confident smile, like a coach starting practice. The young astronaut hero in white suit with orange bands stands ready, the helper robot salutes beside them. Red padded walls fill the rest of the background. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is bright RED padded panels with white trim, and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "request_id": "01a1ddb5-efc4-7927-839f-3a086ad51621",
+  "status_url": "https://api.higgsfield.ai/requests/01a1ddb5-efc4-7927-839f-3a086ad51621/status",
+  "prompt": "Inside a white-walled underground control center. One whole wall is a huge glowing screen showing a floor-plan map of the underground station: one long corridor with rooms on both sides, drawn in green. The commander with red shoulder stripes, helmet off, points forward with a confident smile, like a coach starting practice. The young astronaut hero in white suit with orange bands stands ready, the helper robot salutes beside them. White composite wall panels fill the rest of the background. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
   "model": "marketing-studio/image/sunburst",
   "refs": [
    "c_rookie_sheet",
@@ -650,14 +650,14 @@
    "c_rego_sheet"
   ],
   "file": "assets/art/v2/cm04.png",
-  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddad-c2e3-723e-9198-ac9615366a4f/cc517f09-6932-4944-b0f2-281dee8fa2db.png",
-  "bytes": 4091697,
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddb5-efc4-7927-839f-3a086ad51621/be83a3b9-1ceb-45e1-b5db-07b7f3707fca.png",
+  "bytes": 3744041,
   "seconds": 45
  },
  "cm05": {
-  "request_id": "01a1dc76-ae22-7c16-aaee-3906565b7034",
-  "status_url": "https://api.higgsfield.ai/requests/01a1dc76-ae22-7c16-aaee-3906565b7034/status",
-  "prompt": "A huge wall screen in a red-walled control center, split into three video-call windows. In each window an alarmed astronaut from a different Moon station speaks urgently and points upward: a woman with a blonde braid and teal stripes, a man with round glasses and purple stripes, a woman with a dark ponytail and green stripes. Red alarm lights flash around the screen. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. On the Moon the sky is black with stars and there is no air. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "request_id": "01a1ddb7-f4b1-7df7-9716-1bce3c36e04f",
+  "status_url": "https://api.higgsfield.ai/requests/01a1ddb7-f4b1-7df7-9716-1bce3c36e04f/status",
+  "prompt": "A huge wall screen in a white-walled underground control center, split into three video-call windows side by side. In each window an alarmed astronaut from a different Moon station speaks urgently and points upward, each one indoors in front of the plain interior wall of their own station: a woman with a blonde braid and teal stripes, a man with round glasses and purple stripes, a woman with a dark ponytail and green stripes. Red alarm lamps flash on the white composite wall panels around the screen. In the foreground the dark backs of two control desks with small glowing monitors. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
   "model": "marketing-studio/image/sunburst",
   "refs": [
    "c_ingrid",
@@ -665,27 +665,27 @@
    "c_anika"
   ],
   "file": "assets/art/v2/cm05.png",
-  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dc76-ae22-7c16-aaee-3906565b7034/842c3124-d255-4a48-93c8-c6b3ca992fa4.png",
-  "bytes": 4319642,
-  "seconds": 45
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddb7-f4b1-7df7-9716-1bce3c36e04f/ffc32833-8ddb-4013-833c-030a7ddd6635.png",
+  "bytes": 3926857,
+  "seconds": 46
  },
  "cm06": {
-  "request_id": "01a1ddad-c309-7913-b871-693ffc19a857",
-  "status_url": "https://api.higgsfield.ai/requests/01a1ddad-c309-7913-b871-693ffc19a857/status",
-  "prompt": "Close-up of a round green radar screen set into a red padded wall, showing a big swarm of bright dots rushing toward a small outline of the Moon base. The small helper robot stares at it with wide worried cyan eyes, one little hand on the console. Red alarm glow. Behind the robot there is only the red padded wall. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is bright RED padded panels with white trim, and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "request_id": "01a1ddb5-efd3-7c0e-a345-816ec668f019",
+  "status_url": "https://api.higgsfield.ai/requests/01a1ddb5-efd3-7c0e-a345-816ec668f019/status",
+  "prompt": "Close-up of a round green radar screen set into a white composite wall panel, showing a big swarm of bright dots rushing toward a small outline of the Moon base. The small helper robot stares at it with wide worried cyan eyes, one little hand on the console. A red alarm lamp glows on the wall. Behind the robot there is only the white panelled wall. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
   "model": "marketing-studio/image/sunburst",
   "refs": [
    "c_rego_sheet"
   ],
   "file": "assets/art/v2/cm06.png",
-  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddad-c309-7913-b871-693ffc19a857/04c02255-81e2-4802-97ec-6c22256db205.png",
-  "bytes": 3991290,
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddb5-efd3-7c0e-a345-816ec668f019/9548e271-342a-4a58-932e-c3f0542499f9.png",
+  "bytes": 3853367,
   "seconds": 39
  },
  "cm07": {
-  "request_id": "01a1ddad-c302-7c67-8e26-87fdafe6f7fb",
-  "status_url": "https://api.higgsfield.ai/requests/01a1ddad-c302-7c67-8e26-87fdafe6f7fb/status",
-  "prompt": "In a red-walled underground station corridor with red padded walls on both sides and a metal deck floor: the commander with red shoulder stripes and the engineer with blue shoulder stripes, helmets on, run toward an elevator door at the end of the corridor. The commander looks back and holds up a hand in a stay-here gesture toward the young astronaut hero in the white suit with orange bands, who stands with the small helper robot. Urgent motion lines. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is bright RED padded panels with white trim, and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "request_id": "01a1ddb5-efcc-74c1-94ee-4dd11cc1411e",
+  "status_url": "https://api.higgsfield.ai/requests/01a1ddb5-efcc-74c1-94ee-4dd11cc1411e/status",
+  "prompt": "In a white-walled underground station corridor with white composite wall panels on both sides, orange door frames and a dark metal deck floor: the commander with red shoulder stripes and the engineer with blue shoulder stripes, helmets on, run toward an elevator door at the end of the corridor. The commander looks back and holds up a hand in a stay-here gesture toward the young astronaut hero in the white suit with orange bands, who stands with the small helper robot. Urgent motion lines. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
   "model": "marketing-studio/image/sunburst",
   "refs": [
    "c_rookie_sheet",
@@ -694,50 +694,50 @@
    "c_rego_sheet"
   ],
   "file": "assets/art/v2/cm07.png",
-  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddad-c302-7c67-8e26-87fdafe6f7fb/2f98b8e8-7442-43ce-874c-184ff818f4d6.png",
-  "bytes": 4515660,
-  "seconds": 51
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddb5-efcc-74c1-94ee-4dd11cc1411e/1f986a77-4ddf-4874-99b4-4e02472b2877.png",
+  "bytes": 4249469,
+  "seconds": 52
  },
  "cm10": {
-  "request_id": "01a1ddae-5bb0-7cb7-8ab5-15a91d32b108",
-  "status_url": "https://api.higgsfield.ai/requests/01a1ddae-5bb0-7cb7-8ab5-15a91d32b108/status",
-  "prompt": "A dark red-walled underground control center lit only by red emergency lights. A huge screen showing a floor-plan map of the station, one long corridor with rooms on both sides, is covered in red warning triangles. Seen from behind, the young astronaut hero in the white suit with orange bands and the small helper robot stand small in front of the screen. The robot looks up at the astronaut with worried cyan eyes. Solid red padded walls on the left and right of the screen. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is bright RED padded panels with white trim, and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "request_id": "01a1ddb6-8938-7570-9d41-bec83882cbbd",
+  "status_url": "https://api.higgsfield.ai/requests/01a1ddb6-8938-7570-9d41-bec83882cbbd/status",
+  "prompt": "A dark underground control center lit only by red emergency lamps, which tint its white wall panels dark red-grey. A huge screen showing a floor-plan map of the station, one long corridor with rooms on both sides, is covered in red warning triangles. Seen from behind, the young astronaut hero in the white suit with orange bands and the small helper robot stand small in front of the screen. The robot looks up at the astronaut with worried cyan eyes. Solid panelled walls on the left and right of the screen. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
   "model": "marketing-studio/image/sunburst",
   "refs": [
    "c_rookie_sheet",
    "c_rego_sheet"
   ],
   "file": "assets/art/v2/cm10.png",
-  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddae-5bb0-7cb7-8ab5-15a91d32b108/3eeca003-3d8d-45fe-a2ca-ccc6ee246e2a.png",
-  "bytes": 3986845,
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddb6-8938-7570-9d41-bec83882cbbd/d07084ca-2b1d-4d7a-90f2-89710c11d409.png",
+  "bytes": 3496515,
   "seconds": 39
  },
  "cm11": {
-  "request_id": "01a1ddae-73ef-7b29-a338-5ca039abf327",
-  "status_url": "https://api.higgsfield.ai/requests/01a1ddae-73ef-7b29-a338-5ca039abf327/status",
-  "prompt": "A big wall screen in a dim red-walled underground room shows the mission control flight director, a kind serious woman with silver-streaked hair and a headset, speaking calmly and holding up a hand in reassurance, with rows of blue computer screens behind her. In the foreground, seen from behind, the young astronaut hero in the white suit with orange bands listens. Soft blue light from the screen falls on red padded walls. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is bright RED padded panels with white trim, and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "request_id": "01a1ddb6-a192-7309-8cca-37942febd46d",
+  "status_url": "https://api.higgsfield.ai/requests/01a1ddb6-a192-7309-8cca-37942febd46d/status",
+  "prompt": "A big wall screen in a dim white-walled underground room shows the mission control flight director, a kind serious woman with silver-streaked hair and a headset, speaking calmly and holding up a hand in reassurance, with rows of blue computer screens behind her. In the foreground, seen from behind, the young astronaut hero in the white suit with orange bands listens. Soft blue light from the screen falls on white composite wall panels. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
   "model": "marketing-studio/image/sunburst",
   "refs": [
    "c_flight",
    "c_rookie_sheet"
   ],
   "file": "assets/art/v2/cm11.png",
-  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddae-73ef-7b29-a338-5ca039abf327/037c9a49-0500-4885-9fff-a369c78e0205.png",
-  "bytes": 4107055,
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddb6-a192-7309-8cca-37942febd46d/7ebde913-aa0c-40fc-a2a4-2ceac42e6c62.png",
+  "bytes": 3808811,
   "seconds": 45
  },
  "cm12": {
-  "request_id": "01a1ddae-7471-7e84-b9f3-9c1644d8da93",
-  "status_url": "https://api.higgsfield.ai/requests/01a1ddae-7471-7e84-b9f3-9c1644d8da93/status",
-  "prompt": "Hopeful close panel, indoors in the red-walled underground station corridor with a metal deck floor: the young astronaut hero in the white suit with orange bands and gold visor kneels and rests one gloved hand on the head of the small helper robot. The robot looks brave and determined with cyan eyes, one little fist raised. Above them a single ceiling light flickers back on, throwing warm light on the red padded walls. New courage. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is bright RED padded panels with white trim, and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
+  "request_id": "01a1ddb6-ba27-7f05-a727-d33ba7806e37",
+  "status_url": "https://api.higgsfield.ai/requests/01a1ddb6-ba27-7f05-a727-d33ba7806e37/status",
+  "prompt": "Hopeful close panel, indoors in the white-walled underground station corridor with a dark metal deck floor: the young astronaut hero in the white suit with orange bands and gold visor kneels and rests one gloved hand on the head of the small helper robot. The robot looks brave and determined with cyan eyes, one little fist raised. Above them a single ceiling light flickers back on, throwing warm light on the white composite wall panels. New courage. Comic-book panel for kids: bold black ink outlines, flat cel-shaded colors with subtle halftone dots, dynamic camera angle, clear silhouettes, the same cartoon character designs as in the reference images. This scene is INDOORS, deep underground inside a lava-tube cave station: every wall is made of matte white composite wall panels with rounded corners, thin grey seams and small safety-orange accents (never red walls), and there are NO windows to the outside. Never show the lunar surface, the black sky, stars, the Moon or the Earth through any window, door or opening. Any small porthole is closed or shows only dark grey cave rock. No text, no letters, no speech bubbles, no captions, no logos, no flags, no watermark.",
   "model": "marketing-studio/image/sunburst",
   "refs": [
    "c_rookie_sheet",
    "c_rego_sheet"
   ],
   "file": "assets/art/v2/cm12.png",
-  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddae-7471-7e84-b9f3-9c1644d8da93/fb0682bb-663b-48a3-8470-43a5983af61c.png",
-  "bytes": 4209421,
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1ddb6-ba27-7f05-a727-d33ba7806e37/249fbe13-8cd1-4dff-9771-bdd7afa9f402.png",
+  "bytes": 4235136,
   "seconds": 45
  },
  "title2": {
