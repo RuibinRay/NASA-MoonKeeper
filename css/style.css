@@ -286,7 +286,7 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
 .bf{display:grid;grid-template-columns:30px 1fr;column-gap:9px;align-items:center;padding:9px 11px;border-radius:11px;background:rgba(6,11,17,.6);border:1px solid rgba(120,205,255,.12)}
 .bf i{grid-row:span 2;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;color:var(--cyan);background:rgba(73,230,255,.1)}.bf i .ic{width:16px;height:16px}
 .bf span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}.bf b{font-size:13.5px;line-height:1.3}
-.mission-foot{display:flex;justify-content:flex-end;align-items:center;gap:18px;margin-top:16px}
+.mission-foot{display:flex;justify-content:flex-end;align-items:center;gap:18px;margin-top:16px;position:sticky;bottom:0;z-index:2;padding:14px 0 16px;background:linear-gradient(180deg,rgba(2,5,10,0),rgba(2,5,10,.94) 35%)}   /* Launch stays on screen on short windows too */
 /* ---------- hints ---------- */
 #rego{animation:pop .28s cubic-bezier(.2,1.4,.4,1) both;filter:drop-shadow(0 8px 22px rgba(0,0,0,.45))}
 @keyframes pop{from{transform:translateY(10px) scale(.96)}}

@@ -119,10 +119,16 @@ export function installActions(G) {
       return c;
     }
     const li = nearItem(), door = nearDoor(), hole = nearHole(), done = st && st.id === 'bench' ? s.bench.findIndex((b) => b && b.left <= 0) : -1;
+    // A station panel (depot, outpost, a building) and a parked vehicle in reach at once: E goes to whichever you stand closer to for its size, the other to Q
+    const panel = st && !lift && st.id !== 'suit' && G.state === 'play' ? st : null;
+    const stFar = () => { const [x, z] = panel.site ? [panel.site.pos[0] + 2, panel.site.pos[1] + 16] : panel.pos; return Math.hypot(P.pos.x - x, P.pos.z - z) / (panel.site ? 9 : panel.r); };
+    const vehFar = () => (veh === 'car' ? Math.hypot(P.pos.x - G.car.x, P.pos.z - G.car.z) / 5.4 : shipReach() / 6);
+    const panelFirst = !!(panel && veh && stFar() <= vehFar());
+    const drive = veh && { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) };
     if (hole) c.e = { label: `Patch the hole in the ${hole.name} (1 material, 1 h)`, run: () => J.patch(hole.id) };
     else if (li) c.e = { label: `Pick up the ${ITEMS[li.type].name}`, run: () => G.take(li) };
     else if (top && near(G.dig.x, G.dig.z, 5.5)) c.e = { label: 'Drive the digger', run: () => G.enterVehicle('dig') };
-    else if (veh && !(lift && needLift())) c.e = { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) };
+    else if (veh && !(lift && needLift()) && !panelFirst) c.e = drive;
     else if (m >= 0 && s.mounts[m] === 2) c.e = { label: 'Pull the broken panel off its mount (30 min)', run: () => J.removePanel(m) };
     else if (done >= 0) c.e = { label: 'Take the fixed panel', run: () => J.benchTake(done) };
     else if (door) c.e = { label: s.rooms[door.id].door ? `Lock the ${door.name} door` : `Unlock the ${door.name} door`, run: () => G.toggleDoor(door.id) };
@@ -130,6 +136,8 @@ export function installActions(G) {
     else if (lift) c.e = { label: st.id === 'gate' ? 'Ride the elevator down into the cave' : 'Ride the elevator up to the surface', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
     else if (st && G.state === 'play') c.e = { label: st.info ? `Look at the ${st.name}` : st.name, run: () => G.openStation(st) };
     if (veh && G[veh].cargo.length) { const last = G[veh].cargo[G[veh].cargo.length - 1]; c.q = { label: `Take the ${ITEMS[last.type].name} out (${G[veh].cargo.length} on board)`, run: () => G.take(last) }; }
+    if (panelFirst && c.e && c.e.run !== drive.run) c.q = drive;   // the vehicle is never out of reach: step up to it and E drives again
+    else if (panel && veh && c.e === drive && !c.q) c.q = { label: panel.info ? `Look at the ${panel.name}` : panel.name, run: () => G.openStation(panel) };
     if (lift && veh && !c.q && c.e) c.q = c.e.label.startsWith('Ride') ? { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) } : { label: 'Ride the elevator', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };   // a rover parked on the elevator never blocks it
     return c;
   };
