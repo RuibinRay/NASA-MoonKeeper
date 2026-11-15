@@ -1,6 +1,6 @@
 // MOONKEEPER 2 — interface: HUD, comic pages, dialogue, cards, Power Board, Control Center, maps, end screens.
 import { K, SYS, MODES, STATIONS, SITES, GLOSSARY, PIT, TUBE, HALL, AIRLOCK, CAVE_C, INDOOR_C, BASE, MINE, ROOMS, ROLES, MOUNTS, CAR_PAD, SHIP_PAD, roomRect, fmt } from './config.js';
-import { computeFlows, score, roomOk, hasWork, sun as sunAt } from './sim.js';
+import { computeFlows, score, roomOk, machineOk, hasWork, sun as sunAt } from './sim.js';
 import { IC } from './icons.js';
 import { realMoonSvg, realFacts, roundTo, ROVER_KMH } from './moonmap.js';
 
@@ -235,13 +235,13 @@ export class UI {
     if (F.eff < 1) return shed('<b>Brownout:</b> the battery is empty, so turn something down.');
     if (lv.heat < F.heatNeed) return set('heat', F.heatNeed, `Topside machines need heater level <b>${F.heatNeed}</b> right now, or something will break.`);
     if (S.f.commsDown && lv.comms > 0 && F.use.comms > 0) return set('comms', 0, 'The dish is knocked over, so the Earth Link is burning power for nothing. Switch it off until the dish is fixed.');
-    if (S.o2 < 0.8 || (F.o2Net < 0 && F.o2Days < 2)) { const h = roomOk(S, 'oxygen') && S.water > 3 ? up('o2gen', '<b>Oxygen is running low.</b> Turn the Oxygen Maker up. It costs power and water.') : null; if (h) return h; if (!S.f.isruDown && !lv.isru && canPay('isru', 1)) return set('isru', 1, '<b>Oxygen is running low.</b> The Moon-Dust Oxygen Plant makes oxygen without using water.'); }
+    if (S.o2 < 0.8 || (F.o2Net < 0 && F.o2Days < 2)) { const h = machineOk(S, 'oxygen') && S.water > 3 ? up('o2gen', '<b>Oxygen is running low.</b> Turn the Oxygen Maker up. It costs power and water.') : null; if (h) return h; if (!S.f.isruDown && !lv.isru && canPay('isru', 1)) return set('isru', 1, '<b>Oxygen is running low.</b> The Moon-Dust Oxygen Plant makes oxygen without using water.'); }
     if (F.net < 0 && F.battHours < 10) { const h = shed(`The battery will be empty in <b>${fmt.hrs(Math.floor(F.battHours))}</b>.`); if (h) return h; }
-    if (F.wNet < 0 && F.waterDays < 3 && roomOk(S, 'water')) { const h = up('recycler', '<b>Water is dropping.</b> Turn the Water Recycler up to get more of it back.'); if (h) return h; }
+    if (F.wNet < 0 && F.waterDays < 3 && machineOk(S, 'water')) { const h = up('recycler', '<b>Water is dropping.</b> Turn the Water Recycler up to get more of it back.'); if (h) return h; }
     if (F.farms > 0 && lv.farm === 0 && canPay('farm', 1)) return set('farm', 1, 'The grow lights are off, so the plants are wilting. Level 1 keeps them alive.');
     if (F.farms > 0 && F.foodDays < 2) { const h = up('farm', '<b>Food is short.</b> Brighter grow lights make the crops ripen faster.'); if (h) return h; }
     if (!S.f.commsDown && lv.comms === 0 && canPay('comms', 1)) return set('comms', 1, 'The Earth Link is off, so storms arrive with no warning. Level 1 gives about 4 hours.');
-    if (S.battery >= F.cap - 1 && F.net > 3) { const h = (F.farms > 0 && up('farm', 'The battery is full and power is being wasted. Spend it on faster crops.')) || (roomOk(S, 'oxygen') && S.water > 6 && S.o2 < S.o2Cap - 0.5 && up('o2gen', 'The battery is full and power is being wasted. Spend it on spare oxygen.')); if (h) return h; }
+    if (S.battery >= F.cap - 1 && F.net > 3) { const h = (F.farms > 0 && up('farm', 'The battery is full and power is being wasted. Spend it on faster crops.')) || (machineOk(S, 'oxygen') && S.water > 6 && S.o2 < S.o2Cap - 0.5 && up('o2gen', 'The battery is full and power is being wasted. Spend it on spare oxygen.')); if (h) return h; }
     return null;
   }
   powerBoard(opts = {}) {
@@ -251,9 +251,9 @@ export class UI {
       const seg = (v, color, label) => (v > 0.05 ? `<span style="width:${(v / total) * 100}%;background:${color}" title="${label} ${v.toFixed(1)} kW">${v / total > 0.1 ? label + ' ' + v.toFixed(0) : ''}</span>` : '');
       const lvl = (k) => `<div class="lv">${SYS[k].kw.map((kw, i) => `<button data-k="${k}" data-i="${i}" class="${S.lv[k] === i ? 'on' : ''} ${hint && hint.k === k && hint.i === i ? 'guide-rec' : ''}">${SYS[k].kw.length === 2 ? ['OFF', 'ON'][i] : i === 0 ? 'OFF' : i}<small>${kw} kW</small></button>`).join('')}</div>`;
       const eff = {
-        o2gen: !roomOk(S, 'oxygen') ? '<span class="down">The Oxygen Room is broken or has no air. Fix the room first.</span>' : S.water <= 0 ? '<span class="down">No water to split!</span>' : `Makes <b>${SYS.o2gen.out[S.lv.o2gen]} kg</b> of oxygen a day and drinks <b>${(SYS.o2gen.out[S.lv.o2gen] * K.H2O_PER_KG_O2).toFixed(1)} L</b> of water a day.`,
+        o2gen: !machineOk(S, 'oxygen') ? '<span class="down">The Oxygen Room is broken. Fix the room first.</span>' : S.water <= 0 ? '<span class="down">No water to split!</span>' : `Makes <b>${SYS.o2gen.out[S.lv.o2gen]} kg</b> of oxygen a day and drinks <b>${(SYS.o2gen.out[S.lv.o2gen] * K.H2O_PER_KG_O2).toFixed(1)} L</b> of water a day.`,
         isru: S.f.isruDown ? '<span class="down">Broken by the meteor shower. Repair it topside.</span>' : S.lv.isru ? 'Makes <b>2.2 kg</b> of oxygen a day from moon soil. Uses no water.' : 'Off.',
-        recycler: !roomOk(S, 'water') ? '<span class="down">The Water Room is broken or has no air.</span>' : `<b>${Math.round(F.rate * 100)}%</b> of used water comes back${roomOk(S, 'bathroom') ? '' : ' (less while the Bathroom is broken)'}. You lose ${(F.wUsed * (1 - F.rate)).toFixed(1)} L a day.`,
+        recycler: !machineOk(S, 'water') ? '<span class="down">The Water Room is broken. Fix the room first.</span>' : `<b>${Math.round(F.rate * 100)}%</b> of used water comes back${roomOk(S, 'bathroom') ? '' : ' (less while the Bathroom is broken)'}. You lose ${(F.wUsed * (1 - F.rate)).toFixed(1)} L a day.`,
         farm: F.farms === 0 ? '<span class="down">Both farm rooms are broken.</span>' : S.lv.farm === 0 ? '<span class="down">Lights off: plants slowly wilt.</span>' : `${F.farms} of 2 farms lit. Growth ×${F.grow.toFixed(2)}. Plants add ${F.o2Farm.toFixed(2)} kg of oxygen a day.`,
         heat: `Topside is <b>${fmt.temp(sun.tempC)}</b>. Machines up there need level <b>${F.heatNeed}</b> right now. ${S.lv.heat >= F.heatNeed ? '<span class="up">OK</span>' : '<span class="down">Too low — something will break!</span>'}`,
         comms: S.f.commsDown ? '<span class="down">The dish is down — fix it topside.</span>' : ['No link: storms arrive with no warning.', 'Storm warnings about 4 hours ahead.', 'Storm warnings about 8 hours ahead.'][S.lv.comms],

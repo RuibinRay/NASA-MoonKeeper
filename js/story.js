@@ -1,6 +1,6 @@
 // MOONKEEPER 2 — story: comic pages, the hands-on training, the meteor shower, and the endings.
 import { K, MOUNTS, PIT, ROOMS, SITES, fmt } from './config.js';
-import { roomOk, score } from './sim.js';
+import { roomOk, machineOk, score } from './sim.js';
 
 const cap = (t) => t, by = (who, text, at) => ({ who, text, at });
 
@@ -142,14 +142,19 @@ export function ending(G) {
   const leaks = ROOMS.filter((r) => S.rooms[r.id].hole > 0 && S.rooms[r.id].door).map((r) => r.name);
   if (c === 'air') { title = 'THE AIR RAN OUT';
     if (leaks.length) why.push(`The <b>${leaks.join(' and ')}</b> had a hole and its door was open. Air poured out into space, and the tanks emptied trying to keep up.`);
-    if (!roomOk(S, 'oxygen')) why.push('The Oxygen Room was broken or had no air, so the Oxygen Maker could not run.');
+    // Say why the Oxygen Maker was not keeping up: the room, the switch, or the setting. Not the room when the room was fine.
+    if (!machineOk(S, 'oxygen')) why.push('The Oxygen Room was broken, so the Oxygen Maker could not run.');
+    else if (S.lv.o2gen === 0) why.push('The Oxygen Maker was switched off on the Power Board, so no new oxygen was being made.');
+    else if (S.water > 0 && F.o2Elec + F.o2Isru + F.o2Farm < F.o2Use) why.push(`The Oxygen Maker was at level ${S.lv.o2gen}${F.eff < 1 ? ' in a brownout' : ''}, making less oxygen than ${F.people > 1 ? 'the crew breathes' : 'you breathe'}.`);
     if (brown && m.battZero <= (m.o2Zero ?? 1e9)) why.push(brown);
     if (m.waterZero !== undefined && m.waterZero <= (m.o2Zero ?? 1e9)) why.push(`On ${D(S, m.waterZero)} the water ran dry. The Oxygen Maker makes air by splitting water, so no water meant no new oxygen.`);
     why.push(`On ${D(S, m.o2Zero ?? S.t)} the oxygen tank reached zero${F.people > 1 ? `, with ${F.people} people breathing from it` : ''}.`, 'With no new oxygen, the air left in the station lasted only a few hours.');
     science = 'One person needs 0.84 kg of oxygen every single day. And in space, air only stays where walls hold it in: any hole lets it rush out, because outside there is nothing pushing back.';
-    tip = 'When a room leaks, decide fast: patch it, or lock its door. Keep the Oxygen Room working above everything else.';
+    tip = leaks.length || S.stats.holes ? 'When a room leaks, decide fast: patch it, or lock its door. Keep the Oxygen Room working above everything else.'
+      : brown ? 'Before sunset, fill the battery and the oxygen tank. At night the reactor alone cannot run everything, so the tank has to carry you.'
+      : 'Watch for "will run out before rescue" in the alerts, and keep the Oxygen Maker making more than you breathe.';
   } else if (c === 'water') { title = 'THE WATER RAN OUT';
-    if (!roomOk(S, 'water')) why.push('The Water Room was broken, so no water was being recycled at all.'); else if (S.lv.recycler < 2) why.push('The Water Recycler was set low, so most used water was thrown away.');
+    if (!machineOk(S, 'water')) why.push('The Water Room was broken, so no water was being recycled at all.'); else if (S.lv.recycler < 2) why.push('The Water Recycler was set low, so most used water was thrown away.');
     if (!roomOk(S, 'bathroom')) why.push('The Bathroom was still broken, so the recycler got back less water.');
     if (S.lv.o2gen >= 2) why.push('The Oxygen Maker was running high. Every kilogram of oxygen costs 1.125 litres of water.'); if (S.f.leakWater) why.push('A leaking water pipe was never sealed.'); if (brown) why.push(brown);
     why.push(`On ${D(S, m.waterZero ?? S.t)} the water tank reached zero. A person can only last a few days without water.`);
