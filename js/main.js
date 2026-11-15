@@ -24,7 +24,7 @@ const G = (window.G = {
   items: [], followers: [], crew: {}, siteNpc: {}, itemSeq: 1,
 });
 G.audio = new Sound(); G.world = new World(canvas); G.ui = new UI(G);
-G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.world.scene.add(G.astro.group, G.rego.group);
+G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.astro.lamp.visible = true; G.world.scene.add(G.astro.group, G.rego.group);
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
 G.dig = { x: MINE.x - 10, z: MINE.z + 9, yaw: 2.3, v: 0, load: 0, prog: 0, boom: 0, dig: 0, dry: 0 };   // the digger at the Polar Ice Mine
 const groundY = (zone, x, z) => (zone === 'top' ? world.heightAt(x, z) : TUBE.y);
@@ -224,6 +224,28 @@ $('#b-speed').onclick = () => { G.speedMul = G.speedMul === 1 ? 2 : G.speedMul =
 $('#b-sound').onclick = () => { $('#b-sound').innerHTML = G.audio.toggle() ? IC.sound : IC.mute; };
 // Guide mode: a yellow line on the ground to the next place, and REGO marks the button to press in panels. On by default; Settings turns it off.
 G.guide = (() => { try { return localStorage.getItem('mk-guide') !== '0'; } catch (e) { return true; } })(); world.guideOn = G.guide;
+// ---------- graphics quality: auto, high, medium or low ----------
+const stored = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }, store = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+G.quality = stored('mk-quality', 'auto'); G._autoQ = stored('mk-quality-auto', 'high'); G.qLevel = () => (G.quality === 'auto' ? G._autoQ : G.quality);
+G.setQuality = (q) => { G.quality = q; store('mk-quality', q); world.setQuality(G.qLevel()); fpsN = fpsT = fpsLow = 0; fpsTry = null; };
+G.showFps = stored('mk-fps', '0') === '1'; G.setShowFps = (on) => { G.showFps = !!on; store('mk-fps', on ? '1' : '0'); $('#fps').classList.toggle('hidden', !on); };
+let fpsLast = 0, fpsN = 0, fpsT = 0, fpsLow = 0, fpsTry = null, fpsStop = false;
+// Counts real frames during steady play. On Auto, two slow readings in a row lower the detail one step.
+// If a step down does not help (a screen or power setting is capping the rate), it is undone and Auto leaves the detail alone.
+function fpsTick(now) {
+  const d = now - fpsLast; fpsLast = now;
+  if (d <= 0 || d > 250 || document.hidden || G.state !== 'play' || G.paused || ui.busy || G.riding) { fpsN = fpsT = 0; return; }
+  fpsN++; fpsT += d; if (fpsT < 2000) return;
+  const fps = (fpsN * 1000) / fpsT; fpsN = fpsT = 0; G.fps = fps; if (G.showFps) $('#fps').textContent = Math.round(fps) + ' fps · ' + G.qLevel();
+  if (G.quality !== 'auto' || fpsStop) return;
+  if (fpsTry) { if (++fpsTry.n < 2) return; const helped = fps >= 40 || fps >= fpsTry.before * 1.12;
+    if (!helped && G._autoQ !== 'low') { G._autoQ = 'low'; fpsTry.n = 0; world.setQuality('low'); return; }   // medium did not help: try low once
+    if (!helped) { G._autoQ = fpsTry.from; fpsStop = true; world.setQuality(G._autoQ); }                      // nothing helps: something else caps the rate, so put the detail back
+    store('mk-quality-auto', G._autoQ); fpsTry = null; fpsLow = 0; return; }
+  fpsLow = fps < 40 ? fpsLow + 1 : 0;
+  if (fpsLow >= 2 && G._autoQ !== 'low') { fpsTry = { from: G._autoQ, before: fps, n: 0 }; G._autoQ = G._autoQ === 'high' ? 'medium' : 'low'; fpsLow = 0; world.setQuality(G._autoQ); ui.toast('Graphics detail lowered to keep the game smooth. You can change this in Settings.'); }
+}
+world.setQuality(G.qLevel()); G._fpsTick = fpsTick;   // test hook
 G.setGuide = (on) => { G.guide = !!on; world.guideOn = G.guide; try { localStorage.setItem('mk-guide', G.guide ? '1' : '0'); } catch (e) {} };
 G.setSound = (on) => { if (G.audio.on !== !!on) G.audio.toggle(); $('#b-sound').innerHTML = G.audio.on ? IC.sound : IC.mute; };
 $('#goal-x').onclick = () => { G.goal = null; world.setTarget(null); ui.objective(null); $('#goal-x').classList.add('hidden'); G.audio?.play('click'); };
@@ -393,7 +415,7 @@ async function endGame() {
 
 let last = performance.now(), ccT = 0;
 function frame(now, manual) {
-  if (!manual) requestAnimationFrame(frame); const dt = clamp((now - last) / 1000, 0, 0.05); last = now; if (G.state === 'title') return;
+  if (!manual) { requestAnimationFrame(frame); fpsTick(now); } const dt = clamp((now - last) / 1000, 0, 0.05); last = now; if (G.state === 'title') return;
   if (G.jobTick) G.jobTick(dt);
   G.inside = P.zone === 'deep' && world.indoors(P.pos.x, P.pos.z); G.inCrater = P.zone === 'top' && Math.hypot(P.pos.x - MINE.x, P.pos.z - MINE.z) < MINE.r * 0.9;
   if (G.inCrater && G.state === 'play' && !G._tipMine) { G._tipMine = 1; ui.bubble('The <b>Polar Ice Mine</b>. This crater floor never sees the Sun, so it stays near −230°C: cold enough to keep ice frozen for billions of years. Get in the <b>digger</b>, hold <b>SPACE</b> over a pale blue patch, then tip the bucket into the orange filler. Do not park here long: the cold drains batteries.', 'think', 16); }

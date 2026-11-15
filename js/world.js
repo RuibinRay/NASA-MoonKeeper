@@ -25,11 +25,40 @@ export class World {
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x000000);
     this.camera = new THREE.PerspectiveCamera(62, 1, 0.25, 7000);
     this.top = new THREE.Group(); this.deep = new THREE.Group(); this.deep.position.y = TUBE.y; this.scene.add(this.top, this.deep);
-    this.colliders = { top: [], deep: [] }; this.walk = []; this.t = 0; this.zone = 'top'; this.sunDir = new V3(0, 1, 0); this.lamps = [];
+    this.colliders = { top: [], deep: [] }; this.walk = []; this.t = 0; this.zone = 'top'; this.sunDir = new V3(0, 1, 0); this.lamps = []; this.topLamps = []; this.lampPool = [];
     this._mats(); this._lights(); this._sky(); this._terrain(); this._topside(); this._base(); this._sites(); this._mine(); this._vehicles(); this._tube(); this._station(); this._markers(); this._fx(); this._guide();
     this.setZone('top'); this.resize(); window.addEventListener('resize', () => this.resize());
   }
   resize() { const w = window.innerWidth, h = window.innerHeight; this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
+
+  // ---------- graphics quality ----------
+  // high: everything. medium: lighter shadows, fewer lamps and pixels. low: no shadows, fewest lamps.
+  setQuality(q) {
+    const Q = { high: { px: 1.75, shadow: 2048, soft: true, every: 1, lamps: 10 }, medium: { px: 1.25, shadow: 1024, soft: false, every: 2, lamps: 6 }, low: { px: 1, shadow: 0, soft: false, every: 1, lamps: 3 } }[q]; if (!Q) return;
+    this.quality = q; this.Q = Q; const r = this.renderer, sh = this.sunLight.shadow, roots = [this.scene, this.top, this.deep];
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, Q.px)); this.resize();
+    const type = Q.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap, on = Q.shadow > 0;
+    if (r.shadowMap.enabled !== on || r.shadowMap.type !== type) { r.shadowMap.enabled = on; r.shadowMap.type = type; for (const root of roots) root.traverse((o) => { if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.needsUpdate = true; }); }
+    if (on && sh.mapSize.x !== Q.shadow) { sh.mapSize.set(Q.shadow, Q.shadow); if (sh.map) { sh.map.dispose(); sh.map = null; } }
+    sh.autoUpdate = Q.every === 1; sh.needsUpdate = true;
+    if (!this.smallCasters) { this.smallCasters = []; this.top.updateMatrixWorld(true); const sc = new THREE.Vector3();   // parts too small for their shadow to matter
+      this.top.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && o.castShadow && o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); o.getWorldScale(sc); if (o.geometry.boundingSphere.radius * Math.max(sc.x, sc.y, sc.z) < 0.45) this.smallCasters.push(o); } }); }
+    for (const o of this.smallCasters) o.castShadow = q === 'high';
+    while (this.lampPool.length < Q.lamps) { const l = new THREE.PointLight(0xffffff, 0, 55, 1.2); l.visible = false; this.top.add(l); this.lampPool.push({ l, lamp: null }); }
+    while (this.lampPool.length > Q.lamps) this.top.remove(this.lampPool.pop().l);
+  }
+  // Surface lamps at night: a few real lights stand in for the nearest lamps, so the number of lights
+  // the shaders handle never changes while you travel. By day the Sun drowns the lamps out, so they are off.
+  _lampPool(dt, on, p) {
+    const pool = this.lampPool; if (!pool.length) return;
+    if (!on) { for (const q of pool) { q.l.visible = false; q.l.intensity = 0; q.lamp = null; } this._lpT = 0; return; }
+    this._lpT = (this._lpT || 0) - dt;
+    if (this._lpT <= 0 && p) { this._lpT = 0.4;
+      const near = this.topLamps.map((L) => [Math.hypot(L.x - p.x, L.z - p.z), L]).sort((a, b) => a[0] - b[0]).slice(0, pool.length).map((a) => a[1]);
+      for (const q of pool) if (q.lamp && !near.includes(q.lamp)) q.lamp = null;
+      for (const L of near) if (!pool.some((q) => q.lamp === L)) { const q = pool.find((x) => !x.lamp); if (q) { q.lamp = L; q.l.position.set(L.x, L.y, L.z); q.l.color.setHex(L.color); q.l.distance = L.dist; q.l.intensity = 0; } } }
+    for (const q of pool) { q.l.visible = true; q.l.intensity += ((q.lamp ? q.lamp.base * 1.5 : 0) - q.l.intensity) * Math.min(1, dt * 3); }
+  }
 
   _mats() {
     const rnd = seeded(7), L = new THREE.TextureLoader();
@@ -70,7 +99,9 @@ export class World {
     this.earthLight = new THREE.DirectionalLight(0x9dbcf7, 0.2); this.hemi = new THREE.HemisphereLight(0x10141c, 0xaeacaa, 0.6);
     this.scene.add(this.sunLight, this.sunLight.target, this.earthLight, this.earthLight.target, this.hemi);
   }
-  lamp(group, x, y, z, color, intensity, dist = 55) { const l = new THREE.PointLight(color, intensity, dist, 1.2); l.position.set(x, y, z); group.add(l); this.lamps.push({ l, base: intensity, top: group === this.top }); return l; }
+  lamp(group, x, y, z, color, intensity, dist = 55) {
+    if (group === this.top) { this.topLamps.push({ x, y, z, color, base: intensity, dist }); return null; }   // surface lamps share a pool of lights: see _lampPool
+    const l = new THREE.PointLight(color, intensity, dist, 1.2); l.position.set(x, y, z); group.add(l); this.lamps.push({ l, base: intensity, top: group === this.top }); return l; }
   _sky() {
     const sky = this.sky = new THREE.Group(); this.scene.add(sky);
     const rnd = seeded(99), n = 2200, pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
@@ -328,7 +359,7 @@ export class World {
     const stick = this.digStick = new THREE.Group(); stick.position.set(0, 0, 3.4); boom.add(stick); this.put(stick, this.box(0.28, 0.28, 2.3, M.yellow), 0, 0, 1.15); this.put(stick, this.cyl(0.07, 0.07, 1.6, M.metal, 6), 0, 0.3, 0.2, Math.PI / 2);
     const bk = this.digBucket = new THREE.Group(); bk.position.set(0, 0, 2.3); stick.add(bk); this.put(bk, this.box(1.3, 0.14, 1.0, M.grey), 0, -0.45, 0.2); this.put(bk, this.box(1.3, 0.9, 0.14, M.grey), 0, -0.05, -0.3); for (const sx of [-0.65, 0.65]) this.put(bk, this.box(0.1, 0.9, 1.0, M.grey), sx, -0.05, 0.2); for (let i = -2; i <= 2; i++) this.put(bk, this.box(0.14, 0.1, 0.3, M.metal), i * 0.28, -0.45, 0.8);
     this.digLoad = this.put(bk, this.box(1.1, 0.5, 0.8, frost), 0, -0.1, 0.2); this.digLoad.visible = false;
-    this.digLamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.6, 0.6, 1); this.digLamp.position.set(0, 3.3, 1); this.digLamp.target.position.set(0, 0, 9); d.add(this.digLamp, this.digLamp.target);
+    this.digLamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.6, 0.6, 1); this.digLamp.visible = false; this.digLamp.position.set(0, 3.3, 1); this.digLamp.target.position.set(0, 0, 9); d.add(this.digLamp, this.digLamp.target);
   }
 
   // Other countries' stations: a cracked dome, a leaning mast with a coloured beacon you can see from far away.
@@ -688,7 +719,7 @@ export class World {
   stationPos(id) { const s = STATIONS.find((q) => q.id === id) || (() => { const t = SITES.find((q) => q.id === id); return { zone: 'top', pos: [t.pos[0] + 2, t.pos[1] + 16] }; })(); return this.at(s.zone, s.pos[0], s.pos[1]); }
   // Where the orange guide beam stands: { zone, x, z, id }
   setTarget(t) { this.target = t; if (!t) { this.beacon.visible = false; return; } const p = this.at(t.zone, t.x, t.z); this.beacon.position.set(p.x, p.y + 30, p.z); }
-  setZone(z) { this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; this.earth.visible = this.sunSprite.visible = z === 'top'; }
+  setZone(z) { this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; const show = z === 'top' ? this.top : this.deep, hide = z === 'top' ? this.deep : this.top; if (hide.parent) this.scene.remove(hide); if (!show.parent) this.scene.add(show); this.earth.visible = this.sunSprite.visible = z === 'top'; }
   // Press one tyre print into the dust at (x, z), pointing along yaw.
   track(x, z, yaw) { const m = (this._tm || (this._tm = new THREE.Matrix4())).makeRotationY(yaw); m.setPosition(x, this.heightAt(x, z) + 0.045, z); this.tracks.setMatrixAt(this.trackI++ % 900, m); this.tracks.instanceMatrix.needsUpdate = true; }
   // Kick up n grains of dust at (x, z). dx, dz = which way it is thrown; they fly as far as their speed takes them and drop straight back.
@@ -763,11 +794,13 @@ export class World {
     const earthLit = (1 - this.sunDir.dot(EARTH_DIR)) / 2; this.earthLit = earthLit;
     this.sunLight.intensity = topZ ? 3.4 * sn.factor : 0; const f = focus || this.camera.position;
     this.sunLight.target.position.set(Math.round(f.x / 4) * 4, topZ ? f.y : 0, Math.round(f.z / 4) * 4);
-    this.sunLight.position.copy(this.sunLight.target.position).addScaledVector(this.sunDir.clone().setY(Math.max(this.sunDir.y, 0.06)).normalize(), 300); this.sunLight.castShadow = topZ && sn.factor > 0.02;
+    this.sunLight.position.copy(this.sunLight.target.position).addScaledVector(this.sunDir.clone().setY(Math.max(this.sunDir.y, 0.06)).normalize(), 300); this.sunLight.castShadow = topZ && sn.factor > 0.02 && (!this.Q || this.Q.shadow > 0);
     this.earthLight.intensity = topZ ? (night ? 0.25 + 1.25 * earthLit : 0.1) : 0; this.earthLight.target.position.copy(f); this.earthLight.position.copy(f).addScaledVector(EARTH_DIR, 200);
     this.hemi.intensity = topZ ? 0.3 + 0.6 * sn.factor : 0; this.starMat.color.setScalar(topZ ? (night ? 1 : 0.5) : 0.8);
     const dim = S && S.flow.eff < 1 ? 0.35 : 1;
-    for (const L of this.lamps) L.l.intensity = L.top ? (topZ ? L.base * (night ? 1.5 : 0.25) : 0) : (topZ ? 0 : L.base * dim);
+    for (const L of this.lamps) L.l.intensity = topZ ? 0 : L.base * dim;
+    this._lampPool(dt, topZ && night, ctx.player);
+    if (this.Q && this.Q.every > 1) { this._sf = (this._sf || 0) + 1; if (this._sf % this.Q.every === 0) this.sunLight.shadow.needsUpdate = true; }   // lighter settings redraw the shadow map every other frame
     const inside = !!ctx.inside; this.shell.visible = !topZ && !inside; this.deepHemi.intensity = topZ ? 0 : (inside ? 1.5 : 1.05) * (0.45 + 0.55 * dim); this.skyBounce.intensity = topZ ? 0 : 140 * sn.factor;
     if (!topZ) { const near = ctx.player && Math.hypot(ctx.player.x - AIRLOCK.x0, ctx.player.z) < 6; this.odOpen = (this.odOpen || 0) + ((near ? 1 : 0) - (this.odOpen || 0)) * Math.min(1, dt * 6); this.outerDoor.scale.y = Math.max(0.03, 1 - this.odOpen); this.outerDoor.position.y = 4.15 - 2.05 * this.outerDoor.scale.y; this.suitHook.visible = !!S && !S.suitOn; }
     // solar mounts
@@ -793,10 +826,10 @@ export class World {
       const digging = (b && b.mode === 'ilm') || (S.flow.use.isru > 0); this.digT = (this.digT || 0) + (digging ? dt : 0); this.digger.rotation.y = -0.7 + Math.sin(this.digT * 0.6) * 0.7; this.digger.position.y = Math.abs(Math.sin(this.digT * 1.2)) * 0.05;
     }
     if (S && S.mine && topZ) {   // the mine: floodlights always on (this floor has no day), patches fade as they are dug out, canisters fill
-      const near = ctx.player && Math.hypot(ctx.player.x - MINE.x, ctx.player.z - MINE.z) < MINE.r * 2.2; for (const l of this.mineLights) l.intensity = near ? 260 : 0;
+      const near = ctx.player && Math.hypot(ctx.player.x - MINE.x, ctx.player.z - MINE.z) < MINE.r * 2.2; for (const l of this.mineLights) { l.intensity = near ? 260 : 0; l.visible = !!near; }
       this.iceM.emissiveIntensity = 0.75 + 0.25 * Math.sin(t * 2.2); S.mine.patches.forEach((p, i) => { const g = this.minePatches[i]; g.visible = p.left > 0; if (g.visible) g.scale.setScalar(0.55 + 0.45 * Math.min(1, p.left / 6)); });
       this.mineFill.visible = S.mine.hopper > 0; this.mineLed.material.emissive.setHex(S.mine.hopper > 0 ? 0xffa424 : 0x4dff88); this.mineBeam.material.opacity = 0.11 + 0.05 * Math.sin(t * 2);
-      this.digLamp.intensity = ctx.digOn ? 60 : 0;
+      this.digLamp.intensity = ctx.digOn ? 60 : 0; this.digLamp.visible = !!ctx.digOn;
       const cp = this.mineCable.geometry.attributes.position; cp.setXYZ(0, this.mineMast.x, this.mineMast.y, this.mineMast.z); cp.setXYZ(1, this.dig.position.x, this.dig.position.y + 2.6, this.dig.position.z); cp.needsUpdate = true;
     }
     this.dig.visible = topZ;
@@ -805,7 +838,7 @@ export class World {
       for (const p of this.pads) { const v = S[p.k], on = v.charging; p.ring.material.emissive.setHex(on ? 0x49e6ff : 0x2a5560); p.ring.material.emissiveIntensity = on ? 2 + Math.sin(t * 6) : 1; p.led.material.emissive.setHex(v.charge > 0.5 ? 0x4dff88 : v.charge > 0.2 ? 0xffa424 : 0xff3b30); }
       this.carLed.material.emissive.setHex(S.car.charge > 0.5 ? 0x4dff88 : S.car.charge > 0.2 ? 0xffa424 : 0xff3b30); this.shipLed.material.emissive.setHex(S.ship.charge > 0.5 ? 0x4dff88 : S.ship.charge > 0.2 ? 0xffa424 : 0xff3b30);
     }
-    this.car.visible = this.ship.visible = topZ; this.carLamp.intensity = ctx.carOn && night ? 40 : 0; this.shipLamp.intensity = ctx.shipOn && night ? 50 : 0;
+    this.car.visible = this.ship.visible = topZ; this.carLamp.intensity = ctx.carOn && night ? 40 : 0; this.shipLamp.intensity = ctx.shipOn && night ? 50 : 0; this.carLamp.visible = this.carLamp.intensity > 0; this.shipLamp.visible = this.shipLamp.intensity > 0;
     for (const j of this.shipJets) { j.material.opacity = ctx.shipFly ? 0.55 + Math.random() * 0.3 : 0; j.scale.y = 0.8 + Math.random() * 0.5; }
     for (const s of SITES) { const o = this.sites[s.id], done = S && S.rescued.includes(s.id); o.beam.material.opacity = (done ? 0.05 : 0.14) + 0.05 * Math.sin(t * 2); o.b.material.emissiveIntensity = 1.5 + Math.sin(t * 4) * 1.2; }
     // ---- the station

@@ -15,7 +15,8 @@ const commentAt = (line) => {
   }
   return -1;
 };
-const looksLikeCode = (t) => /[\w)\]]\s*(=|\+=|-=|\+\+|--)\s*[^=].*;|\)\s*;|;\s*(if|for|const|let|return|else)\b|\bG\.\w+\(|\bS\.\w+\s*[-+]?=/.test(t);
+// an assignment that ends in a semicolon; a call that ends the line; a call followed by more code; a statement keyword; a G. call; an S. assignment
+const looksLikeCode = (t) => /[\w)\]]\s*(=|\+=|-=|\+\+|--)\s*[^=].*;|\)\s*;\s*$|\)\s*;\s*[\w$.]+\s*(\(|=[^=]|\+=|-=|\+\+|\.\w)|;\s*(if|for|const|let|return|else)\b|\bG\.\w+\(|\bS\.\w+\s*[-+]?=/.test(t);
 let found = 0;
 for (const f of files) {
   const lines = fs.readFileSync(new URL('../' + f, import.meta.url), 'utf8').split(/\r?\n/);

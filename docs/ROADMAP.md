@@ -76,3 +76,34 @@ Rules for every step: no visible light beams or billowing dust (there is no air)
 - Frame rate has not been measured on a real computer. The surface draws about 260,000 triangles in about 200 draw calls.
 - No child has played the game yet.
 - Peas, soybeans and spinach are listed as candidate crops because we could not open a primary source for their spaceflights. Herbs are our own addition.
+
+## 6. Improvement plan (brief of 14 November 2026)
+
+The brief asks for a more cinematic, more hands-on and better-taught game without rebuilding it. Work goes in this order. Each step is merged only when it works in the game.
+
+| Step | What | State |
+| --- | --- | --- |
+| 1 | **Speed and a graphics setting.** Fewer lights for the shaders to work through, lighter shadows on lower settings, the zone you are not in left out of the scene, a Graphics setting with Auto, and a frame-rate counter. | Done (see below) |
+| 2 | **Remaining verification.** Commander with the Water Plant and the ice mine in the planned player. Saving and loading during a job, in a vehicle and in an emergency. A full touch play-through. | Next |
+| 3 | **Station interiors.** Moving machinery in each of the 11 rooms, emergency and power-out lighting, one consistent material pass, new textures. | To do |
+| 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
+| 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | To do |
+| 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | To do |
+| 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | To do |
+
+### Step 1: what changed and what was measured
+
+Frame times could not be measured reliably in the test browser, so these are counts, which are exact.
+
+| On the surface | Before | After |
+| --- | --- | --- |
+| Lights every lit pixel is shaded with, by day | 16 lamps and 8 spotlights, most of them switched off or hundreds of metres away | 2 lamps and 2 spotlights |
+| The same, at night | 16 lamps and 8 spotlights | 12, 8 or 5 lamps (High, Medium, Low) and 2 spotlights |
+| Parts walked every frame | Both zones, about 2,700 | Only the zone you are in |
+| Shadow map | 2048 px, soft, redrawn every frame | High: the same. Medium: 1024 px, redrawn every other frame, 63 small parts cast none. Low: off |
+
+Surface lamps now share a small pool of real lights that follow the nearest lamps, so the number of lights never changes while you travel. By day the Sun drowns the lamps out, so they are off.
+
+The **Graphics** setting has Auto, High, Medium and Low. Auto counts real frames during steady play and lowers the detail one step after two slow readings in a row. If lowering does not help, something else is capping the rate, so it puts the detail back and stops.
+
+Not done in this step: the ground is still about 218,000 triangles, the station interior still shades 11 lamps per pixel, and repeated objects are not yet instanced. No frame rate has been confirmed on a real computer: turn on **Show frame rate** in Settings to read it.
