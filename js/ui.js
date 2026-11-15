@@ -1,6 +1,6 @@
 // MOONKEEPER 2 — interface: HUD, comic pages, dialogue, cards, Power Board, Control Center, maps, end screens.
 import { K, SYS, MODES, STATIONS, SITES, GLOSSARY, PIT, TUBE, HALL, AIRLOCK, CAVE_C, INDOOR_C, BASE, MINE, ROOMS, ROLES, MOUNTS, CAR_PAD, SHIP_PAD, roomRect, fmt } from './config.js';
-import { computeFlows, score, roomOk, sun as sunAt } from './sim.js';
+import { computeFlows, score, roomOk, hasWork, sun as sunAt } from './sim.js';
 import { IC } from './icons.js';
 import { realMoonSvg, realFacts, roundTo, ROVER_KMH } from './moonmap.js';
 
@@ -260,7 +260,8 @@ export class UI {
       const rows = Object.keys(SYS).map((k) => `<div class="sys"><div class="ico">${IC[SYS[k].ico]}</div><div><h4>${SYS[k].name}</h4><p>${gloss(SYS[k].blurb)}</p></div>${lvl(k)}<div class="eff">${eff[k]}</div></div>`).join('');
       const sgn = (x, d = 1) => `<b class="${x >= 0 ? 'up' : 'down'}">${x >= 0 ? '+' : ''}${x.toFixed(d)}</b>`;
       const netTxt = F.net >= 0 ? (S.battery >= F.cap - 1 ? `Battery full — extra power is wasted. Use it, or make room for it: ${S.rooms.storage.built < 1 ? 'rebuild the Battery Store' : S.mods < 6 ? 'add a battery module' : 'the Battery Store is at its largest'}.` : `Full in ${fmt.hrs(Math.ceil((F.cap - S.battery) / Math.max(F.net, 0.01)))}`) : `Empty in <b class="down">${fmt.hrs(Math.floor(F.battHours))}</b>`;
-      const auto = [['Chargers (rover, hopper)', u.chargers], ['Fix-It bench & builder', u.tools], ['Helper robots', u.bots], ['Fish tank pump', u.pump], ['Extra', F.extra]].filter((x) => x[1] > 0).map(([a, b]) => `<div class="stat"><span>${a}</span><span>${b.toFixed(1)} kW</span></div>`).join('');
+      const chg = S.car.charging || S.ship.charging || S.chargeOff ? `<div class="stat"><span>Chargers (rover, hopper)${S.chargeOff ? ' <small>switched off: they do not charge</small>' : ''}</span><span>${u.chargers.toFixed(1)} kW <button class="mini-b ${S.chargeOff ? 'off' : ''}" id="pb-chg">${S.chargeOff ? 'Switch on' : 'Switch off'}</button></span></div>` : '';
+      const auto = chg + [['Fix-It bench & builder', u.tools], ['Helper robots', u.bots], ['Fish tank pump', u.pump], ['Extra', F.extra]].filter((x) => x[1] > 0).map(([a, b]) => `<div class="stat"><span>${a}</span><span>${b.toFixed(1)} kW</span></div>`).join('');
       w.querySelector('.win-b').innerHTML = `
         <div class="note"><b>No choice is free.</b> Every machine eats power. Turn one up, and something else gets less — or the battery drains faster.</div>
         ${G.guide && !opts.goal ? `<div class="rec-banner ${hint ? '' : 'calm'}"><img src="assets/img/c_rego.jpg" alt=""><div><b>REGO${hint ? ': press the glowing switch' : ''}</b>${hint ? `${SYS[hint.k].name} → ${SYS[hint.k].kw.length === 2 ? ['OFF', 'ON'][hint.i] : hint.i === 0 ? 'OFF' : 'level ' + hint.i}. ${hint.why}` : 'Nothing needs changing right now. The switches are set well for what we have.'}</div></div>` : ''}
@@ -277,6 +278,7 @@ export class UI {
           <div class="stat"><span>${sun.up ? 'Sunset in' : 'Sunrise in'}</span><span><b>${fmt.days((sun.up ? sun.toSunset : sun.toSunrise) / 24)}</b></span></div>
           ${S.hours === Infinity ? '' : `<div class="stat"><span>Rescue in</span><span><b>${fmt.days((S.hours - (S.t - S.t0)) / 24)}</b></span></div>`}
           <div class="learn" style="margin-top:12px">${G.advise ? G.advise(true) : ''}</div>${opts.goal ? `<div class="note" id="goal">${opts.goal.text}</div>` : ''}</div></div>`;
+      { const cb = w.querySelector('#pb-chg'); if (cb) cb.onclick = () => { S.chargeOff = !S.chargeOff; if (S.chargeOff) S.car.charging = S.ship.charging = false; G.audio?.play('click'); render(w); }; }
       w.querySelectorAll('.lv button').forEach((b) => (b.onclick = () => {
         const k = b.dataset.k, i = Number(b.dataset.i), before = computeFlows(S), old = S.lv[k]; S.lv[k] = i; const after = computeFlows(S); G.audio?.play('click'); render(w);
         if (old !== i) { const dKw = after.demand - before.demand, bits = []; if (Math.abs(after.o2Net - before.o2Net) > 0.01) bits.push(`oxygen ${after.o2Net > before.o2Net ? '+' : ''}${(after.o2Net - before.o2Net).toFixed(2)} kg/day`); if (Math.abs(after.wNet - before.wNet) > 0.05) bits.push(`water ${after.wNet > before.wNet ? '+' : ''}${(after.wNet - before.wNet).toFixed(1)} L/day`); if (Math.abs(after.grow - before.grow) > 0.01) bits.push(`farm growth ×${after.grow.toFixed(1)}`);
@@ -293,7 +295,7 @@ export class UI {
     const render = (w) => {
       const al = G.alerts(), F = computeFlows(S);
       const doors = ROOMS.map((d) => { const r = S.rooms[d.id], st = roomState(S, d.id); return `<div class="stat"><span><i class="dotc" style="background:${RCOL[st]}"></i>${d.name} <small>${st === 'ok' ? r.p.toFixed(0) + ' kPa' : RTXT[st]}</small></span><button class="mini-b ${r.door ? '' : 'off'}" data-door="${d.id}" ${here ? '' : 'disabled'}>${r.door ? IC.door + ' Open' : IC.lock + ' Locked'}</button></div>`; }).join('');
-      const crew = S.helpers.map((hp) => `<div class="crew"><img src="assets/img/${hp.img}.jpg" alt=""><div><b>${hp.name}</b><small>${hp.kind === 'bot' ? 'Robot · uses 1 kW while working' : 'Astronaut · eats 3 meals a day, no electricity'}</small><div class="roles">${Object.entries(ROLES).map(([k, r]) => `<button data-h="${hp.id}" data-r="${k}" class="${hp.role === k ? 'on' : ''}" data-tip="${r.tip}">${r.name}</button>`).join('')}</div></div></div>`).join('');
+      const crew = S.helpers.map((hp) => `<div class="crew"><img src="assets/img/${hp.img}.jpg" alt=""><div><b>${hp.name}</b><small>${hp.kind === 'bot' ? 'Robot · uses 1 kW while working' : 'Astronaut · eats 3 meals a day, no electricity'}</small>${hp.role !== 'idle' && !hasWork(S, hp.role) ? `<small style="color:#ffb347">Nothing to do: ${hp.role === 'farm' ? 'no farm and no Animal Bay is working' : 'the Kitchen is not working'}.${hp.kind === 'bot' ? ' It is standing still and uses no power.' : ''}</small>` : ''}<div class="roles">${Object.entries(ROLES).map(([k, r]) => `<button data-h="${hp.id}" data-r="${k}" class="${hp.role === k ? 'on' : ''}" data-tip="${r.tip}">${r.name}</button>`).join('')}</div></div></div>`).join('');
       w.querySelector('.win-b').innerHTML = `<div class="grid2"><div><canvas id="cc-map" width="900" height="300"></canvas>
           <div class="legend">${Object.entries(RTXT).map(([k, v]) => `<span><i style="background:${RCOL[k]}"></i>${v}</span>`).join('')}</div>
           <h4 class="h4">Where is the error?</h4>${al.length ? al.map((a) => `<div class="alert ${a.kind || ''}" data-go="${a.go || ''}">${IC.alert} ${a.text}<small>${a.sub || ''}</small></div>`).join('') : '<div class="learn">No errors. Everything is running.</div>'}

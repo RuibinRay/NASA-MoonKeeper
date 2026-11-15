@@ -77,8 +77,8 @@ G.follow = (site) => { const n = G.siteNpc[site.id]; if (!n) return; delete G.si
 function updateActors(dt) {
   for (const n of G.npcs) { const a = n.a.group; a.visible = n.zone === P.zone; a.position.set(n.x, groundY(n.zone, n.x, n.z), n.z); a.rotation.y = Math.atan2(P.pos.x - n.x, P.pos.z - n.z); n.a.setSuit(!(n.zone === 'deep' && world.indoors(n.x, n.z))); n.a.update(dt, 0, false, Math.hypot(P.pos.x - n.x, P.pos.z - n.z) < 14 && G.goal ? 'wave' : 'walk'); }
   for (const id in G.siteNpc) { const n = G.siteNpc[id], a = n.a.group; a.visible = P.zone === 'top'; a.position.set(n.x, world.heightAt(n.x, n.z), n.z); a.rotation.y = Math.atan2(P.pos.x - n.x, P.pos.z - n.z); n.a.update(dt, 0, false, Math.hypot(P.pos.x - n.x, P.pos.z - n.z) < 40 ? 'wave' : 'walk'); }
-  G.followers.forEach((f, i) => { const a = f.a.group; a.visible = P.zone === 'top' && !P.in; const tx = P.pos.x - Math.sin(P.face + 0.6 + i) * (2.6 + i), tz = P.pos.z - Math.cos(P.face + 0.6 + i) * (2.6 + i), dx = tx - f.x, dz = tz - f.z, d = Math.hypot(dx, dz); let sp = 0;
-    if (P.in || d > 40) { f.x = tx; f.z = tz; } else if (d > 0.4) { sp = Math.min(d * 3, 9); f.x += (dx / d) * sp * dt; f.z += (dz / d) * sp * dt; a.rotation.y = Math.atan2(dx, dz); } a.position.set(f.x, world.heightAt(f.x, f.z), f.z); f.a.update(dt, sp); });
+  G.followers.forEach((f, i) => { const a = f.a.group; a.visible = P.zone === 'top' && !P.in; const lead = i ? G.followers[i - 1] : { x: P.pos.x, z: P.pos.z }, tx = lead.x - Math.sin(P.face + 0.6) * 2.6, tz = lead.z - Math.cos(P.face + 0.6) * 2.6; let sp = 0; f.fol = f.fol || new Follower();
+    if (P.in || P.zone !== 'top') { f.x = tx; f.z = tz; f.fol.reset(); } else { const m = f.fol.update(dt, f, { x: lead.x, z: lead.z, face: P.face }, topFree); sp = Math.min(m.speed, 9); if (sp > 0.5) a.rotation.y = Math.atan2(m.dx, m.dz); } a.position.set(f.x, world.heightAt(f.x, f.z), f.z); f.a.update(dt, sp); });
   // crew inside the station walk around the room that matches their job
   const S = G.S; if (!S) return; const roomOf = { idle: 'quarters', farm: 'potato', cook: 'kitchen', clean: null, build: 'workshop' };
   // Each crew member walks through the doors to a real spot in the room for their job, works there for a while, then moves to
@@ -429,8 +429,10 @@ function placeVehicles(dt) {
       H.hud -= dt; if (H.hud <= 0) { H.hud = 0.12; const vs = s.vy, sp = Math.hypot(s.vx, s.vz); el.classList.remove('hidden');
         el.innerHTML = `<span>ALT <b>${s.alt.toFixed(s.alt < 10 ? 1 : 0)} m</b></span><span>${vs < -0.05 ? '▼' : vs > 0.05 ? '▲' : '•'} <b>${Math.abs(vs).toFixed(1)} m/s</b></span><span>SPEED <b>${sp.toFixed(0)} m/s</b></span><span class="${['ok', 'warn', 'bad'][state]}">${s.alt < 0.6 ? 'On the ground' : ['Clear to land', 'Bumpy ground below', 'Over the pit'][state]}</span>`; } }
     else if (!el.classList.contains('hidden')) el.classList.add('hidden'); }
-  if (S) { const park = (v, pad, r, slow) => Math.hypot(v.x - pad[0], v.z - pad[1]) < r && slow; const warm = !(S.flow && S.flow.frost > 0); S.car.charging = warm && park(c, CAR_PAD, 4.5, Math.abs(c.v) < 0.6) && S.car.charge < 1; S.ship.charging = warm && park(s, SHIP_PAD, 5.5, s.alt < 0.4) && S.ship.charge < 1; }
+  if (S) { const park = (v, pad, r, slow) => Math.hypot(v.x - pad[0], v.z - pad[1]) < r && slow; const warm = !(S.flow && S.flow.frost > 0) && !S.chargeOff; S.car.charging = warm && park(c, CAR_PAD, 4.5, Math.abs(c.v) < 0.6) && S.car.charge < 1; S.ship.charging = warm && park(s, SHIP_PAD, 5.5, s.alt < 0.4) && S.ship.charge < 1; }
 }
+// may someone stand here on the surface? Clear of buildings and machines, and back from the pit's edge
+const topFree = (x, z) => Math.hypot(x - PIT.x, z - PIT.z) >= PIT.r + 7.5 && !world.colliders.top.some((c) => c.r && Math.hypot(c.x - x, c.z - z) < c.r + 0.45);
 function updateRego(dt) {
   const R = G.regoPos, fx = Math.sin(P.face), fz = Math.cos(P.face), g = G.rego.group; g.visible = !P.in;
   const js = G.jobbing && G.jobbing.site && G.jobbing.pose === 'work' ? G.jobbing.site : null;
