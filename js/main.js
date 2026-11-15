@@ -165,7 +165,8 @@ const stagesFor = (o) => {
 G.playMini = (kind, opts) => playMini(G, kind, opts);   // the Space Guide's practice page uses this
 G.minis = (() => { try { return localStorage.getItem('mk-minis') !== '0'; } catch (e) { return true; } })();
 G.setMinis = (on) => { G.minis = !!on; try { localStorage.setItem('mk-minis', G.minis ? '1' : '0'); } catch (e) {} };
-G.job = async (o) => {
+G.job = async (o) => { G.inJob = (G.inJob || 0) + 1; try { return await doJob(o); } finally { G.inJob--; } };
+const doJob = async (o) => {
   let fx = null;
   if (G.minis && o.mini !== false) {
     ui.prompt(null); const r = await playProcedure(G, stagesFor(o).map(([k, opt]) => [k, { loseText: 'Done the slow way', ...opt }]));
@@ -350,7 +351,10 @@ function placeVehicles(dt) {
     world.digBoom.rotation.x = -0.6 + dg.boom * 0.85 + bite; world.digStick.rotation.x = 1.3 - dg.boom * 1.02 + dg.prog * 0.45; world.digBucket.rotation.x = 0.6 - dg.boom * 0.8 + dg.prog * 0.9;
     world.digLoad.visible = dg.load > 0; if (dg.load > 0) world.digLoad.scale.set(1, 0.5 + (0.5 * dg.load) / MINE.bucket, 1); }
   // deep cold steals battery charge from anything parked on the crater floor
-  if (S) { const th = S.t, dh = Math.max(0, th - (G._mT ?? th)); G._mT = th; if (dh > 0 && dh < 5) for (const [k2, v] of [['car', c], ['ship', s]]) if (Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9) S[k2].charge = Math.max(0, S[k2].charge - MINE.drain * dh); }
+  if (S) { const th = S.t, dh = Math.max(0, th - (G._mT ?? th)); G._mT = th; if (dh > 0 && dh < 5) for (const [k2, v] of [['car', c], ['ship', s]]) if (Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9) { S[k2].charge = Math.max(0, S[k2].charge - MINE.drain * dh);
+      // what it takes to reach its pad: the rover uses a full charge in 2.6 km, the hopper in 4.2 km plus a little for every second in the air
+      const pad = k2 === 'car' ? CAR_PAD : SHIP_PAD, home = Math.hypot(v.x - pad[0], v.z - pad[1]), need = k2 === 'car' ? home / 2600 : home / 4200 + home / 25 / 420, name = k2 === 'car' ? 'rover' : 'hopper';
+      if (G.state === 'play' && S[k2].charge > 0 && S[k2].charge < need * 1.25 + 0.04) G.warn('cold-' + k2, `<b>Time to go!</b> The cold has drained the ${name} to <b>${Math.round(S[k2].charge * 100)}%</b>. That is only just enough to get home. Take what you have and leave now.`, 'alert', 45000); } }
   sg.position.set(s.x, s.y, s.z); sg.rotation.set(clamp(-Math.hypot(s.vx, s.vz) * 0.01, -0.3, 0), s.yaw, 0, 'YXZ');
   if (S) { const park = (v, pad, r, slow) => Math.hypot(v.x - pad[0], v.z - pad[1]) < r && slow; S.car.charging = park(c, CAR_PAD, 4.5, Math.abs(c.v) < 0.6) && S.car.charge < 1; S.ship.charging = park(s, SHIP_PAD, 5.5, s.alt < 0.4) && S.ship.charge < 1; }
 }
@@ -405,7 +409,7 @@ async function tickSim(dt) {
   if (S.t >= G.nextEventAt && (S.hours === Infinity || S.hours - (S.t - S.t0) > 5) && !P.in) { G.eventBusy = true; await G.fireEvent(); G.eventBusy = false; }
   G.nagT += dt; const F = S.flow, serious = G.alerts().some((a) => a.kind !== 'warn') || F.eff < 1 || F.o2Days < 0.8 || F.waterDays < 1 || F.foodDays < 1 || S.lv.heat < F.heatNeed;
   if (G.nagT > (serious ? (S.mode === 'cadet' ? 22 : 32) : 85) && $('#rego').classList.contains('hidden') && G.sleepLeft <= 0 && !G.goal?.cb) { G.nagT = 0; const keep = G.goal; G.advise(); if (!serious) G.goal = keep; }
-  G.saveT += dt; if (G.saveT > 20 && G.state === 'play') { G.saveT = 0; G.save(); }
+  G.saveT += dt; if (G.saveT > 20 && G.state === 'play' && G.save()) G.saveT = 0;   // if now is a bad moment, try again next frame
 }
 async function endGame() {
   if (G.state === 'over') return; G.state = 'over'; G.simOn = false; ui.banner(null); ui.objective(null); G.audio.play(G.S.over.win ? 'win' : 'bad'); G.clearSave();
@@ -433,7 +437,7 @@ requestAnimationFrame(frame);
 G.frame = (now) => frame(now, true);   // test hook: step the loop by hand
 
 // ---------- saving ----------
-G.save = () => { try { const S = G.S; if (!S || S.over) return; const o = { S: serialize(S), items: G.items.map((i) => ({ id: i.id, type: i.type, zone: i.zone, x: i.x, z: i.z, where: i.where, rot: i.rot })), car: { ...G.car, cargo: G.car.cargo.map((i) => i.id) }, dig: { x: G.dig.x, z: G.dig.z, yaw: G.dig.yaw, load: G.dig.load }, ship: { ...G.ship, cargo: G.ship.cargo.map((i) => i.id) }, p: { x: P.pos.x, z: P.pos.z, zone: P.zone, carry: P.carry ? P.carry.id : 0 }, fol: G.followers.map((f) => f.site.id), done: G.done, next: G.nextEventAt, seq: G.itemSeq }; localStorage.setItem('mk2-save', JSON.stringify(o)); } catch (e) { /* storage may be blocked */ } };
+G.save = (force) => { try { const S = G.S; if (!S || S.over) return false; if (G.inJob || G.riding || (G.eventBusy && !force)) return false; const o = { S: serialize(S), items: G.items.map((i) => ({ id: i.id, type: i.type, zone: i.zone, x: i.x, z: i.z, where: i.where, rot: i.rot })), car: { ...G.car, cargo: G.car.cargo.map((i) => i.id) }, dig: { x: G.dig.x, z: G.dig.z, yaw: G.dig.yaw, load: G.dig.load }, ship: { ...G.ship, cargo: G.ship.cargo.map((i) => i.id) }, p: { x: P.pos.x, z: P.pos.z, zone: P.zone, carry: P.carry ? P.carry.id : 0 }, fol: G.followers.map((f) => f.site.id), done: G.done, next: G.nextEventAt, seq: G.itemSeq }; localStorage.setItem('mk2-save', JSON.stringify(o)); return true; } catch (e) { return false; /* storage may be blocked */ } };
 G.clearSave = () => { try { localStorage.removeItem('mk2-save'); } catch (e) {} };
 G.hasSave = () => { try { return !!localStorage.getItem('mk2-save'); } catch (e) { return false; } };
 function loadGame() {

@@ -326,6 +326,13 @@ The game was played from the title screen to the rescue by a script that presses
 | The rover never used any charge. The same mistake had swallowed the line that drains its battery. | Driving uses charge again: about 2.6 km on a full battery. |
 | Commander could only be won with perfect routes, and even then with empty tanks. The night needed about twice the power the station could store, and repairs take longer than the simple check assumed. | Sunset in Commander now comes on day 4.5 instead of day 3.4. The night is still the longest of any mode, at five and a half days. |
 
+### Found while testing saves
+
+| Problem | Fix |
+| --- | --- |
+| The game saves by itself every 20 seconds. If that fell in the middle of a job and the player then closed the game, the part being fitted was lost: a solar panel, a battery module, or the materials for a rebuild. | The game no longer saves in the middle of a job, an elevator ride or an emergency. It keeps the last good save instead. |
+| At the ice mine the cold could drain the rover until it was too flat to drive home, with no warning. | REGO warns when the charge is only just enough to get back. |
+
 ### Automatic checks
 
 - **71 calculation checks** pass. They cover water and oxygen balance, crop growth, the Water Plant physics, the mine, research, and saving. One was added in this pass.
@@ -335,7 +342,7 @@ The game was played from the title screen to the rescue by a script that presses
 
 ### Not yet verified
 
-- **Commander by hand.** The planned computer player wins it, but only after Commander's sunset was moved from day 3.4 to day 4.5 (see below). It ends with little oxygen to spare, and it does not face surprise events, so a person should still play it through.
+- **Commander by hand.** The planned computer player wins it, and with the Water Plant and the ice mine in use it ends with 17 L of water to spare. Oxygen is the thin margin: about one kilogram left. It does not face surprise events, so a person should still play it through.
 - **Phones.** Held sideways, the game is usable but crowded. Held upright, the warning list covers the resource bars. Touch controls were seen on screen but not played.
 - **Speed on a real computer.** In the test window a frame took about 40 thousandths of a second, which is about 25 frames a second. The test window slows pages down, so the real figure is unknown.
 - **Real children.** No child has played it yet. Reading level and where players get stuck are untested.

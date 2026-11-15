@@ -84,7 +84,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | Step | What | State |
 | --- | --- | --- |
 | 1 | **Speed and a graphics setting.** Fewer lights for the shaders to work through, lighter shadows on lower settings, the zone you are not in left out of the scene, a Graphics setting with Auto, and a frame-rate counter. | Done (see below) |
-| 2 | **Remaining verification.** Commander with the Water Plant and the ice mine in the planned player. Saving and loading during a job, in a vehicle and in an emergency. A full touch play-through. | Next |
+| 2 | **Remaining verification.** Commander with the Water Plant and the ice mine in the planned player. Saving and loading during a job, in a vehicle and in an emergency. | Done (see below). A full touch play-through is still to do |
 | 3 | **Station interiors.** Moving machinery in each of the 11 rooms, emergency and power-out lighting, one consistent material pass, new textures. | To do |
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
 | 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | To do |
@@ -107,3 +107,27 @@ Surface lamps now share a small pool of real lights that follow the nearest lamp
 The **Graphics** setting has Auto, High, Medium and Low. Auto counts real frames during steady play and lowers the detail one step after two slow readings in a row. If lowering does not help, something else is capping the rate, so it puts the detail back and stops.
 
 Not done in this step: the ground is still about 218,000 triangles, the station interior still shades 11 lamps per pixel, and repeated objects are not yet instanced. No frame rate has been confirmed on a real computer: turn on **Show frame rate** in Settings to read it.
+
+### Step 2: what was checked and what it found
+
+**Commander with the Water Plant and the Polar Ice Mine.** The planned player gained a fourth plan, `water`: the canister at the base goes into the Water Plant at once, and after the panels are fixed it drives to the mine, digs two canisters and runs a second batch.
+
+| Commander, plan `water` | Result | Water left | Oxygen left | Water Plant made |
+| --- | --- | --- | --- | --- |
+| Perfect routes | Win | 18 L | 1.9 kg | 17 L |
+| Good player (travel x1.5) | Win | 17 L | 1.2 kg | 17 L |
+| Slow player (travel x2) | Win | 8 L | 0.2 kg | 7 L (no time for the mine) |
+
+Without the Water Plant the same player ends with no water at all. So water is solved by the plant and the mine. Oxygen stays the thin margin, because the night runs on the reactor alone.
+
+**The cold limits a mine trip.** A parked vehicle loses 3% of its charge per game hour in the crater. For a good Commander player that allows two canisters per rover trip, not the four the rover can carry: four would leave it too flat to drive home. REGO now warns when the charge is only just enough to get back.
+
+**Saving at awkward moments.**
+
+| Saved while | After a reload | State |
+| --- | --- | --- |
+| Flying the hopper 34 m up | The hopper is on the ground below, the player beside it, and it flies | Fine |
+| Installing a solar panel | The panel was gone: used up by the job, but the mount still empty | **Fixed**: the game no longer saves in the middle of a job or an elevator ride. After a reload the player still holds the panel |
+| An emergency card open | The emergency vanished without a choice | **Fixed**: no save while the card is open; the outcome is saved once it is settled |
+| A Water Plant batch running (tested earlier) | The batch carries on | Fine |
+| Sitting in the digger with a scoop in the bucket (tested earlier) | The scoop is kept | Fine |
