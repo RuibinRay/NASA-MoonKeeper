@@ -45,8 +45,8 @@ export function installActions(G) {
   // ---------- spacesuit: off indoors (quicker work, cooking, sleep), on before you step out into the cave ----------
   G.toggleSuit = async () => { const s = G.S, on = s.suitOn;
     if (on && s.P < 45) { ui.toast('The air in here is too thin to breathe. Keep your suit on!', 'bad'); return; }
-    await G.job({ title: on ? 'Taking off your spacesuit' : 'Putting on your spacesuit', hours: 0.25, steps: on ? ['Unlocking the helmet…', 'Unplugging the air hose…', 'Hanging the suit in its locker…'] : ['Stepping into the suit…', 'Locking the gloves and helmet…', 'Checking for leaks…'], site: { x: -65.2, z: -3.9 }, sparks: false, onStep: (k) => { if (k > 0.55) G.suitShow = !on; } });
-    s.suitOn = !on; G.suitShow = undefined; ui.toast(on ? 'Suit off. Indoor jobs are quicker without big gloves, and now you can cook and sleep.' : 'Suit on and sealed. You can go out into the cave now.', 'good'); };
+    await G.job({ title: on ? 'Taking off your spacesuit' : 'Putting on your spacesuit', hours: 0.25, steps: on ? ['Unlocking the helmet…', 'Unplugging the air hose…', 'Hanging the suit in its locker…'] : ['Stepping into the suit…', 'Locking the gloves and helmet…', 'Checking for leaks…'], site: { x: -65.2, z: -3.9 }, sparks: false, onStep: (k) => { G.suitK = k; if (k > 0.55) G.suitShow = !on; } });
+    s.suitOn = !on; G.suitShow = undefined; G.suitK = undefined; ui.toast(on ? 'Suit off. Indoor jobs are quicker without big gloves, and now you can cook and sleep.' : 'Suit on and sealed. You can go out into the cave now.', 'good'); };
   const suitAct = () => ({ label: G.S.suitOn ? 'Take off your spacesuit (15 min)' : 'Put on your spacesuit (15 min)', run: G.toggleSuit });
   const needNoSuit = (what) => { if (!G.S.suitOn) return false; ui.toast(`You cannot ${what} in a spacesuit! Take it off at the Suit Lockers in the airlock.`, 'bad'); G.pointTo('suit'); return true; };
 

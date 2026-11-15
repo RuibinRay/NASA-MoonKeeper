@@ -89,6 +89,8 @@ export class Sound {
       case 'geiger': N(0.012, 0.5, 6000); break;
       case 'step': if (this.st.suit) T(72, 0.09, 'sine', 0.34, 46); else { N(0.05, 0.2, 1500); T(115, 0.05, 'sine', 0.16, 80); } break;   // a dull thump through the boot, or a shoe on the deck
       case 'thud': T(58, 0.24, 'sine', 0.6, 34); N(0.14, 0.3, 300); break;                                                                // the hopper's feet coming down
+      case 'hiss': N(1.25, 0.2, 5200); N(0.5, 0.12, 1800, 0.1); break;   // air leaving or entering the airlock
+      case 'door': T(96, 0.4, 'sawtooth', 0.1, 62); N(0.12, 0.14, 700, 0.36); break;   // an airlock door sliding
       case 'lift': T(120, 1.0, 'sawtooth', 0.12, 60); break;
     }
   }

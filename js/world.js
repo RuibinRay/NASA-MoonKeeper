@@ -479,6 +479,18 @@ export class World {
     for (const dz of [-2.12, 2.12]) this.put(ab, fix(this.box(0.2, DH, 0.24, M.orange)), A.x0 + 0.07, DH / 2, dz); this.put(ab, fix(this.box(0.2, 0.24, 4.48, M.orange)), A.x0 + 0.07, DH + 0.12, 0);
     this.outerDoor = this.put(ab, this.box(0.3, DH - 0.1, 3.9, M.orange), A.x0, DH / 2, 0); this.put(this.outerDoor, new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M.cyan), -0.16, 0.5, 0, 0, -Math.PI / 2); this.put(this.outerDoor, new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M.cyan), 0.16, 0.5, 0, 0, Math.PI / 2);
     this.walk.push({ x0: A.x0 + 0.6, x1: A.x1 + 1, z0: A.z0 + 1.1, z1: A.z1 - 1.2 }, { x0: A.x0 - 1.2, x1: A.x0 + 1, z0: -1.6, z1: 1.6 });
+    // The airlock works like a real one: an inner door as well as the outer one, never both open at once, and a gauge that shows the air being pumped out and back.
+    this.innerDoor = this.put(ab, this.box(0.3, HALL.h - 0.1, HALL.z1 - HALL.z0 - 0.1, M.orange), A.x1, HALL.h / 2, 0);
+    for (const sx of [-0.16, 0.16]) this.put(this.innerDoor, new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M.cyan), sx, 0.5, 0, 0, sx < 0 ? -Math.PI / 2 : Math.PI / 2);
+    this.lock = { p: 1, want: 1, out: 0, in: 0, init: false, key: '' };
+    this.lockCanvas = document.createElement('canvas'); this.lockCanvas.width = 512; this.lockCanvas.height = 256; this.lockTex = new THREE.CanvasTexture(this.lockCanvas); this.lockTex.colorSpace = THREE.SRGBColorSpace;
+    const gm = new THREE.MeshBasicMaterial({ map: this.lockTex });
+    for (const [gx, gz, ry] of [[A.x0 + 2.2, A.z1 - 0.06, Math.PI], [A.x1 - 2.2, A.z1 - 0.06, Math.PI]]) { this.put(ab, this.box(2.3, 1.25, 0.08, M.dark), gx, 2.5, gz + 0.03); this.put(ab, new THREE.Mesh(new THREE.PlaneGeometry(2.1, 1.05), gm), gx, 2.5, gz - 0.02, 0, ry); }
+    const lampM = () => new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0xff3b30, emissiveIntensity: 2.2 });
+    this.lockLampOut = lampM(); this.lockLampIn = lampM(); this.put(ab, this.box(0.1, 0.2, 2.6, this.lockLampOut), A.x0 + 0.22, DH + 0.42, 0); this.put(ab, this.box(0.1, 0.2, 2.6, this.lockLampIn), A.x1 - 0.22, HALL.h + 0.2, 0);
+    // the middle locker has a door that swings open while you change
+    this.lockerDoor = new THREE.Group(); this.lockerDoor.position.set(A.x0 + 4.8 - 0.92, 1.55, A.z0 + 0.8); ab.add(this.lockerDoor);
+    this.put(this.lockerDoor, this.box(1.84, 2.95, 0.06, M.white), 0.92, 0, 0); this.put(this.lockerDoor, this.box(0.06, 0.5, 0.08, M.cyan), 1.66, -0.05, 0.05);
     this.lamp(D, -65, 4, 0, 0xfff0e0, 16, 30); for (const x of [-30, 10, 50]) this.lamp(D, x, 4, 0, 0xfff0e0, 14, 46);
     // rooms
     for (const def of ROOMS) {
@@ -790,7 +802,39 @@ export class World {
   indoors(x, z) { return x > AIRLOCK.x0 - 0.2 && x < HALL.x1 + 1 && Math.abs(z) < 25; }
   inCave(x, z) { return Math.abs(z) < 34 && x > -120 && x < 120 && !(x > AIRLOCK.x0 - 0.9 && x < HALL.x1 + 1.8 && Math.abs(z) < 25.8); }
   roomAt(x, z) { for (const r of this.walk) if (r.room && x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1) return r.room; return null; }
-  walkable(x, z) { for (const r of this.walk) if (x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1) return true; return this.inCave(x, z); }
+  // Airlock cycle. Whichever side you come from, the door behind you shuts, the air is pumped out (or let back in), and only then
+  // does the door ahead open. Sight and sound only: the simulation's air is not touched.
+  _airlock(dt, S, ctx) {
+    const A = AIRLOCK, L = this.lock, pl = ctx.player, was = { p: L.p, out: L.out, in: L.in };
+    if (pl) {
+      const where = pl.x < A.x0 - 0.3 ? 0 : pl.x < A.x1 + 0.3 && Math.abs(pl.z) < 5.2 ? 1 : 2;   // 0 out in the cave, 1 inside the airlock, 2 in the station
+      if (!L.init) { L.init = true; L.p = L.want = where === 0 ? 0 : 1; }
+      if (where === 0) L.want = 0; else if (where === 2) L.want = 1; else if (pl.x < A.x0 + 3.6) { if (!S || S.suitOn) L.want = 0; } else if (pl.x > A.x1 - 3.6) L.want = 1;   // inside: the door you walk toward decides (the air is never pumped out around someone with no suit on)
+      let oT = L.want === 0 && L.p < 0.03 && L.in === 0 && (where === 1 || Math.hypot(pl.x - A.x0, pl.z) < 6);
+      let iT = L.want === 1 && L.p > 0.97 && L.out === 0 && (where === 1 || Math.hypot(pl.x - A.x1, pl.z) < 6);
+      if (Math.abs(pl.x - A.x0) < 0.25 && Math.abs(pl.z) < 2.2) { oT = true; L.out = Math.max(L.out, 0.6); }   // never shut a door on someone standing in it
+      if (Math.abs(pl.x - A.x1) < 0.25 && Math.abs(pl.z) < 2.8) { iT = true; L.in = Math.max(L.in, 0.6); }
+      L.out = clamp(L.out + (oT ? 1 : -1) * dt / 0.45, 0, 1); L.in = clamp(L.in + (iT ? 1 : -1) * dt / 0.45, 0, 1);
+      if (L.out === 0 && L.in === 0 && L.p !== L.want) L.p = clamp(L.p + (L.want > L.p ? 1 : -1) * dt / 1.3, 0, 1);
+      if (L.p !== was.p && (was.p === 0 || was.p === 1)) this.onLock?.('hiss'); if ((L.out > 0 && was.out === 0) || (L.in > 0 && was.in === 0)) this.onLock?.('door');
+    }
+    this.outerDoor.scale.y = Math.max(0.03, 1 - L.out); this.outerDoor.position.y = 4.15 - 2.05 * this.outerDoor.scale.y;
+    this.innerDoor.scale.y = Math.max(0.03, 1 - L.in); this.innerDoor.position.y = HALL.h - 0.05 - (HALL.h - 0.1) / 2 * this.innerDoor.scale.y;
+    this.lockLampOut.emissive.setHex(L.out > 0.5 ? 0x4dff88 : 0xff3b30); this.lockLampIn.emissive.setHex(L.in > 0.5 ? 0x4dff88 : 0xff3b30);
+    const kpa = Math.round(L.p * K.AIR_KPA), state = L.p === 1 ? 'AIR  ·  safe without a suit' : L.p === 0 ? 'VACUUM  ·  suit only' : L.want ? 'Letting air back in…' : 'Pumping the air back into the tanks…', key = kpa + state;
+    if (key !== L.key) { L.key = key; const c = this.lockCanvas.getContext('2d'), col = L.p === 1 ? '#4dff88' : L.p === 0 ? '#7fb8ff' : '#ffb347';
+      c.fillStyle = '#071018'; c.fillRect(0, 0, 512, 256); c.fillStyle = '#9fb3c4'; c.font = '600 30px sans-serif'; c.textAlign = 'left'; c.fillText('AIRLOCK PRESSURE', 28, 50);
+      c.fillStyle = col; c.font = '700 92px sans-serif'; c.fillText(String(kpa), 28, 142); c.font = '600 36px sans-serif'; c.fillText('kPa', 28 + c.measureText(String(kpa)).width * 2.6 + 14, 142);
+      c.fillStyle = '#1c2a36'; c.fillRect(28, 164, 456, 22); c.fillStyle = col; c.fillRect(28, 164, 456 * L.p, 22); c.font = '600 27px sans-serif'; c.fillText(state, 28, 228); this.lockTex.needsUpdate = true; }
+    // suit lockers: the door swings open while you change, and the suit lifts off its stand as it goes on (or settles back as it comes off)
+    const k = ctx.suitK, ss = (a, b, x) => { const u = clamp((x - a) / (b - a), 0, 1); return u * u * (3 - 2 * u); };
+    const open = k === undefined ? 0 : ss(0.04, 0.22, k) * (1 - ss(0.8, 0.96, k)), lift = k === undefined ? 0 : 1 - clamp(Math.abs(k - 0.55) / 0.22, 0, 1);
+    this.lockerDoor.rotation.y += (-1.75 * open - this.lockerDoor.rotation.y) * Math.min(1, dt * 8);
+    this.suitHook.position.y = 0.32 * lift; this.suitHook.position.z = A.z0 + 1.15 + 0.5 * lift; this.suitHook.visible = !!S && !(ctx.suitShow ?? S.suitOn);
+  }
+  walkable(x, z) {   // a shut airlock door is a wall
+    const L = this.lock; if (L && L.init && Math.abs(z) < 3) { if (L.out < 0.5 && Math.abs(x - AIRLOCK.x0) < 0.45) return false; if (L.in < 0.5 && Math.abs(x - AIRLOCK.x1) < 0.45) return false; }
+     for (const r of this.walk) if (x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1) return true; return this.inCave(x, z); }
   sparks(pos) { this.sparkAt = pos; if (!pos) { this.sparkPts.material.opacity = 0; this.sparkLight.intensity = 0; } }
   impactAt(x, z) {
     const y = this.heightAt(x, z); this.flash.position.set(x, y + 6, z); this.flash.intensity = 9000;
@@ -861,7 +905,7 @@ export class World {
     this._lampPool(dt, topZ && night, ctx.player);
     if (this.Q && this.Q.every > 1) { this._sf = (this._sf || 0) + 1; if (this._sf % this.Q.every === 0) this.sunLight.shadow.needsUpdate = true; }   // lighter settings redraw the shadow map every other frame
     const inside = !!ctx.inside; this.shell.visible = !topZ && !inside; this.deepHemi.intensity = topZ ? 0 : (inside ? 1.5 : 1.05) * (0.45 + 0.55 * dim); this.skyBounce.intensity = topZ ? 0 : 140 * sn.factor;
-    if (!topZ) { const near = ctx.player && Math.hypot(ctx.player.x - AIRLOCK.x0, ctx.player.z) < 6; this.odOpen = (this.odOpen || 0) + ((near ? 1 : 0) - (this.odOpen || 0)) * Math.min(1, dt * 6); this.outerDoor.scale.y = Math.max(0.03, 1 - this.odOpen); this.outerDoor.position.y = 4.15 - 2.05 * this.outerDoor.scale.y; this.suitHook.visible = !!S && !S.suitOn; }
+    if (!topZ) { const near = ctx.player && Math.hypot(ctx.player.x - AIRLOCK.x0, ctx.player.z) < 6; this._airlock(dt, S, ctx, near); }
     // solar mounts
     const az = Math.atan2(this.sunDir.x, this.sunDir.z), el = Math.asin(clamp(this.sunDir.y, 0, 1)), dust = S ? S.dust : 0.1;
     this.mounts.forEach((m, i) => {
