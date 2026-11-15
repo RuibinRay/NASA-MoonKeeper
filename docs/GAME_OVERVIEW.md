@@ -281,7 +281,7 @@ The game is honest about what is known. Its "Real or made up?" page shows a tabl
 | **Shown in a laboratory on Earth** | Plants sprouting in real Apollo soil, small and stressed. Microwaves driving ice out of frozen soil. Hydrogen pulling oxygen out of the mineral ilmenite at about 1,000°C. Crop growing times and needs from NASA's crop chambers |
 | **An idea nobody has built on the Moon** | A station inside a lava tube. An ice-extraction plant. Mining a dark crater. A small reactor for the night |
 | **Our story** | A meteor shower wrecking every station at once. The other countries' stations a short drive away. The Polar Ice Mine a short trip from a base near the equator: real dark craters are about 2,500 km away. Hens on the Moon. Herbs as a crop |
-| **Sized for play** | One game hour passes in 7 to 9 seconds. Unheated cold drains the rover and hopper by 1.5% an hour for each heater level short. One game day of growing stands for about 100 real days. Machine power sizes. Earth drawn 2.5 times larger so its phase shows. Suiting up in 15 minutes |
+| **Sized for play** | One game hour passes in 7 to 9 seconds. Surprise events hole at most one, two or three rooms in a mission. Unheated cold drains the rover and hopper by 1.5% an hour for each heater level short. One game day of growing stands for about 100 real days. Machine power sizes. Earth drawn 2.5 times larger so its phase shows. Suiting up in 15 minutes |
 
 Two things the game never allows, because they would teach something false: crops growing on the open surface, and plants replacing the oxygen machines. Six racks give under a quarter of what one person breathes.
 
@@ -335,6 +335,7 @@ The game was played from the title screen to the rescue by a script that presses
 | When a meteoroid holed the Water Room, REGO said to lock the door, which froze the room and stopped all water recycling. In a full play-through this nearly lost the mission. | The Water Room and the Oxygen Room are patched on a thinner margin of oxygen, and the "lock" choice on every leak card now says what you lose and what it costs to rebuild. |
 | REGO said nothing while water was on course to run out two days before rescue; it spoke only in the last day. It also said "turn the Water Recycler up" when the recycler's room was sealed, and never mentioned a leaking water pipe. | REGO and a yellow alert speak up as soon as oxygen, water or food will not last until the rescue ship. REGO names a dead recycler or a leaking pipe first, and says how many materials the repair needs. |
 | The elevator would take you up into a solar storm without a word. | Its prompt reads "Ride the elevator up INTO THE SOLAR STORM (radiation!)" while a storm is on. |
+| Too many rooms were holed: five in one played Pilot mission, the Water Room twice, each one lost once the materials ran out. | A limit for each mission (one room on Cadet, two on Pilot, three on Commander), at least a day and a half between two, never the same room twice, and never the Water Room or Oxygen Room while you have nothing to patch with. |
 
 ### Found in a follow-up check of the hardest mode
 
