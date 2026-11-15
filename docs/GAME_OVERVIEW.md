@@ -71,7 +71,7 @@ Walk up to something and press E. The bar at the bottom of the screen always say
 | **E** | Do the thing shown at the bottom of the screen |
 | Q | Second action: take cargo out of a vehicle, tip the digger's bucket |
 | Tab | Power Board: share out the electricity |
-| M | Map of the surface or the station |
+| M | Map of the surface or the station, and the real Moon to scale |
 | H | Ask REGO what matters most right now |
 | L | Life-support loop: where every litre and every breath goes |
 | T, or click the clock | Day and night: the temperature outside through a whole Moon day |
@@ -137,6 +137,7 @@ Everything is done by hand in the world, not from a menu: you walk there, carry 
 | REGO | Follows you, lights your work, points at the job, gives advice on H, and tells a real space fact when all is calm. It can read its hints, its lines and the emergency cards aloud, using the voice built into the device: on by itself in Cadet missions, a switch in Settings otherwise |
 | Clock and map | A mission clock with sunset, rescue and storm marks, and a line that shows the temperature outside falling after sunset while the cave stays at 17°C. A map of the surface and of the station |
 | Day and night page | A graph of one whole Moon day with "now", sunset, sunrise and rescue marked, three thermometers (outside, cave, station), and a short explanation of why the Moon is so hot and so cold |
+| The real Moon page | In the Map: the side of the Moon that faces Earth, with the base, both poles and the ice zones. It shows that the ice is really about 2,500 km from the base (about 4,000 times as far as the game draws it) and says why the game draws it close by |
 | Guide | How to play, a "Real or made up?" table, why live in a lava tube, a station tour in pictures, space words |
 
 Failing teaches too: the end screen says what ran out first, the science behind it, and what to try next time.
@@ -384,5 +385,5 @@ The list is in order of how much each item would help the goal: children learnin
 8. **Hopper animation.** Done: landing legs that flex, engine dust, and a landing guide.
 9. **Sound.** Done: music, footsteps, room sounds, and the muffled silence outside. Nobody has listened to it yet.
 10. **A more honest ice picture.** Done: the mine's picture now shows dry, dark soil that is a little paler where it is icy. It used to show clear lumps of ice.
-11. **A true-scale map.** The game draws the ice mine and the other stations a short trip away. A map page that shows the real distances, about 2,500 km to the poles, would make the compression clear.
+11. **A true-scale map.** Done: the Map has a page, "The real Moon", that shows the real distance to the ice, about 2,500 km to the nearest pole.
 12. **Two players.** One on the surface and one in the control room, talking by radio.

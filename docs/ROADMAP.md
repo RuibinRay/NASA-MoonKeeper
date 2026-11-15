@@ -89,7 +89,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
 | 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | Done: the hopper, the gait and the hops in and out of vehicles (see below) |
 | 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | Done: sound, music and the radio (see below); reactive lighting was done in step 3 |
-| 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | Questions, REGO's voice, the Day and night page and the ice picture done (see below). Map to do |
+| 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | Questions, REGO's voice, the Day and night page, the ice picture and the true-scale map done (see below). Real ground shape from elevation data is not done |
 
 ### Step 1: what changed and what was measured
 
@@ -269,3 +269,20 @@ The Polar Ice Mine's picture used to show clear lumps of ice and a splash, as if
 - **The mine's note in the game** now says: "You will not see lumps of ice: it is frost between the grains, so icy soil only looks a little paler."
 - **What is measured and what is a guess.** Orbiters found the coldest south-polar crater floors slightly brighter, which fits a thin frost. How pale that looks to the eye is the artist's guess, and `docs/SCIENCE_AND_SOURCES.md` says so.
 - **How it was made.** One picture from the recipe `rm_icemine` in `tools/art_jobs_v4.json`. The picture has three floodlight masts in view where the recipe asks for four.
+
+### Step 7, fourth part: the real Moon, to scale
+
+The game draws the Polar Ice Mine about 620 m from the pit. On the real Moon the ice is near the poles. The Map now has a fourth page, **The real Moon**, that shows the true distance.
+
+| | In the game | On the real Moon |
+| --- | --- | --- |
+| Base to the ice | about 620 m (Pit Elevator to the mine) | about 2,500 km to the nearest pole; about 3,000 km to the crater where a probe found water |
+| How many times as far | 1 | about 4,000 |
+| Driving time | a short trip | about 190 hours at 13 km/h: 8 days and nights without a stop |
+
+- **The picture.** The side of the Moon that faces Earth, with the base as an orange dot, both poles, blue bands where ice has been found, the probe's crater, and dashed lines for the two trips with their lengths.
+- **The words.** Where you are, where the ice is, how long the drive would be, and why the game draws the mine close by. It says plainly that the short trip is our story, and that most real plans for a Moon base choose a place near the south pole.
+- **Ways in.** Map (M), then "The real Moon". The ice mine's panel has a button, "See the real distance to the ice". "Real or made up?" in the Space Guide has a new row.
+- **Where the numbers come from.** `js/moonmap.js` holds the real positions and works out every distance; nothing on the page is typed in by hand. `node tools/moonmap_test.mjs` runs 42 checks on the distances, the drawing and the numbers shown.
+- **What is simplified.** The seas are round patches at their real positions and widths, not their true ragged shapes. The Ocean of Storms is drawn at half its length.
+- **Not done.** The ground in the game is still hand-made hills. Shaping it from measured elevation maps of the pit region is a separate piece of work.
