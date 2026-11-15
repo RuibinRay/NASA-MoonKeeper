@@ -14,7 +14,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const JS = path.join(ROOT, 'js'), LANGDIR = path.join(ROOT, 'lang');
 const SKIP_FILES = new Set(['i18n.js', 'nasa-events.js']);
-const jsFiles = () => fs.readdirSync(JS).filter((f) => f.endsWith('.js') && !SKIP_FILES.has(f)).sort();
+// every game file under js/, sub-folders included (js/mars/...), as paths like 'ui.js' or 'mars/world.js'
+const jsFiles = (dir = '') => fs.readdirSync(path.join(JS, dir), { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? jsFiles(dir + d.name + '/') : d.name.endsWith('.js') && !SKIP_FILES.has(d.name) ? [dir + d.name] : [])).sort();
 
 // ---------------------------------------------------------------- the lexer
 export function literals(src) {
@@ -80,6 +81,8 @@ export function prose(text) {
   if (/\b(\d+|\{\d+\})?px\b/.test(bare) && /\b(sans-serif|serif|monospace|Inter|Chakra|Bangers)\b/.test(bare)) return false;   // canvas fonts
   if (/^(rgba?|hsla?)\(/.test(plain) || /^[XYZ]{3}$/.test(plain)) return false;                   // colours, rotation orders
   if (/\b(uniform|varying|gl_FragColor|gl_Position|void main)\b/.test(bare)) return false;         // shader code
+  if (/\b(vec[234]|mat[34]|smoothstep|fract|texture2D)\s*\(|#include\s*<|\bfloat\s+\w+\s*[=(;,)]|\bvoid\s+\w+\s*\(/.test(text)) return false;   // shader pieces
+  if (!/\s/.test(plain) && plain.length > 30) return false;                                       // one long token: packed data (base64), not words
   if (/\b(translate[XY]?|rotate|scale|linear-gradient|radial-gradient|calc|cubic-bezier|url)\(/.test(bare) || /^[a-z-]+ \{\d+\}m?s\b/.test(bare.trim())) return false;   // css values
   if (/^([a-z-]+\s*:\s*[^;:]*;?\s*)+$/.test(plain)) return false;                                  // css
   if (/^[#.[][\w-]/.test(plain) && /^[\w\s#.,:>~+()[\]="'*-]+$/.test(plain) && !/\s\p{Lu}\p{Ll}/u.test(plain)) return false;   // selectors (".name", not ". The night...")
@@ -194,13 +197,14 @@ function apply(src, edits) {
   for (let k = 1; k < E.length; k++) if (E[k].at === E[k - 1].at && (E[k].del || E[k - 1].del)) throw new Error('two edits at one place');
   let s = src; for (const x of E) s = s.slice(0, x.at) + x.ins + s.slice(x.at + (x.del || 0)); return s;
 }
-const IMPORT = "import { tt } from './i18n.js';";
-function addImport(s) {
-  if (/import\s*\{[^}]*\btt\b[^}]*\}\s*from\s*'\.\/i18n\.js'/.test(s)) return s;
+// the import line for a file at js/<f>: './i18n.js' beside it, '../i18n.js' one folder down (js/mars/...)
+const importFor = (f) => `import { tt } from '${'../'.repeat(f.split('/').length - 1) || './'}i18n.js';`;
+function addImport(s, f = 'x.js') {
+  if (/import\s*\{[^}]*\btt\b[^}]*\}\s*from\s*'(\.\.?\/)+i18n\.js'/.test(s)) return s;
   const nl = s.includes('\r\n') ? '\r\n' : '\n', lines = s.split(/\r?\n/);
   let last = -1; lines.forEach((ln, j) => { if (/^\s*import\b.*from\s*'/.test(ln) && j < 40) last = j; });   // after the last import,
   const at = last >= 0 ? last + 1 : lines.findIndex((ln) => !/^\s*\/\//.test(ln));                        // or after the header comment
-  lines.splice(at, 0, IMPORT); return lines.join(nl);
+  lines.splice(at, 0, importFor(f)); return lines.join(nl);
 }
 
 // English plural endings: tt`${n} panel${n > 1 ? 's' : ''}` becomes (n > 1 ? tt`${n} panels` : tt`${n} panel`),
@@ -228,7 +232,7 @@ function wrapAll(dry) {
     total += marked.length;
     for (const m of marked) report.push(`${f}:${lineOf(src, m.l.s)}  ${m.forced ? '[forced] ' : ''}${m.split ? '[split ' + m.split + '] ' : ''}${JSON.stringify(m.key).slice(0, 140)}`);
     for (const x of skipped) report.push(`${f}:${lineOf(src, x.l.s)}  SKIPPED (${x.why}) ${JSON.stringify(x.key).slice(0, 120)}`);
-    if (!dry && edits.length) { const out = pluralPass(addImport(apply(src, edits))); fs.writeFileSync(file, out); }
+    if (!dry && edits.length) { const out = pluralPass(addImport(apply(src, edits), f)); fs.writeFileSync(file, out); }
   }
   return { total, report };
 }
