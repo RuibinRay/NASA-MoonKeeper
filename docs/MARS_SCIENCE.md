@@ -128,6 +128,16 @@ MOLA files: NASA Planetary Data System, Geosciences Node — https://pds-geoscie
 | Phobos | Rises in the west, sets in the east, about every 11 hours, low in the south from this latitude | Not verified in this pass | See the list below |
 | Dust-devil tracks, ice clouds | Dark winding tracks; thin clouds brightest at twilight | Not verified in this pass | See the list below |
 
+## 8b. The survival mission
+
+| What | In the game | Class | Note |
+|---|---|---|---|
+| The storm's dust | 4.8 to 5.6 | Game (inside the observed range: above 5.5 in 2007, 10.8 in 2018) | Section 4 |
+| How fast it arrives | The dust thickens over about half a sol | Game (the 2018 storm went from clear to 4.9 in three sols) | Section 4 |
+| Solar power in the storm | About a third of a clear day | Game (from the game's own dust formula) | Section 4 |
+| The breakdowns | Clogged filter, tripped heat pump, spent scrubber bed, frozen pump, failed battery module, jammed solar tables, dish off aim, dead grow lamps | Game | Made up for play; the end screen says so |
+| What the crew need | 0.84 kg of oxygen each a day (3.4 kg a sol for four) | Observed | Section 5 |
+
 ## 8. Not verified in this pass
 
 - Some NASA pages say Olympus Mons is "over 40 km" from base to summit; MOLA gives 21.3 km above the datum. The game uses the MOLA value.
