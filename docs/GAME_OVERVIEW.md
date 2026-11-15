@@ -381,8 +381,8 @@ The list is in order of how much each item would help the goal: children learnin
 
 ### Fourth: finish what is on the roadmap
 
-8. **Hopper animation.** Landing legs that flex, engine dust, and a gentler landing guide. This is step 4 of the animation plan.
-9. **Sound.** Music, footsteps inside the station, and the muffled silence outside.
-10. **A more honest ice picture.** The mine's picture shows clear chunks of ice. Real crater ice is frost mixed into the soil.
+8. **Hopper animation.** Done: landing legs that flex, engine dust, and a landing guide.
+9. **Sound.** Done: music, footsteps, room sounds, and the muffled silence outside. Nobody has listened to it yet.
+10. **A more honest ice picture.** Done: the mine's picture now shows dry, dark soil that is a little paler where it is icy. It used to show clear lumps of ice.
 11. **A true-scale map.** The game draws the ice mine and the other stations a short trip away. A map page that shows the real distances, about 2,500 km to the poles, would make the compression clear.
 12. **Two players.** One on the surface and one in the control room, talking by radio.
