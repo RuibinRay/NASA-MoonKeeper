@@ -571,3 +571,16 @@ On the Moon's surface the line is straight. That would not do at the Mars base, 
 ### Mars in every language
 
 The 324 texts of Mars step one (the planet cards, the briefing, all 14 buildings, the gauges, REGO's Mars hints, the map) are translated into the same 15 languages, so every language is complete again (2,660 texts each). Three Mars lines that were built from pieces became whole sentences: the sky demo (clear, dusty, a regional storm), the season (one phrase per season) and "1 building still to see". Checked on screen: Mars in German has no English left; the Arabic mission briefing now keeps "24 L" in its own order (a value in a right-to-left box takes the direction of its own first letter). The translation tool now spaces only numbers that the English writes with a thousands comma, so German decimals such as 0,057 stay as written; three German lines it had broken are repaired. The background "SI-generated" marks are skipped by screen readers, like the picture marks.
+### A better Map (the Map screen, first of two map steps)
+
+The Map was white blobs on brown. It is now its own file, `js/mars/map.js`, and does these things:
+
+- **The outpost page** is one map you can zoom (scroll, or the + and − buttons) and drag, from 40 m across to the whole 1.6 km. Buildings are coloured by what they are part of (crew, air, water, food, power, heat, science, radio, rover), turn dark with a red cross when switched off and get an amber edge when short of power. Pipes and cables are drawn in the same colours, so you can see what feeds what.
+- **Point and click.** Pointing at anything says what it is, how far, and how it is doing. Clicking a building, the rover or a place sets the yellow guide line to it; clicking bare ground marks a spot and guides you there.
+- **The ground** is coloured by height, shaded from the north-west, with a thin line every 2 m and a stronger one every 10 m. The lava-flow edge, the craters and the ripple field can all be read off it.
+- **Places** you have not found yet show as a question mark where they are, so there is always somewhere to go; they get their name when you find them.
+- **Also on it:** the yellow line (the same route the line on the ground takes), the way you have come, the crew who are outdoors, the rover pointing the way it faces, the part of the ground you are looking at, where the Sun is, the wind, a scale and north.
+- **The corner map** uses the same drawing and looks further ahead when you are in the rover.
+- **The region and planet pages** now answer the pointer: move it and read the real latitude, longitude and height from NASA's MOLA data (Olympus Mons reads +19,040 m, Hellas −6,280 m). The region has lines of latitude and longitude, rings at 25, 50 and 75 km, the hill that stands highest on the outpost's skyline, and EM-16, a landing site a published study looked at (Proposed).
+
+**Checked.** `node tools/mars_test.mjs`: 143 checks (18 new on the Map: the readings match the data, zooming keeps the point under the pointer, the view cannot be lost off the edge). In the browser: all four pages, pointing, clicking a building, a question mark and bare ground, zoom, drag, and the corner map; no errors. The new texts are not translated yet.

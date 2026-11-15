@@ -544,3 +544,17 @@ body.mars #suit{color:#ffd9bf}
 html[data-dir="rtl"] .bf b,html[data-dir="rtl"] #modal .win b,html[data-dir="rtl"] #modal .win .stat span,html[data-dir="rtl"] .cost{unicode-bidi:plaintext;text-align:right}
 /* the background marks are for eyes: a screen reader skips them (the picture marks carry aria-hidden) */
 @supports (content: "x" / "") { .title-bg::before,.mission-bg::before,.end-bg::before{content:var(--t-si,'SI-generated') / ''} #mission.mars .mission-bg::before{content:none} }
+
+/* ---------- the Mars map ---------- */
+.mapbox{position:relative;line-height:0}.mapbox canvas{width:100%;border-radius:12px;border:1px solid var(--line);touch-action:none;cursor:grab}
+.maptip{position:absolute;z-index:3;max-width:186px;padding:7px 10px;border-radius:9px;background:rgba(20,10,6,.94);border:1px solid var(--line);font-size:12.5px;line-height:1.4;color:#fff;pointer-events:none}.maptip i{color:var(--mute);font-style:normal;font-size:11.5px}
+.mapread{min-height:56px;padding:8px 11px;margin-bottom:10px;border-radius:10px;background:rgba(0,0,0,.28);border:1px solid var(--line);font-size:13.5px;line-height:1.5}.mapread b{color:#fff}
+.mapbtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.mapbtns button{padding:6px 12px;border-radius:9px;background:#150d09;border:1px solid var(--line);font-size:13px;min-width:38px}.mapbtns button:hover{border-color:var(--cyan)}
+.maplist{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:6px 0 10px}
+.maprow{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:9px;background:rgba(0,0,0,.25);border:1px solid var(--line);font-size:12.5px;text-align:left;min-width:0}.maprow:hover{border-color:var(--cyan)}
+.maprow span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.maprow em{font-style:normal;color:var(--mute);font-size:11.5px;white-space:nowrap}
+.st{flex:none;width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.6)}.st.off{background:#3a1c16!important;border:2px solid #ff5a4a}.st.low{border:2px solid #ffb347}
+.maplegend{display:flex;flex-wrap:wrap;gap:4px 12px;margin:10px 0 4px;font-size:12px;color:#e8dccf}.maplegend span{display:inline-flex;align-items:center;gap:5px}
+.maplegend u{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.6);text-decoration:none}.maplegend u.x{background:#3a1c16;border:2px solid #ff5a4a}.maplegend u.line{width:16px;height:0;border:0;border-top:3px dashed #ffd21f;border-radius:0}.maplegend u.q{width:14px;height:14px;border:1.5px solid #ffe2b5;background:none;color:#ffe2b5;font-size:10px;line-height:11px;text-align:center;font-weight:700}
+.hbar{margin:8px 0 2px;display:grid;grid-template-columns:repeat(4,1fr);font-size:11.5px;color:var(--mute)}.hbar i{grid-column:1/-1;height:10px;border-radius:5px;margin-bottom:3px}.hbar span:nth-child(3){text-align:left}.hbar span:nth-child(4){text-align:center}.hbar span:last-child{text-align:right}
+@media (max-width:900px){.maplist{grid-template-columns:1fr}}
