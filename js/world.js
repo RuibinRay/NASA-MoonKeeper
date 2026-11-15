@@ -666,7 +666,8 @@ export class World {
     if (!kind) return; const LEAF = { potato: 0x3f9b46, wheat: 0x9fbf4a, soybean: 0x5fae4f, peas: 0x5fbe5f, tomato: 0x3f9b46, lettuce: 0x8fe06a, spinach: 0x2f7f3a, radish: 0x4faa4f, herbs: 0x4fbf8a, arabidopsis: 0x9fd0a0 }, FRUIT = { wheat: 0xe0c060, soybean: 0xb9d070, peas: 0x9fe07a, tomato: 0xe5362b, radish: 0xe0527a, arabidopsis: 0xffffff };
     v.base = new THREE.Color(LEAF[kind] || 0x3f9b46); v.leaf = std({ color: v.base.getHex(), roughness: 0.85 }); v.fruit = std({ color: FRUIT[kind] || 0xffffff, roughness: 0.5 });
     const gap = { wheat: 1.0, lettuce: 1.2, spinach: 1.2, radish: 0.9, herbs: 1.0, arabidopsis: 0.9 }[kind] || 1.75, n = Math.max(3, Math.floor((v.L - 1.6) / gap)), rnd = seeded(v.b * 31 + kind.length * 7 + (v.room === 'potato' ? 1 : 5));
-    for (let k = 0; k < n; k++) { const p = this._plant(kind, v.leaf, v.fruit, rnd); p.position.set(-v.L / 2 + 0.8 + (k + 0.5) * ((v.L - 1.6) / n), 0, (rnd() - 0.5) * 0.7); p.rotation.y = rnd() * 6.28; v.plants.add(p); v.list.push({ p, ph: rnd() * 6.28, s: 0.85 + rnd() * 0.3 }); }
+    for (let k = 0; k < n; k++) { const at = -v.L / 2 + 0.8 + (k + 0.5) * ((v.L - 1.6) / n); if (v.gap && Math.abs(at) < v.gap / 2 + 0.6) continue;   // nothing grows in the walkway
+      const p = this._plant(kind, v.leaf, v.fruit, rnd); p.position.set(at, 0, (rnd() - 0.5) * 0.7); p.rotation.y = rnd() * 6.28; v.plants.add(p); v.list.push({ p, ph: rnd() * 6.28, s: 0.85 + rnd() * 0.3 }); }
   }
   // Furniture and machines. Anything added to a room's `props` group is hidden while the room is wrecked and comes back step by step as it is rebuilt.
   _props() {
@@ -694,16 +695,24 @@ export class World {
     // Potato farm: soil beds with bushy plants
     // --- the two farms: three hydroponic racks each, plus one bed of treated moon soil once that is researched.
     // Each rack is one group; its plants are rebuilt when it is replanted and grow, sway and fruit with the simulation.
-    this.rackViews = []; this.expViews = {};
+    // Both farms have a walkway straight in from the door: each long rack is two halves with a gap between them.
+    this.rackViews = []; this.expViews = {}; const AISLE = { potato: 3.4, tomato: 3.4 };   // metres of clear floor across the middle of each rack
     for (const id of ['potato', 'tomato']) { const c = rc(id), len = c.x1 - c.x0 - 5;
       for (let b = 0; b < 4; b++) { const soil = b === 3, L = soil ? 9 : len, x = soil ? (c.s < 0 ? c.x0 + 5.5 : c.x1 - 6) : c.cx, z = soil ? c.z1 - 1.8 : c.z0 + 3 + b * 5, g = new THREE.Group(); g.position.set(x, 0, z); R[id].props.add(g);
-        const lamp = M.pink.clone(), led = M.greenG.clone(); this.put(g, this.box(L, 0.7, soil ? 1.6 : 2.2, soil ? M.grey : M.white), 0, 0.35, 0);
-        if (soil) this.put(g, this.box(L - 0.3, 0.2, 1.3, M.soil), 0, 0.72, 0); else { this.put(g, this.box(L - 0.4, 0.06, 1.7, M.dark), 0, 0.72, 0); this.put(g, this.box(L - 0.6, 0.05, 0.35, M.water), 0, 0.76, 0); this.put(g, this.cyl(0.07, 0.07, L, M.tankW, 8), 0, 0.5, 1.16, 0, 0, Math.PI / 2); }
-        this.put(g, this.box(L, 0.1, 0.5, lamp), 0, ROOM_H - 1.2, 0); for (const e of [-1, 1]) this.put(g, this.box(0.1, ROOM_H - 1.9, 0.1, M.metal), e * (L / 2 - 0.1), (ROOM_H - 0.5) / 2, 0);
+        const lamp = M.pink.clone(), led = M.greenG.clone(), gap = soil ? 0 : AISLE[id] || 0, H = (L - gap) / 2;   // H: the length of one half
+        // the pieces of the rack: one piece, or one on each side of the walkway. [where its middle is along the rack, how long it is]
+        for (const [px, pl] of gap ? [[-(gap + H) / 2, H], [(gap + H) / 2, H]] : [[0, L]]) {
+          this.put(g, this.box(pl, 0.7, soil ? 1.6 : 2.2, soil ? M.grey : M.white), px, 0.35, 0);
+          if (soil) this.put(g, this.box(pl - 0.3, 0.2, 1.3, M.soil), px, 0.72, 0); else { this.put(g, this.box(pl - 0.4, 0.06, 1.7, M.dark), px, 0.72, 0); this.put(g, this.box(pl - 0.6, 0.05, 0.35, M.water), px, 0.76, 0); this.put(g, this.cyl(0.07, 0.07, pl, M.tankW, 8), px, 0.5, 1.16, 0, 0, Math.PI / 2); }
+          this.put(g, this.box(pl, 0.1, 0.5, lamp), px, ROOM_H - 1.2, 0); for (const e of [-1, 1]) this.put(g, this.box(0.1, ROOM_H - 1.9, 0.1, M.metal), px + e * (pl / 2 - 0.1), (ROOM_H - 0.5) / 2, 0);
+          if (gap) { const n = Math.ceil(pl / 2.2); for (let i = 0; i < n; i++) hard(x + px - pl / 2 + 1.1 + (i * (pl - 2.2)) / (n - 1), z, 1.25); }   // solid all along, so the only way across is the walkway
+        }
         this.put(g, this.box(0.5, 0.35, 0.08, M.dark), -L / 2 + 0.6, 0.45, 1.13); this.put(g, this.sph(0.09, led, 8, 6), -L / 2 + 0.6, 0.45, 1.19);
         const plants = new THREE.Group(); plants.position.y = 0.78; g.add(plants);
-        for (let k = -1; k <= 1; k++) hard(x + k * (L / 2 - 1.2), z, soil ? 1.0 : 1.3);
-        this.rackViews.push({ room: id, b, soil, L, g, plants, lamp, led, kind: undefined, cur: 0, list: [], leaf: null, fruit: null }); }
+        if (!gap) for (let k = -1; k <= 1; k++) hard(x + k * (L / 2 - 1.2), z, soil ? 1.0 : 1.3);
+        this.rackViews.push({ room: id, b, soil, L, gap, g, plants, lamp, led, kind: undefined, cur: 0, list: [], leaf: null, fruit: null }); }
+      // the walkway's edges, painted on the floor from the door to the back wall
+      if (AISLE[id]) { const w = AISLE[id] / 2 - 0.35, zd = c.s < 0 ? c.z1 : c.z0, zb = c.s < 0 ? c.z0 : c.z1, zm = (zd + zb) / 2, zl = Math.abs(zb - zd) - 1.6; for (const e of [-1, 1]) add(id, this.box(0.1, 0.02, zl, M.yellow), c.cx + e * w, 0.012, zm); }
       // the moon-soil experiment: three pots of thale cress on a bench by the wall
       const ex = new THREE.Group(); ex.position.set(c.x0 + 1.6, 0, c.cz); R[id].props.add(ex); this.put(ex, this.box(1.4, 0.9, 4.6, M.white), 0, 0.45, 0); this.put(ex, this.box(1.2, 0.06, 0.4, M.pink), 0, 2.4, 0, 0, Math.PI / 2); for (const e of [-2, 2]) this.put(ex, this.box(0.08, 1.5, 0.08, M.metal), 0, 1.65, e);
       const pots = [[M.tankW, 0x58c26a], [M.soil, 0x7fae4f], [M.grey, 0x8a4a52]].map(([pm, col], i) => { const p = new THREE.Group(); p.position.set(0, 0.9, (i - 1) * 1.4); ex.add(p); this.put(p, this.cyl(0.36, 0.28, 0.4, pm, 12), 0, 0.2, 0); const lm = std({ color: col, roughness: 0.8 }), pl = new THREE.Group(); pl.position.y = 0.4; p.add(pl); this.put(pl, this.cyl(0.26, 0.26, 0.04, lm, 9), 0, 0.03, 0); this.put(pl, this.cyl(0.015, 0.015, 0.5, lm, 5), 0, 0.28, 0); this.put(pl, this.sph(0.05, lm, 6, 5), 0, 0.54, 0); return pl; });

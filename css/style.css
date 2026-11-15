@@ -535,6 +535,8 @@ body.mars #suit{color:#ffd9bf}
 /* Every SI-made picture shows a visible "SI-generated" mark (NASA Space Apps rules). js/simark.js places one over each picture
    from assets/img/; the three pictures used as backgrounds get theirs here; the job games draw theirs on the canvas. */
 .si-mark{position:absolute;z-index:3;pointer-events:none;font:700 10.5px/1.25 var(--body);font-style:normal;letter-spacing:.02em;color:#fff;background:rgba(0,0,0,.55);padding:2px 6px;border-radius:5px;white-space:nowrap;text-shadow:none}
+#si-tex{left:12px;bottom:14px;top:auto;z-index:0}   /* the station textures' mark: bottom-left, under REGO's bubble */
+@media (max-width:600px){#si-tex{bottom:92px}}   /* a phone held upright: the buttons fill the bottom row, so it sits above them and the action prompt */
 .si-mark.tiny{font-size:8px;padding:1px 3px;border-radius:4px;letter-spacing:0}
 .title-bg::before,.mission-bg::before,.end-bg::before{content:var(--t-si,'SI-generated');position:absolute;z-index:2;font:700 11px/1.25 var(--body);color:#fff;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:6px;pointer-events:none}
 .title-bg::before{right:16px;bottom:14px}

@@ -21,7 +21,7 @@
       "assets/img/*.jpg and assets/img/mars/*.jpg (all 111 pictures: comic, characters, event cards, rooms, job games, title, endings, and the Mars buildings, places and crew)",
       "assets/tex/wall3.jpg, floor3.jpg, ceil3.jpg, door3.jpg (interior textures)"
     ],
-    "watermark": "Every picture from assets/img shows a visible 'SI-generated' mark in the game (js/simark.js, css/style.css, js/minigames.js). The interior textures are tiled across 3D walls and floors and carry no mark of their own."
+    "watermark": "Every picture from assets/img shows a visible 'SI-generated' mark in the game (js/simark.js, css/style.css, js/minigames.js). The interior textures are tiled across 3D walls and floors, so they cannot carry a mark of their own: while the player is inside the station, a label in the bottom-left corner of the screen says 'Station walls and floors: SI-generated' (js/simark.js, texMark)."
   },
   "video": {
     "si_generated": true,
