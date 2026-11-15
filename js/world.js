@@ -695,8 +695,8 @@ export class World {
     // Potato farm: soil beds with bushy plants
     // --- the two farms: three hydroponic racks each, plus one bed of treated moon soil once that is researched.
     // Each rack is one group; its plants are rebuilt when it is replanted and grow, sway and fruit with the simulation.
-    // The Potato Farm has a walkway straight in from its door: each long rack there is two halves with a gap between them.
-    this.rackViews = []; this.expViews = {}; const AISLE = { potato: 3.4 };   // metres of clear floor across the middle of each rack
+    // Both farms have a walkway straight in from the door: each long rack is two halves with a gap between them.
+    this.rackViews = []; this.expViews = {}; const AISLE = { potato: 3.4, tomato: 3.4 };   // metres of clear floor across the middle of each rack
     for (const id of ['potato', 'tomato']) { const c = rc(id), len = c.x1 - c.x0 - 5;
       for (let b = 0; b < 4; b++) { const soil = b === 3, L = soil ? 9 : len, x = soil ? (c.s < 0 ? c.x0 + 5.5 : c.x1 - 6) : c.cx, z = soil ? c.z1 - 1.8 : c.z0 + 3 + b * 5, g = new THREE.Group(); g.position.set(x, 0, z); R[id].props.add(g);
         const lamp = M.pink.clone(), led = M.greenG.clone(), gap = soil ? 0 : AISLE[id] || 0, H = (L - gap) / 2;   // H: the length of one half
