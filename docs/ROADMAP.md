@@ -480,3 +480,33 @@ When a hole is not allowed, the emergency still happens but does something else:
 - **Rescued astronauts and buildings.** People who follow you home used the old follow code and walked straight through buildings. They now use REGO's: the first follows you, each of the others follows the one in front, and they go round buildings and stay back from the pit.
 
 `node tools/crew_test.mjs` runs 22 checks on the three rules. **Tried in the game:** the hopper at 46% stopped charging when switched off and rose to 85% after it was switched on again; a robot on Farm duty with the farms and the Animal Bay sealed drew nothing and the Control Center said so; two rescued astronauts followed round two surface buildings, never inside one, with no jumps, each about 2.6 m behind the one in front. **Not tried:** a real rescue trip from an outpost to the elevator.
+
+### Reading help: bigger words, and colours for colour-blind players
+
+**Text size.** Settings has a new row, Text size: Normal, Large (1.18 times) or Larger (1.36 times). It scales the words a player reads: every window (cards, panels, the Power Board, the Map, Settings itself), REGO's bubble, the hint at the bottom, the objective, the alerts, the notes and the dialogue. Windows are made narrower by the same factor first, so they still fit the screen. The choice is remembered. The gauges along the top and the buttons along the bottom keep their size, and the job games size their own lettering.
+
+**Colours.** `node tools/colour_test.mjs` takes the colours from the game's own files, passes each through a simulation of the three kinds of dichromacy ([Machado, Oliveira and Fernandes 2009](https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html), full severity), and measures how far apart each pair that must be told apart ends up (the CIE 1976 colour difference). The bar is 20, in normal sight and in all three simulations. That bar is this project's own, not a standard.
+
+| Pair | Smallest difference before | After |
+| --- | --- | --- |
+| A cost and a gain on a choice | 5 (fails) | 27 |
+| Rooms on the station map: a leak and a broken room | 2 (fails) | 62 |
+| Rooms: a leak and low air | 3 (fails) | 29 |
+| Rooms: broken and low air | 2 (fails) | 30 |
+| Rooms: OK and a leak | 16 (fails) | 30 |
+| Rooms: OK and sealed | 14 (fails) | 42 |
+| An emergency alert and a yellow reminder | 26 | unchanged |
+| A good note and a bad note; an open and a locked door | 22 | unchanged |
+
+All 18 pairs now pass by colour alone. The five room colours were found by a search over greens, reds, blues, yellows and a neutral, keeping each dark enough for white lettering.
+
+**Marks that do not rest on colour**, added as well:
+
+- an emergency alert carries a white "!" in a red disc, a reminder a small amber square;
+- a gauge that is low has "!" in front of its number, a critical one "!!";
+- a cost is a square-cornered chip with a dashed edge, a gain a pill with a tick;
+- on the station map a locked door has a white bar across it, and on the surface map a broken solar panel has a white stroke.
+
+**Tried in the game:** the three sizes in Settings, remembered after a reload; Settings, the Power Board, the Control Center, the Map and an emergency card at the largest size at 1280 x 800, 812 x 375 and 375 x 812, each inside the screen with no sideways scrolling; the marks on alerts, gauges, chips and the locked door; the new map colours and legend.
+
+**Not done:** nobody with colour-blindness has looked at the game, and no young reader has tried the larger text. The check covers the play screen and the maps, not the job games, the farm screens or the 3D world's warning lights. Other languages are not started.

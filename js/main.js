@@ -276,6 +276,8 @@ G.guide = (() => { try { return localStorage.getItem('mk-guide') !== '0'; } catc
 const stored = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }, store = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 G.quality = stored('mk-quality', 'auto'); G._autoQ = stored('mk-quality-auto', 'high'); G.qLevel = () => (G.quality === 'auto' ? G._autoQ : G.quality);
 G.setQuality = (q) => { G.quality = q; store('mk-quality', q); world.setQuality(G.qLevel()); fpsN = fpsT = fpsLow = 0; fpsTry = null; };
+// Text size: Normal, Large (about a fifth bigger) or Larger (about a third). It scales the words you read: cards, panels, REGO, hints and alerts.
+G.textSize = stored('mk-text', 'normal'); G.setTextSize = (v) => { G.textSize = ['normal', 'large', 'larger'].includes(v) ? v : 'normal'; store('mk-text', G.textSize); document.body.dataset.text = G.textSize; }; G.setTextSize(G.textSize);
 G.showFps = stored('mk-fps', '0') === '1'; G.setShowFps = (on) => { G.showFps = !!on; store('mk-fps', on ? '1' : '0'); $('#fps').classList.toggle('hidden', !on); };
 let fpsLast = 0, fpsN = 0, fpsT = 0, fpsLow = 0, fpsTry = null, fpsStop = false;
 // Counts real frames during steady play. On Auto, two slow readings in a row lower the detail one step.
