@@ -50,7 +50,7 @@ Rules for every step: no visible light beams or billowing dust (there is no air)
 | Meteorite Landings | Earth | Size comparison on impact cards | "What hit us?" identification mini-task |
 | OSD-476 (plants in Apollo soil) | LAB, real Moon soil | The moon-soil experiment | Load the study's sample groups so the three Apollo sites give three different results (Apollo 11 worst, Apollo 17 best) |
 | BVAD crop tables | LAB | Crop cycles and rankings | A crop-planning screen that shows the real per-square-metre numbers beside the game numbers |
-| LRO Diviner temperatures | MOON / orbit | 17°C pit, surface swing, crater cold | A second site: a polar outpost you reach by hopper, with real crater temperatures |
+| LRO Diviner temperatures | MOON / orbit | 17°C pit, surface swing, crater cold; the day-and-night thermometer in the clock (a simple model between the measured extremes) | Draw the thermometer from the measured curve hour by hour. A second site: a polar outpost you reach by hopper, with real crater temperatures |
 | LCROSS and polar ice maps | MOON | 5.6% ice in canister soil; the Polar Ice Mine you dig at | Vary the ice richness from patch to patch, as the orbital maps do, and give the player a prospecting scanner to find the rich ones |
 | ISS water recovery, ECLSS | FLOWN | 98% recycling, electrolysis ratios | A brine-processor upgrade (93% to 98%), matching the real 2023 step |
 | Ilmenite reduction, ROxygen | LAB | Water from rock | Hydrogen tank as a tracked resource, so electrolysis and rock reduction visibly trade hydrogen |

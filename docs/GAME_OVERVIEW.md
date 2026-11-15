@@ -74,6 +74,7 @@ Walk up to something and press E. The bar at the bottom of the screen always say
 | M | Map of the surface or the station |
 | H | Ask REGO what matters most right now |
 | L | Life-support loop: where every litre and every breath goes |
+| T, or click the clock | Day and night: the temperature outside through a whole Moon day |
 | N | Space Guide: how to play, real or made up, station tour, space words |
 | V · P | First or third person · pause |
 
@@ -131,7 +132,8 @@ Everything is done by hand in the world, not from a menu: you walk there, carry 
 | Experiment | The same seeds grown three ways: hydroponics, treated moon soil, raw moon soil |
 | Events | Solar storms, moonquakes, meteoroid strikes, air leaks, dust, fire, stale air, mold, pump and lamp failures, a drifting dish, a distress call |
 | REGO | Follows you, lights your work, points at the job, gives advice on H, and tells a real space fact when all is calm |
-| Clock and map | A mission clock with sunset, rescue and storm marks. A map of the surface and of the station |
+| Clock and map | A mission clock with sunset, rescue and storm marks, and a line that shows the temperature outside falling after sunset while the cave stays at 17°C. A map of the surface and of the station |
+| Day and night page | A graph of one whole Moon day with "now", sunset, sunrise and rescue marked, three thermometers (outside, cave, station), and a short explanation of why the Moon is so hot and so cold |
 | Guide | How to play, a "Real or made up?" table, why live in a lava tube, a station tour in pictures, space words |
 
 Failing teaches too: the end screen says what ran out first, the science behind it, and what to try next time.
@@ -361,7 +363,7 @@ The list is in order of how much each item would help the goal: children learnin
 | Dataset | What it would add |
 | --- | --- |
 | LOLA elevation maps of the pit region | The real shape of the ground around the base, in place of hand-made hills |
-| Diviner temperatures through a whole lunar day | A thermometer on the clock that follows the measured curve hour by hour, so the player sees the ground cool after sunset |
+| Diviner temperatures through a whole lunar day | The game now has a thermometer on the clock, drawn from a simple model between the measured extremes. The measured curve, hour by hour, would replace the model |
 | LEND and M3 polar ice maps | Ice patches of different richness, and a scanner to find the good ones before digging |
 | DONKI solar-event records | "Replay a real storm": choose a date and face the storm that happened |
 | CRaTER radiation measurements | A dose meter that matches what an orbiter measured, in the open and under shielding |
