@@ -530,3 +530,34 @@ All 18 pairs now pass by colour alone. The five room colours were found by a sea
 **Fitting the words.** Longer words were checked on screen in German, French, Russian, Arabic, Hindi, Chinese and Japanese. Three things changed: the Power Board's level buttons widen for a long "OFF" ("À L'ARRÊT"), a breaker lever squeezes its label to fit, and on a narrow screen a long gauge name shortens with "…" beside its icon so the number always shows whole. Three labels the style sheet wrote ("DID YOU KNOW?", "REGO · HINT", "SELECTED") now come from the language file, and the check fails if a style sheet writes words again.
 
 **Not done.** The translations were written by an AI model, one language at a time, from the English with a shared brief (names, key letters, units, informal "you", words for 7-year-olds). A machine checked their form, not their meaning: nobody who speaks these languages has read them. Numbers the game works out (3.2 kg) keep the English decimal point; numbers written in the text follow the translator (German writes 29,5), and in languages that use a decimal comma thousands are spaced (384 400). The pop-up explanations find a word only in the form the glossary gives, so in languages that change a word's ending (Arabic, Portuguese, Russian) some mentions have no pop-up. A few sentences still join a piece added by the code at the end (a sunspot group number, the end screen's summary), which reads stiffly in Japanese word order. The job games' canvas pictures were checked in the code, not on screen. REGO's voice in each language depends on the device having a voice for it, and nobody has listened. The teacher's page and the documents are in English only. The mission log keeps the language it was written in after a switch.
+
+## 7. The Mars expansion (brief of 15 November 2026)
+
+The Moon game stays as it is. Mars is a second world on the same engine, chosen on the mission page.
+Every Mars number, its class and its source are in [MARS_SCIENCE.md](MARS_SCIENCE.md). Classes: **Observed** on Mars · **Demonstrated** (and where) · **Proposed** by NASA studies · **Game** (made for play).
+
+| Milestone | What it is | State |
+|---|---|---|
+| 1. Research and map | The site, the real elevation data, the Mars ground, sky, dust and light; walking and driving | **Built** (this section) |
+| 2. Mars station | The 14 buildings, each with a job in the outpost's balance | **First version built**: outsides, panels, switches and effects. Rooms you can walk into, building scenes and repairs are not built |
+| 3. Survival on Mars | A mission that can be won and lost: storms that arrive by themselves, breakdowns, EVA limits | Not built |
+| 4. Training and story | Mars lessons, REGO's Mars lines, the radio delay in conversations | Not built (REGO gives advice and a tour only) |
+| 5. Moon ↔ Mars in Unlimited | Rocket flights between the worlds under real launch windows (about every 26 months, about 7 months each way) | Not built |
+| 6. Cinematics | Landing, storm and sunset scenes | Not built |
+| 7. Full check | Playtests on all devices, translation of the Mars texts | Not built |
+
+### Milestone 1: what was built and how it was checked
+
+**The site.** 39.5°N, 191.2°E: a flat bay of Arcadia Planitia among the Erebus Montes, 3,992 m below Mars's reference level. It was chosen from the data: low ground (thick air for landing), under 40°N (sunlight), over buried ice (water), flat. A published landing-site study shortlists places beside it for the same reasons.
+
+**What is real.** `tools/build_mars.mjs` downloads NASA's MOLA elevation files and packs four things into `js/mars/mola.js`: the whole planet at one value per degree, a 192 km region at 1.2 km a cell, the outline of the horizon as seen from the outpost (720 bearings, with the planet's curve taken off), and the tilt of the plain. The Map shows the first two; the hills on the skyline are the third; the ground's overall slope is the fourth.
+
+**What is made for play.** MOLA has one height every 463 m, so the 1.6 km you can walk is built by recipe on top of the real tilt: gentle rolls, 30 small craters, a young crater that reached the ice, an old soft one, a lava-flow edge, a field of wind ripples, 4,200 rocks, and cracked "polygon" ground (the pattern Phoenix photographed over shallow ice). The Map's "Why here?" page and every building panel say which kind of fact each thing is.
+
+**The sky and the light.** The Sun's path is worked out for the latitude and the season (Ls), with a sol of 24 h 39 min 35 s. Dust is one number (optical depth, tau): it dims the direct beam fast and the whole-sky glow slowly, browns the sky, shortens the view and settles on the solar panels. Sunsets are blue around the Sun. Dust devils cross the plain on clear afternoons.
+
+**The outpost.** Solar field plus one 10 kW fission unit, batteries, and twelve buildings that use power. Switching a building off has a consequence within hours: no heat pump, the rooms freeze; no life support, the air goes stale and water is not recycled; no ISRU, oxygen falls; and so on for all of them. A "science demo" control at the Power Station lets the player make the sky dusty or stormy to see what happens. It is labelled as a demo: real storms cannot be switched on.
+
+**Honest limits of this step.** Nobody can be lost (health never reaches zero). There are no rooms to walk into, no crew to see, no repairs, no events, no training and no story. The dust-to-sunlight formula is a simple estimate that has not been checked against published tables. The Mars texts are marked for translation but are not yet in the 15 translated languages, so they show in English.
+
+**Checked.** `node tools/mars_test.mjs`: 117 checks (the data lands Olympus Mons, Hellas and Valles Marineris where they are; noon Sun height, day length and yearly sunlight match the fact sheet; every building's switch has its effect; every door can be reached; the same world every time). It found one real fault while it was being written: a tunnel blocked the laboratory's door. In the browser: walking, running, jumping (1.5 m high in Mars gravity against 3.6 m on the Moon), the rover, all 14 panels, the five map pages, saving and loading, and a Moon mission started afterwards to confirm nothing there changed.

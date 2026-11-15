@@ -259,6 +259,7 @@ addEventListener('keydown', (e) => {
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; G.keys[k] = true; if (k === ' ') e.preventDefault();
   if (G.state !== 'play' && G.state !== 'tutorial') return; if (G.jobTick || G.riding) return;
   if (k === 'e' || k === 'Enter') G.doAction('e'); else if (k === 'q') G.doAction('q');
+  else if (G.planet === 'mars') G.mars.key(k);
   else if (k === 'Tab') { if (G.state === 'play') ui.powerBoard(); } else if (k === 'm') ui.bigMap(); else if (k === 'h') { if (G.state === 'play') G.advise(); }
   else if (k === 'n') ui.guide(); else if (k === 'l') { if (G.state === 'play') G.loopScreen(); } else if (k === 't') { if (G.state === 'play' && G.S) ui.dayNight(); } else if (k === 'v') toggleView(); else if (k === 'p') togglePause();
 });
@@ -322,7 +323,7 @@ if ('ontouchstart' in window) { $('#touch').classList.remove('hidden'); G.touch 
 // ---------- per-frame updates ----------
 const tmp = new V3();
 function pushOut(pos, zone, pad) { for (const c of world.colliders[zone]) { if (!c.r) continue; const dx = pos.x - c.x, dz = pos.z - c.z, d = Math.hypot(dx, dz), m = c.r + pad; if (d < m && d > 0.001) { pos.x = c.x + (dx / d) * m; pos.z = c.z + (dz / d) * m; } } }
-function topBounds(pos, pad) { const dx = pos.x - PIT.x, dz = pos.z - PIT.z, d = Math.hypot(dx, dz), m = PIT.r + pad; if (d < m) { pos.x = PIT.x + (dx / d) * m; pos.z = PIT.z + (dz / d) * m; } const bd = Math.hypot(pos.x, pos.z); if (bd > 790) { pos.x *= 790 / bd; pos.z *= 790 / bd; return true; } return false; }
+function topBounds(pos, pad) { if (G.planet !== 'mars') { const dx = pos.x - PIT.x, dz = pos.z - PIT.z, d = Math.hypot(dx, dz), m = PIT.r + pad; if (d < m) { pos.x = PIT.x + (dx / d) * m; pos.z = PIT.z + (dz / d) * m; } } const bd = Math.hypot(pos.x, pos.z); if (bd > 790) { pos.x *= 790 / bd; pos.z *= 790 / bd; return true; } return false; }
 function updatePlayer(dt) {
   const k = G.keys, free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.paused && !G.jobTick;
   if (P.in) return updateVehicle(dt, free);
@@ -331,7 +332,7 @@ function updatePlayer(dt) {
   const heavy = P.carry && ITEMS[P.carry.type].heavy, load = heavy ? 0.6 : P.carry ? 0.85 : 1, weak = G.S && G.S.health < 35 ? 0.7 : 1, maxV = (k.Shift && !heavy ? 10.5 : 6.4) * weak * load;
   tmp.multiplyScalar(maxV); const acc = P.ground ? 7 : 1.2; P.vel.x += (tmp.x - P.vel.x) * Math.min(1, acc * dt); P.vel.z += (tmp.z - P.vel.z) * Math.min(1, acc * dt);
   const ox = P.pos.x, oz = P.pos.z; P.pos.x += P.vel.x * dt; P.pos.z += P.vel.z * dt; pushOut(P.pos, P.zone, 0.5);
-  if (P.zone === 'top') { if (topBounds(P.pos, 7.5) && (!G._edgeT || performance.now() - G._edgeT > 9000)) { G._edgeT = performance.now(); ui.bubble(tt('That is the edge of the map. Nothing but craters beyond here!'), 'worried', 6); } }
+  if (P.zone === 'top') { if (topBounds(P.pos, 7.5) && (!G._edgeT || performance.now() - G._edgeT > 9000)) { G._edgeT = performance.now(); ui.bubble(G.edgeText || tt('That is the edge of the map. Nothing but craters beyond here!'), 'worried', 6); } }
   else {
     if (!world.walkable(P.pos.x, P.pos.z)) { if (world.walkable(P.pos.x, oz)) P.pos.z = oz; else if (world.walkable(ox, P.pos.z)) P.pos.x = ox; else { P.pos.x = ox; P.pos.z = oz; } }
     const S = G.S;
@@ -342,7 +343,7 @@ function updatePlayer(dt) {
   }
   const gy = groundY(P.zone, P.pos.x, P.pos.z);
   if (free && k[' '] && P.ground && !heavy) { P.vy = 3.4; P.ground = false; G.audio.play('step'); }   // real lunar gravity
-  if (!P.ground) { P.vy -= K.GRAVITY * dt; P.pos.y += P.vy * dt; if (P.pos.y <= gy) { P.pos.y = gy; P.vy = 0; P.ground = true; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x, P.pos.z, 14, P.vel.x * 0.2, P.vel.z * 0.2, 1.5, 2.6); } } else P.pos.y = gy;
+  if (!P.ground) { P.vy -= (G.grav || K.GRAVITY) * dt; P.pos.y += P.vy * dt; if (P.pos.y <= gy) { P.pos.y = gy; P.vy = 0; P.ground = true; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x, P.pos.z, 14, P.vel.x * 0.2, P.vel.z * 0.2, 1.5, 2.6); } } else P.pos.y = gy;
   const sp = Math.hypot(P.vel.x, P.vel.z); if (sp > 0.4 && !G.jobTick) { let d = Math.atan2(P.vel.x, P.vel.z) - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 9); }
   const g = G.astro.group; g.position.copy(P.pos); g.rotation.set(0, P.face, 0); g.visible = !cam.fp;
   const hop = G.xfer && G.xfer.kind === 'out' ? G.xfer : null; if (hop) { hop.u = Math.min(1, hop.u + dt / 0.42); const e = hop.u * hop.u * (3 - 2 * hop.u); g.position.lerpVectors(hop.from, P.pos, e); g.position.y += Math.sin(Math.PI * hop.u) * 0.7; if (hop.u >= 1) G.xfer = null; }
@@ -443,11 +444,11 @@ function placeVehicles(dt) {
     world.digBoom.rotation.x = -0.6 + dg.boom * 0.85 + bite; world.digStick.rotation.x = 1.3 - dg.boom * 1.02 + dg.prog * 0.45; world.digBucket.rotation.x = 0.6 - dg.boom * 0.8 + dg.prog * 0.9;
     world.digLoad.visible = dg.load > 0; if (dg.load > 0) world.digLoad.scale.set(1, 0.5 + (0.5 * dg.load) / MINE.bucket, 1); }
   // deep cold steals battery charge from anything parked on the crater floor
-  if (S) { const th = S.t, dh = Math.max(0, th - (G._mT ?? th)); G._mT = th; if (dh > 0 && dh < 5) for (const [k2, v] of [['car', c], ['ship', s]]) if (Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9) { S[k2].charge = Math.max(0, S[k2].charge - MINE.drain * dh);
+  if (S && G.planet !== 'mars') { const th = S.t, dh = Math.max(0, th - (G._mT ?? th)); G._mT = th; if (dh > 0 && dh < 5) for (const [k2, v] of [['car', c], ['ship', s]]) if (Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9) { S[k2].charge = Math.max(0, S[k2].charge - MINE.drain * dh);
       // what it takes to reach its pad: the rover uses a full charge in 2.6 km, the hopper in 4.2 km plus a little for every second in the air
       const pad = k2 === 'car' ? CAR_PAD : SHIP_PAD, home = Math.hypot(v.x - pad[0], v.z - pad[1]), need = k2 === 'car' ? home / 2600 : home / 4200 + home / 25 / 420, name = k2 === 'car' ? 'rover' : 'hopper';
       if (G.state === 'play' && S[k2].charge > 0 && S[k2].charge < need * 1.25 + 0.04) G.warn('cold-' + k2, tt`<b>Time to go!</b> The cold has drained the ${name} to <b>${Math.round(S[k2].charge * 100)}%</b>. That is only just enough to get home. Take what you have and leave now.`, 'alert', 45000); } }
-  if (S && G.state === 'play') rangeCheck(S, c, s);
+  if (S && G.state === 'play' && G.planet !== 'mars') rangeCheck(S, c, s);
   // --- the hopper on its legs. Like the rover's springs, this is for the eye only: it never changes where the hopper goes.
   const H = s.dyn || (s.dyn = { dy: 0, dv: 0, roll: 0, thr: 0, dust: 0, hud: 0 }), flying = P.in === 'ship'; if (!flying) { s.thr = 0; s.steer = 0; }
   if (s.hit) { H.dv -= s.hit; if (P.zone === 'top') for (const [ex, ez] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) world.puff(s.x + ex * 2.3, s.z + ez * 1.8, 5, ex * 2.4, ez * 2.4, 0.7, 0.8); G.audio.play('thud'); s.hit = 0; }   // feet down: the body dips and dust jumps from each pad
@@ -466,7 +467,7 @@ function placeVehicles(dt) {
       H.hud -= dt; if (H.hud <= 0) { H.hud = 0.12; const vs = s.vy, sp = Math.hypot(s.vx, s.vz); el.classList.remove('hidden');
         el.innerHTML = `<span>${tt`ALT <b>${s.alt.toFixed(s.alt < 10 ? 1 : 0)} m</b>`}</span><span>${vs < -0.05 ? '▼' : vs > 0.05 ? '▲' : '•'} <b>${Math.abs(vs).toFixed(1)} m/s</b></span><span>${tt`SPEED <b>${sp.toFixed(0)} m/s</b>`}</span><span class="${['ok', 'warn', 'bad'][state]}">${s.alt < 0.6 ? tt('On the ground') : [tt('Clear to land'), tt('Bumpy ground below'), tt('Over the pit')][state]}</span>`; } }
     else if (!el.classList.contains('hidden')) el.classList.add('hidden'); }
-  if (S) { const park = (v, pad, r, slow) => Math.hypot(v.x - pad[0], v.z - pad[1]) < r && slow; const warm = !(S.flow && S.flow.frost > 0) && !S.chargeOff; S.car.charging = warm && park(c, CAR_PAD, 4.5, Math.abs(c.v) < 0.6) && S.car.charge < 1; S.ship.charging = warm && park(s, SHIP_PAD, 5.5, s.alt < 0.4) && S.ship.charge < 1; }
+  if (S && G.planet !== 'mars') { const park = (v, pad, r, slow) => Math.hypot(v.x - pad[0], v.z - pad[1]) < r && slow; const warm = !(S.flow && S.flow.frost > 0) && !S.chargeOff; S.car.charging = warm && park(c, CAR_PAD, 4.5, Math.abs(c.v) < 0.6) && S.car.charge < 1; S.ship.charging = warm && park(s, SHIP_PAD, 5.5, s.alt < 0.4) && S.ship.charge < 1; }
 }
 // may someone stand here on the surface? Clear of buildings and machines, and back from the pit's edge
 const topFree = (x, z) => Math.hypot(x - PIT.x, z - PIT.z) >= PIT.r + 7.5 && !world.colliders.top.some((c) => c.r && Math.hypot(c.x - x, c.z - z) < c.r + 0.45);
@@ -474,7 +475,7 @@ function updateRego(dt) {
   const R = G.regoPos, fx = Math.sin(P.face), fz = Math.cos(P.face), g = G.rego.group; g.visible = !P.in;
   const js = G.jobbing && G.jobbing.site && G.jobbing.pose === 'work' ? G.jobbing.site : null;
   const zone = P.zone, cols = world.colliders[zone], pit = PIT.r + 7.5;   // REGO may stand where the floor is, clear of machines and buildings, and back from the pit's edge
-  const free = (x, z) => (zone === 'top' ? Math.hypot(x - PIT.x, z - PIT.z) >= pit : world.walkable(x, z)) && !cols.some((c) => c.r && Math.hypot(c.x - x, c.z - z) < c.r + 0.45);
+  const free = (x, z) => (zone === 'top' ? G.planet === 'mars' || Math.hypot(x - PIT.x, z - PIT.z) >= pit : world.walkable(x, z)) && !cols.some((c) => c.r && Math.hypot(c.x - x, c.z - z) < c.r + 0.45);
   let dx = 0, dz = 0, sp = 0;
   if (P.in || G._regoZone !== zone) { R.x = P.pos.x + fz * 1.9 - fx * 1.3; R.z = P.pos.z - fx * 1.9 - fz * 1.3; if (!free(R.x, R.z)) { R.x = P.pos.x; R.z = P.pos.z; } G.regoFollow.reset(); G._regoZone = zone; }   // riding, or just arrived in a new place: REGO is simply there
   else { const m = G.regoFollow.update(dt, R, { x: P.pos.x, z: P.pos.z, face: P.face }, free, js); dx = m.dx; dz = m.dz; sp = m.speed; }   // behind your shoulder or beside the work, and never into a wall
@@ -535,6 +536,7 @@ let last = performance.now(), ccT = 0;
 function frame(now, manual) {
   if (!manual) { requestAnimationFrame(frame); fpsTick(now); } const dt = clamp((now - last) / 1000, 0, 0.05); last = now; if (G.state === 'title') return;
   if (G.jobTick) G.jobTick(dt);
+  if (G.planet === 'mars') return G.mars.frame(dt);   // Mars has its own frame: same player, rover and camera, its own world and rules
   G.inside = P.zone === 'deep' && world.indoors(P.pos.x, P.pos.z); G.inCrater = P.zone === 'top' && Math.hypot(P.pos.x - MINE.x, P.pos.z - MINE.z) < MINE.r * 0.9;
   if (G.inCrater && G.state === 'play' && !G._tipMine) { G._tipMine = 1; ui.bubble(tt('The <b>Polar Ice Mine</b>. This crater floor never sees the Sun, so it stays near −230°C: cold enough to keep ice frozen for billions of years. Get in the <b>digger</b>, hold <b>SPACE</b> over a pale blue patch, then tip the bucket into the orange filler. Do not park here long: the cold drains batteries.'), 'think', 16); }
   if (G.S) { const S = G.S; if (!S.suitOn && !G.inside) S.suitOn = true; S.here = G.inside ? world.roomAt(P.pos.x, P.pos.z) : null; G.astro.setSuit(G.suitShow ?? S.suitOn);
@@ -557,6 +559,8 @@ function frame(now, manual) {
 requestAnimationFrame(frame);
 setTimeout(() => world.warm(), 400);   // build the shaders while the title screen is up
 G.frame = (now) => frame(now, true);   // test hook: step the loop by hand
+// ---------- Mars: loaded only when chosen, so the Moon starts as fast as before ----------
+G.startMars = async (opts = {}) => { if (G._starting) return; G._starting = true; G.audio.init(); G.audio.play('ok'); try { const m = await import('./mars/game.js'); G.mars = m.installMars(G, { updatePlayer, placeVehicles, updateRego, updateCamera, toggleView, togglePause }); await G.mars.start(opts); } catch (e) { console.error(e); G._starting = false; ui.toast(tt('Mars could not be loaded. Check your connection and try again.'), 'bad'); } };
 
 // ---------- saving ----------
 G.save = (force) => { try { const S = G.S; if (!S || S.over) return false; if (G.inJob || G.riding || (G.eventBusy && !force)) return false; const o = { S: serialize(S), items: G.items.map((i) => ({ id: i.id, type: i.type, zone: i.zone, x: i.x, z: i.z, where: i.where, rot: i.rot })), car: { ...G.car, cargo: G.car.cargo.map((i) => i.id) }, dig: { x: G.dig.x, z: G.dig.z, yaw: G.dig.yaw, load: G.dig.load }, ship: { ...G.ship, cargo: G.ship.cargo.map((i) => i.id) }, p: { x: P.pos.x, z: P.pos.z, zone: P.zone, carry: P.carry ? P.carry.id : 0 }, fol: G.followers.map((f) => f.site.id), done: G.done, next: G.nextEventAt, seq: G.itemSeq }; localStorage.setItem('mk2-save', JSON.stringify(o)); return true; } catch (e) { return false; /* storage may be blocked */ } };
@@ -576,7 +580,19 @@ let mode = params.get('go') || (() => { try { return localStorage.getItem('mk-mo
 const modesEl = $('#modes');
 // Mission page: one card per mission, and a briefing for the chosen one built from the same numbers the simulation uses.
 const HARD = { cadet: 1, pilot: 2, commander: 3, unlimited: 0 }, MODE_IC = { cadet: 'moon', pilot: 'rocket', commander: 'fire', unlimited: 'dome' };
+let planet = 'moon'; const marsSaved = () => { try { return !!localStorage.getItem('mk2-mars-save'); } catch (e) { return false; } };
+const drawPlanets = () => { const el = $('#planets'); el.innerHTML = [['moon', tt('The Moon'), tt('Tranquility Deep · the full game')], ['mars', tt('Mars'), tt('Arcadia Planitia · preview')]].map(([k, n, s]) => `<button class="planet ${k} ${k === planet ? 'sel' : ''}" data-p="${k}"><i></i><b>${n}</b><span>${s}</span></button>`).join('');
+  el.querySelectorAll('.planet').forEach((b) => (b.onclick = () => { planet = b.dataset.p; G.audio?.play?.('click'); drawPlanets(); drawModes(); })); };
+const drawMarsBrief = () => {
+  const fact = (ic, label, val) => `<div class="bf"><i>${IC[ic] || ''}</i><span>${label}</span><b>${val}</b></div>`;
+  modesEl.innerHTML = ''; $('#mission').classList.add('mars'); $('.mission-foot .check').classList.add('hidden'); $('#btn-launch').textContent = tt('Land on Mars'); $('.mission-head h2').textContent = tt('Explore Mars');
+  $('#brief').innerHTML = `<div class="brief-h"><b>${tt('Mars outpost: Arcadia Planitia')}</b><span>${tt('<b>Preview.</b> This is the first step of the Mars expansion: a Mars map built from NASA elevation data, and a working outpost of 14 buildings to explore on foot and by rover. Nobody can be lost yet. Survival, training, the story and flights between the Moon and Mars come in later updates.')}</span></div>
+    <div class="brief-grid">${fact('map', tt('Where'), '39.5°N, 191.2°E')}${fact('rocket', tt('Gravity'), tt('38% of Earth\'s'))}${fact('sun', tt('A day (a sol)'), '24 h 39 min')}${fact('air', tt('Air'), tt('95% carbon dioxide, very thin'))}${fact('moon', tt('Cold'), tt('−89°C to −31°C in a day'))}${fact('bolt', tt('Power'), tt('solar field + a small fission unit'))}${fact('water', tt('Water'), tt('ice under the soil'))}${fact('crew', tt('Crew'), tt('4 people'))}</div>${marsSaved() ? `<button id="btn-mars-cont" class="primary alt">${tt('Continue on Mars')}</button>` : ''}`;
+  const bc = $('#btn-mars-cont'); if (bc) bc.onclick = () => { bc.textContent = tt('Loading…'); G.startMars({ load: true }); };
+};
 const drawModes = () => {
+  if (planet === 'mars') return drawMarsBrief();
+  $('#mission').classList.remove('mars'); $('.mission-foot .check').classList.remove('hidden'); $('#btn-launch').textContent = tt('Launch mission'); $('.mission-head h2').textContent = tt('Choose your mission');
   modesEl.innerHTML = Object.values(MODES).map((m) => `<button class="mode ${m.key === mode ? 'sel' : ''}" data-m="${m.key}"><i class="mode-ic">${IC[MODE_IC[m.key]] || IC.room}</i><b>${m.name}</b><em>${m.ages}</em><span>${m.tag}</span><div class="pips" title="${tt`How hard it is`}">${HARD[m.key] ? [1, 2, 3].map((n) => `<u class="${n <= HARD[m.key] ? 'on' : ''}"></u>`).join('') : ('<small>' + tt('free build') + '</small>')}</div></button>`).join('');
   modesEl.querySelectorAll('.mode').forEach((b) => (b.onclick = () => { mode = b.dataset.m; try { localStorage.setItem('mk-mode', mode); } catch (e) {} G.audio?.play?.('click'); drawModes(); }));
   const m = MODES[mode], lim = m.days !== Infinity, names = m.wreck.map((id) => ROOMS.find((r) => r.id === id)?.name).filter(Boolean);
@@ -585,10 +601,10 @@ const drawModes = () => {
     <div class="brief-grid">${fact('rocket', tt('Rescue'), lim ? tt`in ${m.days} days` : tt('never'))}${fact('sun', tt('Sunset'), tt`day ${Math.floor(m.sunsetDay) + 1}, then two weeks of night`)}${fact('bolt', tt('Solar panels'), tt`${m.ok} working · ${m.broken} broken`)}${fact('o2', tt('Oxygen'), tt`${m.o2} kg in the tank`)}${fact('water', tt('Water'), `${m.water} L`)}${fact('food', tt('Food'), tt`${m.cans} tins${m.meals ? tt` · ${m.meals} hot meals` : ''}`)}${fact('box', tt('Materials'), m.mat === Infinity ? tt('endless') : tt`${m.mat} crates' worth`)}${fact('wrench', tt('Wrecked rooms'), names.join(', ') || tt('none'))}</div>`;
 };
 { const lp = $('#lang-pick'); if (lp) { lp.innerHTML = LANGS.map(([k, n]) => `<option value="${k}">${n}</option>`).join(''); lp.value = LANG; lp.onchange = () => G.setLanguage(lp.value); } }
-drawModes(); $('#btn-codex').onclick = () => ui.guide('how'); $('#btn-how').onclick = () => ui.guide('truth');
+drawPlanets(); drawModes(); $('#btn-codex').onclick = () => ui.guide('how'); $('#btn-how').onclick = () => ui.guide('truth');
 const showMission = (on) => { $('#mission').classList.toggle('hidden', !on); $('#title').classList.toggle('hidden', on); };
 $('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour'); $('#btn-games').onclick = () => { G.audio.init(); ui.guide('games'); };
-$('#btn-launch').onclick = () => start(mode, $('#skip-tut').checked);
+$('#btn-launch').onclick = () => { if (planet === 'mars') { $('#btn-launch').textContent = tt('Loading…'); G.startMars(); } else start(mode, $('#skip-tut').checked); };
 document.querySelectorAll('.pillar').forEach((p) => p.insertAdjacentHTML('afterbegin', `<i>${IC[p.dataset.ic] || ''}</i>`));
 if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = async () => { if (G._starting) return; G._starting = true; G.audio.init(); if (!world.warmMs) b.textContent = tt('Loading…'); await world.warm(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
 async function start(modeKey, skip, seed) {
@@ -610,4 +626,4 @@ async function start(modeKey, skip, seed) {
   if (free) { ui.bubble(tt('Everyone is safe! <b>Commander Vasquez and Engineer Okoro are part of your crew</b>: give them jobs at the Control Center. The big screen shows what is broken. <b>First job: power.</b> Press <b>H</b> whenever you want my advice.'), 'joy', 18); G.pointTo('lift'); return; }
   ui.bubble(tt('I am right here with you. The big screen shows what is broken. <b>First job: power.</b> Put your suit on at the airlock, take the elevator up, pull a broken panel off its mount, and bring it down to the Fix-It Bench. Press <b>H</b> whenever you want my advice.'), 'happy', 18); G.pointTo('lift');
 }
-if (params.get('go')) start(mode, true, Number(params.get('seed')) || undefined);
+if (params.get('go') === 'mars') G.startMars({ load: params.get('load') === '1' }); else if (params.get('go')) start(mode, true, Number(params.get('seed')) || undefined);

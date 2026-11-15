@@ -8,3 +8,6 @@ assets/art/v1_web/
 # local tooling
 .claude/
 node_modules/
+
+# Mars elevation downloads (20 MB; fetched again by tools/build_mars.mjs)
+data/raw/mars/

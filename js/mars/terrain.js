@@ -1,0 +1,105 @@
+// MOONKEEPER — Mars: the shape of the ground around the outpost, and where everything stands. Pure logic.
+//
+// What is real and what is made for play. NASA's best whole-planet elevation map (MOLA) has one value every 463 m,
+// so it can give the region and the skyline but not the ground under your boots. The playable area (1.6 km across)
+// therefore takes its overall tilt from MOLA and its detail from what orbiters and landers have seen on plains like
+// this one: gentle rolls, small craters, wind ripples, an old lava-flow edge, and cracked "polygon" ground, which
+// forms where ice lies just under the soil.
+import { SITE } from './mola.js';
+
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x)), sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const hash = (x, y) => { let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+const vnoise = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), u = x - xi, v = y - yi, a = u * u * (3 - 2 * u), b = v * v * (3 - 2 * v);
+  return (hash(xi, yi) * (1 - a) + hash(xi + 1, yi) * a) * (1 - b) + (hash(xi, yi + 1) * (1 - a) + hash(xi + 1, yi + 1) * a) * b; };
+export const fbm = (x, y, oct = 4) => { let s = 0, amp = 0.5, f = 1; for (let i = 0; i < oct; i++) { s += amp * (vnoise(x * f + i * 17.3, y * f - i * 9.1) * 2 - 1); amp *= 0.5; f *= 2.03; } return s; };
+
+export const PLAY_R = 790;        // metres from the middle of the map to its edge (the same as the Moon's map)
+// x runs east, z runs south (north is -z), like the Moon map.
+
+// ---- the outpost: where each building stands (centre, and the circles you cannot walk through) ----
+export const BUILDINGS = [
+  { id: 'cmd',         x: 0,    z: 0,    r: 7.5,  door: [7, 6.5] },
+  { id: 'airlock',     x: 0,    z: 16,   r: 3.4,  door: [0, 21.5] },
+  { id: 'living',      x: -24,  z: -3,   r: 6,    door: [-24, 5.5], long: [9, 0] },
+  { id: 'medical',     x: -24,  z: -21,  r: 4.6,  door: [-17.5, -21] },
+  { id: 'lifesupport', x: 22,   z: -5,   r: 5,    door: [22, 3], long: [6, 0] },
+  { id: 'greenhouse',  x: 26,   z: -36,  r: 5.2,  door: [18.5, -36], long: [0, 13] },
+  { id: 'lab',         x: -2,   z: -27,  r: 5.4,  door: [5.6, -27] },
+  { id: 'thermal',     x: 46,   z: -3,   r: 5,    door: [46, 5] },
+  { id: 'water',       x: 52,   z: 30,   r: 5.5,  door: [44.5, 30] },
+  { id: 'isru',        x: 78,   z: -12,  r: 6.5,  door: [78, -2.5] },
+  { id: 'storage',     x: -50,  z: 24,   r: 6.5,  door: [-41, 24] },
+  { id: 'garage',      x: -34,  z: 52,   r: 0,    door: [-34, 44] },
+  { id: 'comms',       x: -60,  z: -34,  r: 3.2,  door: [-60, -28] },
+  { id: 'power',       x: 10,   z: 62,   r: 4.2,  door: [10, 56] },
+];
+export const B = Object.fromEntries(BUILDINGS.map((b) => [b.id, b]));
+export const SOLAR = { x0: -32, x1: 52, z0: 76, z1: 132, rows: 5, cols: 7 };          // the solar field
+export const REACTOR = { x: 168, z: 74 };                                               // behind a bank of soil, well away from the crew
+export const PAD = { x: -160, z: 118, r: 20 };                                          // where the lander stands
+export const ROVER_PAD = { x: -34, z: 62 };
+export const DRILL = { x: 66, z: 40 };                                                  // the ice well's rig
+export const ICE_CRATER = { x: 270, z: 150, r: 15, depth: 3.6 };                        // a young crater that dug down to the ice
+export const OLD_CRATER = { x: -340, z: -270, r: 95, depth: 9 };                        // an old, softened crater
+export const SPAWN = { x: -6, z: 30 };
+
+// small craters, the same every time
+const CRATERS = [ICE_CRATER, OLD_CRATER];
+for (let i = 0; CRATERS.length < 30 && i < 400; i++) { const a = hash(i, 91) * 6.283, d = 150 + hash(i, 17) * 600, x = Math.cos(a) * d, z = Math.sin(a) * d, r = 3 + Math.pow(hash(i, 5), 2.2) * 22;
+  if (CRATERS.some((c) => Math.hypot(c.x - x, c.z - z) < c.r + r + 14)) continue; if (Math.hypot(x - PAD.x, z - PAD.z) < 60 || (x > -60 && x < 80 && z > 40 && z < 150) || Math.hypot(x - REACTOR.x, z - REACTOR.z) < 40) continue;
+  CRATERS.push({ x, z, r, depth: r * (0.16 + hash(i, 3) * 0.08) }); }
+export { CRATERS };
+
+// places levelled for building: [x, z, radius of the flat part, width of the ramp round it]
+const FLATS = [[8, 4, 96, 46], [10, 104, 62, 30], [PAD.x, PAD.z, 30, 26], [REACTOR.x, REACTOR.z, 16, 18], [DRILL.x, DRILL.z, 10, 14]];
+const tilt = (x, z) => SITE.slopeE * x + SITE.slopeN * -z;                               // the real slope of the plain here, from MOLA
+const FLAT_Y = FLATS.map(([x, z]) => tilt(x, z));
+// the edge of an old lava flow: the ground to the south-east stands about 7 m higher
+const flowEdge = (x, z) => x * 0.42 + z * 0.9 - 455 - 46 * fbm(x / 210, z / 210, 3);
+export const duneMask = (x, z) => sstep(210, 330, x) * sstep(-120, -230, z) * (0.55 + 0.45 * sstep(-0.2, 0.3, fbm(x / 160, z / 160, 2)));
+
+// The ground's height (m) at any point, straight from the recipe. Slow: the game looks it up in a grid made from this.
+export function rawHeight(x, z) {
+  let h = tilt(x, z) + 5.5 * fbm(x / 260, z / 260, 4) + 1.5 * fbm(x / 64 + 40, z / 64, 3) + 0.3 * fbm(x / 13, z / 13 + 7, 2);
+  h += 7 * sstep(-9, 9, flowEdge(x, z));
+  const dm = duneMask(x, z); if (dm > 0.001) { const w = (x * 0.94 + z * 0.34) / 17 + 1.6 * fbm(x / 55, z / 55, 2), r = 1 - Math.abs(Math.sin(w)); h += dm * (1.5 * r * r + 0.5 * fbm(x / 30, z / 30, 2)); }   // sharp-crested ripples, across the wind
+  for (const c of CRATERS) { const d = Math.hypot(x - c.x, z - c.z); if (d > c.r * 2.4) continue; const q = d / c.r, soft = c === OLD_CRATER ? 0.55 : 1;
+    h += q < 1 ? -c.depth * (1 - q * q) * (0.8 + 0.2 * soft) + c.depth * 0.22 * soft * q * q : c.depth * 0.22 * soft * Math.exp(-(q - 1) * 3.2); }                                              // a bowl, a raised rim, and a blanket of thrown-out soil
+  let w = 0, y = 0; FLATS.forEach(([fx, fz, r, ramp], i) => { const k = 1 - sstep(r, r + ramp, Math.hypot(x - fx, z - fz)); if (k > w) { w = k; y = FLAT_Y[i]; } });
+  return h * (1 - w) + y * w;
+}
+
+// ---- the grid the game uses: one height every 5 m across the playable area ----
+export const GRID = { n: 321, size: 1600 };
+let grid = null;
+export function buildGrid() { if (grid) return grid; const { n, size } = GRID; grid = new Float32Array(n * n); for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) grid[j * n + i] = rawHeight((i / (n - 1) - 0.5) * size, (j / (n - 1) - 0.5) * size); return grid; }
+export function heightAt(x, z) {
+  const { n, size } = GRID, g = grid || buildGrid(), fx = (x / size + 0.5) * (n - 1), fz = (z / size + 0.5) * (n - 1);
+  if (fx < 0 || fz < 0 || fx >= n - 1 || fz >= n - 1) return rawHeight(x, z);
+  const i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j, k = j * n + i;
+  return (g[k] * (1 - u) + g[k + 1] * u) * (1 - v) + (g[k + n] * (1 - u) + g[k + n + 1] * u) * v;
+}
+export const slopeAt = (x, z) => Math.hypot(heightAt(x + 2, z) - heightAt(x - 2, z), heightAt(x, z + 2) - heightAt(x, z - 2)) / 4;
+
+// Rocks: where, how big, which of three shapes. The same field every time. Mostly fist- to football-sized, with a few boulders.
+export function rockField(count = 4200) {
+  const out = []; for (let i = 0; out.length < count && i < count * 3; i++) { const a = hash(i, 201) * 6.283, d = Math.sqrt(hash(i, 202)) * 760, x = Math.cos(a) * d, z = Math.sin(a) * d;
+    if (FLATS.some(([fx, fz, r]) => Math.hypot(x - fx, z - fz) < r + 6) || duneMask(x, z) > 0.5) continue;
+    const near = CRATERS.some((c) => { const q = Math.hypot(x - c.x, z - c.z) / c.r; return q > 0.9 && q < 1.9; });                 // craters throw out blocks
+    const hs = hash(i, 203), s = 0.1 + Math.pow(hs, near ? 3 : 6) * (near ? 1.5 : 0.9) + (hs > 0.985 ? ((hs - 0.985) / 0.015) * 1.2 : 0); out.push({ x, z, s, kind: i % 3, rot: hash(i, 204) * 6.283, tip: hash(i, 205) * 0.5 }); }
+  return out;
+}
+// Circles the player and rover cannot pass through.
+export function colliders() {
+  const c = [];
+  for (const b of BUILDINGS) { if (b.r) c.push({ x: b.x, z: b.z, r: b.r }); if (b.long) for (const s of [-1, 1]) c.push({ x: b.x + b.long[0] * s, z: b.z + b.long[1] * s, r: b.r * 0.9 }); }
+  for (const s of [-1, 1]) c.push({ x: B.garage.x + s * 8.2, z: B.garage.z, r: 1.2 }, { x: B.garage.x + s * 8.2, z: B.garage.z - 4, r: 1.2 }, { x: B.garage.x + s * 8.2, z: B.garage.z + 4, r: 1.2 });   // the garage's side walls: drive straight through
+  c.push({ x: DRILL.x, z: DRILL.z, r: 2.6 }, { x: REACTOR.x, z: REACTOR.z, r: 3 }, { x: PAD.x, z: PAD.z, r: 6.5 });
+  for (let r = 0; r < SOLAR.rows; r++) for (let k = 0; k < SOLAR.cols; k++) { const [x, z] = panelAt(r, k); c.push({ x: x - 3, z, r: 1.5 }, { x: x + 3, z, r: 1.5 }); }
+  for (const t of TUNNELS) { const n = Math.ceil(Math.hypot(t[2] - t[0], t[3] - t[1]) / 2.4); for (let i = 1; i < n; i++) c.push({ x: t[0] + ((t[2] - t[0]) * i) / n, z: t[1] + ((t[3] - t[1]) * i) / n, r: 1.5 }); }
+  for (const rk of rockField()) if (rk.s > 1.05) c.push({ x: rk.x, z: rk.z, r: rk.s * 0.8 });
+  return c;
+}
+export const panelAt = (row, col) => [SOLAR.x0 + 6 + ((SOLAR.x1 - SOLAR.x0 - 12) * col) / (SOLAR.cols - 1), SOLAR.z0 + 5 + ((SOLAR.z1 - SOLAR.z0 - 10) * row) / (SOLAR.rows - 1)];
+// pressurised tunnels between the modules people live and work in: [x0, z0, x1, z1]
+export const TUNNELS = [[0, 7, 0, 13], [-7, -1, -15.5, -2.5], [-24, -8.5, -24, -17], [7, -1.5, 14, -4], [22, -9.5, 24.5, -23.5], [-1, -7.5, -2, -21.5]];

@@ -129,6 +129,7 @@ export class World {
 
   // ---------- terrain ----------
   heightAt(x, z) {
+    if (this.planet === 'mars') return this.mars.heightAt(x, z);
     let far = smooth(105, 190, Math.hypot(x - 10, z + 10));
     for (const s of SITES) far = Math.min(far, smooth(34, 80, Math.hypot(x - s.pos[0], z - s.pos[1])));
     far = Math.min(far, smooth(MINE.r * 1.05, MINE.r * 1.8, Math.hypot(x - MINE.x, z - MINE.z)));
@@ -848,10 +849,11 @@ export class World {
   at(zone, x, z, y = 0) { return new V3(x, (zone === 'top' ? this.heightAt(x, z) : TUBE.y) + y, z); }
   stationPos(id) { const s = STATIONS.find((q) => q.id === id) || (() => { const t = SITES.find((q) => q.id === id); return { zone: 'top', pos: [t.pos[0] + 2, t.pos[1] + 16] }; })(); return this.at(s.zone, s.pos[0], s.pos[1]); }
   // Where the orange guide beam stands: { zone, x, z, id }
-  setTarget(t) { this.target = t; if (!t) { this.beacon.visible = false; return; } const p = this.at(t.zone, t.x, t.z); this.beacon.position.set(p.x, p.y + 30, p.z); }
+  setTarget(t) { if (this.planet === 'mars') { this.target = t; return this.mars.setTarget(t); } this.target = t; if (!t) { this.beacon.visible = false; return; } const p = this.at(t.zone, t.x, t.z); this.beacon.position.set(p.x, p.y + 30, p.z); }
   // Builds the shaders for both zones, by day and by night, and uploads every texture, so the first elevator ride,
   // the first nightfall and the first look around cost nothing in play. Runs once, in the background.
   warm() {
+    if (this.planet === 'mars') return Promise.resolve(0);
     if (this._warm) return this._warm;
     const R = this.renderer, wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const state = (zone, night) => { const z0 = this.zone, sh = this.sunLight.castShadow, vis = this.lampPool.map((q) => q.l.visible), cv = this.car.visible, sv = this.ship.visible, dv = this.dig.visible;
@@ -860,17 +862,22 @@ export class World {
       this.setZone(z0); this.sunLight.castShadow = sh; this.lampPool.forEach((q, i) => (q.l.visible = vis[i])); this.car.visible = cv; this.ship.visible = sv; this.dig.visible = dv; return p; };
     return (this._warm = (async () => {
       const t0 = performance.now(), seen = new Set();
-      for (const [zone, night] of [['top', false], ['deep', false], ['top', true]]) { try { await state(zone, night); } catch (e) {} await wait(30); }
+      for (const [zone, night] of [['top', false], ['deep', false], ['top', true]]) { if (this.planet === 'mars') break; try { await state(zone, night); } catch (e) {} await wait(30); }
       for (const root of [this.top, this.deep, this.scene]) root.traverse((o) => { if (o.material) for (const m of Array.isArray(o.material) ? o.material : [o.material]) for (const k of ['map', 'normalMap', 'roughnessMap', 'emissiveMap', 'alphaMap', 'bumpMap']) if (m[k] && m[k].image) seen.add(m[k]); });
       let n = 0; for (const tx of seen) { try { R.initTexture(tx); } catch (e) {} if (++n % 4 === 0) await wait(0); }
       this.warmMs = Math.round(performance.now() - t0); return this.warmMs;
     })());
   }
-  setZone(z) { this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; const show = z === 'top' ? this.top : this.deep, hide = z === 'top' ? this.deep : this.top; if (hide.parent) this.scene.remove(hide); if (!show.parent) this.scene.add(show); this.earth.visible = this.sunSprite.visible = z === 'top'; }
+  // Mars: the same renderer, camera, lights and rover, with the Moon's ground and sky put away. Loaded only when asked for.
+  async setPlanet(p) {
+    if (p !== 'mars' || this.planet === 'mars') return; const { MarsWorld } = await import('./mars/world.js');
+    this.mars = new MarsWorld(this); this.planet = 'mars'; this.zone = 'top'; this.scene.remove(this.top, this.deep); this.sky.visible = false; this.beacon.visible = false; this.scene.add(this.mars.group); this.colliders = { top: this.mars.colliders, deep: [] };
+  }
+  setZone(z) { if (this.planet === 'mars') return; this.zone = z; this.top.visible = z === 'top'; this.deep.visible = z === 'deep'; const show = z === 'top' ? this.top : this.deep, hide = z === 'top' ? this.deep : this.top; if (hide.parent) this.scene.remove(hide); if (!show.parent) this.scene.add(show); this.earth.visible = this.sunSprite.visible = z === 'top'; }
   // Press one tyre print into the dust at (x, z), pointing along yaw.
-  track(x, z, yaw) { const m = (this._tm || (this._tm = new THREE.Matrix4())).makeRotationY(yaw); m.setPosition(x, this.heightAt(x, z) + 0.045, z); this.tracks.setMatrixAt(this.trackI++ % 900, m); this.tracks.instanceMatrix.needsUpdate = true; }
+  track(x, z, yaw) { if (this.planet === 'mars') return this.mars.track(x, z, yaw); const m = (this._tm || (this._tm = new THREE.Matrix4())).makeRotationY(yaw); m.setPosition(x, this.heightAt(x, z) + 0.045, z); this.tracks.setMatrixAt(this.trackI++ % 900, m); this.tracks.instanceMatrix.needsUpdate = true; }
   // Kick up n grains of dust at (x, z). dx, dz = which way it is thrown; they fly as far as their speed takes them and drop straight back.
-  puff(x, z, n = 6, dx = 0, dz = 0, up = 1.6, spread = 1.2) { const p = this.dustPts.geometry.attributes.position, y = this.heightAt(x, z) + 0.05;
+  puff(x, z, n = 6, dx = 0, dz = 0, up = 1.6, spread = 1.2) { if (this.planet === 'mars') return this.mars.puff(x, z, n, dx, dz, up, spread); const p = this.dustPts.geometry.attributes.position, y = this.heightAt(x, z) + 0.05;
     for (let k = 0; k < n; k++) { const i = this.dustI++ % this.dustV.length, v = this.dustV[i]; p.setXYZ(i, x + (Math.random() - 0.5) * 0.3, y, z + (Math.random() - 0.5) * 0.3); v[0] = dx + (Math.random() - 0.5) * spread; v[1] = up * (0.5 + Math.random()); v[2] = dz + (Math.random() - 0.5) * spread; v[3] = 1; } p.needsUpdate = true; }
   // drag marks in the dust (the Moon keeps every track: there is no wind to blow them away)
   scuff(x, z, yaw) { const m = new THREE.Matrix4().makeRotationY(yaw); m.scale(new V3(1.5, 1, 4.4)); m.setPosition(x, this.heightAt(x, z) + 0.06, z); this.scuffs.setMatrixAt(this.scuffI++ % 240, m); this.scuffs.instanceMatrix.needsUpdate = true; }
@@ -963,6 +970,7 @@ export class World {
     pos.needsUpdate = true; uv.needsUpdate = true; L.geometry.setDrawRange(0, (S.length - 1) * 6); L.visible = true;
   }
   update(dt, S, focus, ctx = {}) {
+    if (this.planet === 'mars') return this.mars.update(dt, S, focus, ctx);
     this._guideUpdate(dt, ctx.player || focus);
     this.t += dt; const t = this.t, M = this.M;
     const sn = S ? S.flow.sun : { e: -0.5, u: 0.6, n: -0.1, factor: 1, up: true, elev: 37 };
