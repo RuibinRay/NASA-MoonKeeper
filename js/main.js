@@ -5,7 +5,7 @@ import { Astronaut, Rego, Bolt } from './actors.js';
 import { UI } from './ui.js';
 import { Sound } from './audio.js';
 import { IC } from './icons.js';
-import { playProcedure } from './minigames.js';
+import { playProcedure, playMini } from './minigames.js';
 import { jobEffect } from './jobfx.js';
 import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, BASE, MINE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, fmt } from './config.js';
 import { createSim, step, computeFlows, applyDisaster, jobHours, addHelper, serialize, deserialize } from './sim.js';
@@ -162,6 +162,7 @@ const stagesFor = (o) => {
   if (tier >= 2 || all.length === 1) return all; if (tier === 0) return [all[core]];
   const other = core > 0 ? core - 1 : 1; return all.filter((q, i) => i === core || i === other);
 };
+G.playMini = (kind, opts) => playMini(G, kind, opts);   // the Space Guide's practice page uses this
 G.minis = (() => { try { return localStorage.getItem('mk-minis') !== '0'; } catch (e) { return true; } })();
 G.setMinis = (on) => { G.minis = !!on; try { localStorage.setItem('mk-minis', G.minis ? '1' : '0'); } catch (e) {} };
 G.job = async (o) => {
