@@ -316,8 +316,9 @@ if (!direct) { /* imported by another tool */ } else if (cmd === 'wrap') {
   // the spaces at either end belong to the English sentence it joins, so they are copied from it
   // In languages that write 2,5 for two and a half, "384,400" would read as 384.4: thousands get a thin space instead ("384 400").
   const COMMA = ['de', 'fr', 'es', 'pt', 'it', 'ru', 'tr', 'id', 'vi'].includes(lang);
-  const thousands = (v) => (COMMA ? v.replace(/(<[^>]*>)|(\d),(?=\d{3}(?!\d))/g, (m, tag, d) => tag || d + ' ') : v);
-  const ends = (key, v) => key.match(/^\s*/)[0] + thousands(v.trim()) + key.match(/\s*$/)[0];
+  // Only a number written with a thousands comma in the English is changed, so a decimal the translator wrote ("0,057") is left alone.
+  const thousands = (key, v) => { if (!COMMA) return v; for (const n of new Set(key.match(/\d{1,3}(?:,\d{3})+(?!\d)/g) || [])) v = v.split(n).join(n.replace(/,/g, '\u202f')); return v; };
+  const ends = (key, v) => key.match(/^\s*/)[0] + thousands(key, v.trim()) + key.match(/\s*$/)[0];
   for (const d of done) for (const [id, raw] of rows(d)) { const key = src.get(id); if (key === undefined) { bad.push(`${d}: line ${id} is not in the list`); continue; } const val = ends(key, raw); const why = broken(key, val); if (why) { bad.push(`${id}: ${why}: ${JSON.stringify(key).slice(0, 80)}`); continue; } have[key] = val; n++; }
   const keys = allKeys(), sorted = {}; for (const k of keys.keys()) if (have[k] !== undefined) sorted[k] = have[k];
   fs.mkdirSync(LANGDIR, { recursive: true }); fs.writeFileSync(file, JSON.stringify(sorted, null, 0).replace(/","/g, '",\n"') + '\n');
