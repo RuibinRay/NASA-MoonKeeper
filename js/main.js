@@ -465,10 +465,10 @@ async function tickSim(dt) {
   const S = G.S; S.zone = P.zone;
   if (!G.simOn || ui.busy || G.paused || G.riding || G.eventBusy || G.jobTick) { computeFlows(S); return; }
   let h = (dt / S.m.hourLen) * G.speedMul * (G.sleepLeft > 0 ? 22 : 1);
-  if (G.sleepLeft > 0) { G.sleepLeft -= h; if (G.alerts().filter((a) => a.kind !== 'warn').length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
-    const blackout = S.battery <= 0.01 && G._sleepBatt > 0.01;   // a blackout always wakes you, even if a low-battery warning was already showing
-    if (blackout) { G.sleepLeft = 0; G.audio.play('alarm'); ui.bubble('<b>Wake up! The battery is empty.</b> Every machine is running weak. Open the Power Board (Tab) and turn something down.', 'alert', 12); }
-    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!blackout) ui.toast('You wake up rested.', 'good'); } }
+  if (G.sleepLeft > 0) { G.sleepLeft -= h; const al = G.alerts(); if (al.filter((a) => a.kind !== 'warn').length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
+    const alarm = G._sleepKeys && al.find((a) => a.key && !G._sleepKeys.includes(a.key));   // a new emergency (power out, air/water/food nearly gone) always wakes you, even if a warning was already showing
+    if (alarm) { G.sleepLeft = 0; G.audio.play('alarm'); ui.bubble(alarm.wake, 'alert', 12); }
+    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!alarm) ui.toast('You wake up rested.', 'good'); } }
   G.simAdvance(h);
   const st = S.storm;
   if (st && S.t >= st.start) { if (!st.begun) { st.begun = true; G.sleepLeft = 0; G.audio.play('alarm'); if (P.zone === 'top') { ui.bubble('<b>The storm is here!</b> Elevator. Now. The rock roof will shield you.', 'alert', 12); G.pointTo('gate'); } } ui.banner(P.zone === 'top' ? 'RADIATION STORM — GET UNDERGROUND!' : 'Solar storm raging topside — you are shielded down here', P.zone !== 'top'); }
@@ -511,7 +511,7 @@ function frame(now, manual) {
       G._danger = G.state !== 'play' ? 0 : clamp(urgent * 0.45 + (S.flow.eff < 1 ? 0.35 : 0) + (S.health < 50 ? 0.4 : 0) + (st && S.t >= st.start ? 0.5 : 0), 0, 1); }
     G.audio.update(dt, { indoors: !!G.inside, suit: S ? !!S.suitOn : true, power: S ? S.flow.eff : 1, vehicle: P.in, speed: P.in === 'car' ? G.car.v : P.in === 'dig' ? G.dig.v : P.in === 'ship' ? Math.hypot(G.ship.vx, G.ship.vz) : Math.hypot(P.vel.x, P.vel.z), thrust: G.ship.dyn ? G.ship.dyn.thr : 0, digging: !!G.dig.dig, danger: G._danger || 0 }); }
   world.render();
-  if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { G._sleepAlerts = G.alerts().filter((a) => a.kind !== 'warn').length; G._sleepBatt = G.S.battery; } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepBatt = undefined; }
+  if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { const al = G.alerts(); G._sleepAlerts = al.filter((a) => a.kind !== 'warn').length; G._sleepKeys = al.filter((a) => a.key).map((a) => a.key); } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepKeys = undefined; }
 }
 requestAnimationFrame(frame);
 setTimeout(() => world.warm(), 400);   // build the shaders while the title screen is up
@@ -548,7 +548,7 @@ const showMission = (on) => { $('#mission').classList.toggle('hidden', !on); $('
 $('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour'); $('#btn-games').onclick = () => { G.audio.init(); ui.guide('games'); };
 $('#btn-launch').onclick = () => start(mode, $('#skip-tut').checked);
 document.querySelectorAll('.pillar').forEach((p) => p.insertAdjacentHTML('afterbegin', `<i>${IC[p.dataset.ic] || ''}</i>`));
-if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = () => { G.audio.init(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
+if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = async () => { if (G._starting) return; G._starting = true; G.audio.init(); if (!world.warmMs) b.textContent = 'Loading…'; await world.warm(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
 async function start(modeKey, skip, seed) {
   G.audio.init(); G.audio.play('ok'); G.clearSave();
   G.S = createSim(modeKey, seed || ((Math.random() * 2 ** 31) >>> 0)); G.applyVoice(); installActions(G); installEvents(G);
