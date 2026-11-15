@@ -365,7 +365,10 @@ async function tickSim(dt) {
   const S = G.S; S.zone = P.zone;
   if (!G.simOn || ui.busy || G.paused || G.riding || G.eventBusy || G.jobTick) { computeFlows(S); return; }
   let h = (dt / S.m.hourLen) * G.speedMul * (G.sleepLeft > 0 ? 22 : 1);
-  if (G.sleepLeft > 0) { G.sleepLeft -= h; if (G.alerts().filter((a) => a.kind !== 'warn').length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0; if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); ui.toast('You wake up rested.', 'good'); } }
+  if (G.sleepLeft > 0) { G.sleepLeft -= h; if (G.alerts().filter((a) => a.kind !== 'warn').length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
+    const blackout = S.battery <= 0.01 && G._sleepBatt > 0.01;   // a blackout always wakes you, even if a low-battery warning was already showing
+    if (blackout) { G.sleepLeft = 0; G.audio.play('alarm'); ui.bubble('<b>Wake up! The battery is empty.</b> Every machine is running weak. Open the Power Board (Tab) and turn something down.', 'alert', 12); }
+    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!blackout) ui.toast('You wake up rested.', 'good'); } }
   G.simAdvance(h);
   const st = S.storm;
   if (st && S.t >= st.start) { if (!st.begun) { st.begun = true; G.sleepLeft = 0; G.audio.play('alarm'); if (P.zone === 'top') { ui.bubble('<b>The storm is here!</b> Elevator. Now. The rock roof will shield you.', 'alert', 12); G.pointTo('gate'); } } ui.banner(P.zone === 'top' ? 'RADIATION STORM — GET UNDERGROUND!' : 'Solar storm raging topside — you are shielded down here', P.zone !== 'top'); }
@@ -401,7 +404,7 @@ function frame(now, manual) {
   world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook' });
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
   world.render();
-  if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) G._sleepAlerts = G.alerts().filter((a) => a.kind !== 'warn').length; if (G.sleepLeft <= 0) G._sleepAlerts = undefined; }
+  if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) { G._sleepAlerts = G.alerts().filter((a) => a.kind !== 'warn').length; G._sleepBatt = G.S.battery; } if (G.sleepLeft <= 0) G._sleepAlerts = G._sleepBatt = undefined; }
 }
 requestAnimationFrame(frame);
 G.frame = (now) => frame(now, true);   // test hook: step the loop by hand
@@ -447,7 +450,7 @@ async function start(modeKey, skip, seed) {
   if (!skip) { if (!free) await comicIntro(G); G.state = 'tutorial'; ui.showHud(true); await tutorial(G); ui.showHud(false); }
   G.state = 'tutorial'; await disaster(G, skip);
   applyDisaster(G.S); world.baseHit = true; for (let i = 0; i < (G.S.m.ice || 0); i++) G.spawnItem('ice', 'top', BASE.water[0] + 5.6 + (i % 3) * 1.15, BASE.water[1] - 10.6 - Math.floor(i / 3) * 1.15);   // canisters of icy polar soil by the cold store
-  for (const s of SITES) s.loot.forEach((type, i) => G.spawnItem(type, 'top', s.pos[0] + 14 + (i % 3) * 2.2, s.pos[1] + 12 + Math.floor(i / 3) * 2.2)); G.spawnSurvivors();
+  for (const s of SITES) s.loot.forEach((type, i) => G.spawnItem(type, 'top', s.pos[0] + 14 + (i % 3) * 2.2, s.pos[1] + 12 + Math.floor(i / 3) * 2.2)); G.spawnSurvivors();   // crates and a survivor at each outpost
   if (P.zone !== 'deep') { P.zone = 'deep'; G.S.zone = 'deep'; world.setZone('deep'); } P.pos.set(-17, TUBE.y, -10); cam.yaw = Math.PI; P.face = 0; G.regoPos.set(-15, TUBE.y, -9); if (P.carry) G.removeItem(P.carry); G.S.suitOn = false;   // you were indoors, out of your suit, when it hit
   if (free) {   // the Commander and the Engineer survived: they are crew you can give jobs to, and the stores are stocked for three people
     const S = G.S; for (const [id, name] of [['vasquez', 'Commander Vasquez'], ['okoro', 'Engineer Okoro']]) if (!S.helpers.some((h) => h.id === id)) S.helpers.push({ id, kind: 'human', name, role: 'idle', img: 'c_' + id });
