@@ -3,6 +3,7 @@
 // camera, Sun light and rover as the Moon, so everything that moves works the same way on both worlds.
 import * as THREE from '../../lib/three.module.min.js';
 import { SKYLINE } from './mola.js';
+import { MARS, marsSun, earthElongation } from './sim.js';
 import * as T from './terrain.js';
 
 const V3 = THREE.Vector3, clamp = (x, a, b) => Math.max(a, Math.min(b, x)), lerp = (a, b, k) => a + (b - a) * k;
@@ -19,7 +20,11 @@ const GROUND_COLOR = `
 { float dC = length(vWp - cameraPosition), nearK = 1.0 - smoothstep(40.0, 220.0, dC), fineK = 1.0 - smoothstep(7.0, 42.0, dC);
   // soft patches where dust has drifted, and gritty grain close up
   float g2 = mnoise(vWp.xz*0.21+7.0), g3 = mnoise(vWp.xz*1.3);
-  diffuseColor.rgb *= 1.0 + (g2-0.5)*0.16 + (g3-0.5)*0.12*nearK;
+  diffuseColor.rgb *= 1.0 + (g2-0.5)*0.11 + (g3-0.5)*0.09*nearK;
+  // dust-devil tracks: dark, winding lines where a whirlwind has lifted the pale dust off the darker soil beneath
+  { float trk = 0.0; for (int k=0;k<3;k++) { float fk = float(k), a = 0.7 + fk*1.9; vec2 n = vec2(cos(a), sin(a)), td = vec2(-n.y, n.x); float u = dot(vWp.xz, td), v = dot(vWp.xz, n) + 26.0*sin(u*0.011 + fk*2.1) + 9.0*sin(u*0.037 + fk), cw = 310.0 + 90.0*fk, lane = floor((v + cw*0.5)/cw), d = abs(v - lane*cw), wd = 1.6 + 1.8*mnoise(vec2(u*0.02, fk*7.0));
+      trk = max(trk, (1.0 - smoothstep(wd, wd + 1.8, d)) * step(0.38, mnoise(vec2(lane*3.7 + fk*11.0, u*0.0025)))); }
+    diffuseColor.rgb *= 1.0 - 0.2*trk*smoothstep(0.2, 0.5, vPoly); }
   float grain = mnoise(vWp.xz*9.0)*0.5 + mnoise(vWp.xz*27.0)*0.3 + mnoise(vWp.xz*71.0)*0.2;
   diffuseColor.rgb *= 1.0 + (grain-0.5)*0.36*fineK;
   // pebbles: small round stones lying in the soil
@@ -47,7 +52,7 @@ export class MarsWorld {
   constructor(world) {
     this.w = world; this.group = new THREE.Group(); this.group.name = 'mars'; this.t = 0; this.sunDir = new V3(0.3, 0.8, 0.2); this.colliders = T.colliders();
     this.lamps = {}; this.spin = []; this.windows = []; this.panels = []; this.night = 0;
-    T.buildGrid(); this._mats(); this._ground(); this._rocks(); this._sky(); this._skyline(); this._dust(); this._station(); this._marks(); this._interior();
+    T.buildGrid(); this._mats(); this._ground(); this._rocks(); this._sky(); this._skyline(); this._dust(); this._station(); this._marks(); this._places(); this._moons(); this._interior();
   }
   heightAt(x, z) { return this.inside ? T.ROOM.y : T.heightAt(x, z); }   // indoors, the floor of the room is the ground
   // Corner points of the yellow guide line: round the buildings, with more room when you are in the rover.
@@ -87,6 +92,7 @@ export class MarsWorld {
       if (c === T.ICE_CRATER && q < 0.62) { const k = clamp((0.62 - q) / 0.2, 0, 1) * (0.7 + 0.3 * T.fbm(x / 3, z / 3, 2)); r = lerp(r, 0.86, k); g = lerp(g, 0.91, k); b = lerp(b, 0.96, k); }
       else if (q > 0.9) { const k = Math.exp(-(q - 1) * 2.4) * 0.16; r += k; g += k * 0.8; b += k * 0.6; } else { r *= 0.86; g *= 0.86; b *= 0.86; } }
     const dp = Math.hypot(x - T.PAD.x, z - T.PAD.z); if (dp < T.PAD.r + 3) { const k = clamp((T.PAD.r + 3 - dp) / 3, 0, 1) * 0.8; r = lerp(r, 0.2, k); g = lerp(g, 0.19, k); b = lerp(b, 0.185, k); }
+    { const sk = T.streak(x, z) * 0.1; r += sk; g += sk * 0.9; b += sk * 0.75; }   // pale dust in the lee of young craters
     const st = 1 - clamp((Math.hypot(x - 8, z - 4) - 80) / 30, 0, 1); r *= 1 - 0.08 * st; g *= 1 - 0.07 * st; b *= 1 - 0.05 * st;   // ground packed down by work around the base
     void h; void slope; return lin(clamp(r, 0, 1), clamp(g, 0, 1), clamp(b, 0, 1));
   }
@@ -117,7 +123,9 @@ export class MarsWorld {
 
   _rocks() {
     const field = T.rockField(), geos = [0, 1, 2].map((k) => { const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position; for (let i = 0; i < p.count; i++) { const s = 0.74 + 0.46 * Math.abs((Math.sin(p.getX(i) * 12.9898 + p.getY(i) * 78.233 + p.getZ(i) * 37.719 + k * 5.1) * 43758.5453) % 1); p.setXYZ(i, p.getX(i) * s * (k === 1 ? 1.35 : 1), p.getY(i) * s * (k === 2 ? 0.55 : 0.8), p.getZ(i) * s); } g.computeVertexNormals(); return g; });
-    const mat = std({ color: 0xffffff, roughness: 0.95, flatShading: true }), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), col = new THREE.Color();
+    const mat = std({ color: 0xffffff, roughness: 0.95, flatShading: true }), m4 = new THREE.Matrix4(),
+      dustTop = '#include <normal_fragment_maps>\n{ vec3 wn = inverseTransformDirection(normal, viewMatrix); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.37, 0.215, 0.13), 0.72 * smoothstep(0.35, 0.85, wn.y)); }', q = new THREE.Quaternion(), e = new THREE.Euler(), col = new THREE.Color();
+    mat.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_maps>', dustTop); };
     for (const big of [true, false]) for (let k = 0; k < 3; k++) { const list = field.filter((r) => r.kind === k && r.s > 0.45 === big); if (!list.length) continue; const im = new THREE.InstancedMesh(geos[k], mat, list.length); im.castShadow = big; im.receiveShadow = true;
       list.forEach((r, i) => { e.set(r.tip, r.rot, r.tip * 0.6); q.setFromEuler(e); m4.compose(new V3(r.x, T.heightAt(r.x, r.z) + r.s * 0.18, r.z), q, new V3(r.s, r.s, r.s)); im.setMatrixAt(i, m4); const t = 0.5 + 0.5 * Math.sin(r.rot * 7); col.setRGB(...lin(lerp(0.3, 0.5, t), lerp(0.25, 0.39, t), lerp(0.22, 0.32, t))); im.setColorAt(i, col); });
       im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; this.group.add(im); }
@@ -125,13 +133,16 @@ export class MarsWorld {
 
   // ---------- the sky: butterscotch by day, blue around the setting Sun, stars at night ----------
   _sky() {
-    this.skyU = { uSun: { value: new V3(0, 1, 0) }, uZen: { value: new THREE.Color() }, uHor: { value: new THREE.Color() }, uGlow: { value: new THREE.Color() }, uWide: { value: 0.2 }, uTight: { value: 1 } };
+    this.skyU = { uSun: { value: new V3(0, 1, 0) }, uZen: { value: new THREE.Color() }, uHor: { value: new THREE.Color() }, uGlow: { value: new THREE.Color() }, uWide: { value: 0.2 }, uTight: { value: 1 }, uCloud: { value: 0 }, uCloudCol: { value: new THREE.Color(1, 1, 1) }, uDrift: { value: new THREE.Vector2() } };
     const mat = new THREE.ShaderMaterial({ uniforms: this.skyU, side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
       vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); vec4 p = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * p; }',
-      fragmentShader: `varying vec3 vDir; uniform vec3 uSun, uZen, uHor, uGlow; uniform float uWide, uTight;
+      fragmentShader: NOISE + `varying vec3 vDir; uniform vec3 uSun, uZen, uHor, uGlow, uCloudCol; uniform float uWide, uTight, uCloud; uniform vec2 uDrift;
         void main(){ vec3 d = normalize(vDir); float h = max(d.y, 0.0); vec3 col = mix(uHor, uZen, pow(h, 0.42));
           float c = max(dot(d, uSun), 0.0); float glow = pow(c, 6.0)*uWide + pow(c, 60.0)*uTight*0.6 + pow(c, 900.0)*uTight*2.0;
-          col = mix(col, uGlow, clamp(glow, 0.0, 1.0)); col = mix(col, uHor, smoothstep(0.0, -0.06, d.y));
+          col = mix(col, uGlow, clamp(glow, 0.0, 1.0));
+          if (uCloud > 0.01 && d.y > 0.03) { vec2 p = d.xz / (d.y + 0.22) * 1.25 + uDrift; float w = mnoise(p*vec2(0.55, 1.5))*0.55 + mnoise(p*vec2(1.7, 4.2) + 3.1)*0.3 + mnoise(p*6.0)*0.15; col = mix(col, uCloudCol, uCloud * smoothstep(0.52, 0.8, w) * smoothstep(0.03, 0.26, d.y) * 0.55); }   // thin, streaky ice clouds, high up
+          col = mix(col, vec3(1.0, 0.97, 0.9), smoothstep(0.99996, 0.99998, c) * uTight);   // the Sun's disc: about two-thirds the size it looks from Earth
+          col = mix(col, uHor, smoothstep(0.0, -0.06, d.y));
           gl_FragColor = vec4(col, 1.0);
           #include <colorspace_fragment>
         }` });
@@ -247,6 +258,44 @@ export class MarsWorld {
   pipe(x0, z0, x1, z1, m, y = 0.6) { const len = Math.hypot(x1 - x0, z1 - z0), g = this.at((x0 + x1) / 2, (z0 + z1) / 2); g.rotation.y = Math.atan2(x1 - x0, z1 - z0); const p = this.cyl(0.16, 0.16, len, m, 8); p.castShadow = false; this.put(g, p, 0, y, 0, Math.PI / 2); for (let s = 0; s <= len; s += 6) this.put(g, this.box(0.3, y, 0.3, this.M.grey), 0, y / 2, -len / 2 + s); }
   cable(x0, z0, x1, z1) { const n = Math.max(1, Math.round(Math.hypot(x1 - x0, z1 - z0) / 8)); for (let i = 0; i < n; i++) { const ax = lerp(x0, x1, i / n), az = lerp(z0, z1, i / n), bx = lerp(x0, x1, (i + 1) / n), bz = lerp(z0, z1, (i + 1) / n), len = Math.hypot(bx - ax, bz - az), c = this.box(0.14, 0.1, len + 0.1, this.M.dark); c.castShadow = false;
       const g = this.at((ax + bx) / 2, (az + bz) / 2); g.rotation.y = Math.atan2(bx - ax, bz - az); g.rotation.x = -Math.atan2(T.heightAt(bx, bz) - T.heightAt(ax, az), len); this.put(g, c, 0, 0.06, 0); } }
+  // ---------- things to find out on the plain ----------
+  _places() {
+    const M = this.M, PI = Math.PI, c = (r, g, b) => new THREE.Color().setRGB(...lin(r, g, b));
+    // the heat shield, lying where it fell: a charred dish on scorched ground
+    { const g = this.at(T.SHIELD.x, T.SHIELD.z), char = std({ color: c(0.2, 0.15, 0.12), roughness: 0.9 }), lining = std({ color: c(0.62, 0.5, 0.36), roughness: 0.8, side: THREE.BackSide }), tip = new THREE.Group(), dishG = new THREE.CylinderGeometry(2.4, 0.5, 0.8, 28, 1, true), dish = new THREE.Mesh(dishG, char), inner = new THREE.Mesh(dishG, lining), rim = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.07, 6, 28), M.grey); dish.castShadow = true;
+      tip.add(dish, inner); this.put(tip, rim, 0, 0.4, 0, PI / 2); this.put(tip, new THREE.Mesh(new THREE.CircleGeometry(0.5, 16), std({ color: c(0.5, 0.4, 0.3), roughness: 0.8, side: THREE.DoubleSide })), 0, -0.38, 0, -PI / 2); this.put(g, tip, 0, 1.25, 0, 0.75, 0.5, 0); for (let i = 0; i < 5; i++) { const a = i * 1.26 + 0.4, p = this.box(0.5 + (i % 2) * 0.3, 0.05, 0.4, char); this.put(g, p, Math.cos(a) * (3.2 + i * 0.5), 0.05, Math.sin(a) * (3 + i * 0.4), 0.2, a, 0.1); }
+      const scorch = new THREE.Mesh(new THREE.CircleGeometry(4.6, 28), new THREE.MeshBasicMaterial({ color: c(0.1, 0.07, 0.06), transparent: true, opacity: 0.35, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); this.put(g, scorch, 0, 0.06, 0, -PI / 2); }
+    // the backshell on its side, and the parachute still tied to it, spread out downwind
+    { const bx = T.SHIELD.x + 13, bz = T.SHIELD.z - 9, g = this.at(bx, bz), shell = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 2.1, 1.9, 24, 1, true), std({ color: c(0.86, 0.84, 0.8), roughness: 0.6, side: THREE.DoubleSide })); shell.castShadow = true; this.put(g, shell, 0, 1.25, 0, 0, 0.6, 1.25);
+      const n = 15, m = 9, W = 15, D = 9.5, ox = bx + T.WIND[0] * 12, oz = bz + T.WIND[1] * 12, ya = Math.atan2(T.WIND[1], T.WIND[0]), pos = new Float32Array(n * m * 3), col = new Float32Array(n * m * 3), idx = [], ca = Math.cos(ya), sa = Math.sin(ya);
+      for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) { const u = (i / (n - 1) - 0.5) * W, v = (j / (m - 1) - 0.5) * D * (1 - 0.35 * Math.abs(i / (n - 1) - 0.5)), x = ox + u * ca - v * sa, z = oz + u * sa + v * ca, k = j * n + i, fold = 0.1 + 0.22 * Math.abs(Math.sin(i * 1.7 + j * 0.9)) + 0.16 * Math.abs(Math.sin(j * 2.3));
+        pos.set([x, T.heightAt(x, z) + fold, z], k * 3); const stripe = Math.floor(j / 1.5) % 2 === 0, cc = stripe ? lin(0.88, 0.4, 0.14) : lin(0.9, 0.88, 0.84), dusty = 0.75 + 0.25 * Math.sin(i * 0.8 + j); col.set([cc[0] * dusty, cc[1] * dusty, cc[2] * dusty], k * 3); }
+      for (let j = 0; j < m - 1; j++) for (let i = 0; i < n - 1; i++) { const a = j * n + i; idx.push(a, a + n, a + 1, a + 1, a + n, a + n + 1); }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+      const chute = new THREE.Mesh(geo, std({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide })); chute.castShadow = chute.receiveShadow = true; this.group.add(chute);
+      for (const s of [-1, 0, 1]) { const ex = ox - ca * W * 0.5 - sa * s * 2.6, ez = oz - sa * W * 0.5 + ca * s * 2.6, len = Math.hypot(ex - bx, ez - bz), line = this.box(0.03, 0.03, len, M.dark), lg = this.at((bx + ex) / 2, (bz + ez) / 2); line.castShadow = false; lg.rotation.y = Math.atan2(ex - bx, ez - bz); this.put(lg, line, 0, 0.12, 0); } }
+    // the seismometer under its dome, with a ribbon cable to its box and a small solar panel
+    { const g = this.at(T.SEIS.x, T.SEIS.z), dome = new THREE.Mesh(new THREE.SphereGeometry(0.9, 22, 12, 0, PI * 2, 0, PI / 2), std({ color: c(0.88, 0.84, 0.74), roughness: 0.45, metalness: 0.2 })); dome.castShadow = true; this.put(g, dome, 0, 0.1, 0); this.put(g, this.cyl(1.08, 1.16, 0.14, M.foil, 24), 0, 0.07, 0);
+      const bx = T.SEIS.x + 4.5, bz = T.SEIS.z + 2, len = Math.hypot(4.5, 2) - 1.4, rg = this.at((T.SEIS.x + bx) / 2, (T.SEIS.z + bz) / 2), rib = this.box(0.14, 0.02, len, M.foil); rib.castShadow = false; rg.rotation.y = Math.atan2(4.5, 2); this.put(rg, rib, 0, 0.05, 0);
+      const b = this.at(bx, bz); this.put(b, this.box(0.9, 0.7, 0.65, M.white), 0, 0.45, 0); this.put(b, this.box(1.5, 0.05, 1.0, M.solar), 0, 1.0, 0.1, -0.5, 0, 0); this.put(b, this.cyl(0.03, 0.03, 1.5, M.steel, 6), 0.35, 1.2, -0.2); this.seisLamp = std({ color: 0x06140a, emissive: 0x4dff88, emissiveIntensity: 1.6 }); this.put(b, this.sph(0.07, this.seisLamp, 8, 6), 0.35, 1.98, -0.2); }
+  }
+  // ---------- Earth and Phobos in the sky ----------
+  _moons() {
+    const mk = (col, size) => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.dot, color: col, transparent: true, opacity: 0, depthTest: false, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })); s.scale.setScalar(size); s.renderOrder = -28.5; s.frustumCulled = false; this.group.add(s); return s; };
+    this.earth = mk(0x9fc8ff, 190); this.phobos = mk(0xe6d8c4, 120); this.earthUp = false; this.phobosUp = false;
+  }
+  _sky2(S, sn, night, day, dusty, cam) {
+    const t = S ? S.t : 0, U = this.skyU, low = clamp(1 - Math.abs(sn.elev - 1) / 12, 0, 1), sol = Math.floor(t / MARS.SOL_H), wisp = 0.35 + 0.65 * Math.abs(Math.sin(sol * 12.9898 + 4.1) * 43758.5453 % 1);
+    // thin ice clouds: faint by day, bright around sunrise and sunset when the Sun lights them from below; none in a dust storm
+    U.uCloud.value = wisp * clamp(0.3 * day + 0.9 * low, 0, 1) * clamp(1 - dusty * 3, 0, 1); U.uCloudCol.value.setRGB(...lin(lerp(1, 0.86, low), lerp(0.95, 0.9, low), lerp(0.88, 1, low))); U.uDrift.value.set(t * 0.012, t * 0.004);
+    // Earth: a blue-white star that never strays far from the Sun; it is where the Sun will be (or was) a couple of hours away
+    const el = S ? earthElongation(S) : 25, se = S ? marsSun(S, t + (el / 360) * MARS.SOL_H) : sn, clear = clamp(1 - dusty * 2, 0, 1), dark = clamp((-sn.elev - 1) / 5, 0, 1);
+    this.earth.position.set(cam.x + se.e * 5800, cam.y + se.u * 5800, cam.z - se.n * 5800); this.earth.material.opacity = se.u > 0.03 ? dark * clear * 0.95 : 0; this.earthUp = this.earth.material.opacity > 0.5 && se.elev > 4; this.earthMorning = el > 0;
+    // Phobos: rises in the west and sets in the east, about every 11 hours; from this far north it stays low in the south
+    const u = ((t / 11.1) % 1) / 0.38, up = u < 1, az = ((270 - 180 * u) * Math.PI) / 180, pe = (33 * Math.PI) / 180 * Math.sin(Math.PI * clamp(u, 0, 1)), ch = Math.cos(pe);
+    this.phobos.position.set(cam.x + Math.sin(az) * ch * 5800, cam.y + Math.sin(pe) * 5800, cam.z - Math.cos(az) * ch * 5800); this.phobos.material.opacity = up && pe > 0.05 ? clamp(night * 1.2, 0, 1) * clear * 0.9 : 0; this.phobosUp = this.phobos.material.opacity > 0.5 && pe > 0.14;
+    if (this.seisLamp) this.seisLamp.emissiveIntensity = 0.5 + 1.4 * (Math.sin(this.t * 2.2) > 0.6 ? 1 : 0);
+  }
   _marks() { this.beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 60, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false })); this.beacon.visible = false; this.group.add(this.beacon); }
   setTarget(t) { if (!t) { this.beacon.visible = false; return; } this.beacon.visible = true; this.beacon.position.set(t.x, T.heightAt(t.x, t.z) + 30, t.z); }
 
@@ -308,6 +357,7 @@ export class MarsWorld {
     const U = this.skyU, k = day * (1 - 0.22 * dusty), hor = lin(lerp(0.035, lerp(0.86, 0.68, dusty), k), lerp(0.03, lerp(0.7, 0.48, dusty), k), lerp(0.03, lerp(0.54, 0.31, dusty), k)), zen = lin(lerp(0.012, lerp(0.6, 0.56, dusty), k), lerp(0.012, lerp(0.46, 0.39, dusty), k), lerp(0.016, lerp(0.35, 0.25, dusty), k));
     U.uHor.value.setRGB(...hor); U.uZen.value.setRGB(...zen); U.uSun.value.copy(this.sunDir);
     U.uGlow.value.setRGB(...lin(lerp(1, 0.6, low), lerp(0.93, 0.74, low), lerp(0.82, 0.98, low))); U.uWide.value = (0.1 + 0.75 * low) * (1 - 0.6 * dusty) * clamp((sn.elev + 9) / 9, 0, 1); U.uTight.value = clamp((sn.elev + 1.2) / 2.4, 0, 1) * (1 - 0.8 * dusty);
+    this._sky2(S, sn, night, day, dusty, cam);
     this.sky.position.copy(cam); this.stars.position.copy(cam); this.starMat.opacity = night * clamp(1 - tau / 2.5, 0, 1) * 0.9; this.skyline.position.set(cam.x, T.heightAt(cam.x, cam.z), cam.z);
     const light = clamp(0.06 + 0.94 * day * (0.45 + 0.55 * (F ? F.direct : 0.6)), 0, 1); this.lineU.uRock.value.setRGB(...lin(0.42 * light, 0.26 * light, 0.19 * light)); this.lineU.uSky.value.setRGB(...hor);
     // haze

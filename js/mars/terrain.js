@@ -41,14 +41,20 @@ export const ROVER_PAD = { x: -34, z: 62 };
 export const DRILL = { x: 66, z: 40 };                                                  // the ice well's rig
 export const ICE_CRATER = { x: 270, z: 150, r: 15, depth: 3.6 };                        // a young crater that dug down to the ice
 export const OLD_CRATER = { x: -340, z: -270, r: 95, depth: 9 };                        // an old, softened crater
+export const TERRACE_CRATER = { x: -430, z: 330, r: 62, depth: 10, terrace: true };          // a crater with a step in its wall: a sign of layers (soil over ice)
+export const SHIELD = { x: -405, z: -30 };                                             // where the lander's heat shield, backshell and parachute came down
+export const SEIS = { x: -255, z: -75 };                                               // the seismometer, well away from footsteps and machines
 export const SPAWN = { x: -6, z: 30 };
 
 // small craters, the same every time
-const CRATERS = [ICE_CRATER, OLD_CRATER];
+const CRATERS = [ICE_CRATER, OLD_CRATER, TERRACE_CRATER];
 for (let i = 0; CRATERS.length < 30 && i < 400; i++) { const a = hash(i, 91) * 6.283, d = 150 + hash(i, 17) * 600, x = Math.cos(a) * d, z = Math.sin(a) * d, r = 3 + Math.pow(hash(i, 5), 2.2) * 22;
-  if (CRATERS.some((c) => Math.hypot(c.x - x, c.z - z) < c.r + r + 14)) continue; if (Math.hypot(x - PAD.x, z - PAD.z) < 60 || (x > -60 && x < 80 && z > 40 && z < 150) || Math.hypot(x - REACTOR.x, z - REACTOR.z) < 40) continue;
+  if (CRATERS.some((c) => Math.hypot(c.x - x, c.z - z) < c.r + r + 14)) continue; if (Math.hypot(x - PAD.x, z - PAD.z) < 60 || (x > -60 && x < 80 && z > 40 && z < 150) || Math.hypot(x - REACTOR.x, z - REACTOR.z) < 40 || Math.hypot(x - SHIELD.x, z - SHIELD.z) < 30 + r || Math.hypot(x - SEIS.x, z - SEIS.z) < 22 + r) continue;
   CRATERS.push({ x, z, r, depth: r * (0.16 + hash(i, 3) * 0.08) }); }
 export { CRATERS };
+// Craters far out on the plain, beyond where you can walk: they only shape the distance. The same every time.
+export const FAR_CRATERS = []; for (let i = 0; FAR_CRATERS.length < 16 && i < 200; i++) { const a = hash(i, 301) * 6.283, d = 1050 + hash(i, 302) * 3600, r = 70 + Math.pow(hash(i, 303), 2) * 330, x = Math.cos(a) * d, z = Math.sin(a) * d;
+  if (d - r * 2.4 < 860 || FAR_CRATERS.some((c) => Math.hypot(c.x - x, c.z - z) < (c.r + r) * 2)) continue; FAR_CRATERS.push({ x, z, r, depth: r * (0.09 + hash(i, 304) * 0.05) }); }
 
 // places levelled for building: [x, z, radius of the flat part, width of the ramp round it]
 const FLATS = [[8, 4, 96, 46], [10, 104, 62, 30], [PAD.x, PAD.z, 30, 26], [REACTOR.x, REACTOR.z, 16, 18], [DRILL.x, DRILL.z, 10, 14]];
@@ -64,7 +70,9 @@ export function rawHeight(x, z) {
   h += 7 * sstep(-9, 9, flowEdge(x, z));
   const dm = duneMask(x, z); if (dm > 0.001) { const w = (x * 0.94 + z * 0.34) / 17 + 1.6 * fbm(x / 55, z / 55, 2), r = 1 - Math.abs(Math.sin(w)); h += dm * (1.5 * r * r + 0.5 * fbm(x / 30, z / 30, 2)); }   // sharp-crested ripples, across the wind
   for (const c of CRATERS) { const d = Math.hypot(x - c.x, z - c.z); if (d > c.r * 2.4) continue; const q = d / c.r, soft = c === OLD_CRATER ? 0.55 : 1;
-    h += q < 1 ? -c.depth * (1 - q * q) * (0.8 + 0.2 * soft) + c.depth * 0.22 * soft * q * q : c.depth * 0.22 * soft * Math.exp(-(q - 1) * 3.2); }                                              // a bowl, a raised rim, and a blanket of thrown-out soil
+    const bowl = c.terrace ? (q < 0.42 ? 1 - 0.22 * (q / 0.42) ** 2 : q < 0.52 ? 0.78 - 0.38 * ((q - 0.42) / 0.1) : q < 0.72 ? 0.4 - 0.04 * ((q - 0.52) / 0.2) : 0.36 * (1 - ((q - 0.72) / 0.28) ** 2)) : 1 - q * q;   // a terraced crater has a bench half-way up its wall
+    h += q < 1 ? -c.depth * bowl * (0.8 + 0.2 * soft) + c.depth * 0.22 * soft * q * q : c.depth * 0.22 * soft * Math.exp(-(q - 1) * 3.2); }
+  const far = Math.hypot(x, z); if (far > 860) for (const c of FAR_CRATERS) { const d = Math.hypot(x - c.x, z - c.z); if (d > c.r * 2.4) continue; const q = d / c.r; h += (q < 1 ? -c.depth * (1 - q * q) + c.depth * 0.3 * q * q : c.depth * 0.3 * Math.exp(-(q - 1) * 3)) * sstep(860, 1000, far); }                                              // a bowl, a raised rim, and a blanket of thrown-out soil
   let w = 0, y = 0; FLATS.forEach(([fx, fz, r, ramp], i) => { const k = 1 - sstep(r, r + ramp, Math.hypot(x - fx, z - fz)); if (k > w) { w = k; y = FLAT_Y[i]; } });
   return h * (1 - w) + y * w;
 }
@@ -84,7 +92,7 @@ export const slopeAt = (x, z) => Math.hypot(heightAt(x + 2, z) - heightAt(x - 2,
 // Rocks: where, how big, which of three shapes. The same field every time. Mostly fist- to football-sized, with a few boulders.
 export function rockField(count = 4200) {
   const out = []; for (let i = 0; out.length < count && i < count * 3; i++) { const a = hash(i, 201) * 6.283, d = Math.sqrt(hash(i, 202)) * 760, x = Math.cos(a) * d, z = Math.sin(a) * d;
-    if (FLATS.some(([fx, fz, r]) => Math.hypot(x - fx, z - fz) < r + 6) || duneMask(x, z) > 0.5) continue;
+    if (FLATS.some(([fx, fz, r]) => Math.hypot(x - fx, z - fz) < r + 6) || duneMask(x, z) > 0.5 || Math.hypot(x - SEIS.x, z - SEIS.z) < 7 || Math.hypot(x - SHIELD.x, z - SHIELD.z) < 5 || Math.hypot(x - SHIELD.x - 13, z - SHIELD.z + 9) < 5) continue;
     const near = CRATERS.some((c) => { const q = Math.hypot(x - c.x, z - c.z) / c.r; return q > 0.9 && q < 1.9; });                 // craters throw out blocks
     const hs = hash(i, 203), s = 0.1 + Math.pow(hs, near ? 3 : 6) * (near ? 1.5 : 0.9) + (hs > 0.985 ? ((hs - 0.985) / 0.015) * 1.2 : 0); out.push({ x, z, s, kind: i % 3, rot: hash(i, 204) * 6.283, tip: hash(i, 205) * 0.5 }); }
   return out;
@@ -95,6 +103,7 @@ export function colliders() {
   for (const b of BUILDINGS) { if (b.r) c.push({ x: b.x, z: b.z, r: b.r }); if (b.long) for (const s of [-1, 1]) c.push({ x: b.x + b.long[0] * s, z: b.z + b.long[1] * s, r: b.r * 0.9 }); }
   for (const s of [-1, 1]) c.push({ x: B.garage.x + s * 8.2, z: B.garage.z, r: 1.2 }, { x: B.garage.x + s * 8.2, z: B.garage.z - 4, r: 1.2 }, { x: B.garage.x + s * 8.2, z: B.garage.z + 4, r: 1.2 });   // the garage's side walls: drive straight through
   c.push({ x: DRILL.x, z: DRILL.z, r: 2.6 }, { x: REACTOR.x, z: REACTOR.z, r: 3 }, { x: PAD.x, z: PAD.z, r: 6.5 });
+  c.push({ x: SHIELD.x, z: SHIELD.z, r: 2.6 }, { x: SHIELD.x + 13, z: SHIELD.z - 9, r: 2.2 }, { x: SEIS.x, z: SEIS.z, r: 1.1 }, { x: SEIS.x + 4.5, z: SEIS.z + 2, r: 0.9 });   // the heat shield, the backshell, the seismometer and its box
   for (let r = 0; r < SOLAR.rows; r++) for (let k = 0; k < SOLAR.cols; k++) { const [x, z] = panelAt(r, k); c.push({ x: x - 3, z, r: 1.5 }, { x: x + 3, z, r: 1.5 }); }
   for (const t of TUNNELS) { const n = Math.ceil(Math.hypot(t[2] - t[0], t[3] - t[1]) / 2.4); for (let i = 1; i < n; i++) c.push({ x: t[0] + ((t[2] - t[0]) * i) / n, z: t[1] + ((t[3] - t[1]) * i) / n, r: 1.5 }); }
   for (const rk of rockField()) if (rk.s > 1.05) c.push({ x: rk.x, z: rk.z, r: rk.s * 0.8 });
@@ -149,3 +158,7 @@ export function routeAround(cols, px, pz, tx, tz, pad = 1.1) {
   const out = [pts[0]]; let i = 0; while (i < pts.length - 1) { let j = pts.length - 1; while (j > i + 1 && hit(pts[i][0], pts[i][1], pts[j][0], pts[j][1], -0.35)) j--; out.push(pts[j]); i = j; }
   if (far) out.push([tx, tz]); return out;
 }
+
+// Pale dust settles in the lee of a crater's rim. How strongly (0…1) at a point, for the prevailing wind (towards the south-east).
+export const WIND = [0.82, 0.57];
+export function streak(x, z) { let s = 0; for (const c of CRATERS) { if (c.r < 5 || c.r > 40) continue; const dx = x - c.x, dz = z - c.z, along = dx * WIND[0] + dz * WIND[1], across = Math.abs(-dx * WIND[1] + dz * WIND[0]), len = c.r * 6; if (along < c.r * 0.9 || along > len) continue; const k = (along - c.r * 0.9) / (len - c.r * 0.9), wide = c.r * (1 - 0.75 * k); if (across < wide) s = Math.max(s, (1 - k) * (1 - (across / wide) ** 2)); } return s; }
