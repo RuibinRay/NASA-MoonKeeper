@@ -17,7 +17,7 @@ import { patchAt, scoop } from './life.js';
 import { installEvents } from './events.js';
 import { comicIntro, tutorial, disaster, ending } from './story.js';
 import { tt, LANG, LANGS, setLang, translatePage } from './i18n.js';
-import { startSIMarks } from './simark.js';
+import { startSIMarks, texMark } from './simark.js';
 translatePage();   // the words written into index.html
 for (const [v, w] of [['--t-dyk', tt('DID YOU KNOW?')], ['--t-hint', tt('REGO · HINT')], ['--t-sel', tt('SELECTED')], ['--t-si', tt('SI-generated')]]) document.documentElement.style.setProperty(v, JSON.stringify(w));   // labels drawn by the style sheet
 startSIMarks();   // a visible "SI-generated" mark on every SI-made picture
@@ -553,8 +553,8 @@ let last = performance.now(), ccT = 0;
 function frame(now, manual) {
   if (!manual) { requestAnimationFrame(frame); fpsTick(now); } const dt = clamp((now - last) / 1000, 0, 0.05); last = now; if (G.state === 'title') return;
   if (G.jobTick) G.jobTick(dt);
-  if (G.planet === 'mars') return G.mars.frame(dt);   // Mars has its own frame: same player, rover and camera, its own world and rules
-  G.inside = P.zone === 'deep' && world.indoors(P.pos.x, P.pos.z); G.inCrater = P.zone === 'top' && Math.hypot(P.pos.x - MINE.x, P.pos.z - MINE.z) < MINE.r * 0.9;
+  if (G.planet === 'mars') { texMark(false); return G.mars.frame(dt); }   // Mars has its own frame: same player, rover and camera, its own world and rules
+  G.inside = P.zone === 'deep' && world.indoors(P.pos.x, P.pos.z); texMark(G.inside); G.inCrater = P.zone === 'top' && Math.hypot(P.pos.x - MINE.x, P.pos.z - MINE.z) < MINE.r * 0.9;
   if (G.inCrater && G.state === 'play' && !G._tipMine) { G._tipMine = 1; ui.bubble(tt('The <b>Polar Ice Mine</b>. This crater floor never sees the Sun, so it stays near −230°C: cold enough to keep ice frozen for billions of years. Get in the <b>digger</b>, hold <b>SPACE</b> over a pale blue patch, then tip the bucket into the orange filler. Do not park here long: the cold drains batteries.'), 'think', 16); }
   if (G.S) { const S = G.S; if (!S.suitOn && !G.inside) S.suitOn = true; S.here = G.inside ? world.roomAt(P.pos.x, P.pos.z) : null; G.astro.setSuit(G.suitShow ?? S.suitOn);
     if (G.inside && !G._wasIn && S.suitOn && G.state === 'play' && !G._tipIn) { G._tipIn = 1; ui.bubble(tt('You are indoors, and the air is good. You can take your suit off at the <b>Suit Lockers</b>: indoor jobs go a quarter faster without big gloves, and you need it off to cook or sleep.'), 'happy', 11); } G._wasIn = G.inside; }
