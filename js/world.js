@@ -439,7 +439,7 @@ export class World {
 
   // ---------- the station: red-walled rooms joined to one hall by bulkhead doors ----------
   _station() {
-    const D = this.deep, M = this.M, DH = 4.2; this.rooms = {};
+    const D = this.deep, M = this.M, DH = 4.2; this.rooms = {}; this.doorSigns = {}; this.floorGlow = glow(0x49e6ff, 2.2); this.spinners = []; this.bubbles = []; this.blinkers = [];
     // Walls are drawn on the inside only, so the camera can sit outside a room and still see in.
     const P = (w, h, mat, tile = 4) => { const g = new THREE.PlaneGeometry(w, h), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * w) / tile, (uv.getY(i) * h) / tile); return new THREE.Mesh(g, mat); };
     const floor = (g, x0, x1, z0, z1) => { const m = P(x1 - x0, z1 - z0, M.floor); m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, 0.03, (z0 + z1) / 2); m.receiveShadow = true; g.add(m); };
@@ -455,11 +455,11 @@ export class World {
     // structure you can read: a rib every 6 m (never across a doorway), a portal frame round every door, services overhead, status light at the floor
     const nearDoor = (x, side) => ROOMS.some((q) => q.side === side && Math.abs(x - q.door) < 2.9), fix = (m) => { m.castShadow = false; return m; };
     for (let x = HALL.x0 + 3; x < HALL.x1; x += 6) { for (const side of [-1, 1]) if (!nearDoor(x, side)) this.put(hall, fix(this.box(0.22, HALL.h, 0.16, M.metal)), x, HALL.h / 2, side * (HALL.z1 - 0.08)); this.put(hall, fix(this.box(0.22, 0.14, HALL.z1 * 2, M.metal)), x, HALL.h - 0.07, 0); }
-    for (const q of ROOMS) { const z = q.side * (HALL.z1 - 0.07); for (const dx of [-2.12, 2.12]) this.put(hall, fix(this.box(0.24, DH, 0.2, M.orange)), q.door + dx, DH / 2, z); this.put(hall, fix(this.box(4.48, 0.24, 0.2, M.orange)), q.door, DH + 0.12, z); this.put(hall, fix(this.box(1.5, 0.1, 0.06, M.cyan)), q.door, DH + 0.12, q.side * (HALL.z1 - 0.19)); }
+    for (const q of ROOMS) { const z = q.side * (HALL.z1 - 0.07); for (const dx of [-2.12, 2.12]) this.put(hall, fix(this.box(0.24, DH, 0.2, M.orange)), q.door + dx, DH / 2, z); this.put(hall, fix(this.box(4.48, 0.24, 0.2, M.orange)), q.door, DH + 0.12, z); this.doorSigns[q.id] = glow(0x49e6ff, 2.2); this.put(hall, fix(this.box(1.5, 0.1, 0.06, this.doorSigns[q.id])), q.door, DH + 0.12, q.side * (HALL.z1 - 0.19)); }
     const run = HALL.x1 - HALL.x0, mid = (HALL.x0 + HALL.x1) / 2;
     for (const [z, r, mat] of [[-1.9, 0.09, M.metal], [-1.62, 0.06, M.tankW], [1.85, 0.11, M.white]]) this.put(hall, fix(this.cyl(r, r, run, mat, 8)), mid, HALL.h - 0.32, z, 0, 0, Math.PI / 2);
     this.put(hall, fix(this.box(run, 0.05, 0.42, M.dark)), mid, HALL.h - 0.5, 1.2);
-    for (const side of [-1, 1]) this.put(hall, fix(this.box(run, 0.05, 0.05, M.cyan)), mid, 0.12, side * (HALL.z1 - 0.05));
+    for (const side of [-1, 1]) this.put(hall, fix(this.box(run, 0.05, 0.05, this.floorGlow)), mid, 0.12, side * (HALL.z1 - 0.05));
     this.walk.push({ x0: HALL.x0 - 1, x1: HALL.x1 - 0.6, z0: HALL.z0 + 0.5, z1: HALL.z1 - 0.5 });
     // airlock: the station's front door, with the suit lockers
     const A = AIRLOCK, ab = new THREE.Group(); D.add(ab); floor(ab, A.x0, A.x1, A.z0, A.z1); ceil(ab, A.x0, A.x1, A.z0, A.z1, A.h);
@@ -514,6 +514,27 @@ export class World {
     for (const z of [-2.7, 2.7]) this.put(sh, this.sph(0.26, M.cyan), A.x0 - 0.2, 4.6, z);
     [[-73.5, 7.2, 0, M.white], [-73.5, 7.2, 1.3, M.orange], [-75.6, 8.4, 0, M.orange], [-73.2, 9.6, 0, M.white]].forEach(([cx, cz, cy, m]) => { this.put(sh, this.box(1.8, 1.3, 1.8, m), cx, cy + 0.65, cz); if (!cy) this.solid('deep', cx, cz, 1.3); });   // cargo waiting by the airlock
     this._props();
+  }
+  // Moving parts. Each one is tied to its room, so it slows in a power cut and stops when the room is wrecked or frozen.
+  _machines(id, g, c, zB, zD) {
+    const M = this.M, quiet = (m) => { m.castShadow = false; m.receiveShadow = false; return m; };
+    const rotor = (x, y, z, r, blades, mat) => { const o = new THREE.Group(); o.position.set(x, y, z); g.add(o); for (let k = 0; k < blades; k++) { const b = quiet(this.box(0.03, r, r * 0.3, mat)); b.position.y = r / 2; const arm = new THREE.Group(); arm.rotation.x = (k / blades) * Math.PI * 2; arm.add(b); o.add(arm); } this.put(o, quiet(this.cyl(r * 0.18, r * 0.18, 0.06, M.dark, 10)), 0, 0, 0, 0, 0, Math.PI / 2); return o; };
+    // every room breathes: a small fan in front of its wall vent (the farms have a big one of their own)
+    if (id !== 'potato' && id !== 'tomato') this.spinners.push({ room: id, o: rotor(c.x1 - 0.13, ROOM_H - 1.3, c.cz + c.D * 0.3, 0.3, 3, M.metal), rate: 11, v: 0 });
+    if (id === 'oxygen') {             // bubbles rise in the two tubes while the Oxygen Maker splits water
+      const mz = c.cz + 2.5; for (const dx of [-1, 1]) for (let k = 0; k < 4; k++) this.bubbles.push({ m: this.put(g, quiet(this.sph(0.035, M.whiteG, 6, 5)), c.cx + dx + (k % 2 ? 0.06 : -0.06), 2.7, mz + (k > 1 ? 0.05 : -0.05)), y0: 2.66, y1: 3.34, ph: k / 4 + (dx > 0 ? 0.13 : 0) });
+    }
+    if (id === 'water') {              // the recycler pump: a flywheel on the end of the motor
+      const fw = rotor(c.x0 + 0.95, 0.75, 12, 0.24, 4, M.orange); this.put(fw, quiet(new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.03, 6, 16), M.metal)), 0, 0, 0, 0, Math.PI / 2); this.spinners.push({ room: id, o: fw, rate: 7, v: 0, sys: 'recycler' });
+    }
+    if (id === 'control') {            // the computers are busy: rows of small lights on every rack
+      const mats = [0, 1, 2].map(() => glow(0x4dff88, 1.6)); mats.forEach((m, i) => this.blinkers.push({ room: id, m, ph: i * 2.1, sp: 2.3 + i * 1.7 }));
+      for (const [x, e] of [[c.x0 + 0.33, 1], [c.x1 - 0.33, -1]]) for (let k = 0; k < 3; k++) for (let j = 0; j < 4; j++) this.put(g, quiet(this.box(0.02, 0.05, 0.16, mats[(k + j) % 3])), x + e * 0.29, 0.75 + j * 0.42, -21 + k * 1.6 + 0.25);
+    }
+    if (id === 'storage') {            // the battery racks show charge moving: a light runs along the cable tray
+      const mats = [0, 1, 2].map(() => glow(0xffa424, 1.2)); mats.forEach((m, i) => this.blinkers.push({ room: id, m, ph: i * 2.094, sp: 4, chase: true }));
+      for (let k = 0; k < 9; k++) this.put(g, quiet(this.box(0.16, 0.03, 0.05, mats[k % 3])), c.x0 + 1.4 + k * ((c.W - 2.8) / 8), ROOM_H - 0.71, zB(1.2));
+    }
   }
   // One little plant of each crop. Leaves share the rack's own leaf material (so sick racks can turn brown); "fruits" appear late.
   _plant(kind, leaf, fruit, rnd) {
@@ -618,7 +639,7 @@ export class World {
       for (const x of [c.x0 + 0.08, c.x1 - 0.08]) for (let k = 1; k <= 3; k++) B(0.16, ROOM_H, 0.2, M.metal, x, ROOM_H / 2, c.z0 + (c.D * k) / 4);
       C(0.2, c.W - 0.5, M.metal, c.cx, ROOM_H - 0.4, zB(0.45), 0, PI2); B(c.W - 0.5, 0.06, 0.45, M.dark, c.cx, ROOM_H - 0.75, zB(1.2));
       B(0.08, 0.7, 1.3, M.dark, c.x1 - 0.05, ROOM_H - 1.3, c.cz + c.D * 0.3);
-      for (const x of [c.x0 + 0.06, c.x1 - 0.06]) B(0.05, 0.05, c.D - 0.4, M.cyan, x, 0.1, c.cz);
+      for (const x of [c.x0 + 0.06, c.x1 - 0.06]) B(0.05, 0.05, c.D - 0.4, this.floorGlow, x, 0.1, c.cz);
       B(0.95, 0.65, 0.05, M.dark, c.door - 3.2, 1.7, zD(0.05)); B(0.8, 0.5, 0.02, M.screen, c.door - 3.2, 1.7, zD(0.09));
 
       if (id === 'workshop') {
@@ -684,9 +705,10 @@ export class World {
         B(4.4, 0.2, 1.4, M.white, tx, 3.0, tz); for (const ex of [-2.1, 2.1]) for (const ez of [-0.9, 0.9]) B(0.07, 3, 0.07, M.metal, tx + ex, 1.5, tz + ez); for (let i = 0; i < 5; i++) S(0.3, i % 2 ? M.green : M.greenD, tx - 1.7 + i * 0.85, 3.3, tz);   // plants fed by the fish water
       }
       if (id === 'potato' || id === 'tomato') {
-        const fz = c.cz; B(0.06, 1.7, 1.7, M.dark, c.x1 - 0.04, 4.2, fz); T(0.72, 0.07, M.metal, c.x1 - 0.12, 4.2, fz, 0, PI2); B(0.04, 1.3, 0.14, M.metal, c.x1 - 0.13, 4.2, fz); B(0.04, 0.14, 1.3, M.metal, c.x1 - 0.13, 4.2, fz);   // ventilation fan
+        const fz = c.cz; B(0.06, 1.7, 1.7, M.dark, c.x1 - 0.04, 4.2, fz); T(0.72, 0.07, M.metal, c.x1 - 0.12, 4.2, fz, 0, PI2); const rotor = new THREE.Group(); rotor.position.set(c.x1 - 0.13, 4.2, fz); g.add(rotor); this.put(rotor, quiet(this.box(0.04, 1.3, 0.14, M.metal))); this.put(rotor, quiet(this.box(0.04, 0.14, 1.3, M.metal))); this.spinners.push({ room: id, o: rotor, rate: 5, v: 0 });   // ventilation fan
         const nx = c.x1 - 0.95, nz = zD(0.95); C(0.6, 1.6, M.tankW, nx, 0.8, nz, 0, 0, 16); C(0.63, 0.1, M.white, nx, 1.65, nz, 0, 0, 16); C(0.05, 1.4, M.tankW, nx - 0.4, 2.4, nz); hard(nx, nz, 0.85);                                  // nutrient tank
       }
+      this._machines(id, g, c, zB, zD);
       R[id].props.add(g);
     }
   }
@@ -847,11 +869,25 @@ export class World {
       for (const id in this.rooms) {
         const R = this.rooms[id], r = S.rooms[id], d = R.def, wreck = r.built < 1, near = Math.hypot(px - d.door, pz - d.side * 4.5) < 4.6;
         R.wall.color.copy(this.wallTint).lerp(this.iceTint || (this.iceTint = new THREE.Color(0x7f9fc4)), r.frozen ? 0.65 : clamp(1 - r.p / K.AIR_KPA, 0, 1) * 0.35);
-        R.light.emissive.setHex(r.hole > 0 ? 0xff3b30 : 0xffffff); R.light.emissiveIntensity = (r.hole > 0 ? 1.2 + Math.sin(t * 9) : wreck ? 0.12 : 1.6) * (0.4 + 0.6 * dim);
+        R.light.emissive.setHex(r.hole > 0 ? 0xff3b30 : 0xffffff); R.light.emissiveIntensity = (r.hole > 0 ? 1.2 + Math.sin(t * 9) : wreck ? 0.12 : 1.6) * (dim < 1 ? 0.34 + (Math.sin(t * 23 + d.door) > 0.93 ? -0.2 : 0) : 1);
         const n = R.props.children.length, show = wreck ? Math.floor(n * clamp((r.built - 0.3) / 0.7, 0, 1) * 0.85) : n; for (let i = 0; i < n; i++) R.props.children[i].visible = i < show;
         R.debris.visible = wreck; R.debris.scale.setScalar(wreck ? clamp(1.3 - r.built, 0.3, 1) : 1); R.hole.visible = r.hole > 0; R.jet.visible = r.hole > 0 && r.p > 4; R.jet.material.opacity = 0.12 + 0.3 * (r.p / K.AIR_KPA) * (0.6 + 0.4 * Math.sin(t * 30));
         R.open += ((r.door || near ? 1 : 0) - R.open) * Math.min(1, dt * 6); R.door.scale.y = Math.max(0.03, 1 - R.open); R.door.position.y = 4.15 - 2.05 * R.door.scale.y; R.swLed.material.emissive.setHex(r.door ? 0x4dff88 : 0xff3b30);
       }
+      // status light over each door: cyan fine, red flashing for a leak, pale blue for a frozen room, amber for a wreck
+      const brown = S.flow.eff < 1, leak = S.flow.leaks.length > 0;
+      for (const id in this.doorSigns) { const r = S.rooms[id], m = this.doorSigns[id], st = r.hole > 0 && r.door ? 3 : r.frozen ? 2 : r.built < 1 ? 1 : 0;
+        m.emissive.setHex([0x49e6ff, 0xffa424, 0x9fc8ff, 0xff3b30][st]); m.emissiveIntensity = st === 3 ? 1.6 + 1.4 * Math.sin(t * 10) : st === 2 ? 1.2 + 0.5 * Math.sin(t * 2) : 2.2; }
+      // floor guide lights: steady cyan; in a power cut they turn amber and pulse, so the way out still shows
+      this.floorGlow.emissive.setHex(brown ? 0xffa424 : 0x49e6ff); this.floorGlow.emissiveIntensity = brown ? 1.5 + 0.9 * Math.sin(t * 3) : 2.2;
+      // hall ceiling lights: in a power cut only every third stays on; a leak anywhere makes them pulse red
+      this.hallLights.forEach((h, i) => { const m = h.material; m.emissive.setHex(leak ? 0xff5a4a : 0xffffff); m.emissiveIntensity = (brown ? (i % 3 === 0 ? 0.55 : 0.06) : 1.6) * (leak ? 0.75 + 0.25 * Math.sin(t * 6) : 1); });
+      // machines: each eases toward the speed its room can give it, so a power cut makes them wind down
+      const power = (id) => { const r = S.rooms[id]; return r.built >= 1 && !r.frozen && r.p > 55 ? S.flow.eff : 0; };
+      for (const q of this.spinners) { const want = power(q.room) * (q.sys === 'recycler' ? (S.lv.recycler > 0 ? 0.4 + 0.3 * S.lv.recycler : 0) : 1) * q.rate; q.v += (want - q.v) * Math.min(1, dt * 1.2); q.o.rotation.x += q.v * dt; }
+      const o2run = power('oxygen') * (S.flow.o2Elec > 0 ? 0.4 + 0.3 * S.lv.o2gen : 0); for (const q of this.bubbles) { q.m.visible = o2run > 0.02; if (q.m.visible) { const k = (t * 0.45 * o2run + q.ph) % 1; q.m.position.y = q.y0 + (q.y1 - q.y0) * k; q.m.scale.setScalar(0.6 + 0.8 * k); } }
+      for (const q of this.blinkers) { const p = power(q.room); q.m.emissiveIntensity = p <= 0 ? 0 : q.chase ? (S.flow.net >= 0 || S.battery > 1 ? 0.25 + 1.6 * Math.max(0, Math.sin(t * q.sp * (S.flow.net >= 0 ? 1 : -1) + q.ph)) : 0.1) : (Math.sin(t * q.sp + q.ph) > -0.2 ? 1.7 : 0.15) * p; }
+      if (this.holoMoon) this.holoMoon.rotation.y = t * 0.25;
       const b = S.battery / S.flow.cap; this.battBars.forEach((bar, i) => { bar.scale.y = b > i / 4 - 0.02 ? clamp((b - i / 4) * 4, 0.12, 1) : 0.08; bar.material.emissive.setHex(b < 0.15 ? 0xff3b30 : b < 0.35 ? 0xffa424 : 0x4dff88); });
       this.modSlots.forEach((m, i) => { if (m.visible) m.visible = i < S.mods; });
       const o = S.o2 / S.o2Cap; this.o2Tanks.forEach((tk, i) => tk.material.emissive.setRGB(0, 0.3 * clamp(o * 3 - i, 0, 1), 0.12 * clamp(o * 3 - i, 0, 1))); this.o2Glow.material.emissive.setHex(S.flow.o2Elec > 0 ? 0x49e6ff : 0x333333);

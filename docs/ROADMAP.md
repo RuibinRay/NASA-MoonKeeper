@@ -85,7 +85,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | --- | --- | --- |
 | 1 | **Speed and a graphics setting.** Fewer lights for the shaders to work through, lighter shadows on lower settings, the zone you are not in left out of the scene, a Graphics setting with Auto, and a frame-rate counter. | Done (see below) |
 | 2 | **Remaining verification.** Commander with the Water Plant and the ice mine in the planned player. Saving and loading during a job, in a vehicle and in an emergency. | Done (see below). A full touch play-through is still to do |
-| 3 | **Station interiors.** Moving machinery in each of the 11 rooms, emergency and power-out lighting, one consistent material pass, new textures. | To do |
+| 3 | **Station interiors.** Moving machinery in each of the 11 rooms, emergency and power-out lighting, one consistent material pass, new textures. | Part done: lighting and the first machinery (see below). Material pass and new textures to do |
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
 | 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | To do |
 | 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | To do |
@@ -131,3 +131,24 @@ Without the Water Plant the same player ends with no water at all. So water is s
 | An emergency card open | The emergency vanished without a choice | **Fixed**: no save while the card is open; the outcome is saved once it is settled |
 | A Water Plant batch running (tested earlier) | The batch carries on | Fine |
 | Sitting in the digger with a scoop in the bucket (tested earlier) | The scoop is kept | Fine |
+
+### Step 3, first part: lights and machines that follow the station's state
+
+Nothing here adds a light for the graphics card to work through: everything is glowing material and moving parts.
+
+| What you see | When |
+| --- | --- |
+| A status light over every door in the hall | Cyan: fine. Red and flashing: a leak. Pale blue, pulsing slowly: frozen. Amber: wrecked |
+| Floor guide lights along the hall and in every room | Steady cyan. In a power cut they turn amber and pulse |
+| Hall ceiling lights | In a power cut only every third stays on. A leak anywhere makes them pulse red |
+| Room lights | In a power cut they sag to a third and flicker now and then |
+| A fan at every room's wall vent; the farms' big fans turn | Full speed with power, slower in a power cut, winding down to a stop when the room is wrecked or frozen |
+| Bubbles rising in the Oxygen Room's two tubes | Only while the Oxygen Maker is splitting water; faster at higher settings |
+| A flywheel on the Water Room's recycler pump | Speed follows the recycler setting |
+| Rows of small lights on the Control Center's computers | Blink while the room has power |
+| A light running along the Battery Store's cable tray | Runs one way while charging, the other way while draining, dark when the battery is empty |
+| The hologram Moon in the Control Center | Turns slowly |
+
+Cost at the same view in the Control Center: 366 draw calls, was 352.
+
+Still to do in step 3: machinery of their own for the Kitchen, Bunk Room, Bathroom, Animal Bay and Workshop (they have the fan, and the Workshop's arm and the hens and fish already move); one consistent material pass; new textures.
