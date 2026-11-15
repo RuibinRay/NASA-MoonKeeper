@@ -9,7 +9,7 @@ import { radioLine } from './radio.js';
 import { IC } from './icons.js';
 import { playProcedure, playMini } from './minigames.js';
 import { jobEffect } from './jobfx.js';
-import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, BASE, MINE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, fmt } from './config.js';
+import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, BASE, MINE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, roomSpot, fmt } from './config.js';
 import { createSim, step, computeFlows, applyDisaster, jobHours, addHelper, serialize, deserialize } from './sim.js';
 import { installActions } from './actions.js';
 import { patchAt, scoop } from './life.js';
@@ -80,15 +80,36 @@ function updateActors(dt) {
     if (P.in || d > 40) { f.x = tx; f.z = tz; } else if (d > 0.4) { sp = Math.min(d * 3, 9); f.x += (dx / d) * sp * dt; f.z += (dz / d) * sp * dt; a.rotation.y = Math.atan2(dx, dz); } a.position.set(f.x, world.heightAt(f.x, f.z), f.z); f.a.update(dt, sp); });
   // crew inside the station walk around the room that matches their job
   const S = G.S; if (!S) return; const roomOf = { idle: 'quarters', farm: 'potato', cook: 'kitchen', clean: null, build: 'workshop' };
+  // Each crew member walks through the doors to a real spot in the room for their job, works there for a while, then moves to
+  // another, sometimes carrying a crate. At mealtimes the people sit down at the kitchen table. Looks only: the sim does not change.
+  const hr = S.t % 24, win = hr >= 7 && hr < 9 ? 0 : hr >= 12 && hr < 14 ? 1 : hr >= 18 && hr < 20 ? 2 : -1, mealId = win < 0 ? null : Math.floor(S.t / 24) * 3 + win, usable = (id) => { const r = S.rooms[id]; return r && r.built >= 1 && !r.frozen && r.p > 60; };
+  const spotsOf = (def) => { const q = roomRect(def), sd = def.side, cx = (q.x0 + q.x1) / 2, [kx, kz] = roomSpot(def), back = sd * 21.6;
+    return [{ x: kx + 1.4, z: kz - sd * 0.9, lx: kx, lz: kz }, { x: q.x0 + 2.6, z: sd * 13, lx: q.x0, lz: sd * 13 }, { x: q.x1 - 2.6, z: sd * 13, lx: q.x1, lz: sd * 13 }, { x: cx - 3.2, z: back, lx: cx - 3.2, lz: sd * 24 }, { x: cx + 3.2, z: back, lx: cx + 3.2, lz: sd * 24 }]; };
+  let seat = 0;
   for (const h of S.helpers) {
-    let c = G.crew[h.id]; if (!c) { const actor = h.kind === 'bot' ? new Bolt() : new Astronaut(SITE_COL[h.id] || 0x888888); actor.setSuit?.(false); world.scene.add(actor.group); c = G.crew[h.id] = { actor, x: -58 + Math.random() * 6, z: -1.5 + Math.random() * 3, tx: -56, tz: 0, t: 0, role: null }; }
+    let c = G.crew[h.id]; if (!c) { const actor = h.kind === 'bot' ? new Bolt() : new Astronaut(SITE_COL[h.id] || 0x888888); actor.setSuit?.(false); world.scene.add(actor.group); c = G.crew[h.id] = { actor, x: -58 + Math.random() * 6, z: -1.5 + Math.random() * 3, path: [], t: 0, key: null, at: null, stuck: 0 };
+      if (h.kind !== 'bot') { c.crate = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.36, 0.4), new THREE.MeshStandardMaterial({ color: 0xc9772e, roughness: 0.8 })); c.crate.position.set(0, 1.1, 0.44); c.crate.visible = false; actor.group.add(c.crate); } }
     const g = c.actor.group; g.visible = P.zone === 'deep'; if (!g.visible) continue;
-    const rid = h.kind === 'bot' && h.role === 'idle' ? null : roomOf[h.role], def = rid && ROOMS.find((r) => r.id === rid), q = def ? roomRect(def) : { x0: -60, x1: -34, z0: -3.8, z1: 3.8 };
-    if (c.role !== h.role) { c.role = h.role; c.x = (q.x0 + q.x1) / 2; c.z = (q.z0 + q.z1) / 2; c.t = 0; }
-    c.t -= dt; if (c.t <= 0) { c.t = 3 + Math.random() * 5; c.tx = q.x0 + 2 + Math.random() * (q.x1 - q.x0 - 4); c.tz = q.z0 + 2 + Math.random() * (q.z1 - q.z0 - 4); }
-    const dx = c.tx - c.x, dz = c.tz - c.z, d = Math.hypot(dx, dz); let sp = 0; if (d > 0.3) { sp = 2.2; c.x += (dx / d) * sp * dt; c.z += (dz / d) * sp * dt; g.rotation.y = Math.atan2(dx, dz); }
-    g.position.set(c.x, TUBE.y, c.z); const busy = h.role !== 'idle' && d <= 0.3;
-    if (h.kind === 'bot') c.actor.update(dt, sp, busy); else c.actor.update(dt, sp, false, busy ? 'work' : 'walk', busy ? { tool: { farm: 'pick', cook: 'stir', clean: 'brush', build: 'wrench' }[h.role], aim: -0.45 } : null);
+    const human = h.kind !== 'bot', eat = human && ((mealId !== null && c.ate !== mealId) || c.mealGo != null) && usable('kitchen') && S.meals + S.cans >= 1, want = eat ? 'kitchen' : h.kind === 'bot' && h.role === 'idle' ? null : roomOf[h.role], rid = want && usable(want) ? want : null, def = rid && ROOMS.find((r) => r.id === rid);
+    if (eat && c.mealGo == null) c.mealGo = mealId; if (!eat) c.mealGo = null;   // once on the way to a meal, finish it even if the hour runs out
+    const key = (rid || 'hall') + (eat ? ':eat' : ''), mySeat = eat ? seat++ : 0;
+    const pick = () => {   // where to go next
+      if (eat) { const q = roomRect(def), tx = (q.x0 + q.x1) / 2, tz = (q.z0 + q.z1) / 2 + 2, a = (mySeat % 4) * Math.PI / 2 + 0.785; return { x: tx + Math.cos(a) * 2.15, z: tz + Math.sin(a) * 2.15, lx: tx, lz: tz, sit: true }; }
+      if (!def) return { x: -58 + Math.random() * 22, z: -1.5 + Math.random() * 3 };
+      const all = spotsOf(def).filter((s) => s !== c.at && !(c.at && Math.hypot(s.x - c.at.x, s.z - c.at.z) < 1)); return all[Math.floor(Math.random() * all.length)]; };
+    const go = (s, carry) => { c.at = s; c.carry = !!carry; c.stuck = 0; const inDoor = Math.abs(c.z) > 2 && Math.abs(c.z) < 7.6, r = world._guideRoute(c.x, inDoor ? 0 : c.z, s.x, s.z).slice(1), out = inDoor ? [[c.x, 0]] : [];   // caught in a doorway: step out into the hall first
+      r.forEach((p, i) => { const door = Math.abs(Math.abs(p[1]) - 5.6) < 0.01, sd = Math.sign(p[1]), leaving = door && r[i + 1] && r[i + 1][1] === 0; if (door && leaving) out.push([p[0], sd * 8.4]); out.push(p); if (door && !leaving) out.push([p[0], sd * 8.4]); }); c.path = out; };   // straight through each doorway, never across its corner
+    if (c.key !== key) { c.key = key; go(pick(), false); }
+    let sp = 0;
+    if (c.path.length) { const [wx, wz] = c.path[0], dx = wx - c.x, dz = wz - c.z, d = Math.hypot(dx, dz); c.stuck += dt;
+      if (d < 0.3 || c.stuck > d / 3 + 5) { c.path.shift(); c.stuck = 0; if (!c.path.length) c.t = eat ? 1e9 : 5 + Math.random() * 6; }
+      else { c.stuck -= dt * 0.999 * (d > 4 ? 1 : 0); sp = c.carry ? 2.6 : 3.6; c.x += (dx / d) * sp * dt; c.z += (dz / d) * sp * dt; if (c.path.length === 1) pushOut(c, 'deep', 0.35); g.rotation.y = Math.atan2(dx, dz); } }
+    else { c.t -= dt; if (c.at && c.at.lx !== undefined) { const want2 = Math.atan2(c.at.lx - c.x, c.at.lz - c.z); let dy = want2 - g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); g.rotation.y += dy * Math.min(1, dt * 6); }
+      if (c.t <= 0) go(pick(), human && h.role !== 'idle' && Math.random() < 0.35); }   // sometimes the next trip is a delivery
+    g.position.set(c.x, TUBE.y, c.z); const arrived = !c.path.length, busy = arrived && h.role !== 'idle' && !eat && !!def, sitting = arrived && eat;
+    if (sitting) { c.sat = (c.sat || 0) + dt; if (c.sat > 14) { c.ate = c.mealGo; c.mealGo = null; c.sat = 0; } }   // a meal takes a little while, then back to work
+    if (c.crate) c.crate.visible = !!c.carry && !arrived;
+    if (!human) c.actor.update(dt, sp, busy); else c.actor.update(dt, sp, false, sitting ? 'sit' : busy ? 'work' : c.carry && !arrived ? 'carry' : 'walk', busy ? { tool: { farm: 'pick', cook: 'stir', clean: 'brush', build: 'wrench' }[h.role], aim: -0.45 } : null);
   }
 }
 
