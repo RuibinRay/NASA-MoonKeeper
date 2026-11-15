@@ -354,3 +354,30 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
 .mg-rego{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:12px;border:1px solid rgba(73,230,255,.35);background:linear-gradient(90deg,rgba(14,30,44,.95),rgba(10,18,28,.85));font-size:14.5px;line-height:1.4;margin-bottom:4px}
 .mg-rego img{flex:none;width:36px;height:36px;border-radius:50%;border:2px solid var(--cyan);object-fit:cover}
 .mg-rego b{display:block;font-family:var(--head);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)}
+
+/* ---------- phones ---------- */
+@media (max-width:600px){
+  #title h1{font-size:12.4vw;letter-spacing:0}
+  .title-inner{padding:4vh 5vw;max-width:100vw}
+  .tagline{font-size:15px}
+  .mission-inner{padding-bottom:0}
+  .mission-foot{position:sticky;bottom:0;margin:12px -3vw 0;padding:10px 3vw 12px;background:linear-gradient(180deg,rgba(2,5,10,0),rgba(2,5,10,.96) 30%);flex-direction:column-reverse;align-items:stretch;gap:8px}
+  .mission-foot .check{justify-content:center}
+  .mg-rego{font-size:13px;padding:6px 9px}.mg-rego img{width:28px;height:28px}
+  #modal .win .learn{font-size:12px}
+}
+
+/* ---------- phones held upright: suggest landscape; keep REGO's bubble clear of the touch controls ---------- */
+#rotate{display:none;position:fixed;inset:0;z-index:60;background:rgba(2,5,10,.93);align-items:center;justify-content:center;padding:8vw;text-align:center}
+#rotate b{display:block;font-family:var(--head);font-size:24px;color:var(--cyan);margin-bottom:8px}#rotate span{display:block;font-size:15px;line-height:1.5;color:#d5e2ee;margin-bottom:18px}
+#rotate button{padding:10px 18px;border-radius:12px;background:rgba(8,14,22,.9);border:1px solid var(--line);font-size:14px}
+@media (max-width:600px) and (orientation:portrait){
+  body:has(#hud:not(.hidden)) #rotate{display:flex}
+  #rego{max-width:94vw;left:3vw;bottom:262px}#rego img{width:44px;height:44px}#rego-text{font-size:13px;padding:22px 11px 8px}
+}
+@media (max-height:480px) and (orientation:landscape){
+  #modal .win{max-height:96vh;overflow:auto}
+  #modal .win .learn{display:none}
+  .mg-wrap{max-width:calc((100vh - 150px) * 1.875);margin:0 auto}
+  .mg-rego{padding:5px 9px;font-size:12.5px}.mg-rego img{width:26px;height:26px}
+}

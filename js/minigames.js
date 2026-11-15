@@ -8,7 +8,7 @@ const rr = (c, x, y, w, h, r) => { c.beginPath(); c.roundRect(x, y, w, h, r); };
 const GAMES = {
   // 1. Brush sticky moon dust off a solar panel: the power meter climbs as the glass clears
   wipe: {
-    title: 'Brush the dust off', how: 'Hold and drag the brush across the panel. Watch the power climb as the glass clears.', time: 26, bg: 'bolts',
+    title: 'Brush the dust off', how: 'Hold and drag the brush across the panel. Watch the power climb as the glass clears.', time: 30, bg: 'bolts',
     why: 'Moon dust is sticky, sharp and charged with static electricity, so it clings to everything. Dust on a panel blocks sunlight, and blocked sunlight is lost power.', src: 'moondust',
     init(s) { s.nx = 45; s.ny = 24; s.d = new Float32Array(s.nx * s.ny).fill(1); s.clean = 0; s.rad = [60, 52, 45][s.tier]; s.goal = [0.9, 0.93, 0.95][s.tier]; s.fl = []; s.ang = 0; s.px = s.ptr.x; s.py = s.ptr.y; },
     update(s, dt) {
@@ -30,7 +30,7 @@ const GAMES = {
   },
   // 2. Swap cracked solar cells: a broken cell drags the whole panel's output down
   cells: {
-    title: 'Swap the cracked cells', how: 'Click every CRACKED cell to swap in a new one. Clicking a good cell wastes 2 seconds.', time: 16, bg: 'bolts',
+    title: 'Swap the cracked cells', how: 'Click every CRACKED cell to swap in a new one. Clicking a good cell wastes 2 seconds.', time: 20, bg: 'bolts',
     why: 'Meteoroids hit the Moon at 20 to 72 km every second. With no air to slow them, even a pebble can smash a panel. Cells are wired in rows, so one dead cell weakens its whole row.', src: 'meo',
     init(s, rnd) { s.cells = []; for (let j = 0; j < 4; j++) for (let i = 0; i < 6; i++) s.cells.push({ x: 30 + i * 142, y: 22 + j * 110, bad: false, fx: 0, seed: rnd() }); s.tot = [6, 8, 10][s.tier]; let n = 0; while (n < s.tot) { const k = s.cells[(rnd() * 24) | 0]; if (!k.bad) { k.bad = true; n++; } } s.bad = s.tot; },
     down(s, x, y) { const k = s.cells.find((q) => x > q.x && x < q.x + 130 && y > q.y && y < q.y + 98); if (!k) return; if (k.bad) { k.bad = false; k.fx = 1; s.sfx('ok'); } else { s.left -= 2; k.fx = -1; s.sfx('bad'); } },
@@ -198,9 +198,9 @@ const GAMES = {
   },
   // 9. Turn the bolts (taking a panel off, putting one on, servicing machines)
   bolts: {
-    title: 'Turn the bolts', how: 'Hold the wrench on each bolt until it has turned all the way, then let go. Do all six.', time: 18,
+    title: 'Turn the bolts', how: 'Hold the wrench on each bolt until it has turned all the way, then let go. Do all six.', time: 22,
     why: 'Space tools are built for thick gloves: big handles, and bolts that stay attached so they cannot float or roll away. Each bolt is tightened to a set force, called torque. Too loose and it shakes free; too tight and the thread strips.', src: 'tools',
-    init(s) { s.b = []; for (let i = 0; i < 6; i++) s.b.push({ x: 150 + (i % 3) * 300, y: 135 + ((i / 3) | 0) * 215, p: 0, over: 0, done: false, fx: 0 }); s.lim = [9, 0.55, 0.36][s.tier]; },
+    init(s) { s.b = []; for (let i = 0; i < 6; i++) s.b.push({ x: 150 + (i % 3) * 300, y: 135 + ((i / 3) | 0) * 215, p: 0, over: 0, done: false, fx: 0 }); s.lim = [9, 0.6, 0.45][s.tier]; },
     update(s, dt) {
       const b = s.ptr.down ? s.b.find((q) => !q.done && Math.hypot(q.x - s.ptr.x, q.y - s.ptr.y) < 62) : null;
       for (const q of s.b) { q.fx *= Math.pow(0.02, dt); if (q !== b && q.p >= 1 && !q.done) { q.done = true; s.sfx('ok'); } }
@@ -292,7 +292,7 @@ const GAMES = {
   },
   // 13. Plant the rack (replanting or clearing a hydroponic rack)
   plant: {
-    title: 'Set the seeds', how: 'Click every empty cup once to set a seed. Clicking a cup twice wastes a second.', time: 13,
+    title: 'Set the seeds', how: 'Click every empty cup once to set a seed. Clicking a cup twice wastes a second.', time: 15,
     why: 'Hydroponic plants grow in cups with their roots in flowing water instead of soil. Each seed sits in a little sponge so it does not wash away.', src: 'veggie',
     init(s) { s.c = []; for (let i = 0; i < 10; i++) s.c.push({ x: 110 + (i % 5) * 170, y: 170 + ((i / 5) | 0) * 180, on: false, g: 0, fx: 0 }); },
     down(s, x, y) { const k = s.c.find((q) => Math.hypot(q.x - x, q.y + 40 - y) < 62); if (!k) return; if (!k.on) { k.on = true; s.sfx('ok'); } else { s.left -= 1; k.fx = 1; s.sfx('bad'); } },
@@ -360,11 +360,11 @@ const GAMES = {
   gauge: {
     title: 'Check the pressure', how: 'Drag the valve wheel round to move the needle. Hold the needle inside the GREEN band until the ring closes.', time: 20,
     why: 'A repair is not finished until it is tested. Crews watch a gauge for a while after every fix: if the needle drifts, there is still a leak or a bad connection.', src: 'leakcheck',
-    init(s, rnd) { s.valve = 0.08; s.n = 0.05; s.a = null; s.hold = 0; s.c = 0.45 + rnd() * 0.3; s.w = [0.2, 0.14, 0.1][s.tier]; s.H = [1.5, 2.1, 2.8][s.tier]; s.max = s.o.max || 101; s.unit = s.o.unit || 'kPa'; },
+    init(s, rnd) { s.valve = 0.08; s.n = 0.05; s.a = null; s.hold = 0; s.c = 0.45 + rnd() * 0.3; s.w = [0.2, 0.14, 0.11][s.tier]; s.H = [1.5, 2.1, 2.8][s.tier]; s.max = s.o.max || 101; s.unit = s.o.unit || 'kPa'; },
     update(s, dt) {
       const dx = s.ptr.x - 230, dy = s.ptr.y - 255, r = Math.hypot(dx, dy);
       if (s.ptr.down && r > 30 && r < 190) { const a = Math.atan2(dy, dx); if (s.a !== null) { let d = a - s.a; d = Math.atan2(Math.sin(d), Math.cos(d)); s.valve = clamp(s.valve + d / (TAU * 1.1), 0, 1); } s.a = a; } else s.a = null;
-      s.n += (s.valve + Math.sin(s.t * 3.1) * 0.012 * (s.tier + 1) - s.n) * Math.min(1, dt * 2.4);
+      s.n += (s.valve + Math.sin(s.t * 3.1) * 0.009 * (s.tier + 1) - s.n) * Math.min(1, dt * 2.4);
       const inBand = Math.abs(s.n - s.c) < s.w / 2; s.inBand = inBand; s.hold = inBand ? s.hold + dt : Math.max(0, s.hold - dt * 2);
       if (s.hold >= s.H) return { win: true, score: clamp(s.left / s.time + 0.4, 0, 1) }; if (s.left <= 0) return { win: false, score: clamp(s.hold / s.H, 0, 0.6) };
     },
@@ -405,7 +405,8 @@ const DEBRIEF = {
 const BG = {};   // backdrop pictures, loaded on first use: assets/img/mg_<kind>.jpg (the game still works without them)
 function backdrop(kind) { if (BG[kind] === undefined) { const im = new Image(); im.onerror = () => { BG[kind] = null; }; im.src = 'assets/img/mg_' + kind + '.jpg'; BG[kind] = im; } const im = BG[kind]; return im && im.complete && im.naturalWidth ? im : null; }
 function wrap(c, text, x, y, maxW, lh) { let line = ''; for (const w of text.split(' ')) { if (c.measureText(line + w).width > maxW && line) { c.fillText(line.trim(), x, y); y += lh; line = ''; } line += w + ' '; } c.fillText(line.trim(), x, y); return y + lh; }
-function label(c, text) { c.font = '600 18px Inter,sans-serif'; c.textAlign = 'center'; const w = c.measureText(text).width + 30; c.fillStyle = 'rgba(4,10,16,.82)'; rr(c, W / 2 - w / 2, 6, w, 30, 10); c.fill(); c.fillStyle = '#fff'; c.fillText(text, W / 2, 27); }
+let TXT = 1;   // text scale: 1 on a desktop, up to 2 when the canvas is drawn small on a phone
+function label(c, text) { const fs = Math.round(18 * TXT); c.font = '600 ' + fs + 'px Inter,sans-serif'; c.textAlign = 'center'; if (c.measureText(text).width > W - 40 && text.includes('   ·   ')) text = text.split('   ·   ')[0]; const w = Math.min(W - 8, c.measureText(text).width + 30), h = fs + 12; c.fillStyle = 'rgba(4,10,16,.82)'; rr(c, W / 2 - w / 2, 6, w, h, 10); c.fill(); c.fillStyle = '#fff'; c.fillText(text, W / 2, 6 + fs + 3); }
 
 // Play a minigame. Returns { win, score 0..1 }. opts: { ease (time multiplier), easy, total }
 export function playMini(G, kind, opts = {}) {
@@ -429,17 +430,17 @@ export function playMini(G, kind, opts = {}) {
         const dt = Math.min(0.05, (now - last) / 1000); last = now;
         if (!result) {
           s.t += dt; s.left -= dt; result = def.update(s, dt) || (window.__mgSkip ? { win: true, score: 0.8 } : null); // __mgSkip: test hook
-          if (result) { result.stars = result.win ? (result.score > 0.75 ? 3 : result.score > 0.5 ? 2 : 1) : 0; endT = 3.2; s.ptr.down = false; G.audio?.play(result.win ? 'win' : 'bad'); }
+          if (result) { result.stars = result.win ? (result.score > 0.8 ? 3 : result.score > 0.55 ? 2 : 1) : 0; endT = 3.2; s.ptr.down = false; G.audio?.play(result.win ? 'win' : 'bad'); }
         } else endT -= dt;
-        c.clearRect(0, 0, W, H); const bg = backdrop(def.bg || kind); s.hasBg = !!bg; if (bg) { const k = Math.max(W / bg.naturalWidth, H / bg.naturalHeight), bw = bg.naturalWidth * k, bh = bg.naturalHeight * k; c.drawImage(bg, (W - bw) / 2, (H - bh) / 2, bw, bh); c.fillStyle = 'rgba(4,9,15,.58)'; c.fillRect(0, 0, W, H); } def.draw(s, c);
+        TXT = clamp(0.7 / (cv.clientWidth / W || 1), 1, 2); c.clearRect(0, 0, W, H); const bg = backdrop(def.bg || kind); s.hasBg = !!bg; if (bg) { const k = Math.max(W / bg.naturalWidth, H / bg.naturalHeight), bw = bg.naturalWidth * k, bh = bg.naturalHeight * k; c.drawImage(bg, (W - bw) / 2, (H - bh) / 2, bw, bh); c.fillStyle = 'rgba(4,9,15,.58)'; c.fillRect(0, 0, W, H); } def.draw(s, c);
         bar.style.width = clamp(s.left / s.time, 0, 1) * 100 + '%';
         if (result) {   // the result card: stars, what you did, why it mattered
           const d = DEBRIEF[kind] || ['', '']; c.fillStyle = 'rgba(2,6,12,.84)'; c.fillRect(0, 0, W, H); c.textAlign = 'center';
           c.font = '700 50px "Chakra Petch",sans-serif'; c.fillStyle = result.win ? '#58e08a' : '#ffb347'; c.fillText(result.win ? (opts.winText || (kind === 'harvest' ? 'Harvest done!' : 'Fixed!')) : (opts.loseText || 'Not this time'), W / 2, 112);
           c.font = '46px Inter,sans-serif'; for (let k = 0; k < 3; k++) { c.fillStyle = k < result.stars ? '#ffd21f' : '#27384a'; c.fillText('★', W / 2 - 62 + k * 62, 176); }
-          c.textAlign = 'left'; c.font = '700 15px "Chakra Petch",sans-serif'; c.fillStyle = '#49e6ff'; c.fillText('WHAT YOU DID', 150, 232); c.font = '500 20px Inter,sans-serif'; c.fillStyle = '#e9f2f9'; let y = wrap(c, result.win ? (opts.did || d[0]) : 'Time ran out before the job was finished, so it had to be done the slow way.', 150, 262, 600, 27);
-          c.font = '700 15px "Chakra Petch",sans-serif'; c.fillStyle = '#ffb347'; c.fillText('WHY IT MATTERS', 150, y + 18); c.font = '500 20px Inter,sans-serif'; c.fillStyle = '#e9f2f9'; wrap(c, opts.matter || d[1], 150, y + 48, 600, 27);
-          c.textAlign = 'center'; c.font = '600 14px Inter,sans-serif'; c.fillStyle = '#9bb0c3'; c.fillText('Click to carry on', W / 2, H - 20);
+          const f = Math.min(TXT, 1.5), bx = f > 1 ? 60 : 150, bw = W - bx * 2; c.textAlign = 'left'; c.font = '700 ' + Math.round(15 * f) + 'px "Chakra Petch",sans-serif'; c.fillStyle = '#49e6ff'; c.fillText('WHAT YOU DID', bx, 226); c.font = '500 ' + Math.round(20 * f) + 'px Inter,sans-serif'; c.fillStyle = '#e9f2f9'; let y = wrap(c, result.win ? (opts.did || d[0]) : 'Time ran out before the job was finished, so it had to be done the slow way.', bx, 226 + 30 * f, bw, 27 * f);
+          c.font = '700 ' + Math.round(15 * f) + 'px "Chakra Petch",sans-serif'; c.fillStyle = '#ffb347'; c.fillText('WHY IT MATTERS', bx, y + 12 * f); c.font = '500 ' + Math.round(20 * f) + 'px Inter,sans-serif'; c.fillStyle = '#e9f2f9'; wrap(c, opts.matter || d[1], bx, y + 12 * f + 30 * f, bw, 27 * f);
+          c.textAlign = 'center'; c.font = '600 ' + Math.round(14 * f) + 'px Inter,sans-serif'; c.fillStyle = '#9bb0c3'; c.fillText('Tap to carry on', W / 2, H - 14);
         }
         if (result && endT <= 0) { removeEventListener('keydown', kd); removeEventListener('keyup', ku); G.ui.close(); resolve(result); return; }
         requestAnimationFrame(loop);
@@ -455,3 +456,5 @@ export async function playProcedure(G, stages) {
   const score = out.reduce((a, r) => a + r.score, 0) / out.length, win = out.every((r) => r.win);
   return { win, score, stars: win ? Math.round(out.reduce((a, r) => a + r.stars, 0) / out.length) : 0, stages: out };
 }
+
+export { GAMES };   // for tools/mini_test.mjs
