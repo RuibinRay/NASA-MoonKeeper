@@ -87,7 +87,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | 2 | **Remaining verification.** Commander with the Water Plant and the ice mine in the planned player. Saving and loading during a job, in a vehicle and in an emergency. | Done (see below). A full touch play-through is still to do |
 | 3 | **Station interiors.** Moving machinery in each of the 11 rooms, emergency and power-out lighting, one consistent material pass, new textures. | Lighting and machinery done in all 11 rooms (see below). Material pass and new textures to do |
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
-| 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | Hopper done (see below). Gait and transitions to do |
+| 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | Done: the hopper, the gait and the hops in and out of vehicles (see below) |
 | 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | Done: sound, music and the radio (see below); reactive lighting was done in step 3 |
 | 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | Questions, REGO's voice and the Day and night page done (see below). Ice picture and map to do |
 
@@ -243,3 +243,20 @@ During quiet play, about once a minute, Mission Control says one short line. It 
 | Nothing is happening | One of five calm lines: the radio delay, the rock roof, resting, the rule that no choice is free |
 
 It never speaks over a window, a job, an elevator ride, an emergency or sleep. What has been said is kept with the mission, so a reload does not repeat it. REGO does not read these lines: they are Mission Control's.
+
+### Step 5, second part: walking in one-sixth gravity
+
+On the Moon a person does not walk as on Earth: each step is a small flight, so astronauts loped. The walk now shows that. It is for the eye only: the player moves at the same speed and along the same path as before.
+
+| | Before | Indoors, no suit | In the suit | Running in the suit |
+| --- | --- | --- | --- | --- |
+| Length of one stride | about 2.8 m | 3.7 m | 4.9 m | 5.1 m |
+| Rise of the body per stride | 0.07 m | 0.14 m | 0.21 m | 0.28 m |
+| Leg swing | 0.62 rad | 0.68 rad | 0.80 rad | 0.90 rad |
+| Forward lean | 0.12 | 0.16 | 0.21 | 0.31 |
+
+- **The stride floats.** The legs linger at full stretch and the body hangs at the top of each stride.
+- **In the suit** the arms are held a little out and forward and swing less, as a stiff suit makes them.
+- **Turning** leans the body into the turn; the trunk twists slightly against the legs.
+- **Footsteps and dust land with the feet.** They used to come every 4.2 m whatever the legs were doing.
+- **Vehicles.** The astronaut hops up into the rover, digger or hopper in 0.4 seconds, and hops down to the ground on getting out. Before, the figure simply vanished and reappeared.
