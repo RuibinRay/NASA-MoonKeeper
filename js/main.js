@@ -277,14 +277,81 @@ addEventListener('keydown', (e) => {
 });
 addEventListener('keyup', (e) => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; G.keys[k] = false; });
 addEventListener('blur', () => (G.keys = {}));
-canvas.addEventListener('click', () => { if ((G.state === 'play' || G.state === 'tutorial') && !ui.busy && !G.touch) { try { canvas.requestPointerLock?.()?.catch?.(() => {}); } catch (e) { /* embedded pages may forbid mouse lock: dragging still looks around */ } } });
-let drag = null;
-canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; if (e.pointerType === 'touch') G.touch = true; });
-addEventListener('pointerup', () => (drag = null));
-addEventListener('pointermove', (e) => { if (ui.busy || G.jobTick) return; let dx = 0, dy = 0; if (document.pointerLockElement === canvas) { dx = e.movementX; dy = e.movementY; } else if (drag && e.pointerId === drag.id) { dx = (e.clientX - drag.x) * 1.6; dy = (e.clientY - drag.y) * 1.6; drag.x = e.clientX; drag.y = e.clientY; } if (dx || dy) G.camT = performance.now(); cam.yaw -= dx * 0.0026; cam.pitch = clamp(cam.pitch + dy * 0.0026, cam.fp ? -1.35 : -0.95, cam.fp ? 1.2 : 1.25); });
-canvas.addEventListener('wheel', (e) => { if (P.zone === 'deep' && G.inside) cam.inDist = clamp((cam.inDist ?? IN_DIST) + Math.sign(e.deltaY) * 0.4, 2.2, IN_DIST); else cam.dist = clamp(cam.dist + Math.sign(e.deltaY) * 0.8, 3.5, 22); }, { passive: true });   // indoors the wheel zooms in, never out past IN_DIST; the outdoor zoom is kept for later
+// ---------- the camera: look, lock, zoom ----------
+// Camera lock: click the 3D view and the mouse is locked to the camera (the pointer hides and every move of the mouse turns the
+// view), as in most 3D games; Esc frees the mouse. The lock button in the bottom bar always shows which it is, and locks it.
+// A panel or a talk frees the mouse for its buttons; if the camera was locked, closing it with a click locks it again, so the
+// camera stays the way you set it. Touch screens have no lock: you drag to look, and pinch to zoom.
+const camLock = { at: 0, back: false, from: 0, until: 0, told: false };
+const locked = () => document.pointerLockElement === canvas;
+const canLook = () => (G.state === 'play' || G.state === 'tutorial') && !ui.busy && !G.jobTick && !G.cineTick;
+function lockCamera() { if (G.touch || locked()) return; try { canvas.requestPointerLock?.()?.catch?.(() => {}); } catch (e) { /* embedded pages may forbid mouse lock: dragging still looks around */ } }
+function showLock() {
+  const b = $('#b-lock'), on = locked(); b.classList.toggle('hidden', !!G.touch); b.classList.toggle('on', on);
+  b.innerHTML = (on ? IC.lock : IC.unlock) + '<small>' + (on ? tt('Locked') : tt('Free')) + '</small>';
+  b.title = on ? tt('Camera locked to the mouse. Press Esc to free the mouse.') : tt('Camera free. Click the view (or this button) to lock the camera to the mouse.');
+}
+document.addEventListener('pointerlockchange', () => {
+  if (locked()) { camLock.at = performance.now(); camLock.back = false; if (!camLock.told) { camLock.told = true; ui.toast(tt('Camera locked: move the mouse to look round. Press Esc to free the mouse.')); } }
+  else if (ui.busy || G.jobTick || G.state !== 'play' && G.state !== 'tutorial') camLock.back = true;   // a panel or a talk took the mouse: give it back when it closes
+  else ui.toast(tt('Camera free: the mouse is yours again. Click the view to lock the camera.'));
+  showLock();
+});
+// Every frame: after a panel closes, lock the camera again if it was locked before. Only within moments of the click that
+// closed it (a browser allows the lock only then), and not between two panels that follow each other.
+function relock() {
+  if (!camLock.back) return; const now = performance.now();
+  if (!canLook()) { camLock.from = 0; if (G.state !== 'play' && G.state !== 'tutorial') camLock.back = false; return; }
+  if (!camLock.from) { camLock.from = now + 150; camLock.until = now + 1500; }
+  if (now > camLock.until) { camLock.back = false; camLock.from = 0; return; }
+  if (now > camLock.from && navigator.userActivation?.isActive) { camLock.back = false; camLock.from = 0; lockCamera(); }
+}
+canvas.addEventListener('click', () => { if (canLook()) lockCamera(); });
+$('#b-lock').onclick = () => { if (canLook()) lockCamera(); }; showLock();
+// Looking round: the locked mouse, or a drag (mouse or one finger). Two fingers on the view pinch to zoom; lifting one of them
+// carries on looking from where that finger is, so the view never jumps.
+const fingers = new Map(); let drag = null, pinch = 0;
+const spread = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'touch') { if (!G.touch) { G.touch = true; showLock(); } fingers.set(e.pointerId, { x: e.clientX, y: e.clientY }); }
+  if (fingers.size >= 2) { drag = null; pinch = spread(); } else drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+});
+const lift = (e) => { fingers.delete(e.pointerId); if (drag && drag.id === e.pointerId) drag = null; if (fingers.size < 2) pinch = 0; if (fingers.size === 1 && !drag) { const [[id, f]] = fingers; drag = { x: f.x, y: f.y, id }; } };
+addEventListener('pointerup', lift); addEventListener('pointercancel', lift);
+addEventListener('pointermove', (e) => {
+  const f = fingers.get(e.pointerId); if (f) { f.x = e.clientX; f.y = e.clientY; }
+  if (pinch) { const s = spread(); if (s > 12) { zoomBy(pinch / s); pinch = s; } return; }
+  if (ui.busy || G.jobTick) return; let dx = 0, dy = 0;
+  if (locked()) { if (performance.now() - camLock.at < 80) return; dx = clamp(e.movementX, -150, 150); dy = clamp(e.movementY, -150, 150); }   // some mice report one huge jump just after the lock, or now and then: never let it spin the view
+  else if (drag && e.pointerId === drag.id) { dx = (e.clientX - drag.x) * 1.6; dy = (e.clientY - drag.y) * 1.6; drag.x = e.clientX; drag.y = e.clientY; }
+  if (dx || dy) G.camT = performance.now(); cam.yaw -= dx * 0.0026; cam.pitch = clamp(cam.pitch + dy * 0.0026, cam.fp ? -1.35 : -0.95, cam.fp ? 1.2 : 1.25);
+});
+// Zoom: the mouse wheel (or two fingers on a touchpad, or a pinch on it), a pinch on a touch screen, and the + and − keys.
+// Every step is a share of the distance, so it feels the same near and far, and the camera glides there (updateCamera).
+// Zoom all the way in and keep going to see through your own eyes; zoom out from there to step back behind yourself.
+// Inside the station the rooms are small: there the zoom is its own (cam.inDist, 2.2 m to IN_DIST) and the outdoor zoom is kept for when you leave.
+const ZOOM = { min: 2.6, max: 26 }; let zoomPush = 0, zoomT = 0;
+const indoors = () => P.zone === 'deep' && !!G.inside;
+function zoomBy(k) {
+  if (!canLook() || !(k > 0) || k === 1) return; const now = performance.now(); if (now - zoomT > 700) zoomPush = 0; zoomT = now;
+  if (cam.fp) { if (k > 1 && !P.in) { zoomPush += Math.log(k); if (zoomPush > 0.12) { zoomPush = 0; setView(false); } } return; }
+  const inside = indoors(), lo = inside ? 2.2 : ZOOM.min, hi = inside ? IN_DIST : ZOOM.max, d = inside ? cam.inDist ?? IN_DIST : cam.dist;
+  if (k < 1 && d <= lo + 0.02 && !P.in) { if (arm.d < lo + 0.15) { zoomPush -= Math.log(k); if (zoomPush > 0.4) { zoomPush = 0; setView(true); } } return; }   // only once the camera is there: one fast spin of the wheel does not overshoot into your head
+  zoomPush = 0; if (inside) cam.inDist = clamp(d * k, lo, hi); else cam.dist = clamp(d * k, lo, hi);
+}
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();   // a pinch on a touchpad arrives as a wheel turn with Ctrl held: it must zoom the camera, not the page
+  const px = e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 600 : 1);
+  zoomBy(Math.exp(clamp(px * (e.ctrlKey ? 0.01 : 0.0016), -0.5, 0.5)));
+}, { passive: false });
 // Earth can only be seen from the surface: down in the cave and in the station the first-person line says what is really there.
-function toggleView() { cam.fp = !cam.fp; cam.pitch = clamp(cam.pitch, -0.9, 1.1); ui.toast(!cam.fp ? tt('Third-person view.') : P.zone === 'top' ? tt('First-person view. Look up to find Earth!') : G.inside ? tt('First-person view. Now you see the station through your own eyes.') : tt('First-person view. Look up at the rock roof of the cave.')); }
+// The camera glides between the two views instead of cutting (updateCamera).
+function setView(fp) {
+  if (cam.fp === fp) return; const c = world.camera; arm.from.copy(c.position); arm.fromQ.copy(c.quaternion); arm.blend = 1;
+  cam.fp = fp; cam.pitch = clamp(cam.pitch, -0.9, 1.1);
+  ui.toast(!cam.fp ? tt('Third-person view.') : P.zone === 'top' ? tt('First-person view. Look up to find Earth!') : G.inside ? tt('First-person view. Now you see the station through your own eyes.') : tt('First-person view. Look up at the rock roof of the cave.'));
+}
+function toggleView() { setView(!cam.fp); }
 function togglePause() { if (G.state !== 'play') return; G.paused = !G.paused; ui.banner(G.paused ? tt('PAUSED — press P to continue') : null, true); }
 // Looking away should not cost game time. When the tab is hidden or the window loses focus during play, pause just as the P key does.
 // Not while a card, a panel, a dialogue or a job is open (those stop the clock already, or are over in seconds), and never start again
@@ -336,7 +403,7 @@ const stickEl = $('#stick'), knob = stickEl.querySelector('i');
 const stickMove = (e) => { const r = stickEl.getBoundingClientRect(), x = (e.clientX - r.left - 59) / 59, y = (e.clientY - r.top - 59) / 59, l = Math.max(1, Math.hypot(x, y)); G.stick.x = x / l; G.stick.y = -y / l; knob.style.transform = `translate(${(x / l) * 34}px,${(y / l) * 34}px)`; };
 stickEl.onpointerdown = (e) => { stickEl.setPointerCapture(e.pointerId); stickMove(e); G.touch = true; }; stickEl.onpointermove = (e) => e.buttons && stickMove(e); stickEl.onpointerup = stickEl.onpointercancel = () => { G.stick.x = G.stick.y = 0; knob.style.transform = ''; };
 $('#t-use').onclick = () => G.doAction('e'); $('#t-alt').onclick = () => G.doAction('q'); const hold = (b, key) => { b.onpointerdown = () => (G.keys[key] = true); b.onpointerup = b.onpointerleave = () => (G.keys[key] = false); }; hold($('#t-jump'), ' '); hold($('#t-down'), 'c');
-if ('ontouchstart' in window) { $('#touch').classList.remove('hidden'); G.touch = true; $('#dlg-next').textContent = tt('Tap anywhere ▸'); }
+if ('ontouchstart' in window) { $('#touch').classList.remove('hidden'); G.touch = true; $('#dlg-next').textContent = tt('Tap anywhere ▸'); showLock(); }
 
 // ---------- per-frame updates ----------
 const tmp = new V3();
@@ -363,7 +430,7 @@ function updatePlayer(dt) {
   if (free && k[' '] && P.ground && !heavy) { P.vy = 3.4; P.ground = false; G.audio.play('step'); }   // real lunar gravity
   if (!P.ground) { P.vy -= (G.grav || K.GRAVITY) * dt; P.pos.y += P.vy * dt; if (P.pos.y <= gy) { P.pos.y = gy; P.vy = 0; P.ground = true; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x, P.pos.z, 14, P.vel.x * 0.2, P.vel.z * 0.2, 1.5, 2.6); } } else P.pos.y = gy;
   const sp = Math.hypot(P.vel.x, P.vel.z); if (sp > 0.4 && !G.jobTick) { let d = Math.atan2(P.vel.x, P.vel.z) - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 9); }
-  const g = G.astro.group; g.position.copy(P.pos); g.rotation.set(0, P.face, 0); g.visible = !cam.fp;
+  const g = G.astro.group; g.position.copy(P.pos); g.rotation.set(0, P.face, 0); g.visible = !cam.fp || arm.blend > 0.45;   // while the camera glides into your head, the body goes only near the end
   const hop = G.xfer && G.xfer.kind === 'out' ? G.xfer : null; if (hop) { hop.u = Math.min(1, hop.u + dt / 0.42); const e = hop.u * hop.u * (3 - 2 * hop.u); g.position.lerpVectors(hop.from, P.pos, e); g.position.y += Math.sin(Math.PI * hop.u) * 0.7; if (hop.u >= 1) G.xfer = null; }
   G.astro.update(dt, G.jobbing && G.jobbing.speed ? G.jobbing.speed : sp, !P.ground || !!hop, G.jobbing ? G.jobbing.pose : heavy ? 'drag' : P.carry ? 'carry' : 'walk', G.jobbing);
   if (sp > 1.5 && P.ground && G.astro.footfall) { G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x - Math.sin(P.face) * 0.3, P.pos.z - Math.cos(P.face) * 0.3, 4, -P.vel.x * 0.12, -P.vel.z * 0.12, 0.9, 0.8); }
@@ -402,7 +469,10 @@ function updateVehicle(dt, free) {
   { const hop = G.xfer && G.xfer.kind === 'in' ? G.xfer : null, g = G.astro.group; g.visible = !!hop && !cam.fp;
     if (hop) { hop.u = Math.min(1, hop.u + dt / 0.42); const v = G[P.in], e = hop.u * hop.u * (3 - 2 * hop.u), seat = TMP.set(v.x, (P.in === 'ship' ? v.y : world.heightAt(v.x, v.z)) + 1.1, v.z); g.position.lerpVectors(hop.from, seat, e); g.position.y += Math.sin(Math.PI * hop.u) * 0.8; g.rotation.set(0, Math.atan2(v.x - hop.from.x, v.z - hop.from.z), 0); if (hop.u >= 1) G.xfer = null; }
     G.astro.update(dt, 0, !!hop, hop ? 'walk' : 'sit'); }
-  if ((thr || st) && (!G.camT || performance.now() - G.camT > 1500)) { let d = P.face + Math.PI - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); cam.yaw += d * Math.min(1, dt * 2.2); }
+  // Driving with the camera left alone, it swings round behind the vehicle. Not while you are turning it, and only after 2.5 s
+  // of leaving it be, easing in over a second: it never snatches the view back from the mouse or your finger.
+  const idle = G.camT ? performance.now() - G.camT : 1e9;
+  if ((thr || st) && idle > 2500) { let d = P.face + Math.PI - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); cam.yaw += d * Math.min(1, dt * 1.8 * Math.min(1, (idle - 2500) / 1000)); }
 }
 // Range. What it takes to get a vehicle back to its pad: the rover uses a full charge in 2.6 km; the hopper in 4.2 km, plus a little
 // for every second in the air and for the climb. In the night cold a parked vehicle keeps losing charge, so allow for a couple of hours of that.
@@ -505,18 +575,19 @@ function updateRego(dt) {
 }
 // On the surface, if a building stands between the player and the camera, move the camera in front of it: without this
 // the view could sit inside a wall, half the screen grey. Only buildings count (colliders over 2 m across), not rocks or posts.
+// Returns how much of the way from target to cp is clear (1: all of it).
 let bigCols = null, bigFrom = null, bigN = -1;
 function pullIn(cp, target) {
-  const all = world.planet === 'mars' ? world.mars?.colliders : world.colliders.top; if (!all) return;
+  const all = world.planet === 'mars' ? world.mars?.colliders : world.colliders.top; if (!all) return 1;
   if (all !== bigFrom || all.length !== bigN) { bigFrom = all; bigN = all.length; bigCols = all.filter((q) => q.r >= 2); }
-  const dx = cp.x - target.x, dz = cp.z - target.z, a = dx * dx + dz * dz; if (a < 1e-6) return; let t = 1;
+  const dx = cp.x - target.x, dz = cp.z - target.z, a = dx * dx + dz * dz; if (a < 1e-6) return 1; let t = 1;
   for (const q of bigCols) {
     const fx = target.x - q.x, fz = target.z - q.z, d0 = Math.hypot(fx, fz), R = Math.min(q.r + 0.7, d0 - 0.05); if (R < 1.5) continue;   // standing in a doorway (inside the circle): the camera may come no deeper than you
     const c = d0 * d0 - R * R;
     const b = 2 * (fx * dx + fz * dz), disc = b * b - 4 * a * c; if (disc < 0) continue;
     const t1 = (-b - Math.sqrt(disc)) / (2 * a); if (t1 > 0 && t1 < t) t = t1;
   }
-  if (t < 1) { const k = Math.max(0.05, t - 0.04); cp.x = target.x + dx * k; cp.z = target.z + dz * k; cp.y = target.y + (cp.y - target.y) * k; }   // with a wall right behind you the camera comes almost to your head, as in most third-person games
+  return t < 1 ? Math.max(0.05, t - 0.04) : 1;   // with a wall right behind you the camera comes almost to your head, as in most third-person games
 }
 // Underground the station is a set of boxes: the hall, the airlock, the eleven rooms and the passages through their doors.
 // Indoors the camera stays inside them (never in a wall or above a ceiling) and comes no further than IN_DIST from you;
@@ -542,18 +613,40 @@ function clipDeep(cp, target, indoors) {
   for (let i = 1; i <= n; i++) { const f = i / n; if (!camOk(boxes, target.x + dx * f, target.y + dy * f, target.z + dz * f)) { k = Math.max(0.05, (i - 1) / n); break; } }
   if (k < 1) { cp.x = target.x + dx * k; cp.y = target.y + dy * k; cp.z = target.z + dz * k; }
 }
+// The camera. cam.dist is how far back you asked for (zoomBy; indoors cam.inDist); arm.d glides to it, so a zoom never jumps.
+// A building, a wall, a ceiling or a shut door between you and the camera brings it in front of them at once (never a frame
+// inside a wall); when the way is clear again it eases back out, so walking past a pillar does not make the picture pump.
+// arm.blend glides between first and third person.
+const arm = { d: 7.5, lim: Infinity, at: '', blend: 0, from: new V3(), fromQ: new THREE.Quaternion() }, toCam = new V3(), camTo = new V3();
+function reach(target, dir, d) {   // how far the camera may go from target along dir (at most d) before something is in the way
+  camTo.copy(target).addScaledVector(dir, d);
+  if (P.zone === 'top') return d * pullIn(camTo, target);
+  clipDeep(camTo, target, indoors()); return camTo.distanceTo(target);
+}
+// + and − held down zoom smoothly (the keys by where they sit, so Shift and the keyboard's language do not matter; Ctrl with them is the browser's own zoom)
+const zoomKey = { in: false, out: false }, zoomCode = (e, on) => { if (e.ctrlKey || e.metaKey) return; if (e.code === 'Equal' || e.code === 'NumpadAdd') zoomKey.in = on; else if (e.code === 'Minus' || e.code === 'NumpadSubtract') zoomKey.out = on; };
+addEventListener('keydown', (e) => zoomCode(e, true)); addEventListener('keyup', (e) => zoomCode(e, false)); addEventListener('blur', () => { zoomKey.in = zoomKey.out = false; });
 function updateCamera(dt) {
   const c = world.camera; G.shake *= Math.pow(0.25, dt); const veh = P.in === 'car' ? 5 : P.in === 'ship' ? 8 : P.in === 'dig' ? 7 : 0;
+  relock(); if (zoomKey.in !== zoomKey.out) zoomBy(Math.exp((zoomKey.out ? 1 : -1) * dt * 1.3));
+  const at = (G.planet || 'moon') + P.zone + (world.mars?.inside ? 'in' : ''), want = (indoors() ? Math.min(cam.dist, cam.inDist ?? IN_DIST) : cam.dist) + veh;   // indoors there is no zooming out: the rooms are small
+  if (at !== arm.at) { arm.at = at; arm.d = want; arm.lim = Infinity; }   // just arrived somewhere new (the elevator, an airlock): start there, do not glide from the old place
+  arm.d += (want - arm.d) * Math.min(1, dt * 9);
   if (cam.fp && !P.in) { c.position.set(P.pos.x, P.pos.y + 1.78, P.pos.z); c.rotation.set(-cam.pitch, cam.yaw, 0, 'YXZ'); }
   else {
-    const pp = Math.max(cam.pitch, 0.06), cp = Math.cos(pp), dist = (P.zone === 'deep' && G.inside ? Math.min(cam.dist, cam.inDist ?? IN_DIST) : cam.dist) + veh; tmp.set(P.pos.x, P.pos.y + (P.in ? 2.6 : 1.75), P.pos.z);   // indoors there is no zooming out: the rooms are small
+    const pp = Math.max(cam.pitch, 0.06), cp = Math.cos(pp); tmp.set(P.pos.x, P.pos.y + (P.in ? 2.6 : 1.75), P.pos.z);
     if (G.jobbing && G.jobbing.site && G.jobbing.focus) { const f = G.jobbing.focus, s = G.jobbing.site; tmp.x += (s.x - P.pos.x) * f; tmp.z += (s.z - P.pos.z) * f; tmp.y += G.jobbing.lift || 0; }
-    c.position.set(tmp.x + Math.sin(cam.yaw) * cp * dist, tmp.y + Math.sin(pp) * dist, tmp.z + Math.cos(cam.yaw) * cp * dist);
-    if (P.zone === 'top') { pullIn(c.position, tmp); c.position.y = Math.max(c.position.y, world.heightAt(c.position.x, c.position.z) + 0.6); }
-    else { clipDeep(c.position, tmp, !!G.inside); c.position.z = clamp(c.position.z, -TUBE.halfWidth + 3, TUBE.halfWidth - 3); c.position.x = clamp(c.position.x, -TUBE.halfLen + 2, TUBE.halfLen - 2); c.position.y = clamp(c.position.y, TUBE.y + 0.6, TUBE.y + 26); }
+    toCam.set(Math.sin(cam.yaw) * cp, Math.sin(pp), Math.cos(cam.yaw) * cp);
+    const free = reach(tmp, toCam, arm.d), blocked = free < arm.d - 0.01;
+    if (blocked && free < arm.lim) arm.lim = free;
+    else if (arm.lim < Infinity) { arm.lim += ((blocked ? free : arm.d) - arm.lim) * Math.min(1, dt * 2.5); if (!blocked && arm.lim > arm.d - 0.02) arm.lim = Infinity; }
+    c.position.copy(tmp).addScaledVector(toCam, Math.min(arm.d, arm.lim));
+    if (P.zone === 'top') c.position.y = Math.max(c.position.y, world.heightAt(c.position.x, c.position.z) + 0.6);
+    else { c.position.z = clamp(c.position.z, -TUBE.halfWidth + 3, TUBE.halfWidth - 3); c.position.x = clamp(c.position.x, -TUBE.halfLen + 2, TUBE.halfLen - 2); c.position.y = clamp(c.position.y, TUBE.y + 0.6, TUBE.y + 26); }
     if (!P.in && c.position.distanceTo(tmp) < 1.3) G.astro.group.visible = false;   // a wall right behind you brings the camera to your head: hide the suit so it does not fill the screen
     c.rotation.order = 'XYZ'; c.lookAt(tmp.x, tmp.y + 0.35, tmp.z); if (cam.pitch < 0.06) c.rotateX((0.06 - cam.pitch) * 1.45);
   }
+  if (arm.blend > 0) { arm.blend = Math.max(0, arm.blend - dt / 0.35); const u = 1 - arm.blend, e = u * u * (3 - 2 * u); c.position.lerpVectors(arm.from, c.position, e); c.quaternion.slerpQuaternions(arm.fromQ, c.quaternion, e); }
   if (G.shake > 0.02) { c.position.x += (Math.random() - 0.5) * G.shake * 0.35; c.position.y += (Math.random() - 0.5) * G.shake * 0.35; }
 }
 const radC = $('#rad'), radX = radC.getContext('2d'); radC.width = 480; radC.height = 270;
