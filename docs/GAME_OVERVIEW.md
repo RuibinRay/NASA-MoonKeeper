@@ -281,7 +281,7 @@ The game is honest about what is known. Its "Real or made up?" page shows a tabl
 | **Shown in a laboratory on Earth** | Plants sprouting in real Apollo soil, small and stressed. Microwaves driving ice out of frozen soil. Hydrogen pulling oxygen out of the mineral ilmenite at about 1,000°C. Crop growing times and needs from NASA's crop chambers |
 | **An idea nobody has built on the Moon** | A station inside a lava tube. An ice-extraction plant. Mining a dark crater. A small reactor for the night |
 | **Our story** | A meteor shower wrecking every station at once. The other countries' stations a short drive away. The Polar Ice Mine a short trip from a base near the equator: real dark craters are about 2,500 km away. Hens on the Moon. Herbs as a crop |
-| **Sized for play** | One game hour passes in 7 to 9 seconds. One game day of growing stands for about 100 real days. Machine power sizes. Earth drawn 2.5 times larger so its phase shows. Suiting up in 15 minutes |
+| **Sized for play** | One game hour passes in 7 to 9 seconds. Unheated cold drains the rover and hopper by 1.5% an hour for each heater level short. One game day of growing stands for about 100 real days. Machine power sizes. Earth drawn 2.5 times larger so its phase shows. Suiting up in 15 minutes |
 
 Two things the game never allows, because they would teach something false: crops growing on the open surface, and plants replacing the oxygen machines. Six racks give under a quarter of what one person breathes.
 
@@ -330,6 +330,7 @@ The game was played from the title screen to the rescue by a script that presses
 | REGO told you to run and patch a leak that emptied the oxygen tank on the way. | The leak card and REGO work out how much oxygen the walk and the patch will take, show it, and say "lock the door" when there is not enough. |
 | REGO pushed solar panels and the 9 kW oxygen plant at night. | Panel repairs are advised only with daylight left to use them; at night the panel alert says they can wait, and the oxygen plant comes with a warning about its power. |
 | Nothing pointed at crew jobs, though two robots on Farm duty and Cook more than doubled the food. | When food is getting low and a helper is resting, REGO names the helper and the two jobs. |
+| The two-week night was easy with the Topside Heaters switched off: what the cold broke (the dish, panels, a heater circuit) did not matter before a rescue that comes at night. | Unheated cold now reaches machines you use at night: the rover and hopper lose charge, their chargers stop, and the Water Plant freezes. Turning the heaters back up ends it. |
 
 ### Found in a follow-up check of the hardest mode
 

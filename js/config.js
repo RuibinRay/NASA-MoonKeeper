@@ -25,6 +25,8 @@ export const K = {
   REACTOR_KW: 5,                  // one small fission reactor that works day and night
   PANEL_KW: 3.2,                  // each working solar panel in full sunlight
   EARTH_DRAW_SCALE: 2.5,
+  FROST_DRAIN: 0.015,             // share of a full charge the rover and hopper lose per hour, for each heater level the night is short of (STORY number)
+  FROST_SEAL: 0.01,               // wear on the Water Plant's seal per hour, for each heater level short (STORY number)
   O2_PER_KPA: 0.012,              // kg of tank air needed to raise station pressure by 1 kPa
 };
 
@@ -41,7 +43,7 @@ export const SYS = {
   isru:     { name: 'Moon-Dust Oxygen Plant', ico: 'fire', kw: [0, 9], out: [0, 2.2], outside: true,
               blurb: 'Melts moon soil to free the oxygen locked inside it. Needs no water, but it is very power-hungry. It stands topside.' },
   heat:     { name: 'Topside Heaters & Coolers', ico: 'temp', kw: [0, 1.5, 3, 5],
-              blurb: 'Keeps machines on the surface from freezing at night or cooking at noon.' },
+              blurb: 'Keeps machines on the surface from freezing at night or cooking at noon. Too cold, and the rover and hopper lose charge, their chargers stop, and the Water Plant freezes.' },
   comms:    { name: 'Earth Link', ico: 'dish', kw: [0, 2, 4],
               blurb: 'Radio dish to Mission Control. Level 1: early storm warnings. Level 2: longer warnings.' },
 };

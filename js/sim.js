@@ -83,7 +83,7 @@ export function computeFlows(S) {
     farm: 0, wx: 0,
     heat: SYS.heat.kw[lv.heat],
     comms: f.commsDown || safe ? 0 : SYS.comms.kw[lv.comms],
-    chargers: (S.car.charging ? 4 : 0) + (S.ship.charging ? 7 : 0),
+    chargers: S.flow && S.flow.frost > 0 ? 0 : (S.car.charging ? 4 : 0) + (S.ship.charging ? 7 : 0),
     tools: S.bench.filter(Boolean).filter((b) => b.left > 0).length * 1.5 + (S.fab ? 4 : 0),
     bots: bots * 1,
     pump: S.fish && roomOk(S, 'animal') ? 0.5 : 0,
@@ -108,12 +108,13 @@ export function computeFlows(S) {
   const co2Out = K.CO2_PER_DAY * drain * people, h2Made = o2Elec * 0.125;      // electrolysis: every kg of oxygen leaves 0.125 kg of hydrogen
   const foodUse = K.MEALS_PER_DAY * drain * people;
   const heatNeed = Math.min(3, (!s.up ? 2 : s.elev > 55 ? 1 : 0) + (f.heater ? 1 : 0));
+  const short = heatNeed - lv.heat * eff, frost = !s.up && short > 0.25 ? short : 0;   // night-time cold the heaters do not cover, in heater levels (a quarter of a level is forgiven)
   const commsOn = !f.commsDown && !safe && lv.comms > 0 && eff > 0.5;
   const cap = S.batteryCap * (roomOk(S, 'storage') ? 1 : 0.6) + S.mods * 120;
   const foodTotal = S.meals + S.cans + S.raw * 0.5;
   S.flow = {
     sun: s, nOk, solar, reactor, use, extra, demand, supply, net, eff, people, cap,
-    o2Elec, o2Isru, o2Farm, o2Use, o2Leak, o2Net, rate, wUsed, wCrew, wFarm, farmBack, wNet, grow, foodUse, heatNeed, commsOn, farms, life, co2Out, h2Made,
+    o2Elec, o2Isru, o2Farm, o2Use, o2Leak, o2Net, rate, wUsed, wCrew, wFarm, farmBack, wNet, grow, foodUse, heatNeed, frost, commsOn, farms, life, co2Out, h2Made,
     battHours: net < 0 ? S.battery / -net : Infinity,
     o2Days: o2Net < 0 ? S.o2 / -o2Net : Infinity,
     waterDays: wNet < 0 ? S.water / -wNet : Infinity,
@@ -143,6 +144,12 @@ export function step(S, dt) {
   S.battery += F.net * dt; if (S.battery > F.cap) S.battery = F.cap;
   if (S.battery <= 0) { S.battery = 0; if (F.net < 0) { mark(S, 'battZero'); S.stats.brownHours += dt; } }
   if (S.safeMode > 0) S.safeMode = Math.max(0, S.safeMode - dt);
+  // ---- cold the heaters do not cover reaches the batteries and the Water Plant: the rover and hopper lose charge, their chargers stop, the plant's seal wears
+  if (F.frost > 0) {
+    for (const [k, v] of [['car', S.car], ['ship', S.ship]]) { v.charging = false; const was = v.charge; v.charge = Math.max(0, v.charge - K.FROST_DRAIN * F.frost * dt); if (was > 0 && v.charge <= 0) S.pending.push('flat:' + k); }
+    S.wx.seal = Math.max(0.5, S.wx.seal - K.FROST_SEAL * F.frost * dt); S.stats.frostHours = (S.stats.frostHours || 0) + dt;
+    if (!S.frostOn) { S.frostOn = true; S.pending.push('frost'); }
+  } else S.frostOn = false;
   for (const [v, rate] of [[S.car, 0.3], [S.ship, 0.2]]) if (v.charging) { v.charge = Math.min(1, v.charge + rate * dt * F.eff); if (v.charge >= 1) v.charging = false; }
   S.bench.forEach((b, i) => { if (b && b.left > 0) { b.left -= dt * F.eff * bs; if (b.left <= 0) { b.left = 0; S.pending.push('bench' + i); } } });
   if (S.fab) { S.fab.left -= dt * F.eff * bs; if (S.fab.left <= 0) { S.pending.push('fab:' + S.fab.what); S.fab = null; } }
