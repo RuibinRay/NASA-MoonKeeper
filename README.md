@@ -101,6 +101,11 @@ tools/mars_test.mjs   161 checks on the Mars data, the Sun and dust model, every
 js/mars/survive.js    Mars: the survival mission's rules: the storm, the breakdowns, repairs, winning and losing (pure logic)
 js/mars/mission.js    Mars: the survival mission as the player meets it: warnings, repair buttons, advice, the end screen
 tools/mars_survive_test.mjs  52 checks, playing the mission out for 24 seeds: doing nothing loses, never mending loses, a careful player wins
+js/mars/science.js    Mars: the Science Center, six demonstrations to try by hand (gravity, air pressure, solar power and dust, oxygen from the air, water from ice, flying between worlds)
+js/mars/transfer.js   flights between the Moon, Earth orbit and Mars: launch windows, flight times, engine burns and propellant (pure logic)
+science.html          the Mars Science Center as a page of its own
+tools/mars_science_test.mjs   checks the sums behind the Science Center
+tools/mars_transfer_test.mjs  checks the flight sums against the textbook answers
 docs/MARS_SCIENCE.md  every Mars number in the game, its class (observed, demonstrated, proposed, made for the game) and its source
 js/world.js           3D world (surface base, other stations, the cave, the white-panelled station, vehicles)
 js/actors.js          astronaut, REGO, BOLT robots
