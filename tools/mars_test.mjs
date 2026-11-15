@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { SITE, GLOBAL, REGION, SKYLINE } from '../js/mars/mola.js';
 import { MARS, LOADS, PLANT, createMars, marsSun, marsFlows, marsStep, skyFactor, directFactor, airTemp, lightMinutes, sitePressure, marsSerialize, marsDeserialize } from '../js/mars/sim.js';
 import * as T from '../js/mars/terrain.js';
+import { SYSTEMS, SYS_OF, regionHeight, planetHeight, fromLatLon, skylinePeak, zoomAt, clampView, compass, ramp } from '../js/mars/map.js';
 
 let pass = 0, fail = 0;
 const ok = (cond, name, got) => { if (cond) pass++; else { fail++; console.log('  FAIL', name, got === undefined ? '' : '→ ' + got); } };
@@ -115,6 +116,22 @@ ok(T.duneMask(430, -380) > 0.4 && T.duneMask(0, 0) === 0, 'the ripple field is i
   ok(walk.length > 2, 'from the start to the laboratory the line bends round the modules', walk.length);
   ok(drive.slice(1, -1).every((p, i, arr) => i === 0 || legClear(arr[i - 1], p, 1.8)), 'the rover is given more room than a walker');
   const same = T.routeAround(cols, T.SPAWN.x, T.SPAWN.z, T.B.lab.door[0], T.B.lab.door[1]); ok(JSON.stringify(same) === JSON.stringify(walk), 'the same route every time'); }
+
+// ---------- 7. the Map: what you read off it must be the real data ----------
+ok(near(regionHeight(0, 0), SITE.elev, 15), 'the region map reads the outpost\'s own height at its middle', regionHeight(0, 0));
+ok(regionHeight(97, 0) === null && regionHeight(0, -97) === null, 'outside the region map there is nothing to read');
+{ let lo = 1e9, hi = -1e9; for (let e = -95; e <= 95; e += 5) for (let n = -95; n <= 95; n += 5) { const m = regionHeight(e, n); lo = Math.min(lo, m); hi = Math.max(hi, m); } ok(lo >= REGION.min - 1 && hi <= REGION.max + 1, 'heights read off the region map stay inside the data', `${lo.toFixed(0)}…${hi.toFixed(0)}`); }
+ok(planetHeight(18.65, 226.2) > 14000 && planetHeight(-42, 70) < -5500, 'the planet map reads Olympus Mons high and Hellas low');
+ok(planetHeight(10, 360) === planetHeight(10, 0) && planetHeight(10, -1) === planetHeight(10, 359), 'the planet map wraps round at 0° and 360°');
+{ const [e, n] = fromLatLon(SITE.lat, SITE.lon); ok(e === 0 && n === 0, 'the outpost is the middle of the region map'); const [e2, n2] = fromLatLon(39.89, 192.03); ok(near(n2, 23.1, 0.3) && near(e2, 37.9, 0.4), 'the studied site EM-16 lies 23 km north and 38 km east', `${e2.toFixed(1)}, ${n2.toFixed(1)}`); ok(Math.abs(e2) < REGION.km / 2 && Math.abs(n2) < REGION.km / 2, 'and is on the region map'); }
+{ const pk = skylinePeak(); ok(pk.deg > 3 && pk.deg < 3.4 && near(pk.km, 16, 1), 'the highest hill on the skyline is about 3.2° up and 16 km away', `${pk.deg}° ${pk.km} km`); ok(near(Math.hypot(pk.e, pk.n), pk.km, 0.01) && pk.n > 0, 'and it is marked to the north of the outpost'); ok(regionHeight(pk.e, pk.n) > SITE.elev + 500, 'where the region map really does show high ground', regionHeight(pk.e, pk.n) - SITE.elev); }
+ok(compass(0) === compass(360) && compass(100) !== compass(10) && compass(-90) === compass(270), 'compass words wrap round');
+ok(T.BUILDINGS.every((b) => SYSTEMS[SYS_OF[b.id]]), 'every building has a colour on the map');
+{ const v0 = { cx: 10, cz: 36, span: 125 }, fx = 0.2, fy = 0.7, wx = v0.cx + (fx * 2 - 1) * v0.span, wz = v0.cz + (fy * 2 - 1) * v0.span, v1 = zoomAt(v0, 0.8, fx, fy);
+  ok(near(v1.cx + (fx * 2 - 1) * v1.span, wx, 1e-6) && near(v1.cz + (fy * 2 - 1) * v1.span, wz, 1e-6), 'zooming keeps the point under the pointer where it is');
+  let v = v0; for (let i = 0; i < 40; i++) v = zoomAt(v, 0.8, 0.5, 0.5); ok(v.span === 40, 'you cannot zoom in closer than 40 m'); for (let i = 0; i < 40; i++) v = zoomAt(v, 1.25, 0.1, 0.9); ok(v.span === 830 && Math.abs(v.cx) <= 415 && Math.abs(v.cz) <= 415, 'or out past the whole map');
+  const far = clampView({ cx: 5000, cz: -5000, span: 100 }); ok(far.cx <= 780 && far.cz >= -780, 'dragging cannot lose the map off the edge'); }
+{ const [r, g, b] = ramp(-8000), [r2, g2, b2] = ramp(21000); ok(b > r && r2 === 255 && g2 === 255 && b2 === 255, 'on the planet map the lowest ground is blue and the highest white'); }
 
 console.log(`${pass} checks passed${fail ? ', ' + fail + ' FAILED' : ''}`);
 process.exitCode = fail ? 1 : 0;
