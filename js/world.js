@@ -939,6 +939,7 @@ export class World {
   }
   // Corner points of the walk from (px,pz) to (tx,tz). Underground it leaves a room by its door, follows the hall, and enters the target room by its door.
   _guideRoute(px, pz, tx, tz) {
+    if (this.planet === 'mars') return this.mars.route(px, pz, tx, tz);
     const pts = [[px, pz]]; if (this.zone !== 'deep') return [...pts, [tx, tz]];
     const roomAt = (x, z) => ROOMS.find((r) => { const q = roomRect(r); return x > q.x0 - 0.4 && x < q.x1 + 0.4 && z > q.z0 - 0.4 && z < q.z1 + 0.4; });
     const ra = roomAt(px, pz), rb = roomAt(tx, tz), caveA = !this.indoors(px, pz), caveB = !this.indoors(tx, tz), gate = [AIRLOCK.x0 - 1.6, 0];
@@ -970,7 +971,7 @@ export class World {
     pos.needsUpdate = true; uv.needsUpdate = true; L.geometry.setDrawRange(0, (S.length - 1) * 6); L.visible = true;
   }
   update(dt, S, focus, ctx = {}) {
-    if (this.planet === 'mars') return this.mars.update(dt, S, focus, ctx);
+    if (this.planet === 'mars') { this._guideUpdate(dt, ctx.player || focus); return this.mars.update(dt, S, focus, ctx); }
     this._guideUpdate(dt, ctx.player || focus);
     this.t += dt; const t = this.t, M = this.M;
     const sn = S ? S.flow.sun : { e: -0.5, u: 0.6, n: -0.1, factor: 1, up: true, elev: 37 };
