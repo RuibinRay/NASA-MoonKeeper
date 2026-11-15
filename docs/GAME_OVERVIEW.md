@@ -281,7 +281,7 @@ Two things the game never allows, because they would teach something false: crop
 
 ## How it was tested
 
-The game was played from the title screen to the rescue by a script that presses the same keys a player does, on 14 November 2026. The script played a full Cadet mission, including the whole training, and reached the rescue on day 4 with no errors. It found six problems. All six are fixed in a test copy and re-checked on a fresh load; **the fixes are not on the public site until they are merged.**
+The game was played from the title screen to the rescue by a script that presses the same keys a player does, on 14 November 2026. The script played a full Cadet mission, including the whole training, and reached the rescue on day 4 with no errors. It found six problems. All six were fixed, re-checked on a fresh load, and **published to the public site the same day.**
 
 ### What was played and what happened
 
