@@ -11,7 +11,7 @@ import { ROOMS, SITES, MINE } from '../js/config.js';
 import { planBatch, startBatch } from '../js/life.js';
 
 const GATE = [0, 60];                 // top of the pit elevator
-export const PLANS = ['basics', 'salvage', 'early', 'water'];
+export const PLANS = ['basics', 'salvage', 'early', 'water', 'store'];
 
 export function runPlanned(mode, f = 1.5, planName = 'basics', trace = false) {
   const S = createSim(mode, 42); applyDisaster(S); S.zone = 'deep';
@@ -47,6 +47,14 @@ export function runPlanned(mode, f = 1.5, planName = 'basics', trace = false) {
   const later = (t) => (t.name.startsWith('two fixed') ? S.bench.some((b) => b && b.left > 0) : t.name.startsWith('plug') ? !!S.fab && roomOk(S, 'storage') : t.name.startsWith('rover') || t.name.startsWith('ice mine') ? S.car.charging : t.name.startsWith('water batch') ? !!S.wx.batch : false);
 
   const plans = {
+    // a yardstick, not a real plan (so it is not in PLANS): the Bathroom and no panel repairs at all. Compared with basics it shows what fixing panels buys.
+    nopanels: [room('bathroom')],
+    // the Battery Store before the panels, so the panels have somewhere to put their power
+    store: [room('bathroom'), room('storage'), up(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), down()],
+    // the Battery Store and no panel repairs: with store, it shows what the panels add once there is room for their power
+    storeonly: [room('bathroom'), room('storage')],
+    // what happens to someone who does the Battery Store first of all, as REGO suggests when the battery is full by day
+    storefirst: [room('storage'), room('bathroom'), up(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), down()],
     // only what the base starts with: the Bathroom (so water is recycled properly), then four panels
     basics: [room('bathroom'), up(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), panelsDown(), wait(2, 'wait for the bench'), panelsUp(), down()],
     // the same, then fetch materials for the Battery Store and a module, then a second trip for water and food

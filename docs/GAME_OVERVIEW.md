@@ -331,6 +331,7 @@ The game was played from the title screen to the rescue by a script that presses
 | REGO pushed solar panels and the 9 kW oxygen plant at night. | Panel repairs are advised only with daylight left to use them; at night the panel alert says they can wait, and the oxygen plant comes with a warning about its power. |
 | Nothing pointed at crew jobs, though two robots on Farm duty and Cook more than doubled the food. | When food is getting low and a helper is resting, REGO names the helper and the two jobs. |
 | The two-week night was easy with the Topside Heaters switched off: what the cold broke (the dish, panels, a heater circuit) did not matter before a rescue that comes at night. | Unheated cold now reaches machines you use at night: the rover and hopper lose charge, their chargers stop, and the Water Plant freezes. Turning the heaters back up ends it. |
+| On Pilot, REGO kept pushing solar panels although fixing them changed almost nothing, and never mentioned the Battery Store, which halves the night's power cuts. | When the battery is full by day with power to spare, REGO says to rebuild the Battery Store before fixing more panels, and the Power Board says how to make room for the wasted power. |
 
 ### Found in a follow-up check of the hardest mode
 

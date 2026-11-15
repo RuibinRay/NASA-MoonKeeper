@@ -336,7 +336,7 @@ A full Pilot mission was played on the live build and written up as 18 points. T
 | 6 | Launch button below the fold at 846 x 726 | Fixed by the merged branch: the button's top is at 634 px |
 | 7 | "Day 8 of 7" | Fixed: "Rescue day" |
 | 8 | The long night is easy with the Topside Heaters off | Changed afterwards: unheated cold now drains the rover and hopper, stops their chargers and freezes the Water Plant (see "The cold matters at night") |
-| 9 | Solar panels do not matter after Day 3 on Pilot | **Not changed.** REGO and the alerts no longer push panels at night (13). See below |
+| 9 | Solar panels do not matter after Day 3 on Pilot | Measured, then fixed in REGO's advice, not in the sunset (see "Do panels matter on Pilot?") |
 | 10 | A leak empties the oxygen tank before you can reach it | The leak itself is unchanged. The card shows what the walk and the patch will cost in oxygen, and REGO recommends locking the door when there is not enough |
 | 11 | "Fix it at the Heater Hub" was free if you never went | Choosing it now also turns the heaters to max (+2 kW) until the circuit is fixed |
 | 12 | The end screen read as if you had failed the astronauts you did not rescue | Reworded: they are safe in their shelters and the rescue ship collects them next |
@@ -373,4 +373,40 @@ Point 8 of the rescue-run report: with the Topside Heaters off, the night ran al
 
 **Tried in the game** (Pilot, at night, heaters off): REGO's warning and the alert; after 10.9 hours the rover and hopper were at 67% and the seal at 0.78; the pads panel and the Water Plant screen said so and a batch would not start; with the rover at zero REGO said so; with the heaters back at level 2 the alert went and the rover charged from 0 to 47% in 1.6 hours. **Not tried:** a whole mission played through with the rule in; whether children notice the warning in time.
 
-**Still open from the report:** point 9 (solar panels stop mattering on Pilot after Day 3) and point 18 (the hopper's charger on Day 1).
+**Still open from the report:** point 18 (the hopper's charger on Day 1). Point 9 is dealt with in the next section.
+
+### Do panels matter on Pilot? A later sunset was tried and not kept
+
+Point 9 of the rescue-run report: on Pilot the Sun sets on Day 3 and rescue comes before sunrise, so panels stop mattering, yet REGO keeps pushing them. A later sunset was suggested. It was measured with the planned player before anything was changed.
+
+**1. What panel repairs buy today.** Three planned Pilot runs, one with no panel repairs at all:
+
+| Plan | Panels working at the end | Hours of power cut in the night | Oxygen at rescue |
+| --- | --- | --- | --- |
+| Bathroom only, no panel repairs | 3 | 58 | 0.8 kg |
+| Bathroom, then four panels | 7 | 61 | 1.4 kg |
+| Bathroom, then the Battery Store | 3 | 30 | 0.9 kg |
+
+Fixing four panels buys 0.6 kg of oxygen and no fewer power cuts. Rebuilding the Battery Store halves the power cuts. The report was right.
+
+**2. A later sunset.** The same runs with the Sun setting later:
+
+| Sunset moved by | Night before rescue | Power cut with no panel repairs | Power cut with four panels fixed |
+| --- | --- | --- | --- |
+| as now | 106 h | 58 h | 61 h |
+| half a day | 94 h | 46 h | 47 h |
+| one day | 82 h | 34 h | 36 h |
+| a day and a half | 70 h | 22 h | 18 h |
+| two days | 58 h | 10 h | 0 h |
+
+Up to a day later, panels still make no difference. Beyond that a small difference appears, but only because the whole night has become short: a careful player's power cuts fall from 61 hours to 18 or to none, and Pilot stops being "one long night". **The sunset was left where it is.**
+
+**3. Why panels do so little, and what does help.** With the Battery Store wrecked, the battery holds 228 kWh, and three panels fill it before sunset. Extra panels have nowhere to put their power. With the store rebuilt (380 kWh), panels working from the first hour cut the power cuts from 25 hours to 2 in a separate test. So the lever is room for power, and panels count once there is room.
+
+**4. What was changed.** Advice, not balance:
+
+- **REGO.** By day, when the battery is at least 90% full and more power is coming in than going out, and the Battery Store is wrecked, REGO says to rebuild it before fixing more panels, and names how many kWh it adds. It keeps back the materials for the Bathroom, so on Commander (8 materials) it does not say this at the start; there, the store-first plan ends with only 0.5 kg of oxygen.
+- **Power Board.** "Battery full — extra power is wasted" now ends with how to make room: rebuild the Battery Store, add a battery module, or that the store is at its largest.
+- **Checks.** The planned player has a fifth plan, `store` (Bathroom, Battery Store, then panels), which `sim_test` now runs in every mode: it wins in all three, with 32 hours of power cuts on Pilot against 61 for the plain plan. Three yardstick plans (`nopanels`, `storeonly`, `storefirst`) can be run by name for comparisons like the ones above.
+
+**Not done:** nothing here was played by a person. The first objectives of a mission still lead to the Solar Field; REGO's new line appears once the battery is full with power to spare.
