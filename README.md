@@ -22,7 +22,7 @@ With REGO the robot you must keep the **power on** and the **air in** until resc
 | **Q** | second action (take cargo out of a vehicle) |
 | Tab · M · H · N · L · T | Power Board · Map · ask REGO · Space Guide · Life-support loop · Day and night |
 | In the hopper | Space up · C down (it slows itself near the ground) · a ring below shows where it will land |
-| Settings (gear button) | Guide mode · job games · questions after emergencies · REGO reads aloud · sound · music · graphics detail (Auto, High, Medium, Low) · text size (Normal, Large, Larger) · frame-rate counter |
+| Settings (gear button) | Guide mode · job games · questions after emergencies · REGO reads aloud · sound · music · graphics detail (Auto, High, Medium, Low) · text size (Normal, Large, Larger) · language · frame-rate counter |
 | V · P | first/third person · pause |
 
 ## What you do
@@ -41,10 +41,20 @@ With REGO the robot you must keep the **power on** and the **air in** until resc
 
 Modes: **Cadet** (4 days), **Pilot** (7 days), **Commander** (10 days, scarce materials), **Unlimited** (no end, endless materials).
 
+## Languages
+
+The game speaks 16 languages: English, Español, Français, Deutsch, Português, Italiano, Русский, Türkçe, العربية (Arabic), हिन्दी (Hindi), বাংলা (Bengali), 中文 (Chinese, simplified), 日本語 (Japanese), 한국어 (Korean), Bahasa Indonesia and Tiếng Việt. Choose one with the globe on the title screen or in Settings; the game remembers it, and a browser set to one of them starts in it. Changing language restarts the game; a mission in progress is saved and can be continued.
+
+**Writing new text:** every word a player sees goes through `tt`: `` tt`Battery ${n}% full` `` or `tt('Settings')` (import it from `./i18n.js`). `node tools/i18n.mjs check` fails if a text a player can see is not marked, and `node tools/i18n.mjs wrap` marks it for you. A text with no translation yet simply shows in English.
+
+**Translating:** `node tools/i18n.mjs todo <code> <folder>` writes the missing texts as numbered lines; translate each line (keep `{0}` places, tags and key names) and put them in with `node tools/i18n.mjs merge <code> <folder>/todo.tsv <done files>`. Open the game with `?lang=qps` to see every marked text in ⟦brackets⟧: any plain English left on screen is a text that is not marked.
+
 ## Project layout
 
 ```
 index.html            page shell and HUD
+js/i18n.js            languages: looks every text up in lang/<code>.json; anything missing stays English
+lang/*.json           one file per language: English text → translation (15 languages besides English)
 teachers.html         the teacher's page, ready to print (written by `node tools/build_teachers.mjs`; do not edit by hand)
 css/style.css         all styling
 js/main.js            game loop, player, rover, hopper, carrying, build scenes, saving
@@ -57,6 +67,7 @@ tools/frost_test.mjs  what unheated cold does at night: vehicle batteries, charg
 tools/holes_test.mjs  the limits on how often surprise events may hole a room (21 checks on `js/sim.js`)
 tools/crew_test.mjs   robots with no work, the chargers' switch, and people following in a line (22 checks)
 tools/colour_test.mjs the warning colours under simulated colour-blindness: 18 pairs that must be told apart (`--table` prints them)
+tools/i18n.mjs        the translation tool: `check` (every text a player sees is marked, every translation keeps its markup), `wrap`, `todo`, `merge`
 js/moonmap.js         the real Moon to scale: real positions, distances, and the drawing for the Map's "The real Moon" page (pure logic; `node tools/moonmap_test.mjs` runs 42 checks)
 js/life.js            crops, plant health, plant food, Water Plant, experiment, research (pure logic; `node tools/life_test.mjs` runs 71 checks)
 js/lifeui.js          farm, Water Plant, life-support loop, research and experiment screens

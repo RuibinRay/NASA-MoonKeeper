@@ -1,6 +1,7 @@
 // MOONKEEPER 2 — the 3D world: a wide lunar surface (base, solar field, other stations) and the white-panelled station inside the lava tube.
 import * as THREE from '../lib/three.module.min.js';
 import { K, STATIONS, SITES, PIT, TUBE, HALL, AIRLOCK, BASE, MINE, ROOMS, ROOM_H, MOUNTS, CAR_PAD, SHIP_PAD, BENCH, FAB, FAB_OUT, roomRect, roomSpot, doorSpot } from './config.js';
+import { tt } from './i18n.js';
 
 const V3 = THREE.Vector3;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -599,7 +600,7 @@ export class World {
       for (const e of [-1, 1]) { const ex = e < 0 ? q.x0 : q.x1; this.put(sh, new THREE.Mesh(new THREE.CircleGeometry(0.55, 18), pm), ex + e * 0.07, 3.5, zc, 0, e * Math.PI / 2); }
       this.put(sh, fix(this.box(4.5, DH + 0.3, 0.7, M.orange)), def.door, DH / 2 + 0.05, s * 4.5);
       this.put(sh, fix(this.box(q.x1 - q.x0 + 0.3, 0.5, 0.3, M.orange)), (q.x0 + q.x1) / 2, 0.25, zf + s * 0.12); }
-    const signTex = canvasTex(512, 96, (g, w, h) => { g.fillStyle = '#10161f'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffb347'; g.font = '700 54px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('TRANQUILITY DEEP', w / 2, h / 2 + 3); });
+    const signTex = canvasTex(512, 96, (g, w, h) => { g.fillStyle = '#10161f'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffb347'; g.font = '700 54px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(tt('TRANQUILITY DEEP'), w / 2, h / 2 + 3); });
     this.put(sh, fix(this.box(0.2, 2, 8.9, M.dark)), A.x0 + 0.05, A.h + 1.1, 0); this.put(sh, new THREE.Mesh(new THREE.PlaneGeometry(8.5, 1.6), new THREE.MeshBasicMaterial({ map: signTex })), A.x0 - 0.07, A.h + 1.1, 0, 0, -Math.PI / 2);
     for (const z of [-2.7, 2.7]) this.put(sh, this.sph(0.26, M.cyan), A.x0 - 0.2, 4.6, z);
     [[-73.5, 7.2, 0, M.white], [-73.5, 7.2, 1.3, M.orange], [-75.6, 8.4, 0, M.orange], [-73.2, 9.6, 0, M.white]].forEach(([cx, cz, cy, m]) => { this.put(sh, this.box(1.8, 1.3, 1.8, m), cx, cy + 0.65, cz); if (!cy) this.solid('deep', cx, cz, 1.3); });   // cargo waiting by the airlock
@@ -896,9 +897,9 @@ export class World {
     this.outerDoor.scale.y = Math.max(0.03, 1 - L.out); this.outerDoor.position.y = 4.15 - 2.05 * this.outerDoor.scale.y;
     this.innerDoor.scale.y = Math.max(0.03, 1 - L.in); this.innerDoor.position.y = HALL.h - 0.05 - (HALL.h - 0.1) / 2 * this.innerDoor.scale.y;
     this.lockLampOut.emissive.setHex(L.out > 0.5 ? 0x4dff88 : 0xff3b30); this.lockLampIn.emissive.setHex(L.in > 0.5 ? 0x4dff88 : 0xff3b30);
-    const kpa = Math.round(L.p * K.AIR_KPA), state = L.p === 1 ? 'AIR  ·  safe without a suit' : L.p === 0 ? 'VACUUM  ·  suit only' : L.want ? 'Letting air back in…' : 'Pumping the air back into the tanks…', key = kpa + state;
+    const kpa = Math.round(L.p * K.AIR_KPA), state = L.p === 1 ? tt('AIR  ·  safe without a suit') : L.p === 0 ? tt('VACUUM  ·  suit only') : L.want ? tt('Letting air back in…') : tt('Pumping the air back into the tanks…'), key = kpa + state;
     if (key !== L.key) { L.key = key; const c = this.lockCanvas.getContext('2d'), col = L.p === 1 ? '#4dff88' : L.p === 0 ? '#7fb8ff' : '#ffb347';
-      c.fillStyle = '#071018'; c.fillRect(0, 0, 512, 256); c.fillStyle = '#9fb3c4'; c.font = '600 30px sans-serif'; c.textAlign = 'left'; c.fillText('AIRLOCK PRESSURE', 28, 50);
+      c.fillStyle = '#071018'; c.fillRect(0, 0, 512, 256); c.fillStyle = '#9fb3c4'; c.font = '600 30px sans-serif'; c.textAlign = 'left'; c.fillText(tt('AIRLOCK PRESSURE'), 28, 50);
       c.fillStyle = col; c.font = '700 92px sans-serif'; c.fillText(String(kpa), 28, 142); c.font = '600 36px sans-serif'; c.fillText('kPa', 28 + c.measureText(String(kpa)).width * 2.6 + 14, 142);
       c.fillStyle = '#1c2a36'; c.fillRect(28, 164, 456, 22); c.fillStyle = col; c.fillRect(28, 164, 456 * L.p, 22); c.font = '600 27px sans-serif'; c.fillText(state, 28, 228); this.lockTex.needsUpdate = true; }
     // suit lockers: the door swings open while you change, and the suit lifts off its stand as it goes on (or settles back as it comes off)

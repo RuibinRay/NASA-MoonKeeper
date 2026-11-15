@@ -4,6 +4,7 @@
 // REAL numbers are sourced in docs/SCIENCE_AND_SOURCES.md. GAME numbers are scaled so one mission teaches the trade-offs.
 
 import { MINE } from './config.js';
+import { tt } from './i18n.js';
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const alive = (S, id) => { const r = S.rooms[id]; return r.built >= 1 && !r.frozen && r.p > 55; };
@@ -24,26 +25,26 @@ export const CO2_PER_O2 = 1.375;         // REAL: kg of CO2 a plant takes in for
 // nutri = kg of plant food a day; o2 = kg of oxygen a day at full growth; t = comfortable temperature range in °C (GAME)
 // space = has it really been grown in space?
 export const CROPS = {
-  potato:  { name: 'Potatoes', one: 'potato', real: 132, days: 1.32, food: 3.55, to: 'raw', light: 1.0, water: 1.0, nutri: 0.045, o2: 0.030, t: [14, 24], col: '#b98a4a', space: 'Yes: small potatoes grew on a Space Shuttle flight in 1995.',
-             tip: 'The best meal-maker. Slow, but each rack fills many plates. Likes it cool.' },
-  wheat:   { name: 'Wheat', one: 'wheat', real: 80, days: 0.8, food: 2.05, to: 'raw', light: 1.5, water: 2.9, nutri: 0.05, o2: 0.036, t: [16, 26], col: '#d9b84a', space: 'Yes: dwarf wheat grew on the Space Station in 2018.',
-             tip: 'Bread and porridge, and the most oxygen of any crop. But it wants full lamp power and drinks almost three times what a potato does.' },
-  peas:    { name: 'Peas', one: 'pea', real: 75, days: 0.75, food: 1.22, to: 'raw', light: 0.85, water: 0.6, nutri: 0.012, o2: 0.022, t: [10, 22], fix: true, col: '#5fae4f', space: 'On the list of crops planned for future bases.',
-             tip: 'Happy in a cool room and modest light. Bacteria on its roots pull nitrogen from the air, so it is almost free to feed.' },
-  tomato:  { name: 'Tomatoes', one: 'tomato', real: 85, days: 0.85, food: 1.38, to: 'raw', light: 1.0, water: 0.7, nutri: 0.05, o2: 0.026, t: [18, 28], col: '#e5362b', space: 'Yes: dwarf tomatoes grew on the Space Station in 2022 and 2023.',
-             tip: 'Tasty and full of vitamins, but hungry for plant food and the first to catch mold in damp air. Likes it warm.' },
-  soybean: { name: 'Soybeans', one: 'soybean', real: 97, days: 0.97, food: 1.09, to: 'raw', light: 1.0, water: 1.2, nutri: 0.015, o2: 0.026, t: [20, 30], fix: true, col: '#8fb04a', space: 'On the list of crops planned for future bases.',
-             tip: 'Small harvests, but packed with protein, and like peas it makes its own nitrogen. Likes it warm.' },
-  lettuce: { name: 'Lettuce', one: 'lettuce', real: 28, days: 0.28, food: 0.21, to: 'meals', light: 0.6, water: 0.5, nutri: 0.03, o2: 0.020, t: [12, 24], col: '#7fd45a', space: 'Yes: astronauts have grown and eaten lettuce on the Space Station since 2015.',
-             tip: 'Salad in a hurry: ready to eat, no cooking, little light. Small plates, though.' },
-  spinach: { name: 'Spinach', one: 'spinach', real: 30, days: 0.3, food: 0.22, to: 'meals', light: 0.6, water: 0.45, nutri: 0.03, o2: 0.020, t: [8, 22], col: '#3f9b46', space: 'On the list of crops planned for future bases.',
-             tip: 'Salad that shrugs off a cold room. Good for a farm you can barely heat or light.' },
-  radish:  { name: 'Radishes', one: 'radish', real: 25, days: 0.25, food: 0.16, to: 'meals', light: 0.9, water: 0.45, nutri: 0.02, o2: 0.016, t: [10, 24], col: '#e0527a', space: 'Yes: radishes were harvested on the Space Station after 27 days in 2020.',
-             tip: 'The fastest crop of all. A crunchy snack, not a dinner.' },
-  herbs:   { name: 'Herbs', one: 'herb', real: 30, days: 0.3, food: 1, to: 'herbs', light: 0.6, water: 0.45, nutri: 0.02, o2: 0.014, t: [16, 28], col: '#4fbf8a', space: 'Not yet. This one is our idea.',
-             tip: 'Basil and mint will not fill you up, but each bunch makes the next cooked batch a fifth bigger. Food that people want to eat matters.' },
-  arabidopsis: { name: 'Thale cress', one: 'thale cress', real: 42, days: 0.42, food: 1, to: 'sci', light: 0.35, water: 0.2, nutri: 0.01, o2: 0.004, t: [16, 26], col: '#9fd0a0', space: 'Yes, many times. It is also the plant that was grown in real Moon soil.',
-             tip: 'Arabidopsis, the lab mouse of plant science. Not food: every harvest is one point of research.' },
+  potato:  { name: tt('Potatoes'), one: 'potato', real: 132, days: 1.32, food: 3.55, to: 'raw', light: 1.0, water: 1.0, nutri: 0.045, o2: 0.030, t: [14, 24], col: '#b98a4a', space: tt('Yes: small potatoes grew on a Space Shuttle flight in 1995.'),
+             tip: tt('The best meal-maker. Slow, but each rack fills many plates. Likes it cool.') },
+  wheat:   { name: tt('Wheat'), one: 'wheat', real: 80, days: 0.8, food: 2.05, to: 'raw', light: 1.5, water: 2.9, nutri: 0.05, o2: 0.036, t: [16, 26], col: '#d9b84a', space: tt('Yes: dwarf wheat grew on the Space Station in 2018.'),
+             tip: tt('Bread and porridge, and the most oxygen of any crop. But it wants full lamp power and drinks almost three times what a potato does.') },
+  peas:    { name: tt('Peas'), one: 'pea', real: 75, days: 0.75, food: 1.22, to: 'raw', light: 0.85, water: 0.6, nutri: 0.012, o2: 0.022, t: [10, 22], fix: true, col: '#5fae4f', space: tt('On the list of crops planned for future bases.'),
+             tip: tt('Happy in a cool room and modest light. Bacteria on its roots pull nitrogen from the air, so it is almost free to feed.') },
+  tomato:  { name: tt('Tomatoes'), one: 'tomato', real: 85, days: 0.85, food: 1.38, to: 'raw', light: 1.0, water: 0.7, nutri: 0.05, o2: 0.026, t: [18, 28], col: '#e5362b', space: tt('Yes: dwarf tomatoes grew on the Space Station in 2022 and 2023.'),
+             tip: tt('Tasty and full of vitamins, but hungry for plant food and the first to catch mold in damp air. Likes it warm.') },
+  soybean: { name: tt('Soybeans'), one: 'soybean', real: 97, days: 0.97, food: 1.09, to: 'raw', light: 1.0, water: 1.2, nutri: 0.015, o2: 0.026, t: [20, 30], fix: true, col: '#8fb04a', space: tt('On the list of crops planned for future bases.'),
+             tip: tt('Small harvests, but packed with protein, and like peas it makes its own nitrogen. Likes it warm.') },
+  lettuce: { name: tt('Lettuce'), one: 'lettuce', real: 28, days: 0.28, food: 0.21, to: 'meals', light: 0.6, water: 0.5, nutri: 0.03, o2: 0.020, t: [12, 24], col: '#7fd45a', space: tt('Yes: astronauts have grown and eaten lettuce on the Space Station since 2015.'),
+             tip: tt('Salad in a hurry: ready to eat, no cooking, little light. Small plates, though.') },
+  spinach: { name: tt('Spinach'), one: 'spinach', real: 30, days: 0.3, food: 0.22, to: 'meals', light: 0.6, water: 0.45, nutri: 0.03, o2: 0.020, t: [8, 22], col: '#3f9b46', space: tt('On the list of crops planned for future bases.'),
+             tip: tt('Salad that shrugs off a cold room. Good for a farm you can barely heat or light.') },
+  radish:  { name: tt('Radishes'), one: 'radish', real: 25, days: 0.25, food: 0.16, to: 'meals', light: 0.9, water: 0.45, nutri: 0.02, o2: 0.016, t: [10, 24], col: '#e0527a', space: tt('Yes: radishes were harvested on the Space Station after 27 days in 2020.'),
+             tip: tt('The fastest crop of all. A crunchy snack, not a dinner.') },
+  herbs:   { name: tt('Herbs'), one: 'herb', real: 30, days: 0.3, food: 1, to: 'herbs', light: 0.6, water: 0.45, nutri: 0.02, o2: 0.014, t: [16, 28], col: '#4fbf8a', space: tt('Not yet. This one is our idea.'),
+             tip: tt('Basil and mint will not fill you up, but each bunch makes the next cooked batch a fifth bigger. Food that people want to eat matters.') },
+  arabidopsis: { name: tt('Thale cress'), one: tt('thale cress'), real: 42, days: 0.42, food: 1, to: 'sci', light: 0.35, water: 0.2, nutri: 0.01, o2: 0.004, t: [16, 26], col: '#9fd0a0', space: tt('Yes, many times. It is also the plant that was grown in real Moon soil.'),
+             tip: tt('Arabidopsis, the lab mouse of plant science. Not food: every harvest is one point of research.') },
 };
 export const SALAD = ['lettuce', 'spinach', 'radish'];
 
@@ -159,11 +160,11 @@ export const iceLeft = (S) => S.mine.patches.reduce((a, p) => a + p.left, 0);
 
 // ---------- research ----------
 export const TECH = {
-  led:  { name: 'Tuned LED recipe', sci: 2, mat: 2, text: 'Leaves mostly use red and blue light. LEDs tuned to those colours waste nothing on green: the farm lamps need 25% less power.' },
-  cond: { name: 'Humidity condensers', sci: 2, mat: 2, text: 'Plants breathe out almost all the water they drink. Cold plates catch it: 97% of farm water comes straight back, and damp-air mold stops.' },
-  nft:  { name: 'Nutrient-film channels', sci: 3, mat: 3, text: 'Roots sit in a thin film of flowing water instead of a full tank. 40% less plant food, and crops grow 10% faster.' },
-  trap: { name: 'Second cold trap', sci: 2, mat: 3, text: 'A second freezing plate in the Water Plant catches vapour the first one misses: 12% more water from every batch.' },
-  soil: { name: 'Treated moon-soil beds', sci: 4, mat: 4, needs: 'exp', text: 'Washed, composted moon soil in one extra bed per farm. Plants there grow at 70% speed, but the beds need no pumps.' },
+  led:  { name: tt('Tuned LED recipe'), sci: 2, mat: 2, text: tt('Leaves mostly use red and blue light. LEDs tuned to those colours waste nothing on green: the farm lamps need 25% less power.') },
+  cond: { name: tt('Humidity condensers'), sci: 2, mat: 2, text: tt('Plants breathe out almost all the water they drink. Cold plates catch it: 97% of farm water comes straight back, and damp-air mold stops.') },
+  nft:  { name: tt('Nutrient-film channels'), sci: 3, mat: 3, text: tt('Roots sit in a thin film of flowing water instead of a full tank. 40% less plant food, and crops grow 10% faster.') },
+  trap: { name: tt('Second cold trap'), sci: 2, mat: 3, text: tt('A second freezing plate in the Water Plant catches vapour the first one misses: 12% more water from every batch.') },
+  soil: { name: tt('Treated moon-soil beds'), sci: 4, mat: 4, needs: 'exp', text: tt('Washed, composted moon soil in one extra bed per farm. Plants there grow at 70% speed, but the beds need no pumps.') },
 };
 export const canResearch = (S, id) => { const t = TECH[id]; return !!t && !S.tech[id] && S.sci >= t.sci && S.mat >= t.mat && (t.needs !== 'exp' || (S.exp && S.exp.done)); };
 export function research(S, id) {
@@ -179,9 +180,9 @@ export function research(S, id) {
 // REAL (2023-2026, on imitation moon soil only): bacteria and compost with helpful fungi made simulant more plant-friendly.
 // GAME: the three sizes below are a simplified picture of those results.
 export const EXP_POTS = [
-  { id: 'hydro', name: 'Water and plant food (hydroponics)', size: 1, sprout: 100, leaf: '#58c26a', note: 'Roots get exactly what they need. This is how the station farms.' },
-  { id: 'treated', name: 'Moon soil, washed and composted', size: 0.7, sprout: 100, leaf: '#7fae4f', note: 'Washing takes out salts; compost and helpful microbes add the food that moon soil lacks. Slower, but healthy. (So far this has only been tried on imitation moon soil.)' },
-  { id: 'raw', name: 'Moon soil, untreated', size: 0.38, sprout: 100, leaf: '#8a4a52', note: 'Nearly every seed sprouts! But the plants stay small, their roots are stunted and some leaves turn reddish-black: signs of stress from salt and metals in the soil.' },
+  { id: 'hydro', name: tt('Water and plant food (hydroponics)'), size: 1, sprout: 100, leaf: '#58c26a', note: tt('Roots get exactly what they need. This is how the station farms.') },
+  { id: 'treated', name: tt('Moon soil, washed and composted'), size: 0.7, sprout: 100, leaf: '#7fae4f', note: tt('Washing takes out salts; compost and helpful microbes add the food that moon soil lacks. Slower, but healthy. (So far this has only been tried on imitation moon soil.)') },
+  { id: 'raw', name: tt('Moon soil, untreated'), size: 0.38, sprout: 100, leaf: '#8a4a52', note: tt('Nearly every seed sprouts! But the plants stay small, their roots are stunted and some leaves turn reddish-black: signs of stress from salt and metals in the soil.') },
 ];
 export function startExperiment(S, room) { if (S.exp && !S.exp.done) return false; S.exp = { room, g: 0, done: false, t: S.t }; return true; }
 
@@ -198,9 +199,9 @@ export const WX = {
   TRIPLE_PA: 611,       // REAL: below this pressure ice cannot melt, it can only turn to vapour
   TRAP_KGH: 3.5,        // GAME: kg of vapour an hour the cold trap can freeze
   METHODS: {
-    elec:  { name: 'Heater rods', eta: 0.6, text: 'Electric rods warm the soil from the outside in. Simple and steady; a lot of heat goes into the metal.' },
-    mw:    { name: 'Microwaves', eta: 0.85, text: 'Microwaves warm the soil all the way through at once, so less power is wasted — but the vapour comes off fast.' },
-    solar: { name: 'Sun mirror', eta: 1, kw: 6, text: 'A mirror dish focuses sunlight on the chamber. Free heat, but only while the Sun is up.' },
+    elec:  { name: tt('Heater rods'), eta: 0.6, text: tt('Electric rods warm the soil from the outside in. Simple and steady; a lot of heat goes into the metal.') },
+    mw:    { name: tt('Microwaves'), eta: 0.85, text: tt('Microwaves warm the soil all the way through at once, so less power is wasted — but the vapour comes off fast.') },
+    solar: { name: tt('Sun mirror'), eta: 1, kw: 6, text: tt('A mirror dish focuses sunlight on the chamber. Free heat, but only while the Sun is up.') },
   },
   // Water from rock (experimental): FeTiO3 + H2 -> Fe + TiO2 + H2O, at about 1,000 °C (REAL: done on Apollo soil in the lab;
   // ilmenite is about a tenth of the dark soil here, and only the oxygen bound to its iron comes out).
@@ -241,8 +242,8 @@ export function tickBatch(S, b, dt, eff = 1, sunF = 1) {
 export function planBatch(S, o, sunF = 1) {
   const b = makeBatch(S, o); while (b.left > 1e-6) tickBatch(S, b, 0.1, 1, sunF);
   const warn = [];
-  if (b.mode === 'ice') { if (b.pa > WX.TRIPLE_PA) warn.push('Pressure is above 611 Pa: the ice will melt into mud instead of turning to vapour.'); if (b.ice > b.max * 0.03) warn.push(`Not enough heat or time: ${Math.round((b.ice / b.max) * 100)}% of the ice never leaves the soil.`); if (b.lost > b.sub * 0.25) warn.push('Vapour is coming off faster than the cold trap can freeze it. Less power, or better seals.'); if (b.T > 60) warn.push('The soil ends up hot and dry: you kept heating after the ice was gone.'); if (b.method === 'solar' && sunF < 0.2) warn.push('The Sun is down: the mirror gives no heat.'); }
-  else if (b.T < WX.ILM_T) warn.push('It never reaches 1,000 °C, so the reaction never starts. More power or more time.');
+  if (b.mode === 'ice') { if (b.pa > WX.TRIPLE_PA) warn.push(tt('Pressure is above 611 Pa: the ice will melt into mud instead of turning to vapour.')); if (b.ice > b.max * 0.03) warn.push(tt`Not enough heat or time: ${Math.round((b.ice / b.max) * 100)}% of the ice never leaves the soil.`); if (b.lost > b.sub * 0.25) warn.push(tt('Vapour is coming off faster than the cold trap can freeze it. Less power, or better seals.')); if (b.T > 60) warn.push(tt('The soil ends up hot and dry: you kept heating after the ice was gone.')); if (b.method === 'solar' && sunF < 0.2) warn.push(tt('The Sun is down: the mirror gives no heat.')); }
+  else if (b.T < WX.ILM_T) warn.push(tt('It never reaches 1,000 °C, so the reaction never starts. More power or more time.'));
   return { water: b.got, eff: b.got / b.max, kwh: b.kwh, peakKw: batchKw(b), T: b.T, left: b.ice, warn, log: b.log, max: b.max };
 }
 export function startBatch(S, o) {

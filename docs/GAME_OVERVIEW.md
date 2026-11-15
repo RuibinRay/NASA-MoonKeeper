@@ -364,6 +364,7 @@ The game was played from the title screen to the rescue by a script that presses
 - **A balance run of all four modes** with two simple computer players that fix things for free, and a planned player that pays game time for every walk, drive and elevator ride. The planned player wins Cadet, Pilot and Commander with each of its three repair plans. Doing nothing loses Commander.
 - **A scan for code hidden inside comments**, the mistake behind three of the bugs on this page, finds none.
 - **A syntax check** of every code file passes.
+- **A translation check** (`node tools/i18n.mjs check`) finds every text a player can see in the code (2333 of them) and fails if one is not marked for translation, or if a translation loses its markup, a key name or a {0} place.
 
 ### Not yet verified
 
@@ -388,7 +389,7 @@ The list is in order of how much each item would help the goal: children learnin
 4. **Phone layout.** Held upright, the warning list covers the resource bars. Either ask the player to turn the phone sideways or stack the panels. Then play a whole mission with the touch controls.
 5. **Speed.** The surface draws about 260,000 triangles in about 200 separate draw calls. Merging repeated objects such as panels, crates and rocks would help older laptops and phones. Measure on a real computer first.
 6. **Hard mode.** Play Commander through by hand. The computer check says a good player wins with about one kilogram of oxygen left, which may still be too tight once surprise events are added.
-7. **Reading help.** Done in part: REGO reads aloud, Settings has a text size (Normal, Large, Larger), and the warning colours were checked against simulated colour-blindness and changed where they failed. Still to do: other languages. Nobody with colour-blindness, and no young reader, has yet tried any of it.
+7. **Reading help.** Done in part: REGO reads aloud, Settings has a text size (Normal, Large, Larger), the warning colours were checked against simulated colour-blindness and changed where they failed, and the game is in 16 languages. The translations were written by an AI model and checked by machine for markup and placeholders, not by people who speak the languages; nobody with colour-blindness, and no young reader, has yet tried any of it.
 
 ### Third: use more of the real data
 
