@@ -99,5 +99,22 @@ ok(T.TUNNELS.every(([a, b, c, d]) => T.BUILDINGS.some((q) => Math.hypot(q.x - a,
 { const rocks = T.rockField(); ok(rocks.length > 3000, 'thousands of rocks'); ok(rocks.every((r) => Math.hypot(r.x - 8, r.z - 4) > 96 + 5), 'none on the levelled base'); ok(rocks.filter((r) => r.s > 1.05).length < 150, 'boulders are rare on this plain', rocks.filter((r) => r.s > 1.05).length); const again = T.rockField(); ok(again[100].x === rocks[100].x && again[3000].s === rocks[3000].s, 'the same field every time'); }
 ok(T.duneMask(430, -380) > 0.4 && T.duneMask(0, 0) === 0, 'the ripple field is in the north-east, not at the base');
 
+// ---------- 6. the yellow guide line: it must lead round the buildings, never through them ----------
+{ const legClear = (a, b, pad) => { const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz || 1e-9; return cols.every((c) => { const t = Math.max(0, Math.min(1, ((c.x - a[0]) * dx + (c.z - a[1]) * dz) / l2)); return Math.hypot(a[0] + dx * t - c.x, a[1] + dz * t - c.z) >= c.r + pad; }); };
+  let through = 0, ends = 0, worst = 0, n = 0;
+  for (const a of T.BUILDINGS) for (const b of T.BUILDINGS) { if (a === b) continue; n++; const r = T.routeAround(cols, a.door[0], a.door[1], b.door[0], b.door[1]); let len = 0;
+    if (r[0][0] !== a.door[0] || r[0][1] !== a.door[1] || r[r.length - 1][0] !== b.door[0] || r[r.length - 1][1] !== b.door[1]) ends++;
+    for (let i = 1; i < r.length; i++) { len += Math.hypot(r[i][0] - r[i - 1][0], r[i][1] - r[i - 1][1]); if (i > 1 && i < r.length - 1 && !legClear(r[i - 1], r[i], 0.5)) through++; }
+    worst = Math.max(worst, len / Math.hypot(a.door[0] - b.door[0], a.door[1] - b.door[1])); }
+  ok(n === 182 && ends === 0, 'a guide route runs from the start to the target, for every pair of doors', ends);
+  ok(through === 0, 'no guide route cuts through a building, a tunnel or a boulder', through);
+  ok(worst < 4.5, 'no guide route is a wild detour', worst);
+  const open = T.routeAround(cols, -200, -300, -260, -340); ok(open.length === 2, 'over open ground the line is straight');
+  const far = T.routeAround(cols, T.SPAWN.x, T.SPAWN.z, T.ICE_CRATER.x, T.ICE_CRATER.z); ok(far[far.length - 1][0] === T.ICE_CRATER.x && far[far.length - 1][1] === T.ICE_CRATER.z, 'a far target is still where the line ends');
+  const walk = T.routeAround(cols, T.SPAWN.x, T.SPAWN.z, T.B.lab.door[0], T.B.lab.door[1]), drive = T.routeAround(cols, T.SPAWN.x, T.SPAWN.z, T.B.lab.door[0], T.B.lab.door[1], 2.4);
+  ok(walk.length > 2, 'from the start to the laboratory the line bends round the modules', walk.length);
+  ok(drive.slice(1, -1).every((p, i, arr) => i === 0 || legClear(arr[i - 1], p, 1.8)), 'the rover is given more room than a walker');
+  const same = T.routeAround(cols, T.SPAWN.x, T.SPAWN.z, T.B.lab.door[0], T.B.lab.door[1]); ok(JSON.stringify(same) === JSON.stringify(walk), 'the same route every time'); }
+
 console.log(`${pass} checks passed${fail ? ', ' + fail + ' FAILED' : ''}`);
 process.exitCode = fail ? 1 : 0;
