@@ -277,12 +277,13 @@ export class World {
     this.put(tw, this.cyl(0.12, 0.16, 7, M.grey, 6), 0, 21.2, 0); this.put(tw, this.cyl(0.9, 0.9, 0.15, M.white, 14), 1.8, 18.2, 0.6, 0.9, 0, 0.4); this.towerBeacon = this.put(tw, this.sph(0.32, M.redG.clone()), 0, 24.9, 0);
     // --- Battery Bank
     const [bx, bz] = B.batt, bb = module(bx, bz, 10, 4.6, 7, cell); for (let i = 0; i < 4; i++) { this.put(bb, this.box(1.6, 3, 1.4, M.dark), -4.2 + i * 2.8, 1.5, 5.2); this.put(bb, this.box(1.1, 0.25, 0.06, cell), -4.2 + i * 2.8, 2.3, 5.93); this.put(bb, this.box(1.1, 0.25, 0.06, cell), -4.2 + i * 2.8, 1.5, 5.93); } hard(bx, bz + 5.2, 10, 1.6);
-    // --- Rover Garage: open to the south, facing the charging pads
-    const [gx, gz] = B.garage, ga = this.group(T, gx, gz); this.put(ga, this.box(15, 0.5, 9.5, M.white), 0, 5.2, 0); this.put(ga, this.box(15, 5, 0.5, M.white), 0, 2.5, -4.5); for (const s of [-1, 1]) this.put(ga, this.box(0.5, 5, 9.5, M.white), s * 7.25, 2.5, 0);
-    for (const px of [-2.4, 2.4]) this.put(ga, this.box(0.4, 5, 0.4, M.grey), px, 2.5, 4.4); this.put(ga, this.box(15.2, 0.7, 0.3, M.orange), 0, 5.1, 4.75); for (const lx of [-4.8, 0, 4.8]) this.put(ga, this.box(2.6, 0.12, 0.6, winW), lx, 4.88, 0);
+    // --- Rover Garage: a drive-through, open at both ends. It stands on the way from the charging pads to the Solar Field,
+    //     and with a back wall a rover driving in from the pads ended up stuck against it.
+    const [gx, gz] = B.garage, ga = this.group(T, gx, gz); this.put(ga, this.box(15, 0.5, 9.5, M.white), 0, 5.2, 0); for (const s of [-1, 1]) this.put(ga, this.box(0.5, 5, 9.5, M.white), s * 7.25, 2.5, 0);
+    for (const pz of [4.4, -4.4]) { for (const px of [-2.4, 2.4]) this.put(ga, this.box(0.4, 5, 0.4, M.grey), px, 2.5, pz); this.put(ga, this.box(15.2, 0.7, 0.3, M.orange), 0, 5.1, pz > 0 ? 4.75 : -4.75); } for (const lx of [-4.8, 0, 4.8]) this.put(ga, this.box(2.6, 0.12, 0.6, winW), lx, 4.88, 0);
     const cart = new THREE.Group(); cart.position.set(-4.8, 0, -0.6); ga.add(cart); this.put(cart, this.box(2.2, 0.9, 3.4, M.yellow), 0, 1.0, 0); this.put(cart, this.box(1.8, 0.9, 1.3, M.dark), 0, 1.85, 0.7); for (const wx2 of [-1.15, 1.15]) for (const wz2 of [-1.1, 1.1]) this.put(cart, this.cyl(0.5, 0.5, 0.4, M.dark, 12), wx2, 0.5, wz2, 0, 0, Math.PI / 2);
-    this.put(ga, this.box(2.4, 1.1, 1, M.grey), 4.8, 0.55, -3.4); this.put(ga, this.box(1, 1.6, 0.8, M.orange), 6.2, 0.8, -3.4);
-    hard(gx, gz - 4.5, 15, 1); hard(gx - 7.25, gz, 1, 9.5); hard(gx + 7.25, gz, 1, 9.5); this.solid('top', gx - 4.8, gz - 0.6, 2.2); this.lamp(T, gx, 4, gz + 1, 0xffe2b8, 16, 40);
+    this.put(ga, this.box(1, 1.1, 2.4, M.grey), 6.3, 0.55, -2.2); this.put(ga, this.box(0.8, 1.6, 1, M.orange), 6.4, 0.8, 0.4); this.solid('top', gx + 6.3, gz - 1, 1.4);   // tool chests against the east wall, out of the lane
+    hard(gx - 7.25, gz, 1, 9.5); hard(gx + 7.25, gz, 1, 9.5); this.solid('top', gx - 4.8, gz - 0.6, 2.2); this.lamp(T, gx, 4, gz + 1, 0xffe2b8, 16, 40);
     // --- Greenhouse Dome
     const [qx, qz, qr] = B.green, gh = dome(qx, qz, qr, 0xff8ad8); for (let i = -2; i <= 2; i++) { const len = Math.sqrt(qr * qr - i * i * 6.8) * 1.7 - 2; this.put(gh, this.box(len, 0.7, 1.3, M.soil), 0, 2.4, i * 2.6); this.put(gh, this.box(len - 0.3, 0.9, 1.0, i % 2 ? M.green : M.greenD), 0, 3.1, i * 2.6); this.put(gh, this.box(len, 0.08, 0.3, grow), 0, 4.6 - Math.abs(i) * 0.25, i * 2.6); }
     this.lamp(T, qx, 7, qz, 0xff9ad8, 18, 45);

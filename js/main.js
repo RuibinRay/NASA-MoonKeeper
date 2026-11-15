@@ -377,6 +377,31 @@ function updateVehicle(dt, free) {
     G.astro.update(dt, 0, !!hop, hop ? 'walk' : 'sit'); }
   if ((thr || st) && (!G.camT || performance.now() - G.camT > 1500)) { let d = P.face + Math.PI - cam.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); cam.yaw += d * Math.min(1, dt * 2.2); }
 }
+// Range. What it takes to get a vehicle back to its pad: the rover uses a full charge in 2.6 km; the hopper in 4.2 km, plus a little
+// for every second in the air and for the climb. In the night cold a parked vehicle keeps losing charge, so allow for a couple of hours of that.
+function homeNeed(S, k, v, extra = 0) {
+  const pad = k === 'car' ? CAR_PAD : SHIP_PAD, home = Math.hypot(v.x - pad[0], v.z - pad[1]) + extra, frost = S.flow ? S.flow.frost : 0;
+  return { home, need: (k === 'car' ? home / 2600 : home / 4200 + home / 25 / 420 + 0.02) + K.FROST_DRAIN * frost * 2 };
+}
+const pct = (x) => Math.max(0, Math.round(x * 100)) + '%';
+function rangeCheck(S, car, ship) {
+  const last = G._rng || (G._rng = { car: S.car.charge, ship: S.ship.charge, in: null });
+  for (const [k, v] of [['car', car], ['ship', ship]]) {
+    const ch = S[k].charge, name = k === 'car' ? 'rover' : 'hopper', { home, need } = homeNeed(S, k, v), away = home > 20, near = P.in === k || Math.hypot(P.pos.x - v.x, P.pos.z - v.z) < 30, atMine = Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9;
+    if (last[k] > 0 && ch <= 0 && away) { if (near) G.pointTo('gate'); G.warn('dead-' + k, `<b>The ${name}'s battery is empty</b>, ${Math.round(home)} m from its pad. ${k === 'ship' ? 'A hopper only charges on its own pad, so it has to stay here.' : 'A rover only charges on its pad.'} Walk home: follow the line to the elevator.`, 'alert', 60000); }
+    else if (away && near && !atMine && ch > 0 && P.zone === 'top') {   // the crater has its own warning
+      if (ch < need) G.warn('range-' + k, `<b>The ${name} cannot get home on ${pct(ch)}.</b> The ${Math.round(home)} m back to its pad needs about ${pct(need)}${S.flow.frost > 0 ? ', and the cold keeps draining it' : ''}. ${k === 'ship' ? 'Fly as far as it goes, then walk the rest.' : 'Drive as far as it goes, then walk the rest.'}`, 'alert', 45000);
+      else if (ch < need * 1.25 + 0.04) G.warn('range-' + k, `<b>Time to go home!</b> The ${name} is at <b>${pct(ch)}</b> and needs about ${pct(need)} to get back to its pad${S.flow.frost > 0 ? '. The night cold drains it even while it stands still' : ''}.`, 'worried', 45000);
+    }
+    last[k] = ch;
+  }
+  // climbing in near the pad: is there enough for the trip to where you are heading, and back?
+  if (P.in !== last.in && (P.in === 'car' || P.in === 'ship')) {
+    const k = P.in, v = k === 'car' ? car : ship, T = G.world.target, name = k === 'car' ? 'rover' : 'hopper', there = T && T.zone === 'top' ? Math.hypot(T.x - v.x, T.z - v.z) : 0;
+    if (there > 150) { const trip = homeNeed(S, k, { x: T.x, z: T.z }, there); if (S[k].charge < trip.need) G.warn('trip-' + k, `<b>Check the charge first!</b> The ${name} has <b>${pct(S[k].charge)}</b>. Getting there and back needs about <b>${pct(trip.need)}</b>${S.flow.frost > 0 ? ' in this cold' : ''}. Charge it on its pad first${k === 'ship' ? ', or take the rover' : ''}.`, 'worried', 20000); }
+  }
+  last.in = P.in;
+}
 function placeVehicles(dt) {
   const S = G.S, c = G.car, s = G.ship, cg = world.car, sg = world.ship;
   const h = world.heightAt(c.x, c.z), fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), hf = world.heightAt(c.x + fx * 2.3, c.z + fz * 2.3), hb = world.heightAt(c.x - fx * 2.3, c.z - fz * 2.3), hl = world.heightAt(c.x + fz * 1.4, c.z - fx * 1.4), hr = world.heightAt(c.x - fz * 1.4, c.z + fx * 1.4);
@@ -414,6 +439,7 @@ function placeVehicles(dt) {
       // what it takes to reach its pad: the rover uses a full charge in 2.6 km, the hopper in 4.2 km plus a little for every second in the air
       const pad = k2 === 'car' ? CAR_PAD : SHIP_PAD, home = Math.hypot(v.x - pad[0], v.z - pad[1]), need = k2 === 'car' ? home / 2600 : home / 4200 + home / 25 / 420, name = k2 === 'car' ? 'rover' : 'hopper';
       if (G.state === 'play' && S[k2].charge > 0 && S[k2].charge < need * 1.25 + 0.04) G.warn('cold-' + k2, `<b>Time to go!</b> The cold has drained the ${name} to <b>${Math.round(S[k2].charge * 100)}%</b>. That is only just enough to get home. Take what you have and leave now.`, 'alert', 45000); } }
+  if (S && G.state === 'play') rangeCheck(S, c, s);
   // --- the hopper on its legs. Like the rover's springs, this is for the eye only: it never changes where the hopper goes.
   const H = s.dyn || (s.dyn = { dy: 0, dv: 0, roll: 0, thr: 0, dust: 0, hud: 0 }), flying = P.in === 'ship'; if (!flying) { s.thr = 0; s.steer = 0; }
   if (s.hit) { H.dv -= s.hit; if (P.zone === 'top') for (const [ex, ez] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) world.puff(s.x + ex * 2.3, s.z + ez * 1.8, 5, ex * 2.4, ez * 2.4, 0.7, 0.8); G.audio.play('thud'); s.hit = 0; }   // feet down: the body dips and dust jumps from each pad
