@@ -307,7 +307,7 @@ export class UI {
       w.querySelectorAll('.alert[data-go]').forEach((a) => (a.onclick = () => { if (a.dataset.go) { G.pointTo(a.dataset.go); this.close(); } }));
       w.querySelector('#cc-power').onclick = () => { this.close(); setTimeout(() => this.powerBoard(), 30); }; w.querySelector('#cc-map2').onclick = () => { this.close(); setTimeout(() => this.bigMap(), 30); };
     };
-    return this.window({ title: 'Control Center', html: '', wide: true, onMount: render });
+    return this.window({ title: 'Control Center', html: '', wide: true, img: 'rm_control', onMount: render });
   }
   // ---------- world map (M) ----------
   bigMap() {
