@@ -255,6 +255,11 @@ export function installActions(G) {
     const s = G.S, F = computeFlows(s), f = s.f, st = s.storm, top = P.zone === 'top'; let t = null, go = null, mood = 'happy';
     const leak = F.leaks[0], wreck = ROOMS.find((d) => s.rooms[d.id].built < 1), sealedHole = ROOMS.find((d) => s.rooms[d.id].hole > 0 && !s.rooms[d.id].door), nb = s.mounts.filter((x) => x === 2).length, empty = s.mounts.filter((x) => x === 0).length;
     const thin = !s.suitOn && (s.here && s.rooms[s.here] ? s.rooms[s.here].p : s.P) < 60;
+    // By day, a battery that is full wastes the sunshine. More room for power helps the night far more than more panels do, so say that first.
+    // The Bathroom's materials are kept back: without it the water recycler works badly.
+    const storeR = s.rooms.storage, storeD = ROOMS.find((d) => d.id === 'storage'), bathD = ROOMS.find((d) => d.id === 'bathroom'), bathKeep = s.rooms.bathroom.built < 1 ? bathD.mat + (s.rooms.bathroom.hole > 0 ? 1 : 0) : 0;
+    const storeNeed = storeD.mat + (storeR.hole > 0 ? 1 : 0), fullByDay = F.sun.up && F.sun.toSunset > 4 && s.battery >= F.cap * 0.9 && F.net > 0;   // full, and still more coming in than going out
+    const storeTip = fullByDay && storeR.built < 1 && s.mat >= storeNeed + bathKeep ? `The battery is full, so the extra sunshine is going to waste. <b>${storeR.hole > 0 ? 'Patch and rebuild' : 'Rebuild'} the Battery Store</b>: it holds ${Math.round(s.batteryCap * 0.4)} kWh more for the long night. Do that before you fix more panels.` : null;
     const idleH = roomOk(s, 'control') && !s.helpers.some((h) => h.role === 'farm' || h.role === 'cook') ? s.helpers.find((h) => h.role === 'idle') : null;   // a helper with no job, while nobody farms or cooks
     if (thin) { t = '<b>The air here is too thin and you have no suit on!</b> Leave this room, or run to the Suit Lockers in the airlock.'; go = 'suit'; mood = 'alert'; }
     else if (st && s.t >= st.start && top) { t = '<b>Radiation storm!</b> Take the elevator down NOW. Metres of rock overhead will shield you.'; go = 'gate'; mood = 'alert'; }
@@ -270,6 +275,7 @@ export function installActions(G) {
     else if (s.bench.some((b) => b && b.left <= 0)) { t = 'A panel is fixed and waiting on the Fix-It Bench. Carry it up and install it on an empty mount.'; go = 'bench'; }
     else if (P.carry && P.carry.type === 'panelB') { t = 'Bring that broken panel to the Fix-It Bench in the Workshop, down in the station.'; go = 'bench'; }
     else if (P.carry && P.carry.type === 'panel') { t = 'Carry that panel to an empty mount in the Solar Field and press E.'; go = 'solar'; }
+    else if (storeTip) { t = storeTip; go = 'storage'; mood = 'think'; }
     else if (nb && F.sun.up && F.sun.toSunset > 6 && s.mat >= 1) { t = `<b>${nb} solar panel${nb > 1 ? 's are' : ' is'} broken.</b> Pull one off its mount (E), load it on the rover, take it down to the Fix-It Bench, then bring it back. More panels means more power.`; go = 'solar'; }
     else if (sealedHole && s.mat >= 1) { t = `The ${sealedHole.name} is sealed off with a hole in it. Go in, patch the hole, then rebuild the room.`; go = sealedHole.id; }
     else if (wreck && s.mat >= wreck.mat && s.rooms[wreck.id].hole === 0) { t = `The ${wreck.name} is still broken. Rebuild it at its console to get ${wreck.what} back.`; go = wreck.id; }

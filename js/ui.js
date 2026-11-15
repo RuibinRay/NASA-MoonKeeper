@@ -259,7 +259,7 @@ export class UI {
       };
       const rows = Object.keys(SYS).map((k) => `<div class="sys"><div class="ico">${IC[SYS[k].ico]}</div><div><h4>${SYS[k].name}</h4><p>${gloss(SYS[k].blurb)}</p></div>${lvl(k)}<div class="eff">${eff[k]}</div></div>`).join('');
       const sgn = (x, d = 1) => `<b class="${x >= 0 ? 'up' : 'down'}">${x >= 0 ? '+' : ''}${x.toFixed(d)}</b>`;
-      const netTxt = F.net >= 0 ? (S.battery >= F.cap - 1 ? 'Battery full — extra power is wasted. Use it!' : `Full in ${fmt.hrs(Math.ceil((F.cap - S.battery) / Math.max(F.net, 0.01)))}`) : `Empty in <b class="down">${fmt.hrs(Math.floor(F.battHours))}</b>`;
+      const netTxt = F.net >= 0 ? (S.battery >= F.cap - 1 ? `Battery full — extra power is wasted. Use it, or make room for it: ${S.rooms.storage.built < 1 ? 'rebuild the Battery Store' : S.mods < 6 ? 'add a battery module' : 'the Battery Store is at its largest'}.` : `Full in ${fmt.hrs(Math.ceil((F.cap - S.battery) / Math.max(F.net, 0.01)))}`) : `Empty in <b class="down">${fmt.hrs(Math.floor(F.battHours))}</b>`;
       const auto = [['Chargers (rover, hopper)', u.chargers], ['Fix-It bench & builder', u.tools], ['Helper robots', u.bots], ['Fish tank pump', u.pump], ['Extra', F.extra]].filter((x) => x[1] > 0).map(([a, b]) => `<div class="stat"><span>${a}</span><span>${b.toFixed(1)} kW</span></div>`).join('');
       w.querySelector('.win-b').innerHTML = `
         <div class="note"><b>No choice is free.</b> Every machine eats power. Turn one up, and something else gets less — or the battery drains faster.</div>
