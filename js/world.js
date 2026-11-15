@@ -865,7 +865,8 @@ export class World {
     // solar mounts
     const az = Math.atan2(this.sunDir.x, this.sunDir.z), el = Math.asin(clamp(this.sunDir.y, 0, 1)), dust = S ? S.dust : 0.1;
     this.mounts.forEach((m, i) => {
-      const st = S ? S.mounts[i] : i < 8 ? 1 : 0; if (st !== m.state) { m.state = st; m.head.visible = st === 1; m.bad.visible = st === 2; m.cap.visible = st === 0; }
+      const st = S ? S.mounts[i] : i < 8 ? 1 : 0; if (st !== m.state) { if (st === 1 && m.state !== undefined && this.t > 1) m.drop = 0; m.state = st; m.head.visible = st === 1; m.bad.visible = st === 2; m.cap.visible = st === 0; }
+      if (m.drop !== undefined) { m.drop += dt / 0.9; const k = Math.min(1, m.drop), e = 1 - Math.pow(1 - k, 3); m.head.position.y = 2.5 + (1 - e) * 1.7; m.head.rotation.z = Math.sin(k * Math.PI * 3) * (1 - k) * 0.1; if (k >= 1 || st !== 1) { m.head.position.y = 2.5; m.head.rotation.z = 0; m.drop = undefined; if (st === 1) this.onPart?.(); } }
       if (st === 1) { if (!night) m.head.rotation.y = az; m.tilt.rotation.x = night ? 0 : Math.PI / 2 - el; m.mat.color.lerpColors(this.panelClean, this.panelDusty, clamp(dust * 1.25, 0, 1)); m.mat.emissiveIntensity = 0.25 * (1 - dust); }
     });
     const down = S && S.f.commsDown; this.dishHead.quaternion.slerp(down ? this.dishOff : this.dishAim, 0.04);
@@ -907,7 +908,12 @@ export class World {
         const R = this.rooms[id], r = S.rooms[id], d = R.def, wreck = r.built < 1, near = Math.hypot(px - d.door, pz - d.side * 4.5) < 4.6;
         R.wall.color.copy(this.wallTint).lerp(this.iceTint || (this.iceTint = new THREE.Color(0x7f9fc4)), r.frozen ? 0.65 : clamp(1 - r.p / K.AIR_KPA, 0, 1) * 0.35);
         R.light.emissive.setHex(r.hole > 0 ? 0xff3b30 : 0xffffff); R.light.emissiveIntensity = (r.hole > 0 ? 1.2 + Math.sin(t * 9) : wreck ? 0.12 : 1.6) * (dim < 1 ? 0.34 + (Math.sin(t * 23 + d.door) > 0.93 ? -0.2 : 0) : 1);
-        const n = R.props.children.length, show = wreck ? Math.floor(n * clamp((r.built - 0.3) / 0.7, 0, 1) * 0.85) : n; for (let i = 0; i < n; i++) R.props.children[i].visible = i < show;
+        const n = R.props.children.length, show = wreck ? Math.floor(n * clamp((r.built - 0.3) / 0.7, 0, 1) * 0.85) : n; for (let i = 0, q = 0; i < n; i++) { const c = R.props.children[i], on = i < show, u = c.userData;
+          if (on && u.on === false && u.arr === undefined && this.t > 1) { u.arr = -0.09 * q++; u.hy = c.position.y; u.hs = c.scale.clone(); } u.on = on;   // just bolted back: start its arrival, after the ones ahead of it
+          if (u.arr === undefined) { c.visible = on; continue; }
+          u.arr += dt / 0.62; const k = Math.min(1, u.arr), e = 1 - Math.pow(1 - Math.max(0, k), 3);
+          c.visible = on && k >= 0; c.position.y = u.hy + (1 - e) * 2.3; c.scale.copy(u.hs).multiplyScalar(0.6 + 0.4 * e + Math.sin(Math.max(0, k) * Math.PI) * 0.05);   // down from above, a little squash as it seats
+          if (k >= 1 || !on) { c.position.y = u.hy; c.scale.copy(u.hs); u.arr = undefined; if (on) this.onPart?.(); } }
         R.debris.visible = wreck; R.debris.scale.setScalar(wreck ? clamp(1.3 - r.built, 0.3, 1) : 1); R.hole.visible = r.hole > 0; R.jet.visible = r.hole > 0 && r.p > 4; R.jet.material.opacity = 0.12 + 0.3 * (r.p / K.AIR_KPA) * (0.6 + 0.4 * Math.sin(t * 30));
         R.open += ((r.door || near ? 1 : 0) - R.open) * Math.min(1, dt * 6); R.door.scale.y = Math.max(0.03, 1 - R.open); R.door.position.y = 4.15 - 2.05 * R.door.scale.y; R.swLed.material.emissive.setHex(r.door ? 0x4dff88 : 0xff3b30);
       }

@@ -29,6 +29,7 @@ G.audio = new Sound(); G.voice = new Voice(() => G.audio.on); G.world = new Worl
 G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.astro.lamp.visible = true; G.world.scene.add(G.astro.group, G.rego.group);
 G.lampMounts = [G.astro, G.rego].map((a) => { const m = new THREE.Group(); m.add(a.lamp, a.lamp.target); G.world.scene.add(m); return [m, a.group]; });   // lamps outside the bodies: hiding a body must not change the light count
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
+world.onPart = () => G.audio.play('step');   // a part dropping into place during a build
 G.dig = { x: MINE.x - 10, z: MINE.z + 9, yaw: 2.3, v: 0, load: 0, prog: 0, boom: 0, dig: 0, dry: 0 };   // the digger at the Polar Ice Mine
 const groundY = (zone, x, z) => (zone === 'top' ? world.heightAt(x, z) : TUBE.y);
 $('#b-power').innerHTML = IC.bolt + '<small>Power<kbd>Tab</kbd></small>'; $('#b-map').innerHTML = IC.map + '<small>Map<kbd>M</kbd></small>'; $('#b-ask').innerHTML = IC.bot + '<small>Ask REGO<kbd>H</kbd></small>'; $('#b-data').innerHTML = IC.book + '<small>Guide<kbd>N</kbd></small>';
