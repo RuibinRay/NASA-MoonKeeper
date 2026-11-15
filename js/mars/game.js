@@ -102,7 +102,7 @@ export function installMars(G, deps) {
 
   // ---------- alerts and advice ----------
   G.alerts = () => {
-    const F = S.flow, a = [], pct = S.battery / S.batteryCap; MIS.alerts(a);
+    const F = S.flow, a = [], pct = S.battery / F.cap; MIS.alerts(a);
     if (F.eff < 1) a.push({ key: 'power', text: tt('POWER IS OUT'), sub: tt('The battery is empty and the machines are slowing'), go: 'power' });
     else if (F.net < 0 && pct < 0.25) a.push({ text: tt('Battery low'), sub: tt`${Math.round(pct * 100)}% · ${hrs(F.battHours)} left`, kind: 'warn', go: 'power' });
     if (F.o2Net < 0 && F.o2Days * 24 / MARS.SOL_H < 3) a.push({ key: 'o2', text: tt('Oxygen running out'), sub: sols((F.o2Days * 24) / MARS.SOL_H), go: 'isru' });
@@ -156,7 +156,7 @@ export function installMars(G, deps) {
   }
   // What each of them says is worked out from the outpost's numbers at that moment.
   async function talk(n) {
-    const F = (S.flow = marsFlows(S)), perSol = MARS.SOL_H, pct = Math.round((S.battery / S.batteryCap) * 100), says = (text) => ui.say([{ who: n.id, text }]), bye = (label) => ({ label, norec: true, run: () => {} }); G.audio.play('radio');
+    const F = (S.flow = marsFlows(S)), perSol = MARS.SOL_H, pct = Math.round((S.battery / F.cap) * 100), says = (text) => ui.say([{ who: n.id, text }]), bye = (label) => ({ label, norec: true, run: () => {} }); G.audio.play('radio');
     if (n.id === 'mateo') {
       await says(F.eff < 1 ? tt`Commander, the batteries are flat. We make ${kw(F.supply)} and the base wants ${kw(F.demand)}, so every machine is running slow. Something has to go off.`
         : S.tau > 2 ? tt`This dust is eating our power. The solar field gives ${kw(F.solar)}; under a clear sky it would give ${kw(F.solarClear)} right now. The fission unit's ${kw(F.reactor)} is carrying us. The battery is at ${pct}%.`
@@ -225,14 +225,23 @@ export function installMars(G, deps) {
 
   // ---------- panels ----------
   const place = (p) => MIS.place(p) || ui.window({ title: p.name, img: `mars/mr_${p.id}`, html: `<p>${p.text}</p><div class="stat"><span>${tt('What kind of fact is this?')}</span><b>${pill(p.cls)}</b></div>` });
-  const toggle = (id) => ({ label: S.on[id] ? tt`Switch the ${INFO[id].name} off` : tt`Switch the ${INFO[id].name} on`, sub: S.on[id] ? tt`Saves ${kw(LOADS[id])}. Everything it does stops.` : tt`Uses ${kw(LOADS[id])}.`, norec: S.on[id], run: () => { S.on[id] = !S.on[id]; S.flow = marsFlows(S); G.audio.play(S.on[id] ? 'ok' : 'blip'); ui.toast(S.on[id] ? tt`${INFO[id].name}: on.` : tt`${INFO[id].name}: off.`, S.on[id] ? 'good' : ''); } });
+  // The two machines that keep the crew alive from minute to minute ask before they go off, and say how long the crew would have.
+  async function sureOff(id) {
+    if (id !== 'lifesupport' && id !== 'thermal') return true; const F = (S.flow = marsFlows(S)), out = Math.min(F.tempC, 4);
+    const h = id === 'lifesupport' ? Math.max(0.5, (3 - S.co2) / (0.02 * S.crew)) : Math.max(0.5, -Math.log(Math.max(0.01, (5 - out) / Math.max(0.01, S.habTemp - out))) / 0.02);   // the same rates as js/mars/sim.js
+    const i = await ui.card({ title: id === 'lifesupport' ? tt('Switch the Life Support Module off?') : tt('Switch the heat pump off?'),
+      body: id === 'lifesupport' ? tt`The air scrubbers stop, and used water is no longer cleaned. Carbon dioxide builds up indoors: in about <b>${hrs(h)}</b> the air makes the crew ill.` : tt`The rooms start cooling towards the ${Math.round(F.tempC)}°C outside. In about <b>${hrs(h)}</b> they are below 5°C, and the crew start to suffer.`,
+      choices: [{ label: tt('Keep it running') }, { label: tt('Switch it off anyway'), sub: tt`Saves ${kw(LOADS[id])}.` }] });
+    return i === 1;
+  }
+  const toggle = (id) => ({ label: S.on[id] ? tt`Switch the ${INFO[id].name} off` : tt`Switch the ${INFO[id].name} on`, sub: S.on[id] ? tt`Saves ${kw(LOADS[id])}. Everything it does stops.` : tt`Uses ${kw(LOADS[id])}.`, norec: S.on[id], run: async () => { if (S.on[id] && !(await sureOff(id))) return; S.on[id] = !S.on[id]; S.flow = marsFlows(S); G.audio.play(S.on[id] ? 'ok' : 'blip'); ui.toast(S.on[id] ? tt`${INFO[id].name}: on.` : tt`${INFO[id].name}: off.`, S.on[id] ? 'good' : ''); } });
   async function panel(id) {
     TRAIN.note('panel', id);
     const I = INFO[id], F = (S.flow = marsFlows(S)), sn = F.sun, first = seen(id), perSol = MARS.SOL_H, st = [[tt('What it does'), I.does], [tt('It needs'), I.needs], [tt('It gives'), I.gives]], act = [];
     if (LOADS[id]) st.push([tt('Power'), S.on[id] ? (F.eff < 1 ? tt`${kw(F.use[id])} wanted · only ${Math.round(F.eff * 100)}% arriving` : kw(F.use[id])) : tt('switched off')]);
-    if (id === 'cmd') { st.push([tt('Crew'), tt`${S.crew} people`], [tt('Power now'), tt`${kw(F.supply)} made · ${kw(F.demand)} used`], [tt('Oxygen'), tt`${S.o2.toFixed(1)} kg · ${F.o2Net >= 0 ? '+' : ''}${(F.o2Net * perSol).toFixed(1)} kg a sol`], [tt('Water'), tt`${S.water.toFixed(0)} L · ${F.wNet >= 0 ? '+' : ''}${(F.wNet * perSol).toFixed(1)} L a sol`], [tt('Food'), tt`${S.food.toFixed(0)} kg · ${F.foodNet >= 0 ? '+' : ''}${(F.foodNet * perSol).toFixed(1)} kg a sol`], [tt('Rooms'), tt`${Math.round(S.habTemp)}°C · ${S.co2.toFixed(2)}% CO₂`], [tt('Places found'), `${POI.filter((p) => S.seen[p.id]).length} / ${POI.length}`]);
+    if (id === 'cmd') { st.push([tt('Crew'), tt`${S.crew} people, you included`], [tt('Power now'), tt`${kw(F.supply)} made · ${kw(F.demand)} used`], [tt('Oxygen'), tt`${S.o2.toFixed(1)} kg · ${F.o2Net >= 0 ? '+' : ''}${(F.o2Net * perSol).toFixed(1)} kg a sol`], [tt('Water'), tt`${S.water.toFixed(0)} L · ${F.wNet >= 0 ? '+' : ''}${(F.wNet * perSol).toFixed(1)} L a sol`], [tt('Food'), tt`${S.food.toFixed(0)} kg · ${F.foodNet >= 0 ? '+' : ''}${(F.foodNet * perSol).toFixed(1)} kg a sol`], [tt('Rooms'), tt`${Math.round(S.habTemp)}°C · ${S.co2.toFixed(2)}% CO₂`], [tt('Places found'), `${POI.filter((p) => S.seen[p.id]).length} / ${POI.length}`]);
       act.push({ label: tt('Ask REGO what to do next'), run: () => G.advise() }, { label: tt('Open the map'), run: () => bigMap() }); }
-    else if (id === 'power') { st.push([tt('Solar field'), tt`${kw(F.solar)} · sunlight on the ground ${Math.round(F.G)} W/m²`], [tt('Fission unit'), kw(F.reactor)], [tt('Being used'), kw(F.demand)], [tt('Battery'), tt`${Math.round(S.battery)} of ${S.batteryCap} kWh${F.net < 0 ? ' · ' + hrs(F.battHours) + tt(' left') : ''}`], [tt('Dust on the panels'), tt`${Math.round(S.panelDust * 100)}% of their power lost`], [tt('Dust in the sky'), tt`${S.tau.toFixed(2)} (${S.tau < 1 ? tt('clear') : S.tau < 2.5 ? tt('dusty') : tt('storm')})`]);
+    else if (id === 'power') { st.push([tt('Solar field'), tt`${kw(F.solar)} · sunlight on the ground ${Math.round(F.G)} W/m²`], [tt('Fission unit'), kw(F.reactor)], [tt('Being used'), kw(F.demand)], [tt('Battery'), (F.cap < S.batteryCap ? tt`${Math.round(S.battery)} of ${Math.round(F.cap)} kWh (a module has failed: ${S.batteryCap} when whole)` : tt`${Math.round(S.battery)} of ${S.batteryCap} kWh`) + (F.net < 0 ? ' · ' + hrs(F.battHours) + tt(' left') : '')], [tt('Dust on the panels'), tt`${Math.round(S.panelDust * 100)}% of their power lost`], [tt('Dust in the sky'), tt`${S.tau.toFixed(2)} (${S.tau < 1 ? tt('clear') : S.tau < 2.5 ? tt('dusty') : tt('storm')})`]);
       act.push({ label: tt('Brush the dust off the solar panels'), sub: tt('Takes 2 hours outside.'), disabled: S.panelDust < 0.04, norec: S.panelDust < 0.1, run: async () => { await pass(2, tt('Brushing the solar panels…')); S.panelDust = 0.02; ui.toast(tt('The panels are clean again.'), 'good'); } });
       if (!MIS.on()) for (const [v, name, sub] of [[0.45, tt('Science demo: make the sky clear'), tt('A normal clear day.')], [1.5, tt('Science demo: make the sky dusty'), tt('Dust season: a hazy sky.')], [4, tt('Science demo: make the sky a regional storm'), tt('Like the storms that cover part of the planet most years.')]]) act.push({ label: name, sub: sub + ' ' + tt('The dust thickens or clears over a few hours.'), norec: true, disabled: Math.abs(S.tauWant - v) < 0.01, run: () => { S.tauWant = v; ui.bubble(v > 2 ? tt('<b>Demo storm on its way.</b> Watch the sky, the shadows and the solar power over the next hours. Real storms cannot be switched on or off: this control is here so you can see what dust does.') : tt('The sky will change over the next few hours.'), v > 2 ? 'worried' : 'happy', 12); } }); }
     else if (id === 'living') { st.push([tt('Rooms'), `${Math.round(S.habTemp)}°C`], [tt('Crew health'), `${Math.round(S.health)}%`]); act.push({ label: tt('Rest until morning'), sub: tt`Time runs on to sunrise (${hrs(toMorning())}). The outpost keeps working.`, disabled: !S.on.living || sn.up && sn.hour < sn.set - 2, norec: true, run: async () => { await ui.fade(true); await pass(toMorning(), tt('Resting…'), true); await ui.fade(false); ui.bubble(tt('Good morning! The Sun is coming up over the plain.'), 'joy', 8); } }); }
@@ -252,7 +261,7 @@ export function installMars(G, deps) {
     if (SCI[id]) act.push({ label: tt('Try it in the Mars Science Center'), sub: tt('Move the sliders and see the sum behind this building.'), norec: true, run: () => openScience(SCI[id]) });
     MIS.panel(id, st, act); st.push([tt('What kind of fact is this?'), pill(I.cls)]);
     await ui.panel(I.name, { stats: st, actions: act, note: I.note, img: `mars/mr_${id}` });
-    if (first && id !== 'cmd') { const left = TOUR.filter((b) => !S.seen[b]).length; ui.toast(left === 1 ? tt`${INFO[id].name} visited. 1 building still to see.` : left ? tt`${INFO[id].name} visited. ${left} buildings still to see.` : tt('You have visited all 14 buildings!'), 'good'); }
+    if (first && id !== 'cmd' && !MIS.on()) { const left = TOUR.filter((b) => !S.seen[b]).length; ui.toast(left === 1 ? tt`${INFO[id].name} visited. 1 building still to see.` : left ? tt`${INFO[id].name} visited. ${left} buildings still to see.` : tt('You have visited all 14 buildings!'), 'good'); }
   }
 
   // ---------- maps: the corner map and the Map window live in js/mars/map.js ----------
@@ -275,7 +284,7 @@ export function installMars(G, deps) {
       const show = !inRoom && (!q.poi || S.seen[id]) && v3.z < 1 && Math.abs(v3.x) < 1.1 && (goal || dist < (q.poi ? 120 : 48)); q.el.classList.toggle('hidden', !show); if (!show) continue;
       q.el.style.transform = `translate(${((v3.x + 1) / 2) * w}px,${((1 - v3.y) / 2) * h}px) translate(-50%,-100%)`; const txt = `${q.name}<small>${dist.toFixed(0)} m</small>`; if (q.el.dataset.t !== txt) { q.el.dataset.t = txt; q.el.innerHTML = txt; } q.el.classList.toggle('goal', goal); q.el.classList.toggle('bad', !goal && ((!!LOADS[id] && !S.on[id]) || MIS.broken(id))); }
     hudT += dt; if (hudT < 0.2) return; hudT = 0;
-    const F = S.flow, sn = F.sun, bp = S.battery / S.batteryCap, ck = marsClock(S), perSol = MARS.SOL_H, toSol = (d) => (d * 24) / MARS.SOL_H;
+    const F = S.flow, sn = F.sun, bp = S.battery / F.cap, ck = marsClock(S), perSol = MARS.SOL_H, toSol = (d) => (d * 24) / MARS.SOL_H;
     gauge('power', Math.round(bp * 100) + '%', bp, F.net >= 0 ? tt`+${F.net.toFixed(1)} kW · Sun ${F.solar.toFixed(0)} kW` : tt`${F.net.toFixed(1)} kW · ${hrs(Math.min(F.battHours, 999))} left`, F.eff < 1 ? 2 : F.net < 0 && bp < 0.12 ? 2 : F.net < 0 && bp < 0.3 ? 1 : 0);
     gauge('air', S.tau.toFixed(2), S.tau / 5, S.tau < 1 ? tt('clear sky') : S.tau < 2.5 ? tt('dusty sky') : tt('dust storm'), S.tau > 2.5 ? 2 : S.tau > 1 ? 1 : 0);
     gauge('o2', S.o2.toFixed(1) + ' kg', S.o2 / S.o2Cap, tt`${F.o2Net >= 0 ? '+' : ''}${(F.o2Net * perSol).toFixed(1)} a sol${F.o2Net < 0 ? ' · ' + sols(toSol(F.o2Days)) : ''}`, S.o2 < 2 ? 2 : F.o2Net < 0 && toSol(F.o2Days) < 3 ? 1 : 0);

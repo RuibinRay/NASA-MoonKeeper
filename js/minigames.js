@@ -150,7 +150,7 @@ const GAMES = {
       if (!s.hasBg) { c.fillStyle = '#0a111a'; c.fillRect(0, 0, W, H); }
       for (const it of s.items) { c.fillStyle = 'rgba(15,28,44,.93)'; rr(c, it.x, it.y, 230, 160, 16); c.fill(); if (it.fx > 0.04) { c.fillStyle = 'rgba(73,230,255,' + it.fx * 0.75 + ')'; c.fill(); } if (it.fx < -0.04) { c.fillStyle = 'rgba(255,82,82,' + -it.fx * 0.75 + ')'; c.fill(); } c.strokeStyle = 'rgba(120,205,255,.3)'; c.lineWidth = 2; rr(c, it.x, it.y, 230, 160, 16); c.stroke(); this.part(c, it.k, it.x + 115, it.y + 66); c.font = '600 19px Inter,sans-serif'; c.textAlign = 'center'; c.fillStyle = '#fff'; c.fillText(it.name, it.x + 115, it.y + 140); }
       for (let i = 0; i < s.seq.length; i++) { c.fillStyle = i < s.in ? '#58e08a' : s.phase === 'show' && i < s.i ? '#49e6ff' : '#27384a'; c.beginPath(); c.arc(W / 2 - (s.seq.length - 1) * 13 + i * 26, 452, 8, 0, TAU); c.fill(); }
-      label(c, s.phase === 'show' ? tt`Mission Control is reading step ${Math.min(s.i + 1, s.seq.length)} of ${s.seq.length}… watch!` : tt`Your turn: step ${s.in + 1} of ${s.seq.length}  ·  round ${s.r + 1}/${s.rounds.length}`);
+      label(c, s.phase === 'show' ? tt`Mission Control is reading step ${Math.min(s.i + 1, s.seq.length)} of ${s.seq.length}… watch!` : tt`Your turn: step ${Math.min(s.in + 1, s.seq.length)} of ${s.seq.length}  ·  round ${Math.min(s.r + 1, s.rounds.length)}/${s.rounds.length}`);
     },
   },
   // 7. Fight a fire: aim at the base of each flame, and watch the extinguisher gauge
@@ -183,7 +183,8 @@ const GAMES = {
     why: tt('Red romaine lettuce took 33 days to grow on the Space Station in 2015. It was the first space-grown crop astronauts ate there. Radishes took 27 days.'), src: 'veggie',
     init(s, rnd) { s.p = []; for (let i = 0; i < 10; i++) s.p.push({ x: 110 + (i % 5) * 170, y: 150 + ((i / 5) | 0) * 190, g: rnd() * 0.6, sp: 0.35 + rnd() * 0.35, fx: 0 }); s.picks = 0; s.rnd = rnd; s.win = [0.7, 0.55, 0.42][s.tier]; },
     down(s, x, y) { const p = s.p.find((q) => Math.hypot(q.x - x, q.y - y) < 70); if (!p) return; if (p.g >= 1 && p.g < 1 + s.win) { s.picks++; p.fx = 1; s.sfx('ok'); } else { p.fx = -1; s.sfx('bad'); } p.g = 0; p.sp = 0.35 + s.rnd() * 0.4; },
-    update(s, dt) { if (s.picks >= 8) return { win: true, score: 1 }; for (const p of s.p) { p.g += dt * p.sp; p.fx *= Math.pow(0.03, dt); if (p.g > 1 + s.win + 0.45) { p.g = 0; p.sp = 0.35 + s.rnd() * 0.4; } } if (s.left <= 0) return { win: true, score: clamp(s.picks / 8, 0, 1) }; },
+    did: (r) => (r.picks >= 8 ? null : tt`You picked ${r.picks} of the 8 the basket holds. A plant picked before it glowed, or after it wilted, was lost.`),
+    update(s, dt) { if (s.picks >= 8) return { win: true, score: 1, picks: s.picks }; for (const p of s.p) { p.g += dt * p.sp; p.fx *= Math.pow(0.03, dt); if (p.g > 1 + s.win + 0.45) { p.g = 0; p.sp = 0.35 + s.rnd() * 0.4; } } if (s.left <= 0) return { win: true, score: clamp(s.picks / 8, 0, 1), picks: s.picks }; },
     draw(s, c) {
       if (!s.hasBg) { c.fillStyle = '#170a1c'; c.fillRect(0, 0, W, H); } c.fillStyle = 'rgba(255,79,216,.12)'; c.fillRect(0, 0, W, H);
       for (let r = 0; r < 2; r++) { c.fillStyle = '#e8e8e3'; rr(c, 30, 188 + r * 190, 840, 30, 10); c.fill(); c.fillStyle = '#2f8fd8'; c.fillRect(40 + ((s.t * 50) % 36), 198 + r * 190, 790, 7); }
@@ -361,7 +362,7 @@ const GAMES = {
   gauge: {
     title: tt('Check the pressure'), how: tt('Drag the valve wheel round to move the needle. Hold the needle inside the GREEN band until the ring closes.'), time: 20,
     why: tt('A repair is not finished until it is tested. Crews watch a gauge for a while after every fix: if the needle drifts, there is still a leak or a bad connection.'), src: 'leakcheck',
-    init(s, rnd) { s.valve = 0.08; s.n = 0.05; s.a = null; s.hold = 0; s.c = 0.45 + rnd() * 0.3; s.w = [0.2, 0.14, 0.11][s.tier]; s.H = [1.5, 2.1, 2.8][s.tier]; s.max = s.o.max || 101; s.unit = s.o.unit || 'kPa'; },
+    init(s, rnd) { s.valve = 0.08; s.n = 0.05; s.a = null; s.hold = 0; s.c = 0.45 + rnd() * 0.3; s.w = [0.2, 0.14, 0.11][s.tier]; s.H = [1.5, 2.1, 2.8][s.tier]; s.max = (s.o.max || 101) / s.c; s.unit = s.o.unit || 'kPa'; },
     update(s, dt) {
       const dx = s.ptr.x - 230, dy = s.ptr.y - 255, r = Math.hypot(dx, dy);
       if (s.ptr.down && r > 30 && r < 190) { const a = Math.atan2(dy, dx); if (s.a !== null) { let d = a - s.a; d = Math.atan2(Math.sin(d), Math.cos(d)); s.valve = clamp(s.valve + d / (TAU * 1.1), 0, 1); } s.a = a; } else s.a = null;
@@ -404,7 +405,7 @@ const DEBRIEF = {
   gauge: [tt('You brought the reading into the safe band and watched it hold steady.'), tt('A steady needle proves the repair worked. A drifting one means the job is not finished.')],
 };
 const BG = {};   // backdrop pictures, loaded on first use: assets/img/mg_<kind>.jpg (the game still works without them)
-function backdrop(kind) { if (BG[kind] === undefined) { const im = new Image(); im.onerror = () => { BG[kind] = null; }; im.src = 'assets/img/mg_' + kind + '.jpg'; BG[kind] = im; } const im = BG[kind]; return im && im.complete && im.naturalWidth ? im : null; }
+function backdrop(kind) { if (BG[kind] === undefined) { const im = new Image(); im.onerror = () => { BG[kind] = null; }; im.src = kind.includes('/') ? 'assets/img/' + kind + '.jpg' : 'assets/img/mg_' + kind + '.jpg'; BG[kind] = im; } const im = BG[kind]; return im && im.complete && im.naturalWidth ? im : null; }   // a kind with a slash ('mars/mr_isru') is any picture in assets/img
 // the backdrop pictures are SI-made: a visible "SI-generated" mark in the bottom-right corner (Space Apps rules)
 function siMark(c, W, H) {
   c.save(); const fs = Math.round(12 * TXT), p = Math.round(5 * TXT), t = tt('SI-generated');
@@ -416,11 +417,11 @@ function wrap(c, text, x, y, maxW, lh) { let line = ''; for (const w of text.spl
 let TXT = 1;   // text scale: 1 on a desktop, up to 2 when the canvas is drawn small on a phone
 function label(c, text) { const fs = Math.round(18 * TXT); c.font = '600 ' + fs + 'px Inter,sans-serif'; c.textAlign = 'center'; if (c.measureText(text).width > W - 40 && text.includes('   ·   ')) text = text.split('   ·   ')[0]; const w = Math.min(W - 8, c.measureText(text).width + 30), h = fs + 12; c.fillStyle = 'rgba(4,10,16,.82)'; rr(c, W / 2 - w / 2, 6, w, h, 10); c.fill(); c.fillStyle = '#fff'; c.fillText(text, W / 2, 6 + fs + 3); }
 
-// Play a minigame. Returns { win, score 0..1 }. opts: { ease (time multiplier), easy, total }
+// Play a minigame. Returns { win, score 0..1 }. opts: { ease (time multiplier), easy, total, title, how, why, bg (a picture in assets/img, e.g. 'mars/mr_isru'), winText, did, matter }
 export function playMini(G, kind, opts = {}) {
   const tier = opts.tier ?? ({ cadet: 0, pilot: 1, commander: 2, unlimited: 2 }[G.S?.mode] ?? 1);   // 0 guided · 1 on your own · 2 tight tolerances
   const def = GAMES[kind], ease = (opts.ease || 1) * (G.S?.m.mgEase || 1) * (G.S?.flow.commsOn && G.S.lv.comms === 2 ? 1.2 : 1);
-  const html = `<div class="mg-rego"><img src="assets/img/c_rego.jpg" alt=""><div>${tt`<b>REGO${opts.step ? ' · ' + opts.step : ''}</b>${opts.how || def.how}`}</div></div><div class="mg-bar"><i id="mg-time"></i></div><div class="mg-wrap"><canvas id="mg-canvas" width="${W}" height="${H}"></canvas></div>${def.arrows ? '<div class="mg-ctl"><button data-k="ArrowLeft">◀</button><button data-k="ArrowUp">▲</button><button data-k="ArrowDown">▼</button><button data-k="ArrowRight">▶</button></div>' : ''}<div class="learn">${def.why}</div>${ease > 1.15 && G.S?.lv.comms === 2 ? ('<div style="font-size:12px;color:var(--green)">' + tt('Mission Control is helping: +20% time.') + '</div>') : ''}`;
+  const html = `<div class="mg-rego"><img src="assets/img/c_rego.jpg" alt=""><div>${tt`<b>REGO${opts.step ? ' · ' + opts.step : ''}</b>${opts.how || def.how}`}</div></div><div class="mg-bar"><i id="mg-time"></i></div><div class="mg-wrap"><canvas id="mg-canvas" width="${W}" height="${H}"></canvas></div>${def.arrows ? '<div class="mg-ctl"><button data-k="ArrowLeft">◀</button><button data-k="ArrowUp">▲</button><button data-k="ArrowDown">▼</button><button data-k="ArrowRight">▶</button></div>' : ''}<div class="learn">${opts.why || def.why}</div>${ease > 1.15 && G.S?.lv.comms === 2 ? ('<div style="font-size:12px;color:var(--green)">' + tt('Mission Control is helping: +20% time.') + '</div>') : ''}`;
   return new Promise((resolve) => {
     G.ui.window({ title: opts.title || def.title, html, closable: false, onMount: (w) => {
       const cv = w.querySelector('#mg-canvas'), c = cv.getContext('2d'), bar = w.querySelector('#mg-time');
@@ -440,13 +441,13 @@ export function playMini(G, kind, opts = {}) {
           s.t += dt; s.left -= dt; result = def.update(s, dt) || (window.__mgSkip ? (window.__mgSkip === 'fail' ? { win: false, score: 0 } : { win: true, score: typeof window.__mgSkip === 'number' ? window.__mgSkip : 0.8 }) : null); // __mgSkip: test hook (true, a score, or 'fail')
           if (result) { result.stars = result.win ? (result.score > 0.8 ? 3 : result.score > 0.55 ? 2 : 1) : 0; endT = 3.2; s.ptr.down = false; G.audio?.play(result.win ? 'win' : 'bad'); }
         } else endT -= dt;
-        TXT = clamp(0.7 / (cv.clientWidth / W || 1), 1, 2); c.clearRect(0, 0, W, H); const bg = backdrop(def.bg || kind); s.hasBg = !!bg; if (bg) { const k = Math.max(W / bg.naturalWidth, H / bg.naturalHeight), bw = bg.naturalWidth * k, bh = bg.naturalHeight * k; c.drawImage(bg, (W - bw) / 2, (H - bh) / 2, bw, bh); c.fillStyle = 'rgba(4,9,15,.58)'; c.fillRect(0, 0, W, H); } def.draw(s, c); if (bg) siMark(c, W, H);   // drawn last, so nothing covers it
+        TXT = clamp(0.7 / (cv.clientWidth / W || 1), 1, 2); c.clearRect(0, 0, W, H); const bg = backdrop(opts.bg || def.bg || kind); s.hasBg = !!bg; if (bg) { const k = Math.max(W / bg.naturalWidth, H / bg.naturalHeight), bw = bg.naturalWidth * k, bh = bg.naturalHeight * k; c.drawImage(bg, (W - bw) / 2, (H - bh) / 2, bw, bh); c.fillStyle = 'rgba(4,9,15,.58)'; c.fillRect(0, 0, W, H); } def.draw(s, c); if (bg) siMark(c, W, H);   // drawn last, so nothing covers it
         bar.style.width = clamp(s.left / s.time, 0, 1) * 100 + '%';
         if (result) {   // the result card: stars, what you did, why it mattered
           const d = DEBRIEF[kind] || ['', '']; c.fillStyle = 'rgba(2,6,12,.84)'; c.fillRect(0, 0, W, H); c.textAlign = 'center';
           c.font = '700 50px "Chakra Petch",sans-serif'; c.fillStyle = result.win ? '#58e08a' : '#ffb347'; c.fillText(result.win ? (opts.winText || (kind === 'harvest' ? tt('Harvest done!') : tt('Fixed!'))) : (opts.loseText || tt('Not this time')), W / 2, 112);
           c.font = '46px Inter,sans-serif'; for (let k = 0; k < 3; k++) { c.fillStyle = k < result.stars ? '#ffd21f' : '#27384a'; c.fillText('★', W / 2 - 62 + k * 62, 176); }
-          const f = Math.min(TXT, 1.5), bx = f > 1 ? 60 : 150, bw = W - bx * 2; c.textAlign = 'left'; c.font = '700 ' + Math.round(15 * f) + 'px "Chakra Petch",sans-serif'; c.fillStyle = '#49e6ff'; c.fillText(tt('WHAT YOU DID'), bx, 226); c.font = '500 ' + Math.round(20 * f) + 'px Inter,sans-serif'; c.fillStyle = '#e9f2f9'; let y = wrap(c, result.win ? (opts.did || d[0]) : tt('Time ran out before the job was finished, so it had to be done the slow way.'), bx, 226 + 30 * f, bw, 27 * f);
+          const f = Math.min(TXT, 1.5), bx = f > 1 ? 60 : 150, bw = W - bx * 2; c.textAlign = 'left'; c.font = '700 ' + Math.round(15 * f) + 'px "Chakra Petch",sans-serif'; c.fillStyle = '#49e6ff'; c.fillText(tt('WHAT YOU DID'), bx, 226); c.font = '500 ' + Math.round(20 * f) + 'px Inter,sans-serif'; c.fillStyle = '#e9f2f9'; let y = wrap(c, result.win ? (opts.did || def.did?.(result) || d[0]) : tt('Time ran out before the job was finished, so it had to be done the slow way.'), bx, 226 + 30 * f, bw, 27 * f);
           c.font = '700 ' + Math.round(15 * f) + 'px "Chakra Petch",sans-serif'; c.fillStyle = '#ffb347'; c.fillText(tt('WHY IT MATTERS'), bx, y + 12 * f); c.font = '500 ' + Math.round(20 * f) + 'px Inter,sans-serif'; c.fillStyle = '#e9f2f9'; wrap(c, opts.matter || d[1], bx, y + 12 * f + 30 * f, bw, 27 * f);
           c.textAlign = 'center'; c.font = '600 ' + Math.round(14 * f) + 'px Inter,sans-serif'; c.fillStyle = '#9bb0c3'; c.fillText(tt('Tap to carry on'), W / 2, H - 14);
         }
