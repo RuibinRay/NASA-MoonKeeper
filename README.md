@@ -20,7 +20,7 @@ With REGO the robot you must keep the **power on** and the **air in** until resc
 | **E** | do the thing shown at the bottom of the screen |
 | Space · Q (in the digger) | dig · tip the bucket into the filler |
 | **Q** | second action (take cargo out of a vehicle) |
-| Tab · M · H · N · L | Power Board · Map · ask REGO · Space Guide · Life-support loop |
+| Tab · M · H · N · L · T | Power Board · Map · ask REGO · Space Guide · Life-support loop · Day and night |
 | V · P | first/third person · pause |
 
 ## What you do

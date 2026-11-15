@@ -168,7 +168,8 @@ G.job = async (o) => {
   let fx = null;
   if (G.minis && o.mini !== false) {
     ui.prompt(null); const r = await playProcedure(G, stagesFor(o).map(([k, opt]) => [k, { loseText: 'Done the slow way', ...opt }]));
-    const q = !r.win || (/Picking/i.test(o.title) && r.stars <= 1) ? 'poor' : r.stars >= 3 ? 'great' : 'ok';   // harvest never fails on time, so one star counts as a poor harvest fx = G.S ? jobEffect(o.title, o.tag, q) : null;
+    const q = !r.win || (/Picking/i.test(o.title) && r.stars <= 1) ? 'poor' : r.stars >= 3 ? 'great' : 'ok';   // harvest never fails on time, so one star counts as a poor harvest
+    fx = G.S ? jobEffect(o.title, o.tag, q) : null;
     if (q === 'poor') { o = { ...o, hours: o.hours * 1.3 }; ui.toast('That was fiddly, so the job takes 30% longer.'); }
     else if (q === 'great') { o = { ...o, hours: o.hours * 0.85 }; ui.toast('Clean work! The job goes 15% faster.', 'good'); }
     if (fx) fx.push(q);
@@ -204,7 +205,7 @@ addEventListener('keydown', (e) => {
   if (G.state !== 'play' && G.state !== 'tutorial') return; if (G.jobTick || G.riding) return;
   if (k === 'e' || k === 'Enter') G.doAction('e'); else if (k === 'q') G.doAction('q');
   else if (k === 'Tab') { if (G.state === 'play') ui.powerBoard(); } else if (k === 'm') ui.bigMap(); else if (k === 'h') { if (G.state === 'play') G.advise(); }
-  else if (k === 'n') ui.guide(); else if (k === 'l') { if (G.state === 'play') G.loopScreen(); } else if (k === 'v') toggleView(); else if (k === 'p') togglePause();
+  else if (k === 'n') ui.guide(); else if (k === 'l') { if (G.state === 'play') G.loopScreen(); } else if (k === 't') { if (G.state === 'play' && G.S) ui.dayNight(); } else if (k === 'v') toggleView(); else if (k === 'p') togglePause();
 });
 addEventListener('keyup', (e) => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; G.keys[k] = false; });
 addEventListener('blur', () => (G.keys = {}));
@@ -216,7 +217,7 @@ addEventListener('pointermove', (e) => { if (ui.busy || G.jobTick) return; let d
 canvas.addEventListener('wheel', (e) => { cam.dist = clamp(cam.dist + Math.sign(e.deltaY) * 0.8, 3.5, 22); }, { passive: true });
 function toggleView() { cam.fp = !cam.fp; cam.pitch = clamp(cam.pitch, -0.9, 1.1); ui.toast(cam.fp ? 'First-person view. Look up to find Earth!' : 'Third-person view.'); }
 function togglePause() { if (G.state !== 'play') return; G.paused = !G.paused; ui.banner(G.paused ? 'PAUSED — press P to continue' : null, true); }
-$('#b-power').onclick = () => G.state === 'play' && !ui.busy && ui.powerBoard(); $('#b-map').onclick = () => !ui.busy && G.S && ui.bigMap(); $('#b-ask').onclick = () => G.state === 'play' && !ui.busy && G.advise(); $('#b-data').onclick = () => !ui.busy && ui.guide();
+$('#b-power').onclick = () => G.state === 'play' && !ui.busy && ui.powerBoard(); $('#b-map').onclick = () => !ui.busy && G.S && ui.bigMap(); $('#b-ask').onclick = () => G.state === 'play' && !ui.busy && G.advise(); $('#b-data').onclick = () => !ui.busy && ui.guide(); $('#clock').onclick = () => G.S && G.state === 'play' && !ui.busy && ui.dayNight();
 $('#b-view').onclick = toggleView; $('#b-pause').onclick = togglePause;
 $('#b-speed').onclick = () => { G.speedMul = G.speedMul === 1 ? 2 : G.speedMul === 2 ? 4 : 1; $('#speed-l').textContent = '×' + G.speedMul; };
 $('#b-sound').onclick = () => { $('#b-sound').innerHTML = G.audio.toggle() ? IC.sound : IC.mute; };
