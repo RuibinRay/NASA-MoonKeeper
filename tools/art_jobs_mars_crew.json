@@ -1,0 +1,34 @@
+{
+ "outDir": "assets/art/mars",
+ "resolution": "2k",
+ "quality": "high",
+ "styles": {
+  "cartoon": "Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, big expressive eyes, clean bold outlines, soft cel shading, bright cheerful saturated colors, simple readable background. No text, no letters, no numbers, no logos, no flags, no watermark."
+ },
+ "jobs": [
+  {
+   "id": "c_mateo",
+   "style": "cartoon",
+   "aspect_ratio": "1:1",
+   "web": "assets/img/mars/c_mateo.jpg",
+   "webW": 512,
+   "prompt": "Cartoon portrait of a cheerful habitat engineer on a Mars outpost: a Latino man in his thirties with short curly dark hair and a neat short beard, friendly confident grin, wearing a dark blue indoor crew shirt with teal stripes on the shoulders, a small wrench tucked in his chest pocket. Background of a white round room with consoles glowing amber and one round window showing a butterscotch-tan Martian sky."
+  },
+  {
+   "id": "c_noor",
+   "style": "cartoon",
+   "aspect_ratio": "1:1",
+   "web": "assets/img/mars/c_noor.jpg",
+   "webW": 512,
+   "prompt": "Cartoon portrait of a calm, kind life-support specialist and doctor on a Mars outpost: an Arab woman in her forties with dark wavy hair tied back, warm reassuring smile, wearing a dark blue indoor crew shirt with violet stripes on the shoulders, a small stethoscope round her neck. Background of a white room with air pipes, a row of green plants and one round window showing a butterscotch-tan Martian sky."
+  },
+  {
+   "id": "c_lena",
+   "style": "cartoon",
+   "aspect_ratio": "1:1",
+   "web": "assets/img/mars/c_lena.jpg",
+   "webW": 512,
+   "prompt": "Cartoon portrait of an excited planetary geologist out on the surface of Mars: a Korean woman in her thirties with a short black bob, bright curious smile, wearing a white spacesuit with green stripes on the shoulders and a clear round bubble helmet through which her whole face is seen, holding up a small reddish rock. Background of a rust-brown rocky Martian plain under a butterscotch-tan hazy sky with a small pale Sun."
+  }
+ ]
+}

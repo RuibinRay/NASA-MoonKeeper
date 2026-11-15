@@ -11,3 +11,6 @@ node_modules/
 
 # Mars elevation downloads (20 MB; fetched again by tools/build_mars.mjs)
 data/raw/mars/
+
+# Mars art originals (4K PNGs; the game loads the small copies in assets/img/mars/)
+assets/art/mars/
