@@ -19,7 +19,7 @@ Legend for evidence: **MOON** measured on or from the Moon · **FLOWN** done in 
 | Experiment | Thale cress three ways: hydroponics, treated moon soil, raw moon soil. | `EXP_POTS` |
 | Research | Points from first harvests, new heating methods and the experiment buy five upgrades. | `TECH` |
 | Polar Ice Mine | A permanently dark crater to the south-west with six icy patches, a drivable digger on a power cable, a canister filler, floodlights and a shelter. Two scoops fill one canister; the first one earns research. Vehicles lose charge in the cold. | `MINE` in `js/config.js`, `scoop` and `dump` in `js/life.js`, `_mine` in `js/world.js` |
-| Tests | 70 checks of mass balance, energy balance, crop timing, routing, saving. | `tools/life_test.mjs` |
+| Tests | 71 checks of mass balance, energy balance, crop timing, routing, saving. | `tools/life_test.mjs` |
 | Animation, step 3 | Rover suspension, steering, body lean, squat and dive, antenna, tyre tracks. All of it is visual only: it never changes where the rover goes. | `placeVehicles` in `js/main.js`, `_vehicles` in `js/world.js` |
 | Animation, step 2 | Walk-in before every job, aimed arms and head, six hand tools, REGO working beside you, crew tools by role. | `G.job` in `js/main.js`, `js/actors.js` |
 | Animation, step 1 | Eased astronaut poses, idle look-around and breathing, landing squash, hip roll; dust from boots, landings, rover wheels and dragged panels that flies in arcs; growing, swaying, fruiting plants; Water Plant glow, vapour, frost, tracking mirror, digger. | `js/actors.js`, `js/world.js` |
@@ -68,7 +68,10 @@ Rules for every step: no visible light beams or billowing dust (there is no air)
 
 ## 5. Known gaps in checking
 
-- No full mission has been played by hand since the suit, surface-base and farming updates.
-- The new screens were checked at desktop width; touch controls and narrow phones were not.
-- Balance with the new crops was checked only by the two scripted strategies in `tools/sim_test.mjs`.
+- A full Cadet mission was played by script on 14 November 2026, from the training to the rescue. The results and the six fixes are in [GAME_OVERVIEW.md](GAME_OVERVIEW.md).
+- **Phones.** Held sideways the game is usable but crowded. Held upright, the warning list covers the resource bars. Touch controls have not been played through.
+- Pilot and Unlimited were checked only by the two scripted strategies in `tools/sim_test.mjs`.
+- **Commander has not been won.** The sensible scripted strategy runs out of water on day 9 of 10. It does not use the Water Plant or the ice mine, so a player may do better, but nobody has shown it.
+- Frame rate has not been measured on a real computer. The surface draws about 260,000 triangles in about 200 draw calls.
+- No child has played the game yet.
 - Peas, soybeans and spinach are listed as candidate crops because we could not open a primary source for their spaceflights. Herbs are our own addition.

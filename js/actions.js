@@ -8,7 +8,7 @@ import { ripeIn, dump, iceLeft } from './life.js';
 import { MINE } from './config.js';
 
 const FACTS = [
-  'Look up! Earth never moves in our sky. The Moon always keeps the same face toward Earth, so from here Earth just hangs in one spot and slowly changes shape.',
+  'Look up! Earth stays in almost the same spot in our sky. The Moon always keeps the same face toward Earth, so from here Earth just hangs there, wobbling a little, and slowly changes shape.',
   'That hop was real physics. Gravity here is one-sixth of Earth\'s, so the same push sends you six times higher.',
   'Moon soil is called regolith. Nearly half of its weight is oxygen, locked inside the rock.',
   'Down here the temperature stays near 17°C. Up top it swings from 127°C to −173°C. That is why we live in a lava tube.',
@@ -102,24 +102,26 @@ export function installActions(G) {
       else if (ITEMS[it.type].gives && st && st.id === 'depot') c.e = { label: `Deliver the ${nm} to the depot`, run: J.deliver };
       else if (it.type === 'battery' && st && st.id === 'storage') c.e = { label: 'Plug the battery module into the rack (1 h)', run: J.battery };
       else if (it.type === 'ice' && st && st.id === 'wplant') c.e = { label: 'Load the icy soil into the Water Plant hopper', run: () => { G.removeItem(it); s.wx.ice++; G.audio.play('ok'); ui.toast(`Canister loaded: ${s.wx.ice} in the hopper. Press E here to set up a batch.`, 'good'); } };
-      else if (veh) c.e = G[veh].cargo.length < G[veh].max ? { label: `Load the ${nm} onto the ${vn}`, run: () => G.load(veh) } : { label: `The ${vn} is full — put the ${nm} down`, run: () => G.drop() };
+      else if (veh && !lift) c.e = G[veh].cargo.length < G[veh].max ? { label: `Load the ${nm} onto the ${vn}`, run: () => G.load(veh) } : { label: `The ${vn} is full — put the ${nm} down`, run: () => G.drop() };
       else if (lift) c.e = { label: st.id === 'gate' ? `Ride the elevator down (the ${it.type.startsWith('panel') ? 'panel' : 'load'} comes too)` : 'Ride the elevator up', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
       else c.e = { label: `Put down the ${nm}`, run: () => G.drop() };
       if (st && st.id === 'suit' && c.e.label.startsWith('Put down')) { c.q = c.e; c.e = suitAct(); }
       if (lift && c.e.run !== undefined && !c.e.label.startsWith('Ride')) c.q = { label: 'Ride the elevator', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
+      else if (lift && veh && G[veh].cargo.length < G[veh].max) c.q = { label: `Load the ${nm} onto the ${vn}`, run: () => G.load(veh) };
       return c;
     }
     const li = nearItem(), door = nearDoor(), hole = nearHole(), done = st && st.id === 'bench' ? s.bench.findIndex((b) => b && b.left <= 0) : -1;
     if (hole) c.e = { label: `Patch the hole in the ${hole.name} (1 material, 1 h)`, run: () => J.patch(hole.id) };
     else if (li) c.e = { label: `Pick up the ${ITEMS[li.type].name}`, run: () => G.take(li) };
     else if (top && near(G.dig.x, G.dig.z, 5.5)) c.e = { label: 'Drive the digger', run: () => G.enterVehicle('dig') };
-    else if (veh) c.e = { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) };
+    else if (veh && !lift) c.e = { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) };
     else if (m >= 0 && s.mounts[m] === 2) c.e = { label: 'Pull the broken panel off its mount (30 min)', run: () => J.removePanel(m) };
     else if (done >= 0) c.e = { label: 'Take the fixed panel', run: () => J.benchTake(done) };
     else if (door) c.e = { label: s.rooms[door.id].door ? `Lock the ${door.name} door` : `Unlock the ${door.name} door`, run: () => G.toggleDoor(door.id) };
     else if (st && st.id === 'suit') c.e = suitAct();
     else if (lift) c.e = { label: st.id === 'gate' ? 'Ride the elevator down into the cave' : 'Ride the elevator up to the surface', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
     else if (st && G.state === 'play') c.e = { label: st.info ? `Look at the ${st.name}` : st.name, run: () => G.openStation(st) };
+    if (veh && lift) c.q = { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) };
     if (veh && G[veh].cargo.length) { const last = G[veh].cargo[G[veh].cargo.length - 1]; c.q = { label: `Take the ${ITEMS[last.type].name} out (${G[veh].cargo.length} on board)`, run: () => G.take(last) }; }
     return c;
   };
@@ -148,7 +150,7 @@ export function installActions(G) {
       ], note: 'Walk up to a broken panel and press E to pull it off. Carry a good panel to an empty mount and press E to install it. Robots or crew set to "Panel cleaner" keep the dust away for you.' });
     if (id === 'dish') return ui.panel('Earth Link Dish', { img: 'ev2_comms', stats: [['Link', f.commsDown ? 'Not pointing at Earth' : s.lv.comms ? 'Talking to Earth' : 'Switched off'], ['Radio delay', '1.3 s each way']],
       actions: [
-        { label: 'Aim the dish at Earth again', sub: 'Earth never moves in our sky — but the dish must point at it almost perfectly.', costs: ['1 h topside'], disabled: !f.commsDown, run: async () => { const r = await playMini(G, 'align'); G.simAdvance(jobHours(s, 1)); if (r.win) { f.commsDown = false; ui.toast('Link restored. Mission Control can warn you about solar storms again.', 'good'); note(s, 'Re-aimed the dish.', 'good'); doneGoal('dish'); } else ui.toast('Not locked on yet. Press E to try again.', 'bad'); } },
+        { label: 'Aim the dish at Earth again', sub: 'Earth stays in almost the same spot in our sky — but the dish must point at it almost perfectly.', costs: ['1 h topside'], disabled: !f.commsDown, run: async () => { const r = await playMini(G, 'align'); G.simAdvance(jobHours(s, 1)); if (r.win) { f.commsDown = false; ui.toast('Link restored. Mission Control can warn you about solar storms again.', 'good'); note(s, 'Re-aimed the dish.', 'good'); doneGoal('dish'); } else ui.toast('Not locked on yet. Press E to try again.', 'bad'); } },
         { label: 'Call Mission Control', disabled: !F.commsOn, run: () => ui.say([{ who: 'you', text: 'Tranquility Deep to Mission Control. Still here. Still breathing.' }, { who: 'flight', text: s.hours === Infinity ? 'We hear you. There is no rescue ship this time — you are building a new home. Make us proud.' : `We hear you, Tranquility Deep. Your ship is ${fmt.days((s.hours - (s.t - s.t0)) / 24)} away. Did you notice the pause before I answered? That was your voice crossing 384,400 km, and mine coming back.` }]) },
       ] });
     if (id === 'isru') return ui.panel('Moon-Dust Oxygen Plant', { stats: [['Status', f.isruDown ? 'Broken by the meteor shower' : s.lv.isru ? 'Running: +2.2 kg of oxygen a day' : 'Off'], ['Power when on', '9 kW'], ['Water used', 'None']],
@@ -174,7 +176,7 @@ export function installActions(G) {
     A.push({ label: r.door ? 'Lock the door' : 'Unlock the door', sub: r.door ? 'Stops a leak here from emptying the whole station.' : 'Lets air back in.', run: async () => G.toggleDoor(id) });
     let note2 = `This room holds ${d.what}.`;
     if (id === 'control') { if (ok) return ui.control(); note2 = 'The Control Center is broken. Rebuild it to get the big map and remote door locks back.'; }
-    if (id === 'kitchen' && ok) { stats.push(['Hot meals', Math.floor(s.meals)], ['Tins', Math.floor(s.cans)], ['Raw food', Math.floor(s.raw)], ['Herbs', `${s.herbs} bunch${s.herbs === 1 ? '' : 'es'} (each makes a cooked batch a fifth bigger)`]); A.unshift({ label: `Cook ${Math.min(12, Math.floor(s.raw))} raw food into hot meals`, costs: ['1 h'], gains: ['Raw food is worth twice as much cooked'], disabled: s.raw < 1, run: J.cook }); note2 = 'Raw potatoes, tomatoes and eggs are worth half a meal each. Cooked, they are a whole meal. A crew member set to "Cook" does this for you.'; }
+    if (id === 'kitchen' && ok) { stats.push(['Hot meals', Math.floor(s.meals)], ['Tins', Math.floor(s.cans)], ['Raw food', Math.floor(s.raw)], ['Herbs', `${s.herbs} bunch${s.herbs === 1 ? '' : 'es'} (each makes a cooked batch a fifth bigger)`]); A.unshift({ label: `Cook ${Math.min(12, Math.floor(s.raw))} raw food into hot meals`, costs: ['1 h'], gains: ['Raw food is worth twice as much cooked'], disabled: s.raw < 1, norec: s.suitOn, run: J.cook }); note2 = 'Raw potatoes, tomatoes and eggs are worth half a meal each. Cooked, they are a whole meal. A crew member set to "Cook" does this for you.'; }
     if (id === 'oxygen' && ok) { stats.push(['Oxygen tank', `${s.o2.toFixed(1)} of ${s.o2Cap} kg`], ['Being made', `${(F.o2Elec + F.o2Isru + F.o2Farm).toFixed(2)} kg a day`], ['Being used', `${F.o2Use.toFixed(2)} kg a day by ${F.people} ${F.people === 1 ? 'person' : 'people'}`]);
       if (f.scrubber) A.unshift({ label: 'Build a new air filter', sub: 'Follow the steps Mission Control reads out.', costs: ['1 material', '1 h'], run: async () => { if (noMat(1)) return; const res = await playMini(G, 'sequence'); G.simAdvance(jobHours(s, 1)); if (res.win) { f.scrubber = false; delete s.extraKw.backup; ui.toast('Air filter working. The stale air is clearing.', 'good'); doneGoal('oxygen'); } else { if (s.mat !== Infinity) s.mat += 1; ui.toast('Not right yet. Press E to try again.', 'bad'); } } }, { label: 'Switch on the backup air cleaner', costs: ['+3 kW until fixed'], disabled: !!s.extraKw.backup, run: async () => { s.extraKw.backup = 3; ui.toast('Backup air cleaner on (+3 kW).'); } });
       A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'One person breathes 0.84 kg of oxygen every day. The Oxygen Maker splits water with electricity to make it.'; }
@@ -183,7 +185,7 @@ export function installActions(G) {
       A.unshift({ label: `Collect ${Math.floor(s.eggs)} egg${Math.floor(s.eggs) === 1 ? '' : 's'}`, gains: ['Raw food'], disabled: s.eggs < 1, run: async () => { const n = collectEggs(s); ui.toast(`Collected ${n} eggs. Cook them in the Kitchen!`, 'good'); } });
       note2 = 'Hens eat dry feed made of grass, seeds and plant scraps, packed before the disaster. People cannot eat it. Every time you pick crops, the leaves and peels become more feed. No feed, no eggs. The fish water feeds the plants.'; }
     if (id === 'storage' && ok) { stats.push(['Battery', `${Math.round(s.battery)} of ${Math.round(F.cap)} kWh`], ['Extra modules', `${s.mods} of 6`]); A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'Build battery modules at the Robot-Arm Builder and carry them here. Each adds 120 kWh for the long lunar night.'; }
-    if (id === 'quarters' && ok) { A.unshift({ label: 'Sleep for 8 hours', sub: 'Time races ahead. Machines keep running as you left them. You wake up if something goes wrong.', costs: ['8 h pass'], gains: ['Health'], run: async () => { if (needNoSuit('sleep')) return; G.sleepLeft = 8; } }); note2 = 'Rest matters. Tired people make mistakes — and in space, small mistakes get big fast.'; }
+    if (id === 'quarters' && ok) { A.unshift({ label: 'Sleep for 8 hours', sub: 'Time races ahead. Machines keep running as you left them. You wake up if something goes wrong.', costs: ['8 h pass'], gains: ['Health'], norec: s.suitOn, run: async () => { if (needNoSuit('sleep')) return; G.sleepLeft = 8; } }); note2 = 'Rest matters. Tired people make mistakes — and in space, small mistakes get big fast.'; }
     if (id === 'bathroom') note2 = ok ? 'Shower water and toilet water go straight to the recycler. Nothing is wasted.' : 'While the Bathroom is broken, the recycler gets back less water.';
     if (id === 'water' && ok) { stats.push(['Water tank', `${s.water.toFixed(0)} of ${s.waterCap} L`], ['Recycling', pct(F.rate)], ['Change', `${F.wNet.toFixed(1)} L a day`], ['Plant food', s.nutri === Infinity ? 'endless' : `${s.nutri.toFixed(2)} kg`]);
       A.unshift({ label: 'Run the waste digester', sub: 'Bacteria turn plant scraps and waste into plant food for the farms. It eats hen feed, so the hens get less.', costs: ['1.5 kg of hen feed', '2 h'], gains: ['+0.5 kg of plant food'], disabled: s.feed < 1.5, run: () => J.fix('Running the waste digester', 2, 0, { x: 14, z: 15 }, ['Loading the scraps…', 'Bacteria break them down…', 'Filtering out the plant food…'], () => { s.feed -= 1.5; s.nutri = Math.min(9, s.nutri + 0.5); note(s, 'Made plant food in the digester.', 'good'); ui.toast('The digester made 0.5 kg of plant food.', 'good'); }) });

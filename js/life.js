@@ -256,7 +256,7 @@ function stepBatch(S, dt, eff, sunF) {
   w.cond = Math.max(0.3, w.cond - 0.004 * dt * (0.5 + b.kw / 4));                                                       // machines wear with use
   if (b.left <= 1e-6) {
     const room = S.waterCap - S.water, kept = Math.min(room, b.got); S.water += kept; w.made += kept; w.runs++;
-    const key = b.mode === 'ilm' ? 'ilm' : b.method; let sci = 0; if (!w.tried[key]) { w.tried[key] = true; sci = key === 'ilm' ? 2 : 1; S.sci += sci; }
+    const key = b.mode === 'ilm' ? 'ilm' : b.method; let sci = 0; if (!w.tried[key] && b.got > 0.05) { w.tried[key] = true; sci = key === 'ilm' ? 2 : 1; S.sci += sci; }
     w.last = { mode: b.mode, method: b.method, water: b.got, kept, spilled: b.got - kept, eff: b.got / b.max, kwh: b.kwh, hours: b.total, sci, log: b.log };
     w.batch = null; S.pending.push('wxdone');
   }

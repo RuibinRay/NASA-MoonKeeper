@@ -68,7 +68,7 @@ Every claim below carries the **status of its evidence**, because "a lab has don
 |---|---|---|---|
 ${life.map(rowS).join('\n')}
 
-**How the game uses these numbers** (calculations live in \`js/life.js\` and are checked by \`node tools/life_test.mjs\`, 70 checks):
+**How the game uses these numbers** (calculations live in \`js/life.js\` and are checked by \`node tools/life_test.mjs\`, 71 checks):
 
 | In the game | Real number behind it | Game simplification |
 |---|---|---|
