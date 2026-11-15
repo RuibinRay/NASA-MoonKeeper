@@ -1,0 +1,18 @@
+{
+  "outDir": "assets/art/mg",
+  "resolution": "2k",
+  "quality": "high",
+  "styles": {
+    "closeup": "Close-up inside or just outside a realistic lunar habitat, seen straight on like a technician looking at the equipment they are about to work on. Same design language as the rest of the station: matte white and warm light-grey composite panels with rounded corners and visible fasteners, brushed aluminium, dark graphite surfaces, safety-orange handles and accents, thin cyan status lights. Grounded space-agency engineering realism, every part functional and bolted down. Photorealistic, soft even practical lighting, shallow depth of field with the centre of the frame calm, plain and uncluttered so that game controls can be drawn on top of it. Ultra detailed, natural film color grade. No people, no hands, no text, no letters, no numbers, no labels, no logos, no flags, no watermark."
+  },
+  "jobs": [
+    { "id": "mg_bolts", "style": "closeup", "web": "assets/img/mg_bolts.jpg", "webW": 1100, "prompt": "A solar panel mount on the lunar surface seen from very close: the aluminium frame and mounting rail of a dark blue solar panel, a cable gland, grey regolith dust on the lower edge, hard sunlight and a black sky at the top edge." },
+    { "id": "mg_weld", "style": "closeup", "web": "assets/img/mg_weld.jpg", "webW": 1100, "prompt": "An interior wall of the habitat seen from very close: a bare brushed metal pressure-hull plate with rivet lines and weld seams, scorch marks around the edges, insulation and pipes visible at the far left and right." },
+    { "id": "mg_stir", "style": "closeup", "web": "assets/img/mg_stir.jpg", "webW": 1100, "prompt": "The galley worktop of the habitat seen from directly above: a brushed steel counter with an induction hob ring, a chopping board, a few potatoes and tomatoes and two food tins at the edges, warm light." },
+    { "id": "mg_stack", "style": "closeup", "web": "assets/img/mg_stack.jpg", "webW": 1100, "prompt": "A cargo depot rack of the habitat seen straight on: heavy aluminium shelving with cargo straps and tie-down rings, empty shelf bays in the middle, a few white and orange cargo crates at the far edges." },
+    { "id": "mg_plant", "style": "closeup", "web": "assets/img/mg_plant.jpg", "webW": 1100, "prompt": "A hydroponic growing rack of the habitat seen from above at an angle: long white growing channels with round planting holes, thin water tubes, magenta-pink LED grow light spilling over everything, a few small green seedlings at the edges." },
+    { "id": "mg_suit", "style": "closeup", "web": "assets/img/mg_suit.jpg", "webW": 1100, "prompt": "The inside of an open spacesuit locker in the airlock, seen straight on: grey locker walls with hooks, an air hose coiled on the left, a helmet shelf at the top right, boots on the floor at the right, an orange handle on the door edge. The middle of the locker is empty." },
+    { "id": "mg_safe", "style": "closeup", "web": "assets/img/mg_safe.jpg", "webW": 1100, "prompt": "An open electrical distribution cabinet of the habitat seen straight on: thick insulated cables in orange and black entering from the top, busbars and cable ducts at the left and right edges, a plain dark grey mounting plate in the middle, small green status lights." },
+    { "id": "mg_gauge", "style": "closeup", "web": "assets/img/mg_gauge.jpg", "webW": 1100, "prompt": "A pipe manifold wall of the habitat seen straight on: insulated steel pipes running left to right, flanges and small valves at the edges, a plain white panel behind the middle, faint condensation, cyan status strip at the bottom." }
+  ]
+}

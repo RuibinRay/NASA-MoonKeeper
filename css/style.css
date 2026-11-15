@@ -349,3 +349,8 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
 #goal-x:hover{background:rgba(64,48,4,.95);border-color:#ffd21f}
 @media (max-width:1000px){#goal-x{left:auto;right:10px;top:268px;transform:none}}
 @media (prefers-reduced-motion:reduce){.lv button.guide-rec,.lv button.guide-rec::after{animation:none}}
+
+/* ---------- minigames: REGO's instruction strip ---------- */
+.mg-rego{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:12px;border:1px solid rgba(73,230,255,.35);background:linear-gradient(90deg,rgba(14,30,44,.95),rgba(10,18,28,.85));font-size:14.5px;line-height:1.4;margin-bottom:4px}
+.mg-rego img{flex:none;width:36px;height:36px;border-radius:50%;border:2px solid var(--cyan);object-fit:cover}
+.mg-rego b{display:block;font-family:var(--head);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)}

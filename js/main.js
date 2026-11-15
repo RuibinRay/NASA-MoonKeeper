@@ -5,6 +5,7 @@ import { Astronaut, Rego, Bolt } from './actors.js';
 import { UI } from './ui.js';
 import { Sound } from './audio.js';
 import { IC } from './icons.js';
+import { playProcedure } from './minigames.js';
 import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, BASE, MINE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, fmt } from './config.js';
 import { createSim, step, computeFlows, applyDisaster, jobHours, addHelper, serialize, deserialize } from './sim.js';
 import { installActions } from './actions.js';
@@ -63,7 +64,7 @@ function placeItems() {
 G.addNpc = (who, color, x, z, zone = 'top') => { const a = new Astronaut(color), n = { a, who, x, z, zone }; world.scene.add(a.group); G.npcs.push(n); return n; };
 G.moveNpc = (n, x, z, zone) => { n.x = x; n.z = z; if (zone) n.zone = zone; };
 G.clearNpcs = () => { for (const n of G.npcs) world.scene.remove(n.a.group); G.npcs = []; };
-const SITE_COL = { ingrid: 0x1fb5a8, kenji: 0x9a5cff, anika: 0x3fbf5a };
+const SITE_COL = { ingrid: 0x1fb5a8, kenji: 0x9a5cff, anika: 0x3fbf5a, vasquez: 0xd8322a, okoro: 0x2a62d8 };
 G.spawnSurvivors = () => { for (const s of SITES) if (!G.S.rescued.includes(s.id) && !G.siteNpc[s.id] && !G.followers.some((f) => f.site.id === s.id)) { const a = new Astronaut(SITE_COL[s.who]); world.scene.add(a.group); G.siteNpc[s.id] = { a, x: s.pos[0] + 5, z: s.pos[1] + 14 }; } };
 G.follow = (site) => { const n = G.siteNpc[site.id]; if (!n) return; delete G.siteNpc[site.id]; G.followers.push({ site, a: n.a, x: n.x, z: n.z }); };
 function updateActors(dt) {
@@ -127,7 +128,50 @@ G.simAdvance = (h) => { const S = G.S; while (h > 1e-6 && !S.over) { const d = M
 // A build / fix scene that plays by itself: the camera circles, you and REGO work, the clock races, parts appear step by step.
 // Which tool fits this job? (Callers can also pass `tool` themselves.)
 const toolFor = (title, tag) => tag === 'cook' ? 'stir' : /spacesuit/i.test(title) ? 'suit' : /Picking|Replanting|Clearing the rack|digester/i.test(title) ? 'pick' : /Brushing/i.test(title) ? 'brush' : /Patching|Rebuilding|Sealing|Repairing/i.test(title) ? 'weld' : 'wrench';
-G.job = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'work', tag, sparks = true, tool }) => new Promise((res) => {
+// Every job starts with a short hands-on game that matches the work; then the animation shows the character doing it.
+// A job can pass `mini: false` to skip it or `mini: 'name'` to choose one. Settings can switch all of them off.
+// Each job is a list of steps taken from how the real work is done: make it safe, do the work, then test it.
+// [core, steps]: Cadet plays only the core step, Pilot the core step and one more, Commander and Unlimited the whole procedure.
+const SAFE = (what) => ['safe', { title: 'Make it safe', how: `Before touching ${what}, drag each breaker lever all the way DOWN to OFF. Work from left to right.`, winText: 'Power is off!' }];
+const TEST = (title, unit, max, how, winText) => ['gauge', { title, unit, max, how, winText }];
+const procFor = (title, tag, tool) => {
+  const T = (re) => re.test(title);
+  if (T(/spacesuit/i)) return [0, [['suit', T(/Taking off/i) ? { title: 'Unlock the suit seals', winText: 'Suit off!' } : { title: 'Check the suit seals', winText: 'Suit sealed!' }], ...(T(/Putting on/i) ? [TEST('Suit leak check', 'kPa', 60, 'Drag the valve wheel to fill the suit with air. Hold the needle in the GREEN band: if it stays steady, the suit has no leaks.', 'No leaks!')] : [])]];
+  if (T(/Brushing/i)) return [0, [['wipe', { winText: 'Spotless!' }], TEST('Test the panel output', 'V', 120, 'Drag the wheel to connect the load. Hold the needle in the GREEN band to prove the clean panels are making full power.', 'Full power!')]];
+  if (T(/Pulling the broken panel/i)) return [1, [SAFE('the broken panel'), ['bolts', { title: 'Loosen the bolts', winText: 'Panel free!' }]]];
+  if (T(/Installing the solar panel/i)) return [0, [['bolts', { title: 'Tighten the bolts', winText: 'Panel on!' }], ['wires', { title: 'Plug in the power cables', winText: 'Connected!' }], TEST('Test the panel output', 'V', 120, 'Drag the wheel to connect the load. Hold the needle in the GREEN band to prove the new panel works.', 'Making power!')]];
+  if (T(/battery module/i)) return [1, [SAFE('the battery rack'), ['wires', { title: 'Connect the battery cables', winText: 'Connected!' }], TEST('Check the charge voltage', 'V', 60, 'Drag the wheel to bring the charger up. Hold the needle in the GREEN band: too high would damage the new module.', 'Charging!')]];
+  if (T(/heater circuit/i)) return [1, [SAFE('the heater circuit'), ['wires', { title: 'Rewire the heater circuit', winText: 'Rewired!' }], TEST('Set the heater current', 'A', 30, 'Drag the wheel to bring the heater up. Hold the needle in the GREEN band.', 'Warming up!')]];
+  if (T(/Sealing/i)) return [0, [['leaks', { winText: 'Sealed!' }], TEST('Bring the pressure back', 'kPa', 300, 'Drag the valve wheel to open the water line again. Hold the needle in the GREEN band: a steady needle means the joint is tight.', 'Holding pressure!')]];
+  if (T(/Patching/i)) return [0, [['weld', { title: 'Weld the patch', winText: 'Airtight!' }], TEST('Refill the room with air', 'kPa', 101, 'Drag the valve wheel to let air back in. Hold the needle in the GREEN band: if it stays steady, the patch is airtight.', 'Pressure is holding!')]];
+  if (T(/Rebuilding/i)) return [0, [['weld', { title: 'Weld the wall panel', how: 'Hold and drag the torch all the way round the new wall panel. Every part of the seam must glow.', winText: 'Wall sealed!' }], ['wires', { title: 'Wire the lights and machines', winText: 'Power on!' }], TEST('Refill the room with air', 'kPa', 101, 'Drag the valve wheel to let air back in. Hold the needle in the GREEN band to prove the room is airtight.', 'Room is airtight!')]];
+  if (T(/Repairing/i)) return [1, [SAFE('the oxygen plant'), ['weld', { title: 'Weld the cracked casing', winText: 'Repaired!' }], TEST('Bring the furnace up to heat', '°C', 1600, 'Drag the wheel to feed power to the furnace. Hold the needle in the GREEN band: hot enough to free the oxygen, not so hot it cracks again.', 'Making oxygen!')]];
+  if (tag === 'cook' || T(/Cooking/i)) return [0, [['stir', { winText: 'Smells good!' }]]];
+  if (T(/digester/i)) return [0, [['stir', { title: 'Mix the digester', how: 'Hold and drag in circles to mix the waste tank. Keep going until the bar is full.', col: '#5d7a3a', winText: 'Well mixed!' }], TEST('Vent the digester gas', 'kPa', 200, 'Drag the valve wheel to let gas out of the tank. Hold the needle in the GREEN band.', 'Pressure is safe!')]];
+  if (T(/Picking/i)) return [0, [['harvest', {}]]];
+  if (T(/Replanting/i)) return [0, [['plant', { winText: 'Planted!' }], TEST('Set the nutrient flow', 'L/h', 40, 'Drag the valve wheel to send plant food to the roots. Hold the needle in the GREEN band: too little starves them, too much burns them.', 'Roots are fed!')]];
+  if (T(/Clearing the rack/i)) return [0, [['plant', { title: 'Rinse the cups', how: 'Click every cup once to rinse it out. Clicking a cup twice wastes a second.', noun: 'Cups rinsed', winText: 'Rack clean!' }]]];
+  if (T(/Unloading/i)) return [0, [['stack', { winText: 'Stacked!' }]]];
+  if (T(/Servicing/i)) return [1, [SAFE('the Water Plant'), ['bolts', { title: 'Open the service hatch', winText: 'Hatch open!' }], TEST('Set the chamber pressure', 'Pa', 900, 'Drag the valve wheel to pump the chamber down. Hold the needle in the GREEN band: in a near-vacuum, ice turns straight into vapour.', 'Ready to extract!')]];
+  return [0, [[{ weld: 'weld', pick: 'plant', brush: 'wipe', stir: 'stir', suit: 'suit' }[tool] || 'bolts', {}]]];
+};
+const stagesFor = (o) => {
+  if (typeof o.mini === 'string') return [[o.mini, {}]];
+  const [core, all] = procFor(o.title, o.tag, o.tool || toolFor(o.title, o.tag)), tier = { cadet: 0, pilot: 1, commander: 2, unlimited: 2 }[G.S?.mode] ?? 1;
+  if (tier >= 2 || all.length === 1) return all; if (tier === 0) return [all[core]];
+  const other = core > 0 ? core - 1 : 1; return all.filter((q, i) => i === core || i === other);
+};
+G.minis = (() => { try { return localStorage.getItem('mk-minis') !== '0'; } catch (e) { return true; } })();
+G.setMinis = (on) => { G.minis = !!on; try { localStorage.setItem('mk-minis', G.minis ? '1' : '0'); } catch (e) {} };
+G.job = async (o) => {
+  if (G.minis && o.mini !== false) {
+    ui.prompt(null); const r = await playProcedure(G, stagesFor(o).map(([k, opt]) => [k, { loseText: 'Done the slow way', ...opt }]));
+    if (!r.win) { o = { ...o, hours: o.hours * 1.3 }; ui.toast('That was fiddly, so the job takes 30% longer.'); }
+    else if (r.stars >= 3) { o = { ...o, hours: o.hours * 0.85 }; ui.toast('Clean work! The job goes 15% faster.', 'good'); }
+  }
+  return runJob(o);
+};
+const runJob = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'work', tag, sparks = true, tool }) => new Promise((res) => {
   const S = G.S, real = clamp(3.5 + hours * 1.5, 4.5, 13), hrs = G.simOn ? jobHours(S, hours) * (G.inside && !S.suitOn ? 0.75 : 1) : 0;   // no big gloves indoors: a quarter faster
   let t = 0; tool = tool || toolFor(title, tag); const J = (G.jobbing = { pose, tag, tool, aim: -0.25, site: null }); ui.prompt(null);
   const sp = site ? world.at(P.zone, site.x, site.z, site.y || 0) : P.pos.clone(), workY = sp.y + (site && site.y ? 0.6 : tool === 'pick' ? 0.95 : 1.15);   // the height the hands go to
@@ -377,7 +421,7 @@ const drawModes = () => {
   modesEl.querySelectorAll('.mode').forEach((b) => (b.onclick = () => { mode = b.dataset.m; try { localStorage.setItem('mk-mode', mode); } catch (e) {} G.audio?.play?.('click'); drawModes(); }));
   const m = MODES[mode], lim = m.days !== Infinity, names = m.wreck.map((id) => ROOMS.find((r) => r.id === id)?.name).filter(Boolean);
   const fact = (ic, label, val) => `<div class="bf"><i>${IC[ic] || ''}</i><span>${label}</span><b>${val}</b></div>`;
-  $('#brief').innerHTML = `<div class="brief-h"><b>${m.name} mission</b><span>${lim ? `Hold the station for ${m.days} days until the rescue ship lands.` : 'No rescue is coming. Build a Moon town that can live on its own.'}</span></div>
+  $('#brief').innerHTML = `<div class="brief-h"><b>${m.name} mission</b><span>${lim ? `Hold the station for ${m.days} days until the rescue ship lands.` : 'Nobody is lost in this one: Commander Vasquez and Engineer Okoro stay as your crew. Build a Moon town that can live on its own.'}</span></div>
     <div class="brief-grid">${fact('rocket', 'Rescue', lim ? `in ${m.days} days` : 'never')}${fact('sun', 'Sunset', `day ${Math.floor(m.sunsetDay) + 1}, then two weeks of night`)}${fact('bolt', 'Solar panels', `${m.ok} working · ${m.broken} broken`)}${fact('o2', 'Oxygen', `${m.o2} kg in the tank`)}${fact('water', 'Water', `${m.water} L`)}${fact('food', 'Food', `${m.cans} tins${m.meals ? ` · ${m.meals} hot meals` : ''}`)}${fact('box', 'Materials', m.mat === Infinity ? 'endless' : `${m.mat} crates' worth`)}${fact('wrench', 'Wrecked rooms', names.join(', ') || 'none')}</div>`;
 };
 drawModes(); $('#btn-codex').onclick = () => ui.guide('how'); $('#btn-how').onclick = () => ui.guide('truth');
@@ -391,11 +435,17 @@ async function start(modeKey, skip, seed) {
   G.S = createSim(modeKey, seed || ((Math.random() * 2 ** 31) >>> 0)); installActions(G); installEvents(G);
   P.pos.set(SPAWN.x, world.heightAt(SPAWN.x, SPAWN.z), SPAWN.z); G.regoPos.set(SPAWN.x + 2, P.pos.y, SPAWN.z + 1.5); world.setZone('top'); G.ship.y = world.heightAt(G.ship.x, G.ship.z);
   $('#title').classList.add('hidden'); $('#mission').classList.add('hidden');
-  if (!skip) { await comicIntro(G); G.state = 'tutorial'; ui.showHud(true); await tutorial(G); ui.showHud(false); }
+  const free = modeKey === 'unlimited';   // Unlimited: no story comic, straight to training, and nobody is lost
+  if (!skip) { if (!free) await comicIntro(G); G.state = 'tutorial'; ui.showHud(true); await tutorial(G); ui.showHud(false); }
   G.state = 'tutorial'; await disaster(G, skip);
   applyDisaster(G.S); world.baseHit = true; for (let i = 0; i < (G.S.m.ice || 0); i++) G.spawnItem('ice', 'top', BASE.water[0] + 5.6 + (i % 3) * 1.15, BASE.water[1] - 10.6 - Math.floor(i / 3) * 1.15);   // canisters of icy polar soil by the cold store for (const s of SITES) s.loot.forEach((type, i) => G.spawnItem(type, 'top', s.pos[0] + 14 + (i % 3) * 2.2, s.pos[1] + 12 + Math.floor(i / 3) * 2.2)); G.spawnSurvivors();
   if (P.zone !== 'deep') { P.zone = 'deep'; G.S.zone = 'deep'; world.setZone('deep'); } P.pos.set(-17, TUBE.y, -10); cam.yaw = Math.PI; P.face = 0; G.regoPos.set(-15, TUBE.y, -9); if (P.carry) G.removeItem(P.carry); G.S.suitOn = false;   // you were indoors, out of your suit, when it hit
+  if (free) {   // the Commander and the Engineer survived: they are crew you can give jobs to, and the stores are stocked for three people
+    const S = G.S; for (const [id, name] of [['vasquez', 'Commander Vasquez'], ['okoro', 'Engineer Okoro']]) if (!S.helpers.some((h) => h.id === id)) S.helpers.push({ id, kind: 'human', name, role: 'idle', img: 'c_' + id });
+    S.o2 = S.o2Cap; S.water = Math.min(S.waterCap, S.water + 24); S.cans += 24;
+  }
   ui.showHud(true); G.state = 'play'; G.simOn = true; G.nextEventAt = G.S.t + 7 + G.S.rng() * 5; G.save();
+  if (free) { ui.bubble('Everyone is safe! <b>Commander Vasquez and Engineer Okoro are part of your crew</b>: give them jobs at the Control Center. The big screen shows what is broken. <b>First job: power.</b> Press <b>H</b> whenever you want my advice.', 'joy', 18); G.pointTo('lift'); return; }
   ui.bubble('I am right here with you. The big screen shows what is broken. <b>First job: power.</b> Put your suit on at the airlock, take the elevator up, pull a broken panel off its mount, and bring it down to the Fix-It Bench. Press <b>H</b> whenever you want my advice.', 'happy', 18); G.pointTo('lift');
 }
 if (params.get('go')) start(mode, true, Number(params.get('seed')) || undefined);
