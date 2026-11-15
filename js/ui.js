@@ -125,7 +125,19 @@ export class UI {
   bubble(html, mood = 'happy', secs = 10) { $('#rego-text').innerHTML = gloss(html); this.G.voice?.say(html); $('#rego').classList.remove('hidden'); this.G.rego?.setMood(mood); if (this.G.rego) this.G.rego.wave = 1.2; this.G.audio?.play('chirp'); clearTimeout(this._bt); this._bt = setTimeout(() => { $('#rego').classList.add('hidden'); this.G.rego?.setMood('happy'); }, secs * 1000); }
   banner(text, info = false) { const b = $('#banner'); if (!text) { b.classList.add('hidden'); return; } if (b.dataset.t !== text) { b.dataset.t = text; b.innerHTML = text; } b.classList.remove('hidden'); b.classList.toggle('info', info); }
   objective(html) { const o = $('#objective'); o.classList.toggle('hidden', !html); if (html && o.dataset.h !== html) { o.dataset.h = html; o.innerHTML = html; const k = (o.querySelector('b')?.textContent || o.textContent).replace(/[\d.]+/g, ''); if (k !== o.dataset.k) { o.dataset.k = k; o.classList.remove('changed'); void o.offsetWidth; o.classList.add('changed'); } } }
-  prompt(html) { const p = $('#prompt'); p.classList.toggle('hidden', !html); if (html && p.dataset.h !== html) { p.dataset.h = html; p.innerHTML = html; } }
+  prompt(html) { const p = $('#prompt'); p.classList.toggle('hidden', !html); if (html && p.dataset.h !== html) { p.dataset.h = html; p.innerHTML = html; } this.unstack(); }
+  // Keep REGO's hint, the E/Q prompt and the button bar from covering each other at any window size: the hint goes above
+  // the buttons if they meet, and the prompt above the hint. Checked five times a second, not every frame.
+  unstack() {
+    const now = performance.now(); if (now - (this._unT || 0) < 200) return; this._unT = now;
+    const rego = $('#rego'), pr = $('#prompt'), bt = $('#btns'); if (!rego || !pr || !bt) return;
+    const hit = (a, b) => a.width > 0 && b.width > 0 && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    rego.style.bottom = ''; pr.style.bottom = ''; pr.style.top = '';
+    if (rego.classList.contains('hidden')) return;
+    let R = rego.getBoundingClientRect(); const B = bt.getBoundingClientRect();
+    if (hit(R, B)) { rego.style.bottom = Math.round(innerHeight - B.top + 8) + 'px'; R = rego.getBoundingClientRect(); }
+    if (!pr.classList.contains('hidden') && hit(R, pr.getBoundingClientRect())) { pr.style.top = 'auto'; pr.style.bottom = Math.round(innerHeight - R.top + 8) + 'px'; }
+  }
   // progress bar shown while a build / fix scene plays by itself
   job(title, k, step, left) { const j = $('#job'); j.classList.toggle('hidden', title === null); if (title === null) return; $('#job-title').textContent = title; $('#job-step').textContent = step; $('#job-bar').style.width = clamp(k * 100, 0, 100) + '%'; $('#job-left').textContent = left; }
 

@@ -45,7 +45,7 @@ kbd{font-family:var(--head);font-size:10px;border:1px solid var(--line);border-r
 .dn-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0}.dn-cards .big{font-size:24px}
 @media (max-width:640px){.dn-cards{grid-template-columns:1fr}}
 #gauges{display:flex;gap:6px;justify-content:center;flex:1;min-width:0}
-.gauge{flex:1 1 0;min-width:0;max-width:150px;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(8px)}
+.gauge{flex:1 1 0;min-width:0;max-width:150px;padding:7px 6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(8px)}
 .gauge .g-top{display:flex;align-items:center;gap:4px;font-family:var(--head);font-size:12px;white-space:nowrap}
 .gauge .g-top b{margin-left:auto;font-size:13.5px;color:#fff;white-space:nowrap}
 .bar{height:7px;border-radius:5px;background:#101c2a;overflow:hidden;margin:5px 0 4px;flex:1}
@@ -509,7 +509,8 @@ body[data-text="large"] #banner,body[data-text="larger"] #banner{font-size:calc(
 /* right-to-left languages: the words in boxes and windows read from the right; the play screen keeps its layout */
 html[data-dir="rtl"] #modal .win,html[data-dir="rtl"] #dlg-box,html[data-dir="rtl"] #rego-text,html[data-dir="rtl"] #prompt,html[data-dir="rtl"] #objective,html[data-dir="rtl"] #alerts,html[data-dir="rtl"] #toasts,html[data-dir="rtl"] .title-inner,html[data-dir="rtl"] .mission-inner,html[data-dir="rtl"] #comic,html[data-dir="rtl"] #end,html[data-dir="rtl"] #job,html[data-dir="rtl"] #tip,html[data-dir="rtl"] #rotate{direction:rtl}
 .lv button{width:auto;min-width:38px;padding:0 5px;white-space:nowrap}
-.gauge .g-top span{flex-shrink:20;min-width:0;overflow:hidden;text-overflow:ellipsis}.gauge .g-top b{flex:none}
+.gauge .g-top{flex-wrap:wrap;row-gap:0}.gauge .g-top span{min-width:0;overflow:hidden;text-overflow:ellipsis}.gauge .g-top b{flex:none}   /* a narrow tile keeps its name and puts the number on the line below, not "Pa…" */
+.gauge{container-type:inline-size}@container (max-width:84px){.gauge .g-top .ic{display:none}}   /* too narrow for icon and name on one line: the name is enough */
 .fine.ai-note{margin-top:4px}
 
 /* ---------- Mars ---------- */
