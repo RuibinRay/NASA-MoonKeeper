@@ -165,10 +165,12 @@ const stagesFor = (o) => {
 G.playMini = (kind, opts) => playMini(G, kind, opts);   // the Space Guide's practice page uses this
 G.minis = (() => { try { return localStorage.getItem('mk-minis') !== '0'; } catch (e) { return true; } })();
 G.setMinis = (on) => { G.minis = !!on; try { localStorage.setItem('mk-minis', G.minis ? '1' : '0'); } catch (e) {} };
+G.minisAll = (() => { try { return localStorage.getItem('mk-minis-all') === '1'; } catch (e) { return false; } })();
+G.setMinisAll = (on) => { G.minisAll = !!on; try { localStorage.setItem('mk-minis-all', G.minisAll ? '1' : '0'); } catch (e) {} };
 G.job = async (o) => { G.inJob = (G.inJob || 0) + 1; try { return await doJob(o); } finally { G.inJob--; } };
 const doJob = async (o) => {
   let fx = null;
-  if (G.minis && o.mini !== false) {
+  if (G.minis && o.mini !== false && (G.minisAll || o.hours >= 1 || typeof o.mini === 'string')) {   // quick jobs (suit, unloading, replanting) skip the game unless "every job" is switched on
     ui.prompt(null); const r = await playProcedure(G, stagesFor(o).map(([k, opt]) => [k, { loseText: 'Done the slow way', ...opt }]));
     const q = !r.win || (/Picking/i.test(o.title) && r.stars <= 1) ? 'poor' : r.stars >= 3 ? 'great' : 'ok';   // harvest never fails on time, so one star counts as a poor harvest
     fx = G.S ? jobEffect(o.title, o.tag, q) : null;
@@ -464,7 +466,7 @@ const drawModes = () => {
 };
 drawModes(); $('#btn-codex').onclick = () => ui.guide('how'); $('#btn-how').onclick = () => ui.guide('truth');
 const showMission = (on) => { $('#mission').classList.toggle('hidden', !on); $('#title').classList.toggle('hidden', on); };
-$('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour');
+$('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour'); $('#btn-games').onclick = () => { G.audio.init(); ui.guide('games'); };
 $('#btn-launch').onclick = () => start(mode, $('#skip-tut').checked);
 document.querySelectorAll('.pillar').forEach((p) => p.insertAdjacentHTML('afterbegin', `<i>${IC[p.dataset.ic] || ''}</i>`));
 if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = () => { G.audio.init(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
