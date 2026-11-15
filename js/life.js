@@ -98,7 +98,7 @@ export function lifeFlows(S, eff, rate, people) {
     }
   }
   const nutriGain = people * 0.05 * (alive(S, 'bathroom') ? 1 : 0.3) * (rate > 0 ? 1 : 0) + (alive(S, 'animal') ? S.hens * 0.004 + (S.fish ? 0.03 : 0) : 0);
-  const b = S.wx.batch, wxKw = b ? batchKw(b) : 0;
+  const b = S.wx.batch, wxKw = b && !(S.flow && S.flow.frost > 0) ? batchKw(b) : 0;   // frozen: the batch waits and draws nothing
   return { env, farmKw, farmWater, farmO2, co2Fix: farmO2 * CO2_PER_O2, nutriUse, nutriGain, racksOn, wxKw };
 }
 
@@ -128,7 +128,7 @@ export function stepLife(S, dt, F, farmers) {
   const x = S.exp;
   if (x && !x.done) { const e = L.env[x.room]; if (e.ok && e.L > 0 && S.water > 0) { x.g = Math.min(1, x.g + (Math.min(1, e.L / 0.35) * dt) / (CROPS.arabidopsis.days * 24)); if (x.g >= 1) { x.done = true; S.sci += 3; S.pending.push('expdone'); } } }
   // ---- the Water Plant
-  if (S.wx.batch) stepBatch(S, dt, F.eff, F.sun.factor);
+  if (S.wx.batch && !(F.frost > 0)) stepBatch(S, dt, F.eff, F.sun.factor);   // too cold topside: the batch waits where it is
 }
 
 // Pick everything ripe in one farm room. Staples go to the raw-food store, salad is ready to eat, herbs go to the kitchen.

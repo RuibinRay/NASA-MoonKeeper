@@ -117,7 +117,7 @@ export function installEvents(G) {
       note(s, `${what} broke from ${cold ? 'cold' : 'heat'}.`, 'bad');
       if (s.gearCard) { G.audio?.play('alarm'); ui.toast(`${what} has broken from the ${cold ? 'cold' : 'heat'}. The Topside Heaters & Coolers are still set too low.`, 'bad'); return; }
       s.gearCard = true;
-      await ui.card({ art: 'ev2_freeze', title: cold ? 'Frozen Solid' : 'Cooked', body: `Topside is <b>${fmt.temp(s.flow.sun.tempC)}</b> and the ${cold ? 'heaters' : 'coolers'} were set too low for too long. <b>${what} has broken.</b> Keep the Topside Heaters &amp; Coolers at the level the machines need, or more will follow.`, learn: 'The Moon has no air to spread heat around, so the surface swings from 127°C in sunlight to −173°C at night.', choices: [{ label: 'Understood' }] }); },
+      await ui.card({ art: 'ev2_freeze', title: cold ? 'Frozen Solid' : 'Cooked', body: `Topside is <b>${fmt.temp(s.flow.sun.tempC)}</b> and the ${cold ? 'heaters' : 'coolers'} were set too low for too long. <b>${what} has broken.</b> Keep the Topside Heaters &amp; Coolers at the level the machines need, or more will follow.${cold ? ' While it is this cold up there, the rover and hopper lose charge, their chargers stop and the Water Plant stands frozen.' : ''}`, learn: 'The Moon has no air to spread heat around, so the surface swings from 127°C in sunlight to −173°C at night.', choices: [{ label: 'Understood' }] }); },
   };
 
   // After an emergency is settled: one short question about why it happened, asked once per kind in a mission.
@@ -153,6 +153,8 @@ export function installEvents(G) {
       else if (ev === 'wxdone') { const r = s.wx.last; ui.toast(`Water Plant: batch finished. ${r.kept.toFixed(1)} L of clean water in the tank (${Math.round(r.eff * 100)}% recovered, ${r.kwh.toFixed(0)} kWh).${r.spilled > 0.1 ? ' The tank was full, so ' + r.spilled.toFixed(1) + ' L was lost!' : ''}${r.sci ? ' +' + r.sci + ' research.' : ''}`, 'good'); note(s, `Water Plant made ${r.kept.toFixed(1)} L.`, 'good'); }
       else if (ev === 'expdone') { ui.bubble('The <b>moon-soil experiment</b> is finished! All three pots sprouted, but they do not look the same at all. Go and see: it earned 3 research.', 'joy', 12); note(s, 'Finished the moon-soil experiment.', 'good'); }
       else if (ev === 'damp') { ui.bubble('The farm air is too damp: nothing is drying it, so <b>mold</b> has started in the Tomato Farm. Plants breathe out almost all the water they drink. Turn the Water Recycler on to catch it.', 'worried', 12); note(s, 'Mold from damp air.', 'bad'); }
+      else if (ev === 'frost') { ui.bubble(`It is <b>${fmt.temp(s.flow.sun.tempC)}</b> topside and the heaters are set too low. The <b>rover and hopper are losing charge</b>, their chargers have stopped, and the <b>Water Plant is frozen</b>. Turn the Topside Heaters up to level ${s.flow.heatNeed} on the Power Board (Tab).`, 'worried', 14); note(s, 'Topside machines began to freeze: the heaters were set too low.', 'bad'); }
+      else if (ev.startsWith('flat:')) { const nm = ev.slice(5) === 'car' ? 'rover' : 'hopper'; ui.bubble(`The cold has emptied the <b>${nm}'s battery</b>. It cannot be charged until the Topside Heaters are at level ${s.flow.heatNeed}.`, 'worried', 12); note(s, `The cold emptied the ${nm}'s battery.`, 'bad'); }
       else if (ev === 'nonutri') ui.bubble('The <b>plant food</b> tank is empty. Crops will crawl until you make more: run the waste digester in the Water Room.', 'worried', 10);
     }
     if (p.includes('stormEnd') && s.storm) {

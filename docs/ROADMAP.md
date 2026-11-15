@@ -335,7 +335,7 @@ A full Pilot mission was played on the live build and written up as 18 points. T
 | 5 | A parked vehicle hides a broken solar mount | Fixed: E goes to whichever you stand closer to, Q to the other |
 | 6 | Launch button below the fold at 846 x 726 | Fixed by the merged branch: the button's top is at 634 px |
 | 7 | "Day 8 of 7" | Fixed: "Rescue day" |
-| 8 | The long night is easy with the Topside Heaters off | **Not changed.** See below |
+| 8 | The long night is easy with the Topside Heaters off | Changed afterwards: unheated cold now drains the rover and hopper, stops their chargers and freezes the Water Plant (see "The cold matters at night") |
 | 9 | Solar panels do not matter after Day 3 on Pilot | **Not changed.** REGO and the alerts no longer push panels at night (13). See below |
 | 10 | A leak empties the oxygen tank before you can reach it | The leak itself is unchanged. The card shows what the walk and the patch will cost in oxygen, and REGO recommends locking the door when there is not enough |
 | 11 | "Fix it at the Heater Hub" was free if you never went | Choosing it now also turns the heaters to max (+2 kW) until the circuit is fixed |
@@ -347,8 +347,30 @@ A full Pilot mission was played on the live build and written up as 18 points. T
 | 17 | "Frozen Solid" repeats as a full card | One card for one spell of cold, then short notes, plus a standing alert "Topside machines are freezing" with the heater level they need |
 | 18 | The hopper's 7 kW charger runs on Day 1 and cannot be switched off | **Not changed.** It stops by itself after about an hour |
 
-**Left for a decision (8 and 9).** Both are about how the mission is balanced, and a change moves how hard every mode is. With the heaters off, the cold breaks the dish, the panels and a heater circuit, and none of those matters before a rescue that comes at night. Two ways to make the cold matter: let it reach things used at night (the rover and hopper batteries, the Water Plant), or let it cut the power coming from the reactor. For the panels: a later sunset on Pilot, or battery room worth filling. Each needs the mission checks re-run and a person to play it.
+**Left for a decision (8 and 9; 8 has since been done, below).** Both are about how the mission is balanced, and a change moves how hard every mode is. With the heaters off, the cold breaks the dish, the panels and a heater circuit, and none of those matters before a rescue that comes at night. Two ways to make the cold matter: let it reach things used at night (the rover and hopper batteries, the Water Plant), or let it cut the power coming from the reactor. For the panels: a later sunset on Pilot, or battery room worth filling. Each needs the mission checks re-run and a person to play it.
 
 **The unmerged branch.** The report listed fixes that existed only on a local branch, `fix/testing-pass`. It was merged here; four places clashed with newer work and both sides were kept: the hop in and out of vehicles with the "too close to the pit" guard, and the "new alert" highlight with the emergencies-first order.
 
 **Checked in the game:** each row marked fixed above was tried by hand in a Pilot mission, by day and by night. `sim_test` still says every mission can be won by a planned player and Commander cannot be won by doing nothing. **Not checked:** a whole mission played start to finish with the fixes in.
+
+### The cold matters at night
+
+Point 8 of the rescue-run report: with the Topside Heaters off, the night ran almost on the reactor alone, and what the cold broke (the dish, panels, a heater circuit) did not matter before rescue. The mission was won with no panel working.
+
+**The rule.** At night, when the heaters deliver less than the machines need, the shortfall (in heater levels) is the *frost*. While there is frost:
+
+| What | Effect | Ends when |
+| --- | --- | --- |
+| Rover and hopper | Each loses 1.5% of a full charge per hour for each heater level short: 3% an hour with the heaters off, so a full battery is flat in about 33 hours | The heaters are back at the needed level |
+| Charging pads | Do not charge, and draw no power | The same |
+| Water Plant | A running batch waits where it is and draws nothing; a new batch cannot be started; the seal wears 1% an hour per level short, down to a half | The same; the worn seal is put right by servicing (1 material, 1 hour) |
+
+- **Forgiven:** a shortfall of a quarter of a level or less, so a brief dip in power does not strand the rover. By day there is no frost.
+- **What the player is told.** REGO speaks once when the frost begins and again if a battery goes flat. A standing alert, ranked above the yellow reminders, names the heater level needed and what is affected. The Charging Pads panel says "too cold to charge". The Water Plant screen shows FROZEN and will not start a batch. The Power Board's line for the heaters says what they protect. "Real or made up?" has a row.
+- **Unchanged:** the cold still breaks the dish, a panel and a heater circuit as before. Nobody is hurt directly; a flat rover still crawls.
+- **What it does to the missions.** `sim_test` still says every mission can be won by a planned player and Commander cannot be won by doing nothing. One planned Pilot run now loses a rover trip: its night has 61 hours of brownout, the heaters run weak in a brownout, and the rover is too drained to drive. It still wins.
+- **Checks.** `node tools/frost_test.mjs` runs 31 checks: heaters right (nothing happens), heaters off, one level short, batteries flat, chargers, the heaters coming back, a batch waiting and carrying on, no frost by day.
+
+**Tried in the game** (Pilot, at night, heaters off): REGO's warning and the alert; after 10.9 hours the rover and hopper were at 67% and the seal at 0.78; the pads panel and the Water Plant screen said so and a batch would not start; with the rover at zero REGO said so; with the heaters back at level 2 the alert went and the rover charged from 0 to 47% in 1.6 hours. **Not tried:** a whole mission played through with the rule in; whether children notice the warning in time.
+
+**Still open from the report:** point 9 (solar panels stop mattering on Pilot after Day 3) and point 18 (the hopper's charger on Day 1).
