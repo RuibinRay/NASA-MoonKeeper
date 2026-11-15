@@ -32,7 +32,8 @@ const CAUSE = {
 export function makeMission(env) {
   const { G, ui, INFO, hrs, kw } = env, S = () => env.state(), on = () => !!S() && S().mode === 'survive', sol = MARS.SOL_H;
   const log = (text, kind) => { const s = S(); (s.log || (s.log = [])).push({ t: s.t, text, kind }); if (s.log.length > 60) s.log.shift(); };
-  const broken = (id) => on() && Object.keys(S().fault).some((f) => AT(f) === id);
+  const faulty = () => !!S() && !!S().fault && Object.keys(S().fault).length > 0;
+  const broken = (id) => faulty() && Object.keys(S().fault).some((f) => AT(f) === id);
   const clock = (t) => { const s = t / sol, h = (s % 1) * 24; return tt`Sol ${Math.floor(s) + 1}, ${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60)).padStart(2, '0')}`; };
 
   function begin() { const s = startSurvival(S()); log(tt('The mission begins: hold the outpost until the supply lander arrives.')); return s; }
@@ -51,7 +52,7 @@ export function makeMission(env) {
 
   // ---------- alerts and advice ----------
   function alerts(a) {
-    if (!on()) return; const s = S(), ph = stormPhase(s);
+    if (!on() && !faulty()) return; const s = S(), ph = on() ? stormPhase(s) : { phase: 'none' };
     for (const id of PRIORITY) if (s.fault[id]) a.push({ key: 'fault-' + id, text: FAULT_TEXT[id].name, sub: canRepair(s, id) ? tt('Mend it at its door') : tt('No spare parts for this'), go: AT(id) });
     if (ph.phase === 'before') a.push({ text: tt('Dust storm coming'), sub: tt`arrives in ${hrs(ph.inH)}`, kind: 'warn', go: 'power' });
   }
@@ -73,15 +74,15 @@ export function makeMission(env) {
 
   // ---------- at the buildings ----------
   function panel(id, st, act) {
-    if (!on()) return; const s = S();
+    if (!on() && !faulty()) return; const s = S();
     for (const f of PRIORITY.filter((k) => s.fault[k] && AT(k) === id).reverse()) { const need = FAULTS[f].parts, h = repairHours(s, f), T = FAULT_TEXT[f];
       st.unshift([tt('BROKEN'), `<span class="down">${T.name}</span>`]);
       act.unshift({ label: tt`Mend it: ${T.name}`, sub: (need ? (need > 1 ? tt`Uses ${need} spare parts (you have ${s.mat}).` : tt`Uses 1 spare part (you have ${s.mat}).`) : tt('Needs no parts.')) + ' ' + tt`Takes ${hrs(h)}${s.tau > 2 ? tt(' in the storm') : ''}.`, disabled: !canRepair(s, f),
         run: async () => { await env.pass(h, tt('Mending…')); if (s.over) return; if (repair(s, f)) { G.audio.play('ok'); ui.toast(T.done, 'good'); log(T.done); } } }); }
-    if (id === 'cmd') { const ph = stormPhase(s), bad = PRIORITY.filter((k) => s.fault[k]); st.push([tt('Supply lander'), tt`arrives in ${hrs(s.deadline - s.t)}`], [tt('Dust storm'), ph.phase === 'before' ? tt`arrives in ${hrs(ph.inH)}` : ph.phase === 'on' ? tt`here for about ${hrs(ph.leftH)} more` : tt('over')], [tt('Broken now'), bad.length ? bad.map((k) => FAULT_TEXT[k].name).join(' · ') : tt('nothing')], [tt('Spare parts'), s.cargo ? tt`${s.mat} here · ${s.cargo} still in the lander` : String(s.mat)]); }
+    if (id === 'cmd' && on()) { const ph = stormPhase(s), bad = PRIORITY.filter((k) => s.fault[k]); st.push([tt('Supply lander'), tt`arrives in ${hrs(s.deadline - s.t)}`], [tt('Dust storm'), ph.phase === 'before' ? tt`arrives in ${hrs(ph.inH)}` : ph.phase === 'on' ? tt`here for about ${hrs(ph.leftH)} more` : tt('over')], [tt('Broken now'), bad.length ? bad.map((k) => FAULT_TEXT[k].name).join(' · ') : tt('nothing')], [tt('Spare parts'), s.cargo ? tt`${s.mat} here · ${s.cargo} still in the lander` : String(s.mat)]); }
   }
   // The lander: in the survival mission its hold still has spare parts in it.
-  const place = (p) => { const s = S(); if (!on() || p.id !== 'lander' || !s.cargo) return null;
+  const place = (p) => { const s = S(); if (p.id !== 'lander' || !s.cargo) return null;
     return ui.panel(p.name, { img: `mars/mr_${p.id}`, stats: [[tt('In the hold'), tt`${s.cargo} spare parts`], [tt('In the depot'), tt`${s.mat} spare parts`]], note: p.text, actions: [{ label: tt`Unpack the ${s.cargo} spare parts`, sub: tt('Load them on the rover and take them to the base.'), run: () => { const n = unpackCargo(s); G.audio.play('ok'); ui.toast(tt`${n} spare parts unpacked. You now have ${s.mat}.`, 'good'); log(tt('Spare parts unpacked from the lander.')); } }] }); };
 
   // ---------- the HUD ----------

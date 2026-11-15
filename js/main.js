@@ -599,13 +599,14 @@ const modesEl = $('#modes');
 const HARD = { cadet: 1, pilot: 2, commander: 3, unlimited: 0 }, MODE_IC = { cadet: 'moon', pilot: 'rocket', commander: 'fire', unlimited: 'dome' };
 let planet = 'moon', marsMode = 'explore'; const marsSaved = () => { try { return !!localStorage.getItem(marsMode === 'survive' ? 'mk2-mars-survive-save' : 'mk2-mars-save'); } catch (e) { return false; } };
 const drawPlanets = () => { const el = $('#planets'); el.innerHTML = [['moon', tt('The Moon'), tt('Tranquility Deep · the full game')], ['mars', tt('Mars'), tt('Arcadia Planitia · explore or survive')]].map(([k, n, s]) => `<button class="planet ${k} ${k === planet ? 'sel' : ''}" data-p="${k}"><i></i><b>${n}</b><span>${s}</span></button>`).join('');
-  el.querySelectorAll('.planet').forEach((b) => (b.onclick = () => { planet = b.dataset.p; G.audio?.play?.('click'); drawPlanets(); drawModes(); })); };
+  el.querySelectorAll('.planet').forEach((b) => (b.onclick = () => { planet = b.dataset.p; G.audio?.play?.('click'); $('#skip-tut').checked = planet === 'mars' && marsTrained(); drawPlanets(); drawModes(); })); };
+const marsTrained = () => { try { return localStorage.getItem('mk-mars-trained') === '1'; } catch (e) { return false; } };
 const drawMarsBrief = () => {
   const fact = (ic, label, val) => `<div class="bf"><i>${IC[ic] || ''}</i><span>${label}</span><b>${val}</b></div>`;
   const surv = marsMode === 'survive';
   modesEl.innerHTML = [['explore', tt('Explore'), tt('Any age'), tt('No end · look round the outpost and the plain'), 0, 'map'], ['survive', tt('Survive on Mars'), tt('Ages 11 and up'), tt('7 sols · a dust storm · things break'), 2, 'fire']].map(([k, n, ages, tag, hard, ic]) => `<button class="mode ${k === marsMode ? 'sel' : ''}" data-mm="${k}"><i class="mode-ic">${IC[ic] || IC.room}</i><b>${n}</b><em>${ages}</em><span>${tag}</span><div class="pips" title="${tt`How hard it is`}">${hard ? [1, 2, 3].map((q) => `<u class="${q <= hard ? 'on' : ''}"></u>`).join('') : ('<small>' + tt('no ending') + '</small>')}</div></button>`).join('');
   modesEl.querySelectorAll('.mode').forEach((b) => (b.onclick = () => { marsMode = b.dataset.mm; G.audio?.play?.('click'); drawModes(); }));
-  $('#mission').classList.add('mars'); $('.mission-foot .check').classList.add('hidden'); $('#btn-launch').textContent = surv ? tt('Start the mission') : tt('Land on Mars'); $('.mission-head h2').textContent = tt('Choose how to play Mars');
+  $('#mission').classList.add('mars'); $('.mission-foot .check').classList.remove('hidden'); $('.mission-foot .check span').textContent = tt('Skip the training'); $('#btn-launch').textContent = surv ? tt('Start the mission') : tt('Land on Mars'); $('.mission-head h2').textContent = tt('Choose how to play Mars');
   if (surv) { $('#brief').innerHTML = `<div class="brief-h"><b>${tt('Survive on Mars')}</b><span>${tt('Hold the outpost for <b>7 sols</b> until the supply lander arrives. The tanks are low, a dust storm is on its way, and machines will break. Mend them, and decide what to switch off when the Sun goes dim. Four lives depend on it.')}</span></div>
     <div class="brief-grid">${fact('rocket', tt('Supply lander'), tt('in 7 sols'))}${fact('air', tt('Dust storm'), tt('arrives in the second sol'))}${fact('bolt', tt('Battery'), tt('about a third full'))}${fact('o2', tt('Oxygen'), tt('12 kg in the tank'))}${fact('water', tt('Water'), '60 L')}${fact('food', tt('Food'), '36 kg')}${fact('wrench', tt('Spare parts'), tt('5 here · 4 in the lander'))}${fact('crew', tt('Crew'), tt('4 people'))}</div>${marsSaved() ? `<button id="btn-mars-cont" class="primary alt">${tt('Continue the mission')}</button>` : ''}`;
     const bs = $('#btn-mars-cont'); if (bs) bs.onclick = () => { bs.textContent = tt('Loading…'); G.startMars({ load: true, mode: 'survive' }); }; return; }
@@ -615,7 +616,7 @@ const drawMarsBrief = () => {
 };
 const drawModes = () => {
   if (planet === 'mars') return drawMarsBrief();
-  $('#mission').classList.remove('mars'); $('.mission-foot .check').classList.remove('hidden'); $('#btn-launch').textContent = tt('Launch mission'); $('.mission-head h2').textContent = tt('Choose your mission');
+  $('#mission').classList.remove('mars'); $('.mission-foot .check').classList.remove('hidden'); $('.mission-foot .check span').textContent = tt('Skip the comic and training'); $('#btn-launch').textContent = tt('Launch mission'); $('.mission-head h2').textContent = tt('Choose your mission');
   modesEl.innerHTML = Object.values(MODES).map((m) => `<button class="mode ${m.key === mode ? 'sel' : ''}" data-m="${m.key}"><i class="mode-ic">${IC[MODE_IC[m.key]] || IC.room}</i><b>${m.name}</b><em>${m.ages}</em><span>${m.tag}</span><div class="pips" title="${tt`How hard it is`}">${HARD[m.key] ? [1, 2, 3].map((n) => `<u class="${n <= HARD[m.key] ? 'on' : ''}"></u>`).join('') : ('<small>' + tt('free build') + '</small>')}</div></button>`).join('');
   modesEl.querySelectorAll('.mode').forEach((b) => (b.onclick = () => { mode = b.dataset.m; try { localStorage.setItem('mk-mode', mode); } catch (e) {} G.audio?.play?.('click'); drawModes(); }));
   const m = MODES[mode], lim = m.days !== Infinity, names = m.wreck.map((id) => ROOMS.find((r) => r.id === id)?.name).filter(Boolean);
@@ -627,7 +628,7 @@ const drawModes = () => {
 drawPlanets(); drawModes(); $('#btn-codex').onclick = () => ui.guide('how'); $('#btn-how').onclick = () => ui.guide('truth');
 const showMission = (on) => { $('#mission').classList.toggle('hidden', !on); $('#title').classList.toggle('hidden', on); };
 $('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour'); $('#btn-games').onclick = () => { G.audio.init(); ui.guide('games'); };
-$('#btn-launch').onclick = () => { if (planet === 'mars') { $('#btn-launch').textContent = tt('Loading…'); G.startMars({ mode: marsMode }); } else start(mode, $('#skip-tut').checked); };
+$('#btn-launch').onclick = () => { if (planet === 'mars') { $('#btn-launch').textContent = tt('Loading…'); G.startMars({ mode: marsMode, train: !$('#skip-tut').checked }); } else start(mode, $('#skip-tut').checked); };
 document.querySelectorAll('.pillar').forEach((p) => p.insertAdjacentHTML('afterbegin', `<i>${IC[p.dataset.ic] || ''}</i>`));
 if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = async () => { if (G._starting) return; G._starting = true; G.audio.init(); if (!world.warmMs) b.textContent = tt('Loading…'); await world.warm(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
 async function start(modeKey, skip, seed) {
@@ -649,4 +650,4 @@ async function start(modeKey, skip, seed) {
   if (free) { ui.bubble(tt('Everyone is safe! <b>Commander Vasquez and Engineer Okoro are part of your crew</b>: give them jobs at the Control Center. The big screen shows what is broken. <b>First job: power.</b> Press <b>H</b> whenever you want my advice.'), 'joy', 18); G.pointTo('lift'); return; }
   ui.bubble(tt('I am right here with you. The big screen shows what is broken. <b>First job: power.</b> Put your suit on at the airlock, take the elevator up, pull a broken panel off its mount, and bring it down to the Fix-It Bench. Press <b>H</b> whenever you want my advice.'), 'happy', 18); G.pointTo('lift');
 }
-if ((params.get('go') || '').startsWith('mars')) G.startMars({ load: params.get('load') === '1', mode: params.get('go') === 'mars-survive' ? 'survive' : 'explore' }); else if (params.get('go')) start(mode, true, Number(params.get('seed')) || undefined);
+if ((params.get('go') || '').startsWith('mars')) G.startMars({ load: params.get('load') === '1', mode: params.get('go') === 'mars-survive' ? 'survive' : 'explore', train: params.get('train') === '1' || params.get('go') === 'mars-train' }); else if (params.get('go')) start(mode, true, Number(params.get('seed')) || undefined);
