@@ -89,7 +89,7 @@ The brief asks for a more cinematic, more hands-on and better-taught game withou
 | 4 | **Minigames.** Rover maintenance and mining procedures, tool sounds, on top of the 16 hands-on games already there. | To do |
 | 5 | **Movement.** Hopper landing legs, engine and landing guide; low-gravity gait; smoother changes between walking, driving and flying. | Hopper done (see below). Gait and transitions to do |
 | 6 | **Sound and light.** Room ambience, muffled sound outside, music that follows danger, radio chatter, lighting that reacts to emergencies. | Sound and music done (see below); reactive lighting was done in step 3. Radio chatter to do |
-| 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | To do |
+| 7 | **Learning.** A question after each emergency, a voice for REGO using the browser's own speech, a picture of ice as frost in the soil, real terrain on the map. | Questions done (see below), and the Day and night page earlier. Voice, ice picture and map to do |
 
 ### Step 1: what changed and what was measured
 
@@ -195,3 +195,18 @@ All of it is made in the browser; there are no audio files. It was checked by me
 Output figures are average level times 1,000, read from the game's own audio output in the test browser.
 
 Still to do in step 6: radio chatter with Mission Control.
+
+### Step 7, first part: a question after each emergency
+
+After an emergency is settled, one card asks why it happened. There are 14 questions, one for each kind of emergency, in `js/quiz.js`.
+
+| Rule | Why |
+| --- | --- |
+| Asked once per kind of emergency in a mission | A second solar storm does not repeat the same question |
+| Three answers, shuffled: one right, two that people often believe | For example "the night wind chills them" for why machines freeze at night. There is no wind on the Moon, and the explanation says so |
+| A right answer earns one research point | A small reason to think it through |
+| A wrong answer costs nothing | The card shows the right answer and explains it, and the game goes on. Getting it wrong is how the fact is learned |
+| The clock is stopped while the card is up | The same rule as the emergency itself: stop, then think |
+| Questions can be switched off in Settings | For players who only want to play |
+
+Every fact in the questions is one the game already uses, with its source in `docs/SCIENCE_AND_SOURCES.md`. The mission keeps count of how many were asked and how many answered right.
