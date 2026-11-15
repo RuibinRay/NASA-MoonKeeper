@@ -3,7 +3,7 @@
 // comes through the suit and the ground: dull, low and close. Indoors, with the suit off, the station hums.
 const CALM = [[110.0, 164.81, 261.63, 392.0], [87.31, 174.61, 220.0, 329.63], [130.81, 196.0, 261.63, 329.63], [98.0, 146.83, 246.94, 293.66]];   // A minor 9, F major 7, C major, G major
 const TENSE = [[82.41, 123.47, 174.61, 233.08], [87.31, 130.81, 185.0, 246.94]];                                                                   // close, uneasy clusters
-const INTERFACE = { click: 1, blip: 1, ok: 1, win: 1, chirp: 1, radio: 1, alarm: 1, geiger: 1 };   // sounds made inside the helmet or by the screen: never muffled
+const INTERFACE = { click: 1, blip: 1, ok: 1, win: 1, chirp: 1, radio: 1, alarm: 1, geiger: 1, call: 1, static: 1 };   // sounds made inside the helmet or by the screen: never muffled
 
 export class Sound {
   constructor() { this.on = true; this.music = true; this.ctx = null; this.st = {}; this.breath = 0; this.mood = 0; this.chordT = 0; this.chordI = 0; this.wasTense = false; }
@@ -82,6 +82,8 @@ export class Sound {
       case 'alarm': for (let i = 0; i < 3; i++) T(540, 0.14, 'square', 0.3, null, i * 0.2); break;
       case 'chirp': T(900, 0.07, 'sine', 0.4, 1500); T(1500, 0.08, 'sine', 0.4, 1100, 0.07); T(1250, 0.06, 'sine', 0.35, 1700, 0.16); break;
       case 'radio': N(0.18, 0.25, 3000); T(1000, 0.08, 'sine', 0.25, null, 0.16); break;
+      case 'call': T(2525, 0.22, 'sine', 0.22); N(0.5, 0.12, 2600, 0.24); T(2475, 0.22, 'sine', 0.2, null, 0.78); break;   // a transmission: a tone, a breath of static, a second tone
+      case 'static': N(0.9, 0.22, 3200); N(0.5, 0.14, 1400, 0.3); break;                                                          // nobody on the other end
       case 'boom': T(70, 0.9, 'sine', 1, 28); N(0.7, 0.6, 260); break;
       case 'win': [523, 659, 784, 1047].forEach((f, i) => T(f, 0.22, 'triangle', 0.5, null, i * 0.11)); break;
       case 'geiger': N(0.012, 0.5, 6000); break;
