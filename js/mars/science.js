@@ -48,7 +48,7 @@ const num = (x, d = 1) => (Math.abs(x) >= 100 || d === 0 ? Math.round(x).toLocal
 function canvas(host, w, h) {
   const c = el('canvas', 'msc-cv'), dpr = Math.min(2, (typeof devicePixelRatio === 'number' && devicePixelRatio) || 1);
   c.width = w * dpr; c.height = h * dpr; c.style.aspectRatio = `${w} / ${h}`; host.appendChild(c);
-  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.font = '13px Inter, system-ui, sans-serif'; g.textBaseline = 'middle';
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.font = '13px Inter, system-ui, sans-serif'; g.textBaseline = 'middle'; g.W = w;
   return { c, g, w, h };
 }
 function slider(host, label, min, max, step, value, fmt, on) {
@@ -63,7 +63,14 @@ function choices(host, label, list, value, on) {      // list: [[id, text]]
   host.appendChild(row); return { get value() { return cur; } };
 }
 const facts = (host) => { const box = el('div', 'msc-facts'); host.appendChild(box); return (rows) => { box.innerHTML = rows.map(([k, v, tone]) => `<div class="msc-fact${tone ? ' ' + tone : ''}"><span>${k}</span><b>${v}</b></div>`).join(''); }; };
-const text = (g, s, x, y, col = C.text, align = 'left', font) => { g.fillStyle = col; g.textAlign = align; if (font) g.font = font; g.fillText(s, x, y); if (font) g.font = '13px Inter, system-ui, sans-serif'; };
+// room: the width the label may take (by default, up to the canvas edge). A longer label (other languages) shrinks down to 10px, then is squeezed.
+const text = (g, s, x, y, col = C.text, align = 'left', font, room) => {
+  g.fillStyle = col; g.textAlign = align; if (font) g.font = font;
+  const W = g.W || 1e4; room = Math.max(20, room ?? (align === 'right' ? x - 4 : align === 'center' ? 2 * Math.min(x, W - x) - 8 : W - x - 4));
+  let wd = g.measureText(s).width;
+  if (wd <= room) g.fillText(s, x, y);
+  else { const f0 = g.font, m = f0.match(/(\d+(?:\.\d+)?)px/); if (m) for (let px = +m[1]; wd > room && px > 10; ) { px -= 0.5; g.font = f0.replace(m[0], px + 'px'); wd = g.measureText(s).width; } g.fillText(s, x, y, room); g.font = f0; }
+  if (font) g.font = '13px Inter, system-ui, sans-serif'; };
 const bar = (g, x, y, w, h, col) => { g.fillStyle = col; g.beginPath(); g.roundRect ? g.roundRect(x, y, Math.max(0, w), h, 4) : g.rect(x, y, Math.max(0, w), h); g.fill(); };
 
 // ---------------------------------------------------------------- the six demonstrations
@@ -103,7 +110,7 @@ const TOPICS = [
         [tt('Water'), p < TRIPLE ? tt('Cannot stay liquid: ice turns straight into vapour') : tt`Boils at ${boilC(p).toFixed(0)} °C`, p < TRIPLE ? 'warn' : '']]); };
       show();
       return () => { const rows = [[tt('Earth, sea level'), PRESSURES.earth, '#6fb7ff'], [tt('Top of Mount Everest'), PRESSURES.everest, '#8fc3ee'], [tt('Inside a NASA spacesuit'), PRESSURES.suit, C.green], [tt('Water boils at body heat'), PRESSURES.armstrong, C.amber], [tt('Mars, where you are'), pressureAt(km), C.rust]];
-        g.clearRect(0, 0, w, h); const x0 = 190, x1 = w - 86, lg = (p) => x0 + ((Math.log10(p) - 1.5) / (5.2 - 1.5)) * (x1 - x0);
+        g.clearRect(0, 0, w, h); const x0 = clamp(Math.ceil(Math.max(...rows.map((r) => g.measureText(r[0]).width))) + 20, 190, 250), x1 = w - 86, lg = (p) => x0 + ((Math.log10(p) - 1.5) / (5.2 - 1.5)) * (x1 - x0);
         rows.forEach(([name, p, col], i) => { const y = 30 + i * 44; text(g, name, x0 - 10, y, C.text, 'right'); bar(g, x0, y - 10, lg(p) - x0, 20, col); text(g, tt`${num(p, 0)} Pa`, lg(p) + 8, y, C.mute); });
         g.strokeStyle = C.line; g.beginPath(); g.moveTo(x0, 12); g.lineTo(x0, h - 26); g.stroke(); text(g, tt('Each step to the right is ten times more'), x0, h - 12, C.mute); };
     } },
@@ -132,7 +139,8 @@ const TOPICS = [
         const bx = 250, bw = w - bx - 20, top = Math.max(need * 1.3, r.kw + reactor, 1), X = (v) => bx + (v / top) * bw;
         text(g, tt('Power made'), bx, h - 44, C.text); bar(g, bx, h - 34, X(reactor) - bx, 12, C.amber); bar(g, X(reactor), h - 34, X(reactor + r.kw) - X(reactor), 12, C.cyan);
         g.strokeStyle = C.red; g.lineWidth = 2; g.beginPath(); g.moveTo(X(need), h - 40); g.lineTo(X(need), h - 18); g.stroke(); g.lineWidth = 1;
-        text(g, tt('reactor'), bx, h - 9, C.amber); text(g, tt('solar'), bx + 62, h - 9, C.cyan); text(g, tt('red line: needed'), w - 20, h - 9, C.red, 'right'); };
+        const lr = tt('reactor'), ls = tt('solar'), sx = bx + Math.max(62, g.measureText(lr).width + 12), ln = tt('red line: needed');
+        text(g, lr, bx, h - 9, C.amber); text(g, ls, sx, h - 9, C.cyan); text(g, ln, w - 20, h - 9, C.red, 'right', undefined, w - 20 - (sx + g.measureText(ls).width + 12)); };
     } },
 
   { id: 'oxygen', title: tt('Oxygen from the air'),
@@ -170,7 +178,7 @@ const TOPICS = [
       show();
       return () => { const e = iceEnergy(iceC, vap), full = iceEnergy(-110, true).kJ, x0 = 30, bw = w - 60, parts = [[tt('warm the ice'), e.warm, '#8fc3ee'], [tt('melt it'), e.melt, C.cyan], [tt('turn it to vapour'), e.boil, C.rust]];
         g.clearRect(0, 0, w, h); text(g, tt('Energy to make one litre of clean water'), x0, 24, C.text, 'left', '600 15px Chakra Petch, Inter, sans-serif'); let x = x0;
-        parts.forEach(([name, kJ, col], i) => { const wd = (kJ / full) * bw; bar(g, x, 50, wd, 46, col); if (kJ > 0) { text(g, name, x0 + i * 180, 124, col); text(g, tt`${num(kJ, 0)} kJ`, x0 + i * 180, 144, C.mute); } x += wd; });
+        parts.forEach(([name, kJ, col], i) => { const wd = (kJ / full) * bw; bar(g, x, 50, wd, 46, col); if (kJ > 0) { text(g, name, x0 + i * 180, 124, col, 'left', undefined, 172); text(g, tt`${num(kJ, 0)} kJ`, x0 + i * 180, 144, C.mute); } x += wd; });
         g.strokeStyle = C.line; g.strokeRect(x0, 50, bw, 46); text(g, tt`${num(e.kJ, 0)} kJ in all`, x0, 178, C.text); };
     } },
 
@@ -202,8 +210,9 @@ const TOPICS = [
         if (far) { if (!map) map = T.costMap(tH, { from, to }); const mx = 318, my = 34, mw = w - mx - 16, mh = 170, cw = mw / map.cols.length, ch = mh / map.rows.length;
           text(g, tt('What it costs to leave on another day'), mx, 16, C.text); map.cells.forEach((row, j) => row.forEach((v, i) => { if (v == null) return; const k = clamp((v - map.min) / 8, 0, 1); g.fillStyle = `rgb(${Math.round(24 + 210 * k)},${Math.round(150 - 90 * k)},${Math.round(120 - 80 * k)})`; g.fillRect(mx + i * cw, my + mh - (j + 1) * ch, cw + 0.5, ch + 0.5); }));
           g.strokeStyle = C.line; g.strokeRect(mx, my, mw, mh); const span = map.cols[map.cols.length - 1]; for (const win of T.windows(tH, 2, out ? 'out' : 'back')) { const d = (win.departH - tH) / 24; if (d > span) continue; const x = mx + (d / span) * mw; g.strokeStyle = '#fff'; g.beginPath(); g.moveTo(x, my); g.lineTo(x, my + mh + 6); g.stroke(); text(g, tt('cheap'), x, my + mh + 16, C.text, 'center'); }
-          text(g, tt`days from now, 0 to ${span}`, mx, my + mh + 34, C.mute); g.save(); g.translate(mx - 8, my + mh); g.rotate(-Math.PI / 2); text(g, tt`flight: ${map.rows[0]} to ${map.rows[map.rows.length - 1]} days`, 0, 0, C.mute); g.restore();
-          bar(g, mx, h - 34, 14, 10, 'rgb(24,150,120)'); text(g, tt('cheap'), mx + 20, h - 29, C.mute); bar(g, mx + 78, h - 34, 14, 10, 'rgb(234,60,40)'); text(g, tt('8 km/s more, or worse'), mx + 98, h - 29, C.mute); }
+          text(g, tt`days from now, 0 to ${span}`, mx, my + mh + 34, C.mute); g.save(); g.translate(mx - 8, my + mh); g.rotate(-Math.PI / 2); text(g, tt`flight: ${map.rows[0]} to ${map.rows[map.rows.length - 1]} days`, 0, 0, C.mute, 'left', undefined, my + mh - 4); g.restore();
+          const lc = tt('cheap'), lw = tt('8 km/s more, or worse'), x2 = mx + Math.max(78, 20 + g.measureText(lc).width + 14), one = x2 + 20 + g.measureText(lw).width <= w - 4, [wx, wy] = one ? [x2, h - 34] : [mx, h - 18];
+          bar(g, mx, h - 34, 14, 10, 'rgb(24,150,120)'); text(g, lc, mx + 20, h - 29, C.mute); bar(g, wx, wy, 14, 10, 'rgb(234,60,40)'); text(g, lw, wx + 20, wy + 5, C.mute); }
         else text(g, tt('The Moon goes round Earth: you can leave in any month.'), 318, 60, C.mute); };
     } },
 ];
