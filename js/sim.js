@@ -1,6 +1,7 @@
 // MOONKEEPER 2 — survival simulation. Pure logic (no DOM) so it can be tested in Node.
 // Core rule: every machine eats power, every helper eats something, every fix costs time. No choice is free.
 import { K, SYS, MODES, BASE_LOAD, ROOMS, MOUNTS } from './config.js';
+import { newLife, lifeFlows, stepLife, harvestRoom } from './life.js';
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export function mulberry32(a) {
@@ -17,11 +18,11 @@ export function createSim(modeKey = 'pilot', seed = (Date.now() >>> 0)) {
     o2: m.o2, o2Cap: 8, water: m.water, waterCap: 60,
     cans: m.cans, meals: m.meals, raw: 0, feed: m.feed, hens: 6, eggs: 0, fish: true, fishAcc: 0,
     mat: m.mat,
-    crops: { potato: { g: 0.55, ripe: 1, hp: 1 }, tomato: { g: 0.3, ripe: 0, hp: 1 } },
+    ...newLife(m),                                    // farm racks, plant food, research, the Water Plant (js/life.js)
     dose: 0, health: 100, air: 1, dust: 0.08, solarHealth: 1, gearStress: 0,
     P: K.AIR_KPA, rooms: {}, mounts: MOUNTS.map((_, i) => (i < 8 ? 1 : 0)),   // 0 empty, 1 working, 2 broken
     lv: { o2gen: 1, isru: 0, recycler: 2, farm: 1, heat: 1, comms: 1 },
-    f: { commsDown: false, isruDown: false, heater: false, scrubber: false, leakWater: 0, mold: false },
+    f: { commsDown: false, isruDown: false, heater: false, scrubber: false, leakWater: 0, mold: false, pump: null, led: null },
     extraKw: {}, safeMode: 0, storm: null, zone: 'top', suitOn: true, here: null,
     helpers: [{ id: 'bolt1', kind: 'bot', name: 'BOLT-1', role: 'idle', img: 'c_bot' }, { id: 'bolt2', kind: 'bot', name: 'BOLT-2', role: 'idle', img: 'c_bot' }],
     perks: {}, rescued: [],
@@ -44,7 +45,7 @@ export function applyDisaster(S) {
   // shuffle which of the first 8 mounts survived
   for (let i = 7; i > 0; i--) { const j = (S.rng() * (i + 1)) | 0; [S.mounts[i], S.mounts[j]] = [S.mounts[j], S.mounts[i]]; }
   for (const id of m.wreck) Object.assign(S.rooms[id], { p: 0, hole: 1, door: 0, built: 0.3, frozen: true });
-  if (m.wreck.includes('tomato')) Object.assign(S.crops.tomato, { g: 0, ripe: 0, hp: 0.1 });
+  for (const r of S.racks) if (m.wreck.includes(r.room)) Object.assign(r, { g: 0, ripe: 0, hp: 0.1 });
   S.f.commsDown = true; S.f.isruDown = true; S.lv.isru = 0; S.dust = 0.3; S.battery = Math.min(S.battery, S.batteryCap * 0.5);
   note(S, 'A meteor shower hit every station on the Moon. You are the only one left at Tranquility Deep.', 'bad');
 }
@@ -79,7 +80,7 @@ export function computeFlows(S) {
     o2gen: roomOk(S, 'oxygen') ? SYS.o2gen.kw[lv.o2gen] : 0,
     isru: f.isruDown || safe ? 0 : SYS.isru.kw[lv.isru],
     recycler: roomOk(S, 'water') ? SYS.recycler.kw[lv.recycler] : 0,
-    farm: SYS.farm.kw[lv.farm] * (farms / 2),
+    farm: 0, wx: 0,
     heat: SYS.heat.kw[lv.heat],
     comms: f.commsDown || safe ? 0 : SYS.comms.kw[lv.comms],
     chargers: (S.car.charging ? 4 : 0) + (S.ship.charging ? 7 : 0),
@@ -87,20 +88,24 @@ export function computeFlows(S) {
     bots: bots * 1,
     pump: S.fish && roomOk(S, 'animal') ? 0.5 : 0,
   };
+  const people = 1 + humans(S).length, drain = m.drain, okW = roomOk(S, 'water') ? 1 : 0, okB = roomOk(S, 'bathroom') ? 1 : 0.8;
+  const L0 = lifeFlows(S, 1, SYS.recycler.rate[lv.recycler] * okW, people); use.farm = L0.farmKw; use.wx = L0.wxKw;   // what the farms and the Water Plant ask for
   let extra = 0; for (const k in S.extraKw) extra += S.extraKw[k];
   const reactor = m.reactor || K.REACTOR_KW, demand = Object.values(use).reduce((a, b) => a + b, 0) + extra, supply = solar + reactor, net = supply - demand;
   const eff = S.battery <= 0.01 && net < 0 ? supply / demand : 1;   // brownout: every machine runs weak
-  const people = 1 + humans(S).length, drain = m.drain;
-  const hp = (S.crops.potato.hp * (roomOk(S, 'potato') ? 1 : 0) + S.crops.tomato.hp * (roomOk(S, 'tomato') ? 1 : 0)) / 2;
   const o2Elec = use.o2gen > 0 && S.water > 0 ? SYS.o2gen.out[lv.o2gen] * eff : 0;
-  const o2Farm = SYS.farm.o2[lv.farm] * eff * hp, o2Isru = use.isru > 0 ? SYS.isru.out[lv.isru] * eff : 0;
+  const rate = SYS.recycler.rate[lv.recycler] * eff * okW * okB;
+  const life = lifeFlows(S, eff, rate, people);                       // what they actually get once power is shared out
+  const o2Farm = life.farmO2, o2Isru = use.isru > 0 ? SYS.isru.out[lv.isru] * eff : 0;
   const o2Use = K.O2_PER_DAY * drain * people + S.hens * 0.008;
   const o2Leak = S.flow?.o2Leak || 0;
   const o2Net = o2Elec + o2Isru + o2Farm - o2Use - o2Leak;
-  const rate = SYS.recycler.rate[lv.recycler] * eff * (roomOk(S, 'water') ? 1 : 0) * (roomOk(S, 'bathroom') ? 1 : 0.8);
-  const wUsed = K.WATER_PER_DAY * drain * people + SYS.farm.water[lv.farm] * (farms / 2) + S.hens * 0.05 + (S.fish ? 0.3 : 0);
-  const wNet = -(wUsed * (1 - rate)) - K.H2O_PER_KG_O2 * o2Elec - f.leakWater * 24;
-  const grow = SYS.farm.grow[lv.farm] * eff * (S.water > 0 ? 1 : 0) * (S.fish && roomOk(S, 'animal') ? 1.15 : 1) * (S.perks.botanist ? 1.25 : 1);
+  // Plants breathe out nearly all the water they drink; the recycler (or the condensers) catches it from the air.
+  const wCrew = K.WATER_PER_DAY * drain * people + S.hens * 0.05 + (S.fish ? 0.3 : 0), wFarm = life.farmWater, wUsed = wCrew + wFarm;
+  const farmBack = S.tech.cond ? Math.max(rate, 0.97) : rate;
+  const wNet = -(wCrew * (1 - rate)) - wFarm * (1 - farmBack) - K.H2O_PER_KG_O2 * o2Elec - f.leakWater * 24;
+  const grow = SYS.farm.grow[lv.farm] * eff;
+  const co2Out = K.CO2_PER_DAY * drain * people, h2Made = o2Elec * 0.125;      // electrolysis: every kg of oxygen leaves 0.125 kg of hydrogen
   const foodUse = K.MEALS_PER_DAY * drain * people;
   const heatNeed = Math.min(3, (!s.up ? 2 : s.elev > 55 ? 1 : 0) + (f.heater ? 1 : 0));
   const commsOn = !f.commsDown && !safe && lv.comms > 0 && eff > 0.5;
@@ -108,7 +113,7 @@ export function computeFlows(S) {
   const foodTotal = S.meals + S.cans + S.raw * 0.5;
   S.flow = {
     sun: s, nOk, solar, reactor, use, extra, demand, supply, net, eff, people, cap,
-    o2Elec, o2Isru, o2Farm, o2Use, o2Leak, o2Net, rate, wUsed, wNet, grow, foodUse, heatNeed, commsOn, farms,
+    o2Elec, o2Isru, o2Farm, o2Use, o2Leak, o2Net, rate, wUsed, wCrew, wFarm, farmBack, wNet, grow, foodUse, heatNeed, commsOn, farms, life, co2Out, h2Made,
     battHours: net < 0 ? S.battery / -net : Infinity,
     o2Days: o2Net < 0 ? S.o2 / -o2Net : Infinity,
     waterDays: wNet < 0 ? S.water / -wNet : Infinity,
@@ -163,17 +168,9 @@ export function step(S, dt) {
   let need = F.foodUse * d, hungry = false;
   const eat = (k, worth) => { const take = Math.min(S[k] * worth, need); S[k] -= take / worth; need -= take; };
   eat('meals', 1); if (need > 1e-9) eat('cans', 1); if (need > 1e-9) eat('raw', 0.5); if (need > 1e-6) hungry = true;
-  // ---- crops (potatoes, tomatoes)
+  // ---- farms, plant food, the moon-soil experiment, the Water Plant (js/life.js)
   const farmers = working(S, 'farm');
-  for (const [id, days, yieldRaw] of [['potato', 1.25, 8], ['tomato', 1.1, 6]]) {
-    const c = S.crops[id], ok = roomOk(S, id);
-    if (S.rooms[id].frozen) { c.g = 0; c.ripe = 0; c.hp = 0.1; continue; }
-    if (!ok || S.lv.farm === 0 || S.water <= 0) c.hp = Math.max(0.15, c.hp - 0.01 * dt);
-    else if (id === 'tomato' && S.f.mold) c.hp = Math.max(0.1, c.hp - 0.02 * dt);
-    else c.hp = Math.min(1, c.hp + 0.012 * dt);
-    if (ok && c.ripe < 3) { c.g += (F.grow * c.hp * dt) / (days * 24); if (c.g >= 1) { c.g = 0; c.ripe++; S.pending.push('ripe:' + id); } }
-    if (ok && farmers && c.ripe > 0) { S.raw += c.ripe * yieldRaw * 0.85 * (0.5 + 0.5 * c.hp); S.feed += 0.4 * c.ripe; c.ripe = 0; S.stats.harvests++; }
-  }
+  stepLife(S, dt, F, farmers);
   // ---- animals: hens eat dry feed (people cannot eat it) and lay eggs; fish feed the plants
   if (roomOk(S, 'animal')) {
     if (S.feed > 0) { S.feed = Math.max(0, S.feed - S.hens * 0.11 * d); S.eggs = Math.min(10, S.eggs + S.hens * 0.75 * d); if (S.feed <= 0) S.pending.push('nofeed'); }
@@ -192,7 +189,8 @@ export function step(S, dt) {
   if (S.zone === 'top') { S.stats.evaHours += dt; if (S.storm && S.t >= S.storm.start && S.t < S.storm.end) S.stats.stormDose += r * dt; }
   if (S.storm && S.t >= S.storm.end) S.pending.push('stormEnd');
   // ---- stale air (CO2)
-  if (S.f.scrubber && !S.extraKw.backup) S.air = Math.max(0, S.air - dt / 14); else S.air = Math.min(1, S.air + dt / 4);
+  if (S.f.scrubber && !S.extraKw.backup) S.air = Math.max(0, S.air - (dt / 14) * (1 - Math.min(0.5, F.life.co2Fix / Math.max(0.1, F.co2Out)))); else   // plants soak up part of the CO2
+    S.air = Math.min(1, S.air + dt / 4);
   // ---- health
   let dh = 0;
   if (S.o2 <= 0) { dh -= 7 * dt; S.hurt.air += dt; mark(S, 'o2Zero'); }
@@ -213,13 +211,13 @@ export function step(S, dt) {
 }
 
 // ---------- player actions (each one costs something) ----------
-export function harvest(S, id, score = 0.8) {
-  const c = S.crops[id]; if (c.ripe <= 0) return 0;
-  const n = Math.round(c.ripe * (id === 'potato' ? 8 : 6) * (0.6 + 0.4 * score) * (0.5 + 0.5 * c.hp));
-  S.feed += 0.4 * c.ripe; c.ripe = 0; S.raw += n; S.stats.harvests++; note(S, `Picked ${n} ${id === 'potato' ? 'potatoes' : 'tomatoes'}.`, 'good'); return n;
+// Pick every ripe rack in one farm room. Returns { racks, raw, meals, herbs, sci, names }.
+export function harvest(S, room, score = 0.8) {
+  const out = harvestRoom(S, room, score); if (out.racks) note(S, `Picked ${out.names.join(' and ').toLowerCase()}.`, 'good'); return out;
 }
 export function collectEggs(S) { const n = Math.floor(S.eggs); S.eggs -= n; S.raw += n; return n; }
-export function cookBatch(S) { const n = Math.min(12, Math.floor(S.raw)); S.raw -= n; S.meals += n; return n; }
+// Herbs make a cooked batch a fifth bigger (food people want to eat goes further).
+export function cookBatch(S) { const n = Math.min(12, Math.floor(S.raw)), herb = S.herbs >= 1 && n > 0; if (herb) S.herbs -= 1; const made = Math.round(n * (herb ? 1.2 : 1)); S.raw -= n; S.meals += made; return made; }
 export function spend(S, n) { if (S.mat < n) return false; if (S.mat !== Infinity) S.mat -= n; return true; }
 export function runDustShield(S) { if (S.battery < 35) return false; S.battery -= 35; S.dust = Math.max(0.03, S.dust * 0.2); note(S, 'Ran the dust shield (−35 kWh).'); return true; }
 export function startStorm(S, real, leadHours) {

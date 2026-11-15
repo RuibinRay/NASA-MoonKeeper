@@ -47,15 +47,25 @@ export class Astronaut {
   // pose: 'walk' (default), 'wave', 'work' (hammering), 'carry' (box held in front), 'drag' (pulling something behind), 'sit'
   update(dt, speed = 0, air = false, pose = 'walk') {
     this.phase += dt * (2.2 + speed * 0.75);
-    const k = Math.min(1, speed / 5), sw = Math.sin(this.phase) * 0.62 * k, [L, R] = this.arms;
-    this.legs[0].rotation.x = pose === 'sit' ? -1.4 : air ? -0.35 : sw; this.legs[1].rotation.x = pose === 'sit' ? -1.4 : air ? 0.25 : -sw;
-    if (pose === 'work') { L.rotation.x = -1.2 + Math.sin(this.phase * 4.5) * 0.55; R.rotation.x = -1.2 + Math.sin(this.phase * 4.5 + 1.6) * 0.55; }
-    else if (pose === 'carry') { L.rotation.x = R.rotation.x = -1.25; }
-    else if (pose === 'drag') { const heave = Math.sin(this.phase * 2) * 0.09 * k; L.rotation.x = 1.0 + heave; R.rotation.x = 1.0 - heave; }   // both hands behind, hauling
-    else if (pose === 'sit') { L.rotation.x = R.rotation.x = -1.0; }
-    else { L.rotation.x = air ? -0.9 : -sw * 0.8; R.rotation.x = pose === 'wave' ? -2.6 + Math.sin(this.phase * 3) * 0.3 : air ? -0.9 : sw * 0.8; }
-    this.body.position.y = pose === 'sit' ? -0.35 : air ? 0 : Math.abs(Math.sin(this.phase)) * 0.07 * k + Math.sin(this.phase * 0.35) * 0.012;
-    this.body.rotation.x = pose === 'work' ? 0.3 + Math.sin(this.phase * 4.5) * 0.06 : pose === 'drag' ? 0.24 + 0.2 * k + Math.sin(this.phase * 2) * 0.035 * k : k * 0.12;   // lean into the load, harder the faster you pull
+    const k = Math.min(1, speed / 5), idle = 1 - k, ph = this.phase, sw = Math.sin(ph) * 0.62 * k, [L, R] = this.arms, T = this._t || (this._t = { ll: 0, lr: 0, al: 0, ar: 0, azl: 0.12, azr: -0.12, by: 0, bx: 0, hy: 0, hx: 0 });
+    // 1. where every joint wants to be for this pose
+    T.ll = pose === 'sit' ? -1.4 : air ? -0.35 : sw; T.lr = pose === 'sit' ? -1.4 : air ? 0.25 : -sw; T.azl = -0.12; T.azr = 0.12;
+    if (pose === 'work') { T.al = -1.2 + Math.sin(ph * 4.5) * 0.55; T.ar = -1.2 + Math.sin(ph * 4.5 + 1.6) * 0.55; }
+    else if (pose === 'carry') { T.al = T.ar = -1.25 + Math.sin(ph) * 0.05 * k; T.azl = 0.1; T.azr = -0.1; }
+    else if (pose === 'drag') { const heave = Math.sin(ph * 2) * 0.09 * k; T.al = 1.0 + heave; T.ar = 1.0 - heave; T.azl = 0.05; T.azr = -0.05; }   // both hands behind, hauling
+    else if (pose === 'sit') { T.al = T.ar = -1.0; }
+    else { T.al = air ? -0.9 : -sw * 0.8 + Math.sin(ph * 0.5) * 0.05 * idle; T.ar = pose === 'wave' ? -2.6 + Math.sin(ph * 3) * 0.3 : air ? -0.9 : sw * 0.8 - Math.sin(ph * 0.5) * 0.05 * idle; if (pose === 'wave') T.azr = 0.35; if (air) { T.azl = -0.5; T.azr = 0.5; } }
+    T.by = pose === 'sit' ? -0.35 : air ? 0 : Math.abs(Math.sin(ph)) * 0.07 * k + Math.sin(ph * 0.35) * 0.014;
+    T.bx = pose === 'work' ? 0.3 + Math.sin(ph * 4.5) * 0.06 : pose === 'drag' ? 0.24 + 0.2 * k + Math.sin(ph * 2) * 0.035 * k : k * 0.12;   // lean into the load, harder the faster you pull
+    T.hy = pose === 'walk' ? Math.sin(ph * 0.31) * 0.32 * idle : 0; T.hx = pose === 'work' ? 0.25 : air ? -0.15 : Math.sin(ph * 0.23) * 0.06 * idle;   // standing still, you look around
+    // 2. ease toward it (quick for the stride, softer when the pose itself changes), plus a squash when you land
+    const e = 1 - Math.exp(-dt * 16), es = 1 - Math.exp(-dt * 9), m = (a, b, f) => a + (b - a) * f;
+    this.legs[0].rotation.x = m(this.legs[0].rotation.x, T.ll, e); this.legs[1].rotation.x = m(this.legs[1].rotation.x, T.lr, e);
+    L.rotation.x = m(L.rotation.x, T.al, e); R.rotation.x = m(R.rotation.x, T.ar, e); L.rotation.z = m(L.rotation.z, T.azl, es); R.rotation.z = m(R.rotation.z, T.azr, es);
+    if (this._air && !air) this._sq = 1; this._air = air; this._sq = Math.max(0, (this._sq || 0) - dt * 3.2); const sq = Math.sin(Math.min(1, this._sq) * Math.PI) * 0.16;
+    this.body.position.y = m(this.body.position.y, T.by - sq * 0.9, e); this.body.rotation.x = m(this.body.rotation.x, T.bx, es); this.body.rotation.z = Math.sin(ph) * 0.035 * k;   // hips roll a little with each step
+    this.body.scale.set(1 + sq * 0.5, 1 - sq + Math.sin(ph * 0.35) * 0.008 * idle, 1 + sq * 0.5);                                                                              // breathing; squash on landing
+    this.head.rotation.y = m(this.head.rotation.y, T.hy, es); this.head.rotation.x = m(this.head.rotation.x, T.hx, es);
   }
 }
 

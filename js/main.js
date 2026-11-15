@@ -5,7 +5,7 @@ import { Astronaut, Rego, Bolt } from './actors.js';
 import { UI } from './ui.js';
 import { Sound } from './audio.js';
 import { IC } from './icons.js';
-import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, fmt } from './config.js';
+import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, BASE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, fmt } from './config.js';
 import { createSim, step, computeFlows, applyDisaster, jobHours, addHelper, serialize, deserialize } from './sim.js';
 import { installActions } from './actions.js';
 import { installEvents } from './events.js';
@@ -47,7 +47,7 @@ function placeItems() {
         let bx = d.tx - hx, bz = d.tz - hz; const bl = Math.hypot(bx, bz) || 1; bx /= bl; bz /= bl; const ntx = hx + bx * L, ntz = hz + bz * L; d.run += Math.hypot(ntx - d.tx, ntz - d.tz); d.tx = ntx; d.tz = ntz;
         const hy = P.pos.y + 0.95, ty = groundY(P.zone, d.tx, d.tz) + 0.1, sp = Math.hypot(P.vel.x, P.vel.z); d.cx = (hx + d.tx) / 2; d.cz = (hz + d.tz) / 2; d.yaw = Math.atan2(-bz, bx);
         m.position.set(d.cx, (hy + ty) / 2 - 0.1, d.cz); m.rotation.set(Math.sin(performance.now() * 0.012) * 0.04 * Math.min(1, sp / 3), d.yaw, -Math.asin(clamp((hy - ty) / 5, -0.6, 0.6)), 'YXZ');
-        if (P.zone === 'top' && d.run > 0.55) { d.run = 0; world.scuff(d.tx, d.tz, d.yaw); }
+        if (P.zone === 'top' && d.run > 0.55) { d.run = 0; world.scuff(d.tx, d.tz, d.yaw); world.puff(d.tx, d.tz, 3, -P.vel.x * 0.15, -P.vel.z * 0.15, 0.8, 1.4); }
       }
       else { m.position.set(P.pos.x + fx * 0.75, P.pos.y + 0.75, P.pos.z + fz * 0.75); m.rotation.set(0, P.face, 0); m.scale.setScalar(0.7); } }
     else { const v = G[it.where], i = v.cargo.indexOf(it), s = Math.sin(v.yaw), c = Math.cos(v.yaw), by = (it.where === 'car' ? 1.55 : 3.1) + (it.where === 'ship' ? v.y : world.heightAt(v.x, v.z)); m.visible = P.zone === 'top';
@@ -141,7 +141,7 @@ addEventListener('keydown', (e) => {
   if (G.state !== 'play' && G.state !== 'tutorial') return; if (G.jobTick || G.riding) return;
   if (k === 'e' || k === 'Enter') G.doAction('e'); else if (k === 'q') G.doAction('q');
   else if (k === 'Tab') { if (G.state === 'play') ui.powerBoard(); } else if (k === 'm') ui.bigMap(); else if (k === 'h') { if (G.state === 'play') G.advise(); }
-  else if (k === 'n') ui.guide(); else if (k === 'v') toggleView(); else if (k === 'p') togglePause();
+  else if (k === 'n') ui.guide(); else if (k === 'l') { if (G.state === 'play') G.loopScreen(); } else if (k === 'v') toggleView(); else if (k === 'p') togglePause();
 });
 addEventListener('keyup', (e) => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; G.keys[k] = false; });
 addEventListener('blur', () => (G.keys = {}));
@@ -186,17 +186,18 @@ function updatePlayer(dt) {
   }
   const gy = groundY(P.zone, P.pos.x, P.pos.z);
   if (free && k[' '] && P.ground && !heavy) { P.vy = 3.4; P.ground = false; G.audio.play('step'); }   // real lunar gravity
-  if (!P.ground) { P.vy -= K.GRAVITY * dt; P.pos.y += P.vy * dt; if (P.pos.y <= gy) { P.pos.y = gy; P.vy = 0; P.ground = true; G.audio.play('step'); } } else P.pos.y = gy;
+  if (!P.ground) { P.vy -= K.GRAVITY * dt; P.pos.y += P.vy * dt; if (P.pos.y <= gy) { P.pos.y = gy; P.vy = 0; P.ground = true; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x, P.pos.z, 14, P.vel.x * 0.2, P.vel.z * 0.2, 1.5, 2.6); } } else P.pos.y = gy;
   const sp = Math.hypot(P.vel.x, P.vel.z); if (sp > 0.4 && !G.jobTick) { let d = Math.atan2(P.vel.x, P.vel.z) - P.face; d = Math.atan2(Math.sin(d), Math.cos(d)); P.face += d * Math.min(1, dt * 9); }
   const g = G.astro.group; g.position.copy(P.pos); g.rotation.set(0, P.face, 0); g.visible = !cam.fp; G.astro.update(dt, sp, !P.ground, G.jobbing ? G.jobbing.pose : heavy ? 'drag' : P.carry ? 'carry' : 'walk');
-  if (sp > 1.5 && P.ground) { G.stepT += dt * sp; if (G.stepT > 4.2) { G.stepT = 0; G.audio.play('step'); } }
+  if (sp > 1.5 && P.ground) { G.stepT += dt * sp; if (G.stepT > 4.2) { G.stepT = 0; G.audio.play('step'); if (P.zone === 'top') world.puff(P.pos.x - Math.sin(P.face) * 0.3, P.pos.z - Math.cos(P.face) * 0.3, 4, -P.vel.x * 0.12, -P.vel.z * 0.12, 0.9, 0.8); } }
 }
 function updateVehicle(dt, free) {
   const S = G.S, k = G.keys, thr = free ? (k.w || k.ArrowUp ? 1 : 0) - (k.s || k.ArrowDown ? 1 : 0) + G.stick.y : 0, st = free ? (k.a || k.ArrowLeft ? 1 : 0) - (k.d || k.ArrowRight ? 1 : 0) - G.stick.x : 0, perk = S.perks.pilot ? 0.7 : 1;
   if (P.in === 'car') {
     const c = G.car, max = S.car.charge > 0 ? 15 : 2.2; c.v += (thr * max - c.v) * Math.min(1, dt * 1.5); if (Math.abs(thr) < 0.05) c.v *= 1 - Math.min(1, dt * 1.2);
     c.yaw += st * dt * 1.6 * clamp(c.v / 5, -1, 1); const p = { x: c.x + Math.sin(c.yaw) * c.v * dt, z: c.z + Math.cos(c.yaw) * c.v * dt }, bx = p.x, bz = p.z; pushOut(p, 'top', 2.2); topBounds(p, 12); if (p.x !== bx || p.z !== bz) c.v *= 0.6;
-    const moved = Math.hypot(p.x - c.x, p.z - c.z); c.x = p.x; c.z = p.z; S.car.charge = Math.max(0, S.car.charge - (moved / 2600) * perk); S.stats.km += moved / 1000;
+    const moved = Math.hypot(p.x - c.x, p.z - c.z); c.x = p.x; c.z = p.z;
+    if (Math.abs(c.v) > 3 && Math.random() < dt * 22) { const sx = Math.sin(c.yaw), cz = Math.cos(c.yaw), side = Math.random() < 0.5 ? -1.3 : 1.3, back = c.v > 0 ? -2.1 : 2.1; world.puff(c.x + sx * back + cz * side, c.z + cz * back - sx * side, 2, -sx * c.v * 0.28, -cz * c.v * 0.28, 1.2 + Math.abs(c.v) * 0.12, 0.9); }   // rooster tails behind the wheels S.car.charge = Math.max(0, S.car.charge - (moved / 2600) * perk); S.stats.km += moved / 1000;
     P.pos.set(c.x, world.heightAt(c.x, c.z), c.z); P.face = c.yaw;
   } else {
     const s = G.ship, dead = S.ship.charge <= 0, up = free && !dead ? (k[' '] ? 1 : 0) - (k.c || k.Control ? 1 : 0) : dead ? -0.6 : 0, fly = s.alt > 0.25;
@@ -306,18 +307,30 @@ function loadGame() {
 // ---------- title screen & mission start ----------
 let mode = params.get('go') || (() => { try { return localStorage.getItem('mk-mode'); } catch (e) { return null; } })() || 'pilot'; if (!MODES[mode]) mode = 'pilot';
 const modesEl = $('#modes');
-const drawModes = () => { modesEl.innerHTML = Object.values(MODES).map((m) => `<button class="mode ${m.key === mode ? 'sel' : ''}" data-m="${m.key}"><b>${m.name}</b><em>${m.ages}</em><span>${m.tag}</span></button>`).join(''); modesEl.querySelectorAll('.mode').forEach((b) => (b.onclick = () => { mode = b.dataset.m; try { localStorage.setItem('mk-mode', mode); } catch (e) {} drawModes(); })); };
+// Mission page: one card per mission, and a briefing for the chosen one built from the same numbers the simulation uses.
+const HARD = { cadet: 1, pilot: 2, commander: 3, unlimited: 0 }, MODE_IC = { cadet: 'moon', pilot: 'rocket', commander: 'fire', unlimited: 'dome' };
+const drawModes = () => {
+  modesEl.innerHTML = Object.values(MODES).map((m) => `<button class="mode ${m.key === mode ? 'sel' : ''}" data-m="${m.key}"><i class="mode-ic">${IC[MODE_IC[m.key]] || IC.room}</i><b>${m.name}</b><em>${m.ages}</em><span>${m.tag}</span><div class="pips" title="How hard it is">${HARD[m.key] ? [1, 2, 3].map((n) => `<u class="${n <= HARD[m.key] ? 'on' : ''}"></u>`).join('') : '<small>free build</small>'}</div></button>`).join('');
+  modesEl.querySelectorAll('.mode').forEach((b) => (b.onclick = () => { mode = b.dataset.m; try { localStorage.setItem('mk-mode', mode); } catch (e) {} G.audio?.play?.('click'); drawModes(); }));
+  const m = MODES[mode], lim = m.days !== Infinity, names = m.wreck.map((id) => ROOMS.find((r) => r.id === id)?.name).filter(Boolean);
+  const fact = (ic, label, val) => `<div class="bf"><i>${IC[ic] || ''}</i><span>${label}</span><b>${val}</b></div>`;
+  $('#brief').innerHTML = `<div class="brief-h"><b>${m.name} mission</b><span>${lim ? `Hold the station for ${m.days} days until the rescue ship lands.` : 'No rescue is coming. Build a Moon town that can live on its own.'}</span></div>
+    <div class="brief-grid">${fact('rocket', 'Rescue', lim ? `in ${m.days} days` : 'never')}${fact('sun', 'Sunset', `day ${Math.floor(m.sunsetDay) + 1}, then two weeks of night`)}${fact('bolt', 'Solar panels', `${m.ok} working · ${m.broken} broken`)}${fact('o2', 'Oxygen', `${m.o2} kg in the tank`)}${fact('water', 'Water', `${m.water} L`)}${fact('food', 'Food', `${m.cans} tins${m.meals ? ` · ${m.meals} hot meals` : ''}`)}${fact('box', 'Materials', m.mat === Infinity ? 'endless' : `${m.mat} crates' worth`)}${fact('wrench', 'Wrecked rooms', names.join(', ') || 'none')}</div>`;
+};
 drawModes(); $('#btn-codex').onclick = () => ui.guide('how'); $('#btn-how').onclick = () => ui.guide('truth');
-$('#btn-start').onclick = () => start(mode, $('#skip-tut').checked);
+const showMission = (on) => { $('#mission').classList.toggle('hidden', !on); $('#title').classList.toggle('hidden', on); };
+$('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour');
+$('#btn-launch').onclick = () => start(mode, $('#skip-tut').checked);
+document.querySelectorAll('.pillar').forEach((p) => p.insertAdjacentHTML('afterbegin', `<i>${IC[p.dataset.ic] || ''}</i>`));
 if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = () => { G.audio.init(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
 async function start(modeKey, skip, seed) {
   G.audio.init(); G.audio.play('ok'); G.clearSave();
   G.S = createSim(modeKey, seed || ((Math.random() * 2 ** 31) >>> 0)); installActions(G); installEvents(G);
   P.pos.set(SPAWN.x, world.heightAt(SPAWN.x, SPAWN.z), SPAWN.z); G.regoPos.set(SPAWN.x + 2, P.pos.y, SPAWN.z + 1.5); world.setZone('top'); G.ship.y = world.heightAt(G.ship.x, G.ship.z);
-  $('#title').classList.add('hidden');
+  $('#title').classList.add('hidden'); $('#mission').classList.add('hidden');
   if (!skip) { await comicIntro(G); G.state = 'tutorial'; ui.showHud(true); await tutorial(G); ui.showHud(false); }
   G.state = 'tutorial'; await disaster(G, skip);
-  applyDisaster(G.S); world.baseHit = true; for (const s of SITES) s.loot.forEach((type, i) => G.spawnItem(type, 'top', s.pos[0] + 14 + (i % 3) * 2.2, s.pos[1] + 12 + Math.floor(i / 3) * 2.2)); G.spawnSurvivors();
+  applyDisaster(G.S); world.baseHit = true; for (let i = 0; i < (G.S.m.ice || 0); i++) G.spawnItem('ice', 'top', BASE.water[0] + 5.6 + (i % 3) * 1.15, BASE.water[1] - 10.6 - Math.floor(i / 3) * 1.15);   // canisters of icy polar soil by the cold store for (const s of SITES) s.loot.forEach((type, i) => G.spawnItem(type, 'top', s.pos[0] + 14 + (i % 3) * 2.2, s.pos[1] + 12 + Math.floor(i / 3) * 2.2)); G.spawnSurvivors();
   if (P.zone !== 'deep') { P.zone = 'deep'; G.S.zone = 'deep'; world.setZone('deep'); } P.pos.set(-17, TUBE.y, -10); cam.yaw = Math.PI; P.face = 0; G.regoPos.set(-15, TUBE.y, -9); if (P.carry) G.removeItem(P.carry); G.S.suitOn = false;   // you were indoors, out of your suit, when it hit
   ui.showHud(true); G.state = 'play'; G.simOn = true; G.nextEventAt = G.S.t + 7 + G.S.rng() * 5; G.save();
   ui.bubble('I am right here with you. The big screen shows what is broken. <b>First job: power.</b> Put your suit on at the airlock, take the elevator up, pull a broken panel off its mount, and bring it down to the Fix-It Bench. Press <b>H</b> whenever you want my advice.', 'happy', 18); G.pointTo('lift');

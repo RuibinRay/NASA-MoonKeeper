@@ -8,6 +8,7 @@ export const K = {
   LUNAR_DAY: 29.53,               // one full lunar day-night cycle, in Earth days
   GRAVITY: 1.62,                  // m/s², about 1/6 of Earth
   O2_PER_DAY: 0.84,               // kg of oxygen one person breathes per day
+  CO2_PER_DAY: 1.0,               // kg of carbon dioxide one person breathes out per day
   WATER_PER_DAY: 3.8,             // litres per person per day (about one gallon)
   H2O_PER_KG_O2: 1.125,           // litres of water split to make 1 kg of oxygen (2 H2O -> 2 H2 + O2)
   MEALS_PER_DAY: 3,
@@ -36,7 +37,7 @@ export const SYS = {
   recycler: { name: 'Water Recycler', ico: 'water', room: 'water', kw: [0, 1, 2, 3.5], rate: [0, 0.75, 0.9, 0.98],
               blurb: 'Cleans used water (even sweat and pee!) so you can drink it again.' },
   farm:     { name: 'Farm Grow Lights', ico: 'plant', kw: [0, 3, 6, 9], grow: [0, 0.5, 1, 1.5], water: [0, 3, 6, 9], o2: [0, 0.08, 0.16, 0.24],
-              blurb: 'Underground there is no sunlight, so potatoes and tomatoes need electric light. Plants give food and a little oxygen, and drink water.' },
+              blurb: 'Underground there is no sunlight, so every crop grows under LED lamps. Each planted rack has its own lamp: fewer racks, less power. Plants give food and a little oxygen, and drink water.' },
   isru:     { name: 'Moon-Dust Oxygen Plant', ico: 'fire', kw: [0, 9], out: [0, 2.2], outside: true,
               blurb: 'Melts moon soil to free the oxygen locked inside it. Needs no water, but it is very power-hungry. It stands topside.' },
   heat:     { name: 'Topside Heaters & Coolers', ico: 'temp', kw: [0, 1.5, 3, 5],
@@ -48,13 +49,13 @@ export const SYS = {
 // hourLen = real seconds per game hour. gap = game days between surprise events.
 export const MODES = {
   cadet:     { key: 'cadet', name: 'Cadet', ages: 'Ages 7–10', tag: '4 days · a gentle mission', days: 4, sunsetDay: 1.7, hourLen: 9, drain: 0.85, reactor: 6,
-               ok: 4, broken: 4, batteryCap: 420, o2: 3.4, water: 28, cans: 16, meals: 4, feed: 5, mat: 16, gap: [0.42, 0.62], stormMul: 0.65, mgEase: 1.35, wreck: ['tomato', 'bathroom'] },
+               ok: 4, broken: 4, batteryCap: 420, o2: 3.4, water: 28, cans: 16, meals: 4, feed: 5, mat: 16, nutri: 2.0, ice: 4, gap: [0.42, 0.62], stormMul: 0.65, mgEase: 1.35, wreck: ['tomato', 'bathroom'] },
   pilot:     { key: 'pilot', name: 'Pilot', ages: 'Ages 11–14', tag: '7 days · one long night', days: 7, sunsetDay: 2.6, hourLen: 8, drain: 1, reactor: 5,
-               ok: 3, broken: 5, batteryCap: 380, o2: 3.0, water: 24, cans: 14, meals: 2, feed: 4, mat: 11, gap: [0.4, 0.6], stormMul: 1, mgEase: 1, wreck: ['tomato', 'bathroom', 'storage'] },
+               ok: 3, broken: 5, batteryCap: 380, o2: 3.0, water: 24, cans: 14, meals: 2, feed: 4, mat: 11, nutri: 1.2, ice: 3, gap: [0.4, 0.6], stormMul: 1, mgEase: 1, wreck: ['tomato', 'bathroom', 'storage'] },
   commander: { key: 'commander', name: 'Commander', ages: 'Ages 15–18', tag: '10 days · scarce materials', days: 10, sunsetDay: 3.4, hourLen: 7, drain: 1.08, reactor: 5,
-               ok: 2, broken: 6, batteryCap: 360, o2: 2.7, water: 22, cans: 12, meals: 0, feed: 3, mat: 8, gap: [0.36, 0.55], stormMul: 1.25, mgEase: 0.85, wreck: ['tomato', 'bathroom', 'storage', 'quarters'] },
+               ok: 2, broken: 6, batteryCap: 360, o2: 2.7, water: 22, cans: 12, meals: 0, feed: 3, mat: 8, nutri: 0.8, ice: 2, gap: [0.36, 0.55], stormMul: 1.25, mgEase: 0.85, wreck: ['tomato', 'bathroom', 'storage', 'quarters'] },
   unlimited: { key: 'unlimited', name: 'Unlimited', ages: 'Any age', tag: 'No end · endless materials · build a Moon town', days: Infinity, sunsetDay: 9, hourLen: 8, drain: 1, reactor: 8,
-               ok: 3, broken: 5, batteryCap: 380, o2: 3.0, water: 24, cans: 14, meals: 2, feed: 4, mat: Infinity, gap: [0.5, 0.8], stormMul: 1, mgEase: 1, wreck: ['tomato', 'bathroom'] },
+               ok: 3, broken: 5, batteryCap: 380, o2: 3.0, water: 24, cans: 14, meals: 2, feed: 4, mat: Infinity, nutri: 1.5, ice: 6, gap: [0.5, 0.8], stormMul: 1, mgEase: 1, wreck: ['tomato', 'bathroom'] },
 };
 
 // ---------- the map ----------
@@ -105,7 +106,7 @@ export const STATIONS = [
   { id: 'batt',  zone: 'top',  name: 'Battery Bank',        ico: 'bolt',   pos: [-58, -35],   r: 5, info: 'Solar panels only work in sunshine, and a lunar night lasts two weeks. Big batteries save up daytime power for the dark.', hit: 'These cells were cracked by flying rock. The battery racks that still work are in the Battery Store underground.' },
   { id: 'green', zone: 'top',  name: 'Greenhouse Dome',     ico: 'room',   pos: [26, -21.5],  r: 5, info: 'Plants make food and fresh oxygen, and they recycle water. Real astronauts have grown lettuce, radishes and chilli peppers in space.', hit: 'The glass is holed and the plants froze in minutes. Your potatoes and tomatoes now grow underground, under lamps.' },
   { id: 'lab',   zone: 'top',  name: 'Research Lab',        ico: 'room',   pos: [19, 14],     r: 5, info: 'Scientists here study moon rock, test new building materials and look for ice. Everything we learn makes the next base better.', hit: 'The lab is sealed and dark until the rescue ship brings a repair crew.' },
-  { id: 'wplant', zone: 'top', name: 'Water Plant',         ico: 'room',   pos: [46, -18],    r: 4.5, info: 'Water is the most useful thing on the Moon: you can drink it, grow food with it, and split it into oxygen to breathe and hydrogen for rocket fuel. There is ice in the cold, dark craters near the Moon\'s poles.', hit: 'The pipes are cracked. The water you have left is in the tanks underground, so recycle every drop.' },
+  { id: 'wplant', zone: 'top', name: 'Water Plant',         ico: 'room',   pos: [46, -18],    r: 4.5 },
   { id: 'mine',  zone: 'top',  name: 'Moon-Dust Mine',      ico: 'room',   pos: [78, -23],    r: 6, info: 'Diggers scoop up moon soil and a conveyor carries it to the Oxygen Plant next door. Nearly half the weight of moon soil is oxygen, locked inside the rock.', hit: 'The digger still works. Repair the Oxygen Plant and it will feed it again.' },
   { id: 'lift',  zone: 'deep', name: 'Elevator to Surface', ico: 'lift',   pos: [TUBE.skyX, 0], r: 6 },
   { id: 'suit',  zone: 'deep', name: 'Suit Lockers',        ico: 'room',   pos: [-65.2, -1.6], r: 3.3 },
@@ -115,9 +116,9 @@ export const STATIONS = [
 ];
 // Other countries' stations, hit by the same meteor shower. Each has crates to salvage and one stranded astronaut.
 export const SITES = [
-  { id: 'aurora',  name: 'Aurora Station', pos: [-520, -300], color: 0x2ad0c0, who: 'ingrid', whoName: 'Ingrid Solberg', job: 'pilot',    perk: 'Vehicles use 30% less charge.',  loot: ['mat', 'mat', 'mat', 'cans', 'water'] },
-  { id: 'sakura',  name: 'Sakura Outpost', pos: [480, -380],  color: 0xb070ff, who: 'kenji',  whoName: 'Kenji Mori',     job: 'engineer', perk: 'All building and fixing is 25% faster.', loot: ['mat', 'mat', 'mat', 'mat', 'cans'] },
-  { id: 'chandra', name: 'Chandra Base',   pos: [430, 420],   color: 0x58e08a, who: 'anika',  whoName: 'Dr. Anika Rao',  job: 'botanist', perk: 'Crops grow 25% faster.',         loot: ['mat', 'mat', 'mat', 'cans', 'cans', 'water'] },
+  { id: 'aurora',  name: 'Aurora Station', pos: [-520, -300], color: 0x2ad0c0, who: 'ingrid', whoName: 'Ingrid Solberg', job: 'pilot',    perk: 'Vehicles use 30% less charge.',  loot: ['mat', 'mat', 'mat', 'cans', 'water', 'ice', 'ice'] },
+  { id: 'sakura',  name: 'Sakura Outpost', pos: [480, -380],  color: 0xb070ff, who: 'kenji',  whoName: 'Kenji Mori',     job: 'engineer', perk: 'All building and fixing is 25% faster.', loot: ['mat', 'mat', 'mat', 'mat', 'cans', 'ice'] },
+  { id: 'chandra', name: 'Chandra Base',   pos: [430, 420],   color: 0x58e08a, who: 'anika',  whoName: 'Dr. Anika Rao',  job: 'botanist', perk: 'Crops grow 25% faster.',         loot: ['mat', 'mat', 'mat', 'cans', 'cans', 'water', 'ice', 'ice'] },
 ];
 export const ITEMS = {
   panel:   { name: 'solar panel', heavy: true },
@@ -126,6 +127,7 @@ export const ITEMS = {
   mat:     { name: 'materials crate', gives: 'mat', n: 4 },
   cans:    { name: 'food crate', gives: 'cans', n: 8 },
   water:   { name: 'water tank', gives: 'water', n: 12 },
+  ice:     { name: 'canister of icy moon soil' },
 };
 export const ROLES = {
   idle:  { name: 'Rest', tip: 'Does nothing. Costs nothing extra.' },

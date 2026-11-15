@@ -1131,5 +1131,38 @@
   "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dcc7-cd8a-7833-b8e6-c079d859772c/b729cf15-0f73-490c-9ab1-9ead42ce59d8.png",
   "bytes": 13245295,
   "seconds": 46
+ },
+ "rm_waterplant": {
+  "request_id": "01a1dcf4-63ab-759e-8b95-1dae5e46cc6e",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dcf4-63ab-759e-8b95-1dae5e46cc6e/status",
+  "prompt": "A small ice-extraction plant on the lunar surface, three-quarter view at eye level. In the middle a sealed horizontal white pressure chamber the size of a van, with a round observation window glowing orange from the heaters inside and an orange loading hopper on top. A short glass pipe leads from it to a tall finned cold-trap column crusted with thick white frost. Insulated blue pipes run from the cold trap to two tall blue cylindrical water tanks with domed tops. Beside the chamber a low white cold-store bunker with a row of white canisters banded in pale blue. On a pole stands a polished parabolic mirror dish that throws a small bright patch of sunlight onto the chamber wall; there is no visible beam in the vacuum. A small green status lamp. Grey regolith with boot prints. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film: white modular habitat buildings with visible panel seams and orange accents, believable scale, real lunar regolith with rover tracks and footprints, hard low sunlight with long black shadows, pure black sky. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v4/rm_waterplant.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dcf4-63ab-759e-8b95-1dae5e46cc6e/6899a29b-a8c1-41e6-9062-d92278a46c1c.png",
+  "bytes": 14875873,
+  "seconds": 53
+ },
+ "rm_experiment": {
+  "request_id": "01a1dcf4-63a8-781e-807e-eb8ab0f34709",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dcf4-63a8-781e-807e-eb8ab0f34709/status",
+  "prompt": "Close view of a plant-science bench inside the farm room of a Moon station, under a strip of magenta LED grow light. Three identical small clear pots stand in a row. The left pot holds clear water with nutrient gel and a large healthy bright-green rosette plant with a thin flowering stalk. The middle pot holds dark brown composted soil and a medium-sized green rosette plant. The right pot holds pale grey powdery lunar regolith and a small stunted plant with dark reddish-purple leaves. A thin drip line runs to each pot. Behind, out of focus, long hydroponic racks of green crops under pink light. Design language of this one lunar habitat, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, safety-orange accents only on handles, hatch wheels and bulkhead door frames, each bulkhead door a rounded-rectangle orange-framed pressure hatch with one round porthole lit cyan, recessed warm-white ceiling light strips plus thin cyan status lighting at floor level, labelled-looking cable trays and insulated pipes overhead, cargo straps and handrails, pale blue translucent holographic displays floating above consoles showing only abstract graphs and schematics. Grounded space-agency engineering realism, like a real orbital station and a real lunar habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm anamorphic lens, eye-level camera, deep perspective, soft volumetric haze, practical lighting, natural film color grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v4/rm_experiment.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dcf4-63a8-781e-807e-eb8ab0f34709/27a3ba1b-a9d2-4151-84e9-ed740ce8a65a.png",
+  "bytes": 10956435,
+  "seconds": 47
+ },
+ "rm_farmracks": {
+  "request_id": "01a1dcf4-63ae-70ab-8fd2-92c06966d92c",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dcf4-63ae-70ab-8fd2-92c06966d92c/status",
+  "prompt": "A sealed hydroponic farm room inside a Moon station seen down its length. Three long white hydroponic racks run to the back wall, each under its own strip of magenta-pink LED grow light: one rack of golden dwarf wheat, one of leafy green lettuce and spinach, one of pea vines on a low trellis. Thin channels of flowing water under the roots, blue nutrient pipes along the racks, a humidity condenser with cold fins on the wall, a small control panel glowing green, a thermostat display. Warm air haze. Design language of this one lunar habitat, identical in every room: matte white and warm light-grey composite wall panels with rounded corners and visible fasteners, brushed aluminium structural ribs every two metres, dark graphite anti-slip deck flooring with thin amber guide lines, safety-orange accents only on handles, hatch wheels and bulkhead door frames, each bulkhead door a rounded-rectangle orange-framed pressure hatch with one round porthole lit cyan, recessed warm-white ceiling light strips plus thin cyan status lighting at floor level, labelled-looking cable trays and insulated pipes overhead, cargo straps and handrails, pale blue translucent holographic displays floating above consoles showing only abstract graphs and schematics. Grounded space-agency engineering realism, like a real orbital station and a real lunar habitat mock-up, with the restrained production design of a prestige science-fiction film. Every object looks functional, serviceable and bolted down. Photorealistic cinematic film still, 35mm anamorphic lens, eye-level camera, deep perspective, soft volumetric haze, practical lighting, natural film color grade, ultra detailed, lived-in but clean. No people, no text, no letters, no numbers, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v4/rm_farmracks.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dcf4-63ae-70ab-8fd2-92c06966d92c/6646e394-0850-489e-a008-c54d22531bd2.png",
+  "bytes": 12403553,
+  "seconds": 47
  }
 }

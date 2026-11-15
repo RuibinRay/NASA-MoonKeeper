@@ -58,23 +58,44 @@
 <div id="title" class="screen">
   <div class="title-bg"></div>
   <div class="title-inner">
-    <div class="eyebrow">A Moon-base survival and building adventure</div>
+    <div class="eyebrow"><i></i>A Moon-base survival and building adventure</div>
     <h1>MOON<span>KEEPER</span></h1>
-    <p class="tagline">A meteor shower has hit every station on the Moon. You are the only one left at <b>Tranquility Deep</b>.<br>Keep the power on. Keep the air in. And remember: <b>no choice is free.</b></p>
-    <div id="modes"></div>
+    <p class="tagline">A meteor shower has hit every station on the Moon. You are the only one left at <b>Tranquility Deep</b>.</p>
+    <div class="pillars">
+      <div class="pillar" data-ic="bolt"><b>Keep the power on</b><span>Fix and build solar panels before the two-week night.</span></div>
+      <div class="pillar" data-ic="air"><b>Keep the air in</b><span>Patch holes, lock doors, make oxygen from water.</span></div>
+      <div class="pillar" data-ic="food"><b>No choice is free</b><span>Every machine eats power. Every helper eats something.</span></div>
+    </div>
     <div class="title-btns">
       <button id="btn-start" class="primary">New Mission</button>
       <button id="btn-continue" class="primary alt hidden">Continue</button>
-      <label class="check"><input type="checkbox" id="skip-tut"> Skip the comic and training</label>
+    </div>
+    <div class="title-links">
       <button id="btn-codex" class="ghost">How to Play</button>
+      <button id="btn-tour" class="ghost">Station tour</button>
       <button id="btn-how" class="ghost">Real or made up?</button>
     </div>
     <div class="fine">Plays in your browser · no download · no login · your mission saves itself</div>
   </div>
 </div>
+<div id="mission" class="screen hidden">
+  <div class="mission-bg"></div>
+  <div class="mission-inner">
+    <div class="mission-head">
+      <button id="btn-back" class="ghost">◂ Back</button>
+      <div><div class="eyebrow"><i></i>Mission briefing</div><h2>Choose your mission</h2></div>
+    </div>
+    <div id="modes"></div>
+    <div id="brief" class="glass"></div>
+    <div class="mission-foot">
+      <label class="check"><input type="checkbox" id="skip-tut"> Skip the comic and training</label>
+      <button id="btn-launch" class="primary">Launch mission</button>
+    </div>
+  </div>
+</div>
 <div id="comic" class="screen hidden"></div>
 <div id="modal" class="hidden"></div>
-<div id="dialog" class="hidden"><img id="dlg-img" alt=""><div id="dlg-box"><div id="dlg-name"></div><div id="dlg-delay" class="hidden"><span>Radio signal crossing 384,400 km…</span><i></i></div><div id="dlg-text"></div><div id="dlg-next">Enter / click ▸</div></div></div>
+<div id="dialog" class="hidden"><img id="dlg-img" alt=""><div id="dlg-box"><div id="dlg-name"></div><div id="dlg-delay" class="hidden"><span>Radio signal crossing 384,400 km…</span><i></i></div><div id="dlg-text"></div><div id="dlg-next">Click anywhere ▸</div></div></div>
 <div id="end" class="screen hidden"></div>
 <div id="tip"></div>
 

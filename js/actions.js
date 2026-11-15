@@ -3,6 +3,8 @@ import { K, SYS, STATIONS, SITES, ROOMS, ITEMS, MOUNTS, BENCH, FAB_OUT, doorSpot
 import { computeFlows, roomOk, spend, harvest, collectEggs, cookBatch, runDustShield, note, jobHours, humans } from './sim.js';
 import { drawStation, roomState } from './ui.js';
 import { playMini } from './minigames.js';
+import { installLife } from './lifeui.js';
+import { ripeIn } from './life.js';
 
 const FACTS = [
   'Look up! Earth never moves in our sky. The Moon always keeps the same face toward Earth, so from here Earth just hangs in one spot and slowly changes shape.',
@@ -15,6 +17,9 @@ const FACTS = [
   'A message to Earth takes 1.3 seconds. On Mars it would take 4 to 24 minutes. Imagine waiting that long for an answer!',
   'Hens can eat dried grass, seeds and plant scraps. People cannot — our tummies are built differently.',
   'Why is there no glowing beam under the skylight? You can only see a light beam when air or dust scatters it. The cave has no air, so sunlight just makes a bright patch on the floor.',
+  'Watch the dust your boots kick up. On Earth it would hang in the air as a cloud. Here there is no air, so every grain flies in a clean arc and drops straight back down.',
+  'A plant grows only as fast as whatever it has least of: light, water, plant food, warmth or fresh air. Fixing anything else changes nothing.',
+  'In 2022 scientists grew plants in real Moon soil for the first time. Nearly every seed sprouted — but the plants stayed small and stressed. Moon soil is not garden soil.',
   'A spacesuit is a tiny spaceship shaped like a person: it holds air, keeps you warm and blocks the Sun. Indoors you do not need it — astronauts on the Space Station work in T-shirts.',
   'Fish and plants help each other: fish poo feeds the plants, and the plants clean the water. It is called aquaponics.',
 ];
@@ -23,6 +28,7 @@ export function installActions(G) {
   const ui = G.ui, P = G.player, world = G.world, S = () => G.S;
   const near = (x, z, r) => Math.hypot(P.pos.x - x, P.pos.z - z) < r, rn = (id) => ROOMS.find((r) => r.id === id).name, pct = (x) => Math.round(x * 100) + '%';
   G.factI = (Math.random() * FACTS.length) | 0;
+  installLife(G);   // farm, Water Plant, life-support loop, research and experiment screens
   G.paintCC = () => { drawStation(world.ccCanvas.getContext('2d'), G.S, 1024, 512, { big: true, player: P.zone === 'deep' ? { x: P.pos.x, z: P.pos.z } : null }); world.ccTex.needsUpdate = true; };
   const noMat = (n) => { if (spend(G.S, n)) return false; ui.toast(`You need ${n} material${n > 1 ? 's' : ''}. Other stations have crates of them — take the rover or the hopper.`, 'bad'); return true; };
   const doneGoal = (id) => { if (G.goal && !G.goal.cb && G.goal.id === id) G.goal = null; };
@@ -55,10 +61,13 @@ export function installActions(G) {
     async patch(id) { if (noMat(1)) return; const hp = world.rooms[id].holePos; await G.job({ title: `Patching the hole in the ${rn(id)}`, hours: 1, steps: ['Finding the hole…', 'Pressing the patch on…', 'Welding the edges…', 'Listening for hissing…'], site: { x: hp.x, z: hp.z } }); const r = G.S.rooms[id]; r.hole = 0; note(G.S, `Patched the hole in the ${rn(id)}.`, 'good'); ui.toast(r.door ? 'Hole patched. The air is staying in.' : r.built < 1 ? 'Hole patched. Now rebuild the room at its console.' : 'Hole patched. Unlock the door to let air back in.', 'good'); doneGoal(id); },
     async rebuild(id) { const d = ROOMS.find((q) => q.id === id), r = G.S.rooms[id]; if (noMat(d.mat)) return; r.cold = 0; r.door = 1;   // open the bulkhead: air flows back in from the tanks while we work
       await G.job({ title: `Rebuilding the ${d.name}`, hours: d.hours, steps: ['Clearing the wreckage…', 'Fixing the wall panels…', 'Bolting the machines back…', 'Wiring the lights…', 'Testing every switch…'], site: { x: (d.x0 + d.x1) / 2, z: d.side * 15 }, onStep: (k) => { r.built = Math.min(0.99, 0.3 + 0.7 * k); r.frozen = k < 0.8; r.cold = 0; } });
-      r.built = 1; r.frozen = false; r.door = 1; r.cold = 0; if (G.S.crops[id]) Object.assign(G.S.crops[id], { g: 0, ripe: 0, hp: 0.6 }); G.S.stats.roomsBuilt++; note(G.S, `Rebuilt the ${d.name}.`, 'good'); ui.toast(`${d.name} rebuilt! Air is flowing back in.`, 'good'); G.rego.setMood('joy'); G.rego.wave = 2; doneGoal(id); },
+      r.built = 1; r.frozen = false; r.door = 1; r.cold = 0; for (const q of G.S.racks) if (q.room === id) Object.assign(q, { g: 0, ripe: 0, hp: 0.6 }); G.S.stats.roomsBuilt++; note(G.S, `Rebuilt the ${d.name}.`, 'good'); ui.toast(`${d.name} rebuilt! Air is flowing back in.`, 'good'); G.rego.setMood('joy'); G.rego.wave = 2; doneGoal(id); },
     async fix(title, hours, mat, site, steps, done) { if (mat && noMat(mat)) return; await G.job({ title, hours, steps, site }); done(); },
     async cook() { const s = G.S; if (s.raw < 1) return; if (needNoSuit('cook')) return; await G.job({ title: 'Cooking', hours: 1, steps: ['Washing and chopping…', 'Boiling the potatoes…', 'Frying eggs and tomatoes…', 'Serving up…'], site: { x: 5, z: -22 }, tag: 'cook', sparks: false }); const n = cookBatch(s); ui.toast(`Cooked ${n} hot meals.`, 'good'); note(s, `Cooked ${n} meals.`, 'good'); },
-    async pick(id) { const d = ROOMS.find((q) => q.id === id); await G.job({ title: `Picking ${id === 'potato' ? 'potatoes' : 'tomatoes'}`, hours: 1, steps: ['Checking which are ripe…', 'Picking…', 'Saving leaves and peels for the hens…'], site: { x: (d.x0 + d.x1) / 2, z: d.side * 15 }, pose: 'work', sparks: false }); const n = harvest(G.S, id, 0.9); ui.toast(`Picked ${n} ${id === 'potato' ? 'potatoes' : 'tomatoes'}. Cook them in the Kitchen. The scraps became hen feed.`, 'good'); doneGoal(id); },
+    async pick(id) { const d = ROOMS.find((q) => q.id === id); if (!ripeIn(G.S, id)) { ui.toast('Nothing is ripe in this farm yet.'); return; }
+      await G.job({ title: `Picking the ripe racks`, hours: 1, steps: ['Checking which are ripe…', 'Picking…', 'Saving leaves and peels for the hens…', 'Setting new seeds…'], site: { x: (d.x0 + d.x1) / 2, z: d.side * 15 }, pose: 'work', sparks: false });
+      const h = harvest(G.S, id, 0.9), got = []; if (h.raw) got.push(`${h.raw.toFixed(1)} raw food (cook it in the Kitchen)`); if (h.meals) got.push(`${h.meals.toFixed(1)} ready-to-eat salad`); if (h.herbs) got.push(`${h.herbs} bunch${h.herbs > 1 ? 'es' : ''} of herbs`); if (h.sci) got.push(`${h.sci} research`);
+      ui.toast(`Picked ${h.names.join(' and ').toLowerCase()}: ${got.join(', ')}. The scraps became hen feed, and the racks are replanted.`, 'good'); doneGoal(id); },
   };
   G.J = J;
 
@@ -80,6 +89,7 @@ export function installActions(G) {
       else if (it.type === 'panelB' && st && st.id === 'bench') c.e = { label: 'Put the broken panel on the Fix-It Bench (1 material, 2 h)', run: J.benchPut };
       else if (ITEMS[it.type].gives && st && st.id === 'depot') c.e = { label: `Deliver the ${nm} to the depot`, run: J.deliver };
       else if (it.type === 'battery' && st && st.id === 'storage') c.e = { label: 'Plug the battery module into the rack (1 h)', run: J.battery };
+      else if (it.type === 'ice' && st && st.id === 'wplant') c.e = { label: 'Load the icy soil into the Water Plant hopper', run: () => { G.removeItem(it); s.wx.ice++; G.audio.play('ok'); ui.toast(`Canister loaded: ${s.wx.ice} in the hopper. Press E here to set up a batch.`, 'good'); } };
       else if (veh) c.e = G[veh].cargo.length < G[veh].max ? { label: `Load the ${nm} onto the ${vn}`, run: () => G.load(veh) } : { label: `The ${vn} is full — put the ${nm} down`, run: () => G.drop() };
       else if (lift) c.e = { label: st.id === 'gate' ? `Ride the elevator down (the ${it.type.startsWith('panel') ? 'panel' : 'load'} comes too)` : 'Ride the elevator up', run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
       else c.e = { label: `Put down the ${nm}`, run: () => G.drop() };
@@ -108,6 +118,7 @@ export function installActions(G) {
     const s = G.S, F = computeFlows(s), f = s.f, id = st.id;
     if (st.site) return sitePanel(st.site);
     if (st.room) return roomPanel(id);
+    if (id === 'wplant') return G.waterPlant();
     if (st.info) return ui.panel(st.name, { stats: [], actions: [], note: world.baseHit ? `${st.info}<br><br><b>After the meteor shower:</b> ${st.hit}` : st.info, img: 'rm_surface' });
     if (id === 'bench') return ui.panel('Fix-It Bench', { stats: s.bench.map((b, i) => [`Slot ${i + 1}`, !b ? 'empty' : b.left > 0 ? `fixing… ${fmt.hrs(jobHours(s, b.left))} left` : 'FIXED — pick it up']), note: 'Carry a broken solar panel here and press E. The robot arm fixes it while you do something else. Each repair uses 1 material and electricity.' });
     if (id === 'fab') return ui.panel('Robot-Arm Builder', { stats: [['Materials', fmt.mat(s.mat)], ['Now building', s.fab ? `${s.fab.what === 'panel' ? 'solar panel' : 'battery module'} — ${fmt.hrs(jobHours(s, s.fab.left))} left` : 'nothing']],
@@ -148,21 +159,20 @@ export function installActions(G) {
     A.push({ label: r.door ? 'Lock the door' : 'Unlock the door', sub: r.door ? 'Stops a leak here from emptying the whole station.' : 'Lets air back in.', run: async () => G.toggleDoor(id) });
     let note2 = `This room holds ${d.what}.`;
     if (id === 'control') { if (ok) return ui.control(); note2 = 'The Control Center is broken. Rebuild it to get the big map and remote door locks back.'; }
-    if (id === 'kitchen' && ok) { stats.push(['Hot meals', Math.floor(s.meals)], ['Tins', Math.floor(s.cans)], ['Raw food', Math.floor(s.raw)]); A.unshift({ label: `Cook ${Math.min(12, Math.floor(s.raw))} raw food into hot meals`, costs: ['1 h'], gains: ['Raw food is worth twice as much cooked'], disabled: s.raw < 1, run: J.cook }); note2 = 'Raw potatoes, tomatoes and eggs are worth half a meal each. Cooked, they are a whole meal. A crew member set to "Cook" does this for you.'; }
+    if (id === 'kitchen' && ok) { stats.push(['Hot meals', Math.floor(s.meals)], ['Tins', Math.floor(s.cans)], ['Raw food', Math.floor(s.raw)], ['Herbs', `${s.herbs} bunch${s.herbs === 1 ? '' : 'es'} (each makes a cooked batch a fifth bigger)`]); A.unshift({ label: `Cook ${Math.min(12, Math.floor(s.raw))} raw food into hot meals`, costs: ['1 h'], gains: ['Raw food is worth twice as much cooked'], disabled: s.raw < 1, run: J.cook }); note2 = 'Raw potatoes, tomatoes and eggs are worth half a meal each. Cooked, they are a whole meal. A crew member set to "Cook" does this for you.'; }
     if (id === 'oxygen' && ok) { stats.push(['Oxygen tank', `${s.o2.toFixed(1)} of ${s.o2Cap} kg`], ['Being made', `${(F.o2Elec + F.o2Isru + F.o2Farm).toFixed(2)} kg a day`], ['Being used', `${F.o2Use.toFixed(2)} kg a day by ${F.people} ${F.people === 1 ? 'person' : 'people'}`]);
       if (f.scrubber) A.unshift({ label: 'Build a new air filter', sub: 'Follow the steps Mission Control reads out.', costs: ['1 material', '1 h'], run: async () => { if (noMat(1)) return; const res = await playMini(G, 'sequence'); G.simAdvance(jobHours(s, 1)); if (res.win) { f.scrubber = false; delete s.extraKw.backup; ui.toast('Air filter working. The stale air is clearing.', 'good'); doneGoal('oxygen'); } else { if (s.mat !== Infinity) s.mat += 1; ui.toast('Not right yet. Press E to try again.', 'bad'); } } }, { label: 'Switch on the backup air cleaner', costs: ['+3 kW until fixed'], disabled: !!s.extraKw.backup, run: async () => { s.extraKw.backup = 3; ui.toast('Backup air cleaner on (+3 kW).'); } });
       A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'One person breathes 0.84 kg of oxygen every day. The Oxygen Maker splits water with electricity to make it.'; }
-    if ((id === 'potato' || id === 'tomato') && ok) { const c = s.crops[id]; stats.push(['Ripe trays', `${c.ripe} of 3${c.ripe >= 3 ? ' — FULL, growth has stalled!' : ''}`], ['Next tray', F.grow > 0 ? `${Math.round(c.g * 100)}% grown` : 'not growing (lights off)'], ['Plant health', pct(c.hp)]);
-      A.unshift({ label: `Pick ${c.ripe} ripe tray${c.ripe === 1 ? '' : 's'}`, costs: ['1 h'], gains: [`about ${c.ripe * (id === 'potato' ? 8 : 6)} raw food`, 'scraps for the hens'], disabled: c.ripe <= 0, run: () => J.pick(id) });
-      if (id === 'tomato' && f.mold) A.unshift({ label: 'Fans on full for two days', costs: ['+2 kW for 48 h'], run: async () => { f.mold = false; s.extraKw.fans = 2; s.fansUntil = s.t + 48; ui.toast('Fans on full. The mold is drying out.', 'good'); } }, { label: 'Cut out the sick plants', costs: ['Lose the ripe trays'], run: async () => { f.mold = false; c.ripe = 0; c.g = 0; c.hp = Math.max(0.5, c.hp); ui.toast('Sick plants removed.'); } });
-      note2 = id === 'potato' ? 'Potatoes grow underground and are packed with energy. A crew member on "Farm duty" picks them for you.' : 'Tomatoes are juicy and full of vitamins, but they catch mold if the air gets too damp.'; }
+    if ((id === 'potato' || id === 'tomato') && ok) return G.farmPanel(id);
     if (id === 'animal' && ok) { stats.push(['Hens', s.hens], ['Eggs waiting', Math.floor(s.eggs)], ['Dry feed', `${s.feed.toFixed(1)} kg (${s.feed > 0 ? fmt.days(s.feed / (s.hens * 0.11)) : 'EMPTY'})`], ['Fish tank', s.fish ? 'healthy — plants grow 15% faster' : 'empty']);
       A.unshift({ label: `Collect ${Math.floor(s.eggs)} egg${Math.floor(s.eggs) === 1 ? '' : 's'}`, gains: ['Raw food'], disabled: s.eggs < 1, run: async () => { const n = collectEggs(s); ui.toast(`Collected ${n} eggs. Cook them in the Kitchen!`, 'good'); } });
       note2 = 'Hens eat dry feed made of grass, seeds and plant scraps, packed before the disaster. People cannot eat it. Every time you pick crops, the leaves and peels become more feed. No feed, no eggs. The fish water feeds the plants.'; }
     if (id === 'storage' && ok) { stats.push(['Battery', `${Math.round(s.battery)} of ${Math.round(F.cap)} kWh`], ['Extra modules', `${s.mods} of 6`]); A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'Build battery modules at the Robot-Arm Builder and carry them here. Each adds 120 kWh for the long lunar night.'; }
     if (id === 'quarters' && ok) { A.unshift({ label: 'Sleep for 8 hours', sub: 'Time races ahead. Machines keep running as you left them. You wake up if something goes wrong.', costs: ['8 h pass'], gains: ['Health'], run: async () => { if (needNoSuit('sleep')) return; G.sleepLeft = 8; } }); note2 = 'Rest matters. Tired people make mistakes — and in space, small mistakes get big fast.'; }
     if (id === 'bathroom') note2 = ok ? 'Shower water and toilet water go straight to the recycler. Nothing is wasted.' : 'While the Bathroom is broken, the recycler gets back less water.';
-    if (id === 'water' && ok) { stats.push(['Water tank', `${s.water.toFixed(0)} of ${s.waterCap} L`], ['Recycling', pct(F.rate)], ['Change', `${F.wNet.toFixed(1)} L a day`]); if (f.leakWater) A.unshift({ label: 'Seal the leaking pipe', costs: ['1 material', '1 h'], run: () => J.fix('Sealing the water pipe', 1, 1, { x: 15, z: 14 }, ['Shutting the valve…', 'Clamping the joint…', 'Turning the water back on…'], () => { f.leakWater = 0; ui.toast('Pipe sealed. No more drips.', 'good'); doneGoal('water'); }) }); A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'Each person needs about 3.8 litres of water a day. A good recycler gives 98% of it back.'; }
+    if (id === 'water' && ok) { stats.push(['Water tank', `${s.water.toFixed(0)} of ${s.waterCap} L`], ['Recycling', pct(F.rate)], ['Change', `${F.wNet.toFixed(1)} L a day`], ['Plant food', s.nutri === Infinity ? 'endless' : `${s.nutri.toFixed(2)} kg`]);
+      A.unshift({ label: 'Run the waste digester', sub: 'Bacteria turn plant scraps and waste into plant food for the farms. It eats hen feed, so the hens get less.', costs: ['1.5 kg of hen feed', '2 h'], gains: ['+0.5 kg of plant food'], disabled: s.feed < 1.5, run: () => J.fix('Running the waste digester', 2, 0, { x: 14, z: 15 }, ['Loading the scraps…', 'Bacteria break them down…', 'Filtering out the plant food…'], () => { s.feed -= 1.5; s.nutri = Math.min(9, s.nutri + 0.5); note(s, 'Made plant food in the digester.', 'good'); ui.toast('The digester made 0.5 kg of plant food.', 'good'); }) });
+      A.push({ label: 'See the life-support loop', sub: 'Where every litre and every breath goes.', run: () => G.loopScreen() }); if (f.leakWater) A.unshift({ label: 'Seal the leaking pipe', costs: ['1 material', '1 h'], run: () => J.fix('Sealing the water pipe', 1, 1, { x: 15, z: 14 }, ['Shutting the valve…', 'Clamping the joint…', 'Turning the water back on…'], () => { f.leakWater = 0; ui.toast('Pipe sealed. No more drips.', 'good'); doneGoal('water'); }) }); A.push({ label: 'Open the Power Board', run: () => ui.powerBoard() }); note2 = 'Each person needs about 3.8 litres of water a day. A good recycler gives 98% of it back.'; }
     return ui.panel(d.name, { stats, actions: A, note: note2, img: `rm_${id}` });
   };
 
@@ -181,7 +191,11 @@ export function installActions(G) {
     if (f.mold) a.push({ text: 'Mold on the tomatoes', sub: 'Tomato Farm', go: 'tomato' });
     if (s.dust > 0.4 && s.flow.sun.up) a.push({ text: `Dusty panels (−${Math.round(s.dust * 75)}% power)`, sub: 'Solar Field', go: 'solar', kind: 'warn' });
     if (s.feed <= 0 && roomOk(s, 'animal')) a.push({ text: 'Hen feed is empty', sub: 'Pick crops to make more', go: 'potato', kind: 'warn' });
-    for (const id of ['potato', 'tomato']) if (s.crops[id].ripe >= 2) a.push({ text: `${s.crops[id].ripe} trays of ${id === 'potato' ? 'potatoes' : 'tomatoes'} ripe`, sub: 'Pick them before growth stalls', go: id, kind: 'warn' });
+    for (const id of ['potato', 'tomato']) if (ripeIn(s, id) >= 2) a.push({ text: `${ripeIn(s, id)} racks ripe in the ${rn(id)}`, sub: 'A ripe rack stops growing until you pick it', go: id, kind: 'warn' });
+    if (s.nutri <= 0) a.push({ text: 'Plant food has run out', sub: 'Water Room: run the waste digester', go: 'water' });
+    if (f.pump) a.push({ text: `Farm pump broken in the ${rn(f.pump)}`, sub: 'Roots are drying out', go: f.pump });
+    if (f.led) a.push({ text: `Half the lamps are dark in the ${rn(f.led)}`, sub: 'Crops there grow at half speed', go: f.led, kind: 'warn' });
+    if (s.wx.seal < 0.9 || s.wx.cond < 0.5) a.push({ text: 'Water Plant needs servicing', sub: s.wx.seal < 0.9 ? 'A leaking seal wastes vapour' : 'Worn out', go: 'wplant', kind: 'warn' });
     s.bench.forEach((b) => { if (b && b.left <= 0) a.push({ text: 'A panel is fixed', sub: 'Fix-It Bench', go: 'bench', kind: 'warn' }); });
     return a;
   };
@@ -200,7 +214,7 @@ export function installActions(G) {
     else if (s.o2 < 0.8 || F.o2Days < 0.6) { t = !roomOk(s, 'oxygen') ? '<b>Oxygen is low</b> and the Oxygen Room is not working. Fix that room first!' : s.water > 3 && s.lv.o2gen < 3 ? '<b>Oxygen is low!</b> Turn the Oxygen Maker up on the Power Board. It costs power and water.' : '<b>Oxygen is low!</b> Repair and switch on the Moon-Dust Oxygen Plant topside: it needs no water.'; go = !roomOk(s, 'oxygen') ? 'oxygen' : null; mood = 'alert'; }
     else if (f.scrubber && !s.extraKw.backup) { t = 'The air cleaner is broken and the air is going stale. Fix it in the Oxygen Room.'; go = 'oxygen'; mood = 'worried'; }
     else if (s.water < 3 || F.waterDays < 1) { t = '<b>Water is low.</b> Turn the Water Recycler up. The Oxygen Maker drinks water too. Other stations have water tanks to salvage.'; mood = 'worried'; }
-    else if (F.foodDays < 1) { t = s.raw >= 2 && roomOk(s, 'kitchen') ? 'Food is low — but you have raw food. Cook it in the Kitchen!' : s.crops.potato.ripe || s.crops.tomato.ripe ? 'Food is low. There are ripe crops to pick!' : s.eggs >= 1 ? 'Food is low. Collect the eggs in the Animal Bay!' : 'Food is low. Turn the Farm lights up, and look for food crates at the other stations.'; go = s.raw >= 2 ? 'kitchen' : s.crops.potato.ripe ? 'potato' : s.crops.tomato.ripe ? 'tomato' : s.eggs >= 1 ? 'animal' : null; mood = 'worried'; }
+    else if (F.foodDays < 1) { t = s.raw >= 2 && roomOk(s, 'kitchen') ? 'Food is low — but you have raw food. Cook it in the Kitchen!' : ripeIn(s, 'potato') || ripeIn(s, 'tomato') ? 'Food is low. There are ripe crops to pick!' : s.eggs >= 1 ? 'Food is low. Collect the eggs in the Animal Bay!' : 'Food is low. Turn the Farm lights up, and look for food crates at the other stations.'; go = s.raw >= 2 ? 'kitchen' : ripeIn(s, 'potato') ? 'potato' : ripeIn(s, 'tomato') ? 'tomato' : s.eggs >= 1 ? 'animal' : null; mood = 'worried'; }
     else if (s.lv.heat < F.heatNeed) { t = `Topside is ${fmt.temp(F.sun.tempC)}. Our machines up there need heater level ${F.heatNeed} or they will break.`; mood = 'worried'; }
     else if (s.bench.some((b) => b && b.left <= 0)) { t = 'A panel is fixed and waiting on the Fix-It Bench. Carry it up and install it on an empty mount.'; go = 'bench'; }
     else if (P.carry && P.carry.type === 'panelB') { t = 'Bring that broken panel to the Fix-It Bench in the Workshop, down in the station.'; go = 'bench'; }
@@ -210,7 +224,11 @@ export function installActions(G) {
     else if (wreck && s.mat >= wreck.mat && s.rooms[wreck.id].hole === 0) { t = `The ${wreck.name} is still broken. Rebuild it at its console to get ${wreck.what} back.`; go = wreck.id; }
     else if (f.commsDown) { t = 'The dish is not pointing at Earth. Without it, solar storms arrive with no warning.'; go = 'dish'; }
     else if (s.mat < 3 && s.mat !== Infinity && s.rescued.length + G.followers.length < 3) { const site = SITES.find((q) => !s.rescued.includes(q.id) && !G.followers.some((fl) => fl.site.id === q.id)); t = `We are nearly out of materials. <b>${site.name}</b> has crates — and an astronaut who needs rescuing. Follow the ${['teal', 'purple', 'green'][SITES.indexOf(site)]} light. Take the rover or the hopper.`; go = site.id; mood = 'think'; }
-    else if (s.crops.potato.ripe >= 1 || s.crops.tomato.ripe >= 1) { const id = s.crops.potato.ripe ? 'potato' : 'tomato'; t = `Ripe ${id === 'potato' ? 'potatoes' : 'tomatoes'}! Pick them, then cook them in the Kitchen.`; go = id; }
+    else if (f.pump) { t = `The water pump in the ${rn(f.pump)} has stopped. Hydroponic roots have no soil to hold water: fix it before they dry out.`; go = f.pump; mood = 'worried'; }
+    else if (s.nutri <= 0) { t = '<b>The plant food has run out</b>, so crops are crawling. Run the waste digester in the Water Room, or plant peas and soybeans: they make their own nitrogen.'; go = 'water'; mood = 'worried'; }
+    else if (ripeIn(s, 'potato') || ripeIn(s, 'tomato')) { const id = ripeIn(s, 'potato') ? 'potato' : 'tomato'; t = `Ripe crops in the ${rn(id)}! Pick them: a ripe rack stops growing. Staples need cooking; salad is ready to eat.`; go = id; }
+    else if (s.wx.ice > 0 && !s.wx.batch && top) { t = `There ${s.wx.ice === 1 ? 'is a canister' : 'are ' + s.wx.ice + ' canisters'} of icy soil in the Water Plant hopper. Set up a batch: gentle heat in a vacuum turns the ice straight to vapour.`; go = 'wplant'; mood = 'think'; }
+    else if (F.waterDays < 3 && !s.wx.batch && G.items.some((q) => q.type === 'ice' && q.where === 'ground')) { t = 'Water is getting short. There are canisters of icy polar soil by the Water Plant topside: carry them to the hopper and extract the ice.'; go = 'wplant'; mood = 'think'; }
     else if (s.raw >= 4 && roomOk(s, 'kitchen')) { t = 'You have raw food waiting. Cook it in the Kitchen — cooked food fills you up twice as much.'; go = 'kitchen'; }
     else if (s.eggs >= 3) { t = 'The hens have laid eggs. Collect them in the Animal Bay.'; go = 'animal'; }
     else if (F.sun.up && F.sun.toSunset < 30 && s.battery < F.cap * 0.8) { t = `Sunset in ${fmt.days(F.sun.toSunset / 24)}. After that there is no solar power for two weeks. Fill the battery while you can!`; mood = 'think'; }
