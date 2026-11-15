@@ -27,7 +27,7 @@ export async function tutorial(G) {
   await G.waitFor(() => near(mx, mz + 10, 22), tt('Drive to the <b>Solar Field</b>: <b>W</b> to go, <b>A</b> and <b>D</b> to steer'), 'solar');
   await G.waitFor(() => !P.in, tt('Press <b>E</b> to get out of the rover'), 'solar');
   await say([
-    { who: 'okoro', text: tt('There you are! I am Tobi, the engineer. Solar panels make our electricity. But a lunar day lasts about 29.5 Earth days: two weeks of sunshine, then two weeks of night.') },
+    { who: 'okoro', text: tt('There you are! I am Tobi Okoro, the engineer, but everyone calls me Tobi. Solar panels make our electricity. But a lunar day lasts about 29.5 Earth days: two weeks of sunshine, then two weeks of night.') },
     { who: 'okoro', text: tt('One of these panels is cracked. On the Moon nobody comes to fix things for you. Walk up to the broken one and press <b>E</b> to pull it off its mount.') },
   ]);
   await G.waitFor(() => P.carry && P.carry.type === 'panelB', tt('Walk to the <b>cracked panel</b> and press <b>E</b>'), { zone: 'top', x: mx, z: mz, name: tt('the cracked panel'), r: 2 });
@@ -42,7 +42,7 @@ export async function tutorial(G) {
   ]);
   await G.waitFor(() => S.bench.some(Boolean), tt('Drag the panel through the airlock to the <b>Fix-It Bench</b> in the Workshop and press <b>E</b>'), 'bench');
   await say([
-    { who: 'okoro', text: tt('On a real day that takes two hours. Time never stops here — every job costs some.') },
+    { who: 'okoro', text: tt('On a real mission that takes two hours. While you train, the clock waits for you. After that, time never stops here, and every job costs some.') },
     { who: 'okoro', text: tt('Now, you are indoors and the air in here is good. Go back to the <b>Suit Lockers</b> in the airlock and take that heavy suit off. Jobs are quicker without big gloves — and nobody cooks dinner in a helmet!') },
   ]);
   await G.waitFor(() => !S.suitOn, tt('Take your suit off at the <b>Suit Lockers</b> in the airlock (press <b>E</b>)'), 'suit');
