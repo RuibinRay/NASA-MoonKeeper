@@ -374,6 +374,7 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
 @media (max-width:600px) and (orientation:portrait){
   body:has(#hud:not(.hidden)) #rotate{display:flex}
   #rego{max-width:94vw;left:3vw;bottom:262px}#rego img{width:44px;height:44px}#rego-text{font-size:13px;padding:22px 11px 8px}
+  #btns{left:6px;right:6px;bottom:8px;gap:3px}#btns button{flex:1 1 0;min-width:0;padding:6px 0}
 }
 @media (max-height:480px) and (orientation:landscape){
   #modal .win{max-height:96vh;overflow:auto}

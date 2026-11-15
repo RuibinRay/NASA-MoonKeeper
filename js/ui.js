@@ -324,7 +324,8 @@ export class UI {
     const st = S.storm, ts = $('#tl-storm'); ts.style.display = st ? 'block' : 'none'; if (st) { ts.style.left = clamp(((st.start - S.t0) / this._tl) * 100, 0, 100) + '%'; ts.style.width = Math.max(((st.end - st.start) / this._tl) * 100, 1.2) + '%'; }
     $('#hp').style.width = S.health + '%'; $('#hp').style.background = S.health > 60 ? 'var(--green)' : S.health > 30 ? 'var(--amber)' : 'var(--red)';
     const v = G.player.in, cc = G.player.carry; $('#carry').innerHTML = v === 'dig' ? `${IC.box} Digger ${G.dig.load}/${MINE.bucket}` : v ? `${IC[v]} ${v === 'car' ? 'Rover' : 'Hopper'} ${Math.round(S[v].charge * 100)}%` : cc ? `${IC.box} ${cc.type.startsWith('panel') ? 'panel' : cc.type}` : `${IC.crew} ${F.people}`;
-    const al = G.alerts ? G.alerts() : [], key = al.map((a) => a.text + a.sub).join('|');
+    const rank = (a) => (a.key ? 0 : a.kind ? 2 : 1);   // emergencies first, then other serious alerts, warnings last: only five fit on screen
+    const al = (G.alerts ? G.alerts() : []).sort((a, b) => rank(a) - rank(b)), key = al.map((a) => a.text + a.sub).join('|');
     if (key !== this._alKey) { this._alKey = key; const box = $('#alerts'); box.innerHTML = ''; al.slice(0, 5).forEach((a) => { const d = el('div', 'alert ' + (a.kind || ''), `${a.text}<small>${a.sub || ''}</small>`); d.onclick = () => a.go && G.pointTo(a.go); box.appendChild(d); }); }
     this._minimap();
   }

@@ -5,7 +5,7 @@ import { drawStation, roomState } from './ui.js';
 import { playMini } from './minigames.js';
 import { installLife } from './lifeui.js';
 import { ripeIn, dump, iceLeft } from './life.js';
-import { MINE } from './config.js';
+import { MINE, PIT } from './config.js';
 
 const FACTS = [
   'Look up! Earth never moves in our sky. The Moon always keeps the same face toward Earth, so from here Earth just hangs in one spot and slowly changes shape.',
@@ -58,7 +58,11 @@ export function installActions(G) {
 
   // ---------- vehicles ----------
   G.enterVehicle = (v) => { P.in = v; P.vel.set(0, 0, 0); G.audio.play('ok'); G.camT = 0; if (G.state === 'play' && !G['_tip' + v]) { G['_tip' + v] = 1; ui.toast(v === 'dig' ? 'Digger: W S to drive, A D to turn. Hold SPACE with the bucket over a pale blue patch to dig. Q tips the bucket into the filler. E to get out.' : v === 'car' ? 'Rover: W S to drive, A D to steer, E to get out. Park on the round pad to recharge.' : 'Hopper: Space to lift off, W to fly forward, A D to turn, C to come down, E to get out. It only charges on its own pad.'); } };
-  G.exitVehicle = () => { const v = P.in, o = G[v]; if (v === 'ship' && o.alt > 0.7) { ui.toast('Land first: hold C to come down.', 'bad'); return; } P.in = null; if (v === 'car' || v === 'dig') { o.v = 0; o.dig = 0; } else { o.vx = o.vz = 0; } P.pos.set(o.x + Math.cos(o.yaw) * 3.2, 0, o.z - Math.sin(o.yaw) * 3.2); P.pos.y = world.heightAt(P.pos.x, P.pos.z); G.regoPos.set(P.pos.x + 1, P.pos.y, P.pos.z + 1); G.audio.play('blip'); };
+  // Nobody can stand within RIM of the pit's middle, so the hopper may not be left there (you could never climb back in)
+  const RIM = PIT.r + 7.5, pitDist = (o) => Math.hypot(o.x - PIT.x, o.z - PIT.z);
+  const shipReach = () => Math.hypot(P.pos.x - G.ship.x, P.pos.z - G.ship.z) - Math.max(0, RIM - pitDist(G.ship));   // a hopper parked too close to the pit can still be boarded from the rim
+  G.exitVehicle = () => { const v = P.in, o = G[v]; if (v === 'ship' && o.alt > 0.7) { ui.toast('Land first: hold C to come down.', 'bad'); return; }
+    if (v === 'ship' && pitDist(o) < RIM + 1) { ui.toast('Too close to the edge of the pit to climb out. Fly a little further away from it first.', 'bad'); return; } P.in = null; if (v === 'car' || v === 'dig') { o.v = 0; o.dig = 0; } else { o.vx = o.vz = 0; } P.pos.set(o.x + Math.cos(o.yaw) * 3.2, 0, o.z - Math.sin(o.yaw) * 3.2); P.pos.y = world.heightAt(P.pos.x, P.pos.z); G.regoPos.set(P.pos.x + 1, P.pos.y, P.pos.z + 1); G.audio.play('blip'); };
 
   // ---------- jobs: scenes that play by themselves while the clock runs ----------
   const J = {
@@ -95,7 +99,7 @@ export function installActions(G) {
     if (P.in) { c.e = { label: P.in === 'car' ? 'Get out of the rover' : P.in === 'dig' ? 'Get out of the digger' : 'Get out of the hopper', run: G.exitVehicle };
       if (P.in === 'dig') { if (G.dig.load > 0 && near(MINE.x, MINE.z, 10)) c.q = { label: `Tip ${G.dig.load} scoop${G.dig.load > 1 ? 's' : ''} into the canister filler`, run: G.dumpDig }; else c.q = { label: G.dig.load >= MINE.bucket ? 'Bucket full: drive to the orange filler' : 'Hold SPACE over a pale blue patch to dig', run: () => {} }; }
       return c; }
-    const it = P.carry, st = nearStation(), veh = top ? (near(G.car.x, G.car.z, 5.4) ? 'car' : near(G.ship.x, G.ship.z, 6) && G.ship.alt < 0.7 ? 'ship' : null) : null, m = top ? nearMount() : -1, lift = st && (st.id === 'gate' || st.id === 'lift');
+    const it = P.carry, st = nearStation(), veh = top ? (near(G.car.x, G.car.z, 5.4) ? 'car' : shipReach() < 6 && G.ship.alt < 0.7 ? 'ship' : null) : null, m = top ? nearMount() : -1, lift = st && (st.id === 'gate' || st.id === 'lift');
     if (it) {
       const nm = ITEMS[it.type].name, vn = veh === 'car' ? 'rover' : 'hopper';
       if (it.type === 'panel' && m >= 0 && s.mounts[m] === 0) c.e = { label: 'Install the solar panel on this mount (1 h)', run: () => J.installPanel(m) };
@@ -213,7 +217,7 @@ export function installActions(G) {
     }
     for (const d of ROOMS) { const stt = roomState(s, d.id); if (stt === 'leak') a.push({ text: `AIR LEAK: ${d.name}`, sub: 'Patch the hole, or lock its door', go: d.id }); else if (stt === 'sealed') a.push({ text: `${d.name}: sealed, no air`, sub: 'Patch the hole to save it', go: d.id, kind: 'warn' }); else if (stt === 'wreck') a.push({ text: `${d.name}: broken`, sub: `Rebuild it (${d.mat} materials)`, go: d.id, kind: 'warn' }); }
     if (s.safeMode > 0) a.push({ text: `Topside safe mode: ${fmt.hrs(s.safeMode)}`, sub: 'No solar or radio', kind: 'warn' });
-    if (f.scrubber && !s.extraKw.backup) a.push({ text: 'Air cleaner broken', sub: `Air quality ${Math.round(s.air * 100)}% · Oxygen Room`, go: 'oxygen' });
+    if (f.scrubber && !s.extraKw.backup) a.push({ text: 'Air cleaner broken', sub: `Air quality ${Math.round(s.air * 100)}% · Oxygen Room`, go: 'oxygen', ...(s.air < 0.55 ? { key: 'air-bad', wake: `<b>Wake up! The air is going stale (${Math.round(s.air * 100)}% clean).</b> Fix the air cleaner in the Oxygen Room, or switch on the backup.` } : {}) });   // below 35% the CO₂ starts to hurt, so this wakes a sleeper first
     if (f.leakWater) a.push({ text: 'Water pipe leaking', sub: 'Water Room', go: 'water' });
     const nb = s.mounts.filter((x) => x === 2).length; if (nb) a.push({ text: `${nb} solar panel${nb > 1 ? 's' : ''} broken`, sub: 'Solar Field → Fix-It Bench', go: 'solar', kind: 'warn' });
     if (f.commsDown) a.push({ text: 'Dish lost Earth', sub: 'No storm warnings', go: 'dish', kind: 'warn' });
