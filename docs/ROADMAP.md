@@ -296,3 +296,28 @@ The overview listed "a teacher's page" as the third most useful thing after play
 - **Printed size.** About two sheets, printed on both sides: the lesson on the first, the questions and reference on the second. This is an estimate from the page's layout; it has not been printed.
 - **Way in from the game.** The small print on the title screen ends with a link, "For teachers". It sits on the line that was already there, so the title screen is the same height as before on a computer and on a phone.
 - **Not done.** Nobody has taught with it. The timings are estimates.
+
+### REGO no longer runs at the wall
+
+Reported by the player: "REGO always runs to the wall".
+
+**The cause.** REGO aimed at one fixed point, 1.9 m to your right and 1.3 m behind you, and ran straight at it. In the hall, which is 4.2 m wide, that point is inside the wall whenever you stand in the southern half and face east (or the mirror of that). The game then put REGO back on top of you, and it ran at the wall again, several times a second.
+
+| Standing or walking for 10 seconds | Before | After |
+| --- | --- | --- |
+| Standing by the hall wall: how far REGO ran | 92 m | 1.1 m |
+| Walking 50 m along the wall: how far REGO ran | 112 m | 48 m |
+| Times REGO was inside a wall or a building | not counted (it was put back each time) | 0 |
+
+**What REGO does now** (`js/follow.js`, pure logic):
+
+- **Chooses a place it can reach.** Ten places are tried in order, starting behind your right shoulder, then the left, then closer in. A place is refused if it is in a wall or a wall lies between you and it.
+- **Follows your path when a wall is in the way.** If you go through a door, REGO walks the way you walked, which is always clear, in place of cutting through the wall.
+- **Slides, never enters.** A step that would end in a wall slides along it or is not taken. On the surface this now includes buildings and machines, which REGO used to walk through.
+- **Does not fuss.** Once near you, in sight and not in front of you, it stays where it is until you move away or turn to face it.
+- **Beside a job** it picks a free place next to the work in the same way.
+- **Last resort.** If it is ever found inside a wall, is wedged out of sight, or is more than 32 m behind, it appears beside you once.
+
+`node tools/follow_test.mjs` runs 44 checks on a small test station: by a wall, in a corner, along a wall, through a door, turning on the spot, left behind, found inside a wall, beside a job.
+
+**Checked in the game:** the hall wall standing and walking, in and out of the Control Center through its door, a job on the hall wall, six passes close to surface buildings, standing against a building, and open ground walking, running and zig-zagging: no wall entered, no jump. **Not checked:** the elevator ride and getting in and out of vehicles were not run in the test browser (its fade animation stalls there); the rescued astronauts who follow you on the surface use their own, older code and were not changed.

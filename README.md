@@ -61,6 +61,7 @@ docs/ROADMAP.md       what is built, what comes next, and which real data each p
 docs/TEACHERS.md      the teacher's page: learning goals, a 40-minute lesson, the questions the game asks (written by `node tools/build_teachers.mjs`, which takes the missions and questions from the game; `--check` fails if it is out of date)
 js/world.js           3D world (surface base, other stations, the cave, the white-panelled station, vehicles)
 js/actors.js          astronaut, REGO, BOLT robots
+js/follow.js          how REGO keeps up with you without walking into walls (pure logic; `node tools/follow_test.mjs` runs 44 checks)
 js/ui.js, icons.js    interface and hand-drawn icons
 js/minigames.js       dish aiming, air-filter build, fire fighting
 js/nasa-events.js     generated data module (see docs)

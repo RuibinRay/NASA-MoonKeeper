@@ -321,6 +321,7 @@ The game was played from the title screen to the rescue by a script that presses
 | A water-from-rock run that made no water still earned research. | No water, no research. |
 | The recipe screen said a run looked good when the station had no power for it. | It warns when the battery and spare power cannot cover the run. |
 | The game said Earth never moves in the sky. | It now says Earth stays in almost the same spot. Guide mode also no longer marks Cook or Sleep while the suit is on. |
+| REGO kept running at the wall. Its place was a fixed point behind your right shoulder, even when that point was inside a wall; it ran there, was put back on top of you, and ran there again, many times a second. Standing by a hall wall for 10 seconds, REGO ran 92 m. | REGO chooses a place it can reach, follows the path you walked when a wall is in the way, and stays put once it is near you and out of your way. In the same 10 seconds it now moves about 1 m. |
 
 ### Found in a follow-up check of the hardest mode
 

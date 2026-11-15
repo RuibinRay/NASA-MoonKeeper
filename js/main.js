@@ -2,6 +2,7 @@
 import * as THREE from '../lib/three.module.min.js';
 import { World } from './world.js';
 import { Astronaut, Rego, Bolt } from './actors.js';
+import { Follower } from './follow.js';
 import { UI } from './ui.js';
 import { Sound } from './audio.js';
 import { Voice } from './voice.js';
@@ -26,7 +27,7 @@ const G = (window.G = {
   items: [], followers: [], crew: {}, siteNpc: {}, itemSeq: 1,
 });
 G.audio = new Sound(); G.voice = new Voice(() => G.audio.on); G.world = new World(canvas); G.ui = new UI(G);
-G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.astro.lamp.visible = true; G.world.scene.add(G.astro.group, G.rego.group);
+G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.regoFollow = new Follower(); G.astro.lamp.visible = true; G.world.scene.add(G.astro.group, G.rego.group);
 G.lampMounts = [G.astro, G.rego].map((a) => { const m = new THREE.Group(); m.add(a.lamp, a.lamp.target); G.world.scene.add(m); return [m, a.group]; });   // lamps outside the bodies: hiding a body must not change the light count
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
 world.onPart = () => G.audio.play('step');
@@ -433,10 +434,11 @@ function placeVehicles(dt) {
 function updateRego(dt) {
   const R = G.regoPos, fx = Math.sin(P.face), fz = Math.cos(P.face), g = G.rego.group; g.visible = !P.in;
   const js = G.jobbing && G.jobbing.site && G.jobbing.pose === 'work' ? G.jobbing.site : null;
-  if (js) tmp.set(js.x - fx * 0.95 + fz * 1.25, 0, js.z - fz * 0.95 - fx * 1.25); else tmp.set(P.pos.x + fz * 1.9 - fx * 1.3, 0, P.pos.z - fx * 1.9 - fz * 1.3);   // beside the work, or behind your shoulder
-  let dx = tmp.x - R.x, dz = tmp.z - R.z, d = Math.hypot(dx, dz), sp = 0;
-  if (d > 32 || P.in) { R.x = tmp.x; R.z = tmp.z; } else if (d > 0.3) { sp = Math.min(d * 3.2, 12); R.x += (dx / d) * sp * dt; R.z += (dz / d) * sp * dt; }
-  if (P.zone === 'top') topBounds(R, 8); else if (!world.walkable(R.x, R.z)) { R.x = P.pos.x; R.z = P.pos.z; }
+  const zone = P.zone, cols = world.colliders[zone], pit = PIT.r + 7.5;   // REGO may stand where the floor is, clear of machines and buildings, and back from the pit's edge
+  const free = (x, z) => (zone === 'top' ? Math.hypot(x - PIT.x, z - PIT.z) >= pit : world.walkable(x, z)) && !cols.some((c) => c.r && Math.hypot(c.x - x, c.z - z) < c.r + 0.45);
+  let dx = 0, dz = 0, sp = 0;
+  if (P.in || G._regoZone !== zone) { R.x = P.pos.x + fz * 1.9 - fx * 1.3; R.z = P.pos.z - fx * 1.9 - fz * 1.3; if (!free(R.x, R.z)) { R.x = P.pos.x; R.z = P.pos.z; } G.regoFollow.reset(); G._regoZone = zone; }   // riding, or just arrived in a new place: REGO is simply there
+  else { const m = G.regoFollow.update(dt, R, { x: P.pos.x, z: P.pos.z, face: P.face }, free, js); dx = m.dx; dz = m.dz; sp = m.speed; }   // behind your shoulder or beside the work, and never into a wall
   R.y = groundY(P.zone, R.x, R.z); g.position.copy(R);
   const want = sp > 0.8 ? Math.atan2(dx, dz) : js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z); let dy = want - g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); g.rotation.y += dy * Math.min(1, dt * 6);
   let look = (js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z)) - g.rotation.y; look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -1.1, 1.1); G.rego.update(dt, sp, look);
