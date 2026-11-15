@@ -268,7 +268,8 @@ function toggleView() { cam.fp = !cam.fp; cam.pitch = clamp(cam.pitch, -0.9, 1.1
 function togglePause() { if (G.state !== 'play') return; G.paused = !G.paused; ui.banner(G.paused ? 'PAUSED — press P to continue' : null, true); }
 $('#b-power').onclick = () => G.state === 'play' && !ui.busy && ui.powerBoard(); $('#b-map').onclick = () => !ui.busy && G.S && ui.bigMap(); $('#b-ask').onclick = () => G.state === 'play' && !ui.busy && G.advise(); $('#b-data').onclick = () => !ui.busy && ui.guide(); $('#clock').onclick = () => G.S && G.state === 'play' && !ui.busy && ui.dayNight();
 $('#b-view').onclick = toggleView; $('#b-pause').onclick = togglePause;
-$('#b-speed').onclick = () => { G.speedMul = G.speedMul === 1 ? 2 : G.speedMul === 2 ? 4 : 1; $('#speed-l').textContent = '×' + G.speedMul; };
+G.setSpeed = (v) => { G.speedMul = v; $('#speed-l').textContent = '×' + v; };
+$('#b-speed').onclick = () => G.setSpeed(G.speedMul === 1 ? 2 : G.speedMul === 2 ? 4 : 1);
 $('#b-sound').onclick = () => { $('#b-sound').innerHTML = G.audio.toggle() ? IC.sound : IC.mute; };
 // Guide mode: a yellow line on the ground to the next place, and REGO marks the button to press in panels. On by default; Settings turns it off.
 G.guide = (() => { try { return localStorage.getItem('mk-guide') !== '0'; } catch (e) { return true; } })(); world.guideOn = G.guide;

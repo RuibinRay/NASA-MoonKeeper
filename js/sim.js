@@ -51,6 +51,9 @@ export function applyDisaster(S) {
 }
 
 export const roomOk = (S, id) => { const r = S.rooms[id]; return r.built >= 1 && !r.frozen && r.p > 55; };
+// Can the machines in a room run? Machines need no air. Thin air from an empty tank must not stop the Oxygen Maker,
+// or nothing could ever refill the station. Only a hole that has let the room's own air out stops them.
+export const machineOk = (S, id) => { const r = S.rooms[id]; return r.built >= 1 && !r.frozen && (r.p > 55 || r.hole === 0); };
 export const humans = (S) => S.helpers.filter((h) => h.kind === 'human');
 // Is there anything for a helper with this job to do? Farm duty needs a farm or the Animal Bay; a cook needs the Kitchen.
 export const hasWork = (S, role) => (role === 'idle' ? false : role === 'farm' ? roomOk(S, 'potato') || roomOk(S, 'tomato') || roomOk(S, 'animal') : role === 'cook' ? roomOk(S, 'kitchen') : true);
@@ -79,9 +82,9 @@ export function computeFlows(S) {
   const bots = S.helpers.filter((h) => h.kind === 'bot' && hasWork(S, h.role)).length;   // a robot with nothing to do stands still and draws nothing
   const use = {
     base: BASE_LOAD,
-    o2gen: roomOk(S, 'oxygen') ? SYS.o2gen.kw[lv.o2gen] : 0,
+    o2gen: machineOk(S, 'oxygen') ? SYS.o2gen.kw[lv.o2gen] : 0,
     isru: f.isruDown || safe ? 0 : SYS.isru.kw[lv.isru],
-    recycler: roomOk(S, 'water') ? SYS.recycler.kw[lv.recycler] : 0,
+    recycler: machineOk(S, 'water') ? SYS.recycler.kw[lv.recycler] : 0,
     farm: 0, wx: 0,
     heat: SYS.heat.kw[lv.heat],
     comms: f.commsDown || safe ? 0 : SYS.comms.kw[lv.comms],
@@ -90,7 +93,7 @@ export function computeFlows(S) {
     bots: bots * 1,
     pump: S.fish && roomOk(S, 'animal') ? 0.5 : 0,
   };
-  const people = 1 + humans(S).length, drain = m.drain, okW = roomOk(S, 'water') ? 1 : 0, okB = roomOk(S, 'bathroom') ? 1 : 0.8;
+  const people = 1 + humans(S).length, drain = m.drain, okW = machineOk(S, 'water') ? 1 : 0, okB = roomOk(S, 'bathroom') ? 1 : 0.8;
   const L0 = lifeFlows(S, 1, SYS.recycler.rate[lv.recycler] * okW, people); use.farm = L0.farmKw; use.wx = L0.wxKw;   // what the farms and the Water Plant ask for
   let extra = 0; for (const k in S.extraKw) extra += S.extraKw[k];
   const reactor = m.reactor || K.REACTOR_KW, demand = Object.values(use).reduce((a, b) => a + b, 0) + extra, supply = solar + reactor, net = supply - demand;
