@@ -2,7 +2,8 @@
 // Every check prints PASS or FAIL; the script exits with code 1 if anything fails.
 import { createSim, step, computeFlows, harvest, cookBatch, serialize, deserialize } from '../js/sim.js';
 import { CROPS, LIGHT, WX, TECH, FARM_ROOMS, subTemp, planBatch, startBatch, makeBatch, tickBatch, batchKw, trapEta, rackState, farmEnv, plant, research, canResearch, startExperiment, harvestRoom } from '../js/life.js';
-import { K } from '../js/config.js';
+import { K, MINE, MODES } from '../js/config.js';
+import { patchAt, scoop, dump, iceLeft } from '../js/life.js';
 
 let fails = 0;
 const ok = (name, cond, info = '') => { console.log(`${cond ? 'PASS' : 'FAIL'}  ${name}${info ? '  — ' + info : ''}`); if (!cond) fails++; };
@@ -101,14 +102,29 @@ console.log('--- experiment and research');
   research(S, 'led'); const kw = (() => { computeFlows(S); return S.flow.use.farm; })(); ok('tuned LEDs cut lamp power by a quarter', near(kw, 6 * LIGHT[1] * 0.75 + 0.2, 1e-9), `${kw.toFixed(2)} kW`);
   ok('every technology has a cost and a description', Object.values(TECH).every((t) => t.sci > 0 && t.mat > 0 && t.text.length > 40));
 }
+console.log('--- polar ice mine');
+{
+  const S = sim(), p0 = S.mine.patches[0], total = iceLeft(S);
+  ok('six icy patches inside the crater, all within the digger\'s cable', S.mine.patches.length === 6 && S.mine.patches.every((p) => Math.hypot(p.x - MINE.x, p.z - MINE.z) < MINE.tether - 4));
+  ok('the bucket finds a patch only when it is over one', patchAt(S, p0.x + 1, p0.z - 1) === 0 && patchAt(S, MINE.x, MINE.z) === -1);
+  ok('a scoop takes one from the patch', scoop(S, 0) && S.mine.patches[0].left === p0.left && iceLeft(S) === total - 1 && S.mine.dug === 1);
+  const a = dump(S, 1), b = dump(S, 2), c = dump(S, 1);
+  ok('two scoops fill one canister; a half-full hopper keeps its scoop', a.cans === 0 && b.cans === 1 && c.cans === 1 && S.mine.hopper === 0 && S.mine.cans === 2, `${S.mine.cans} canisters from 4 scoops`);
+  ok('the first canister you dig earns 2 research, later ones none', b.sci === 2 && c.sci === 0 && S.sci === 2);
+  for (let i = 0; i < 40; i++) scoop(S, 0); ok('a patch runs out', S.mine.patches[0].left === 0 && patchAt(S, p0.x, p0.z) === -1 && !scoop(S, 0));
+  const U = sim('unlimited'), u0 = iceLeft(U); for (let i = 0; i < 30; i++) scoop(U, 1); ok('in Unlimited mode the ice never runs out', iceLeft(U) === u0 && U.mine.dug === 30);
+  ok('the mine holds far more water than the base starts with', total * 0.5 * 120 * 0.056 > 100, `${total} scoops = ${Math.floor(total / 2)} canisters = about ${Math.round((total / 2) * 120 * 0.056)} L of ice`);
+  ok('every mode starts with at least one canister at the base, to learn the Water Plant', Object.values(MODES).every((m) => m.ice >= 1));
+  const T = deserialize(JSON.parse(JSON.stringify(serialize(S)))); ok('save and load keep the mine', T.mine.patches[0].left === 0 && T.mine.cans === 2 && T.mine.seen === true && T.mine.patches.every((p) => Number.isFinite(p.left)));
+}
 console.log('--- saving');
 {
   const S = sim(); S.wx.ice = 2; plant(S, 0, 'wheat'); S.tech.led = true; startBatch(S, { mode: 'ice', method: 'mw', n: 1, kw: 3, hours: 4, pa: 10 }); run(S, 1);
   const T = deserialize(JSON.parse(JSON.stringify(serialize(S))));
   ok('save and load keep racks, research and a running batch', T.racks[0].kind === 'wheat' && T.tech.led && T.wx.batch && near(T.wx.batch.left, S.wx.batch.left, 1e-9) && T.wx.ice === 1);
-  const old = serialize(sim()); delete old.racks; delete old.wx; delete old.tech; old.crops = { potato: { g: 0.5, ripe: 1, hp: 1 } };
+  const old = serialize(sim()); delete old.racks; delete old.wx; delete old.tech; delete old.mine; old.crops = { potato: { g: 0.5, ripe: 1, hp: 1 } };
   const U = deserialize(JSON.parse(JSON.stringify(old))); let threw = false; try { run(U, 2); } catch (e) { threw = true; console.log(e); }
-  ok('a save from before this update still loads and runs', !threw && U.racks.length === 6 && U.wx && U.tech);
+  ok('a save from before this update still loads and runs', !threw && U.racks.length === 6 && U.wx && U.tech && U.mine && U.mine.patches.length === 6);
 }
 console.log(fails ? `\n${fails} check(s) FAILED` : '\nAll checks passed.');
 process.exit(fails ? 1 : 0);

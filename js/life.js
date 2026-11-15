@@ -3,6 +3,8 @@
 // Pure logic (no DOM), so Node can test it: node tools/life_test.mjs
 // REAL numbers are sourced in docs/SCIENCE_AND_SOURCES.md. GAME numbers are scaled so one mission teaches the trade-offs.
 
+import { MINE } from './config.js';
+
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const alive = (S, id) => { const r = S.rooms[id]; return r.built >= 1 && !r.frozen && r.p > 55; };
 
@@ -51,7 +53,7 @@ export const newRacks = () => [
 ];
 export const newLife = (m) => ({
   racks: newRacks(), farmT: { potato: 20, tomato: 24 }, nutri: m.nutri ?? 1.2, herbs: 0, sci: 0, tech: {}, tried: {},
-  exp: null, wx: { ice: 0, cond: 1, seal: 1, batch: null, made: 0, runs: 0, last: null, tried: {} },
+  mine: newMine(), exp: null, wx: { ice: 0, cond: 1, seal: 1, batch: null, made: 0, runs: 0, last: null, tried: {} },
 });
 
 // ---------- the air, light and warmth a farm room offers ----------
@@ -144,6 +146,16 @@ export function harvestRoom(S, room, score = 0.8, auto = false) {
 }
 export const ripeIn = (S, room) => S.racks.filter((r) => r.room === room && r.ripe).length;
 export function plant(S, i, kind) { const r = S.racks[i]; if (!r || (kind && !CROPS[kind])) return false; r.kind = kind || null; r.g = 0; r.ripe = 0; r.hp = Math.max(r.hp, 0.8); return true; }
+
+// ---------- the Polar Ice Mine ----------
+// You dig the icy soil yourself: two scoops of the digger's bucket fill one canister for the Water Plant.
+export function newMine() { return { patches: MINE.patches.map(([dx, dz, n]) => ({ x: MINE.x + dx, z: MINE.z + dz, left: n })), hopper: 0, dug: 0, cans: 0, seen: false }; }
+// Which icy patch is under this point? (-1 = dry soil, or a patch that is dug out)
+export const patchAt = (S, x, z, r = 3.6) => S.mine.patches.findIndex((p) => p.left > 0 && Math.hypot(p.x - x, p.z - z) < r);
+export function scoop(S, i) { const p = S.mine.patches[i]; if (!p || p.left <= 0) return false; if (S.mode !== 'unlimited') p.left -= 1; S.mine.dug++; return true; }   // Unlimited mode: the patches never run out
+// Tip n scoops into the filler. Returns how many canisters it sealed, and the research earned by the first one.
+export function dump(S, n) { const m = S.mine; m.hopper += n; let cans = 0; while (m.hopper >= MINE.perCan) { m.hopper -= MINE.perCan; cans++; } m.cans += cans; let sci = 0; if (cans && !m.seen) { m.seen = true; sci = 2; S.sci += 2; } return { cans, sci }; }
+export const iceLeft = (S) => S.mine.patches.reduce((a, p) => a + p.left, 0);
 
 // ---------- research ----------
 export const TECH = {

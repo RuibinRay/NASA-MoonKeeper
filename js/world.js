@@ -1,6 +1,6 @@
 // MOONKEEPER 2 — the 3D world: a wide lunar surface (base, solar field, other stations) and the red-walled station inside the lava tube.
 import * as THREE from '../lib/three.module.min.js';
-import { K, STATIONS, SITES, PIT, TUBE, HALL, AIRLOCK, BASE, ROOMS, ROOM_H, MOUNTS, CAR_PAD, SHIP_PAD, BENCH, FAB, FAB_OUT, roomRect, roomSpot, doorSpot } from './config.js';
+import { K, STATIONS, SITES, PIT, TUBE, HALL, AIRLOCK, BASE, MINE, ROOMS, ROOM_H, MOUNTS, CAR_PAD, SHIP_PAD, BENCH, FAB, FAB_OUT, roomRect, roomSpot, doorSpot } from './config.js';
 
 const V3 = THREE.Vector3;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -26,7 +26,7 @@ export class World {
     this.camera = new THREE.PerspectiveCamera(62, 1, 0.25, 7000);
     this.top = new THREE.Group(); this.deep = new THREE.Group(); this.deep.position.y = TUBE.y; this.scene.add(this.top, this.deep);
     this.colliders = { top: [], deep: [] }; this.walk = []; this.t = 0; this.zone = 'top'; this.sunDir = new V3(0, 1, 0); this.lamps = [];
-    this._mats(); this._lights(); this._sky(); this._terrain(); this._topside(); this._base(); this._sites(); this._vehicles(); this._tube(); this._station(); this._markers(); this._fx(); this._guide();
+    this._mats(); this._lights(); this._sky(); this._terrain(); this._topside(); this._base(); this._sites(); this._mine(); this._vehicles(); this._tube(); this._station(); this._markers(); this._fx(); this._guide();
     this.setZone('top'); this.resize(); window.addEventListener('resize', () => this.resize());
   }
   resize() { const w = window.innerWidth, h = window.innerHeight; this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
@@ -99,18 +99,20 @@ export class World {
   heightAt(x, z) {
     let far = smooth(105, 190, Math.hypot(x - 10, z + 10));
     for (const s of SITES) far = Math.min(far, smooth(34, 80, Math.hypot(x - s.pos[0], z - s.pos[1])));
+    far = Math.min(far, smooth(MINE.r * 1.05, MINE.r * 1.8, Math.hypot(x - MINE.x, z - MINE.z)));
     let h = (fbm(x * 0.006 + 3, z * 0.006 + 7) - 0.5) * 22 * far + (fbm(x * 0.05, z * 0.05) - 0.5) * (0.35 + 1.4 * far);
     for (const c of this.craters) { const q = Math.hypot(x - c.x, z - c.z) / c.r; if (q < 2) h += (q < 1 ? -c.d * (1 - q * q) : 0) + c.d * 0.35 * Math.exp(-Math.pow((q - 1) / 0.28, 2)); }
     const dp = Math.hypot(x - PIT.x, z - PIT.z); if (dp < PIT.r + 22) h -= 5 * smooth(PIT.r + 22, PIT.r, dp);
     return h;
   }
   _terrain() {
-    const rnd = seeded(2049); this.craters = [];
+    const rnd = seeded(2049); this.craters = [{ x: MINE.x, z: MINE.z, r: MINE.r, d: MINE.depth }];
     for (let i = 0; i < 420; i++) {
       const x = (rnd() - 0.5) * 1600, z = (rnd() - 0.5) * 1600, dBase = Math.hypot(x - 10, z + 10), r = dBase < 150 ? 1.5 + rnd() * 4 : 4 + rnd() * rnd() * 30;
       if (Math.hypot(x - PIT.x, z - PIT.z) < PIT.r + 26 + r) continue;
       if (STATIONS.some((s) => s.zone === 'top' && Math.hypot(x - s.pos[0], z - s.pos[1]) < 20 + r)) continue;
       if (SITES.some((s) => Math.hypot(x - s.pos[0], z - s.pos[1]) < 44 + r)) continue;
+      if (Math.hypot(x - MINE.x, z - MINE.z) < MINE.r * 1.5 + r) continue;
       if (Math.abs(x) < 56 && z < -44 && z > -112) continue;   // keep the solar field level
       if (x < -8 && x > -66 && z > 26 && z < 60) continue;      // and the parking pads
       this.craters.push({ x, z, r, d: r * (0.16 + rnd() * 0.1) });
@@ -120,7 +122,7 @@ export class World {
     for (let i = 0; i < p.count; i++) {
       let x = p.getX(i), z = p.getZ(i), y = this.heightAt(x, z); const dp = Math.hypot(x - PIT.x, z - PIT.z);
       if (dp < PIT.r) { if (dp > PIT.r - step * 1.6) { const k = (PIT.r - 0.3) / Math.max(dp, 0.01); x = PIT.x + (x - PIT.x) * k; z = PIT.z + (z - PIT.z) * k; p.setX(i, x); p.setZ(i, z); } y = -105; }
-      p.setY(i, y); const tone = 0.78 + fbm(x * 0.02 + 40, z * 0.02) * 0.4 - (dp < PIT.r ? 0.55 : 0); colors.set([tone, tone * 0.985, tone * 0.96], i * 3);
+      p.setY(i, y); const tone = (0.78 + fbm(x * 0.02 + 40, z * 0.02) * 0.4 - (dp < PIT.r ? 0.55 : 0)) * (0.2 + 0.8 * smooth(MINE.r * 0.82, MINE.r * 1.02, Math.hypot(x - MINE.x, z - MINE.z)));   // the mine's floor never sees the Sun colors.set([tone, tone * 0.985, tone * 0.96], i * 3);
     }
     g.setAttribute('color', new THREE.BufferAttribute(colors, 3)); g.computeVertexNormals();
     const mesh = new THREE.Mesh(g, this.M.rego); mesh.receiveShadow = true; this.top.add(mesh);
@@ -129,7 +131,7 @@ export class World {
     const rg = new THREE.DodecahedronGeometry(1, 0), n = 420, im = new THREE.InstancedMesh(rg, this.M.rock, n), o = new THREE.Object3D();
     for (let i = 0, placed = 0; placed < n && i < 6000; i++) {
       const x = (rnd() - 0.5) * 1500, z = (rnd() - 0.5) * 1500;
-      if (Math.hypot(x - PIT.x, z - PIT.z) < PIT.r + 6 || STATIONS.some((s) => s.zone === 'top' && Math.hypot(x - s.pos[0], z - s.pos[1]) < 22) || (Math.abs(x) < 60 && z < -40 && z > -116) || (x < -6 && x > -70 && z > 24 && z < 62)) continue;
+      if (Math.hypot(x - PIT.x, z - PIT.z) < PIT.r + 6 || STATIONS.some((s) => s.zone === 'top' && Math.hypot(x - s.pos[0], z - s.pos[1]) < 22) || (Math.abs(x) < 60 && z < -40 && z > -116) || (x < -6 && x > -70 && z > 24 && z < 62) || Math.hypot(x - MINE.x, z - MINE.z) < MINE.r) continue;
       const s = 0.25 + rnd() * rnd() * 2.2; o.position.set(x, this.heightAt(x, z) + s * 0.25, z); o.scale.set(s, s * (0.5 + rnd() * 0.5), s * (0.7 + rnd() * 0.6)); o.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3); o.updateMatrix(); im.setMatrixAt(placed++, o.matrix);
     }
     im.castShadow = true; im.receiveShadow = true; this.top.add(im);
@@ -293,6 +295,39 @@ export class World {
     const dm = this.baseDamage = new THREE.Group(); dm.visible = false; T.add(dm); const black = new THREE.MeshBasicMaterial({ color: 0x05070a, side: THREE.DoubleSide }), rd = seeded(404);
     for (const [x, z, r, n] of [[hx, hz, hr, 4], [qx, qz, qr, 3]]) for (let i = 0; i < n; i++) { const a = rd() * 6.28, e = 0.35 + rd() * 0.7, nrm = new V3(Math.cos(a) * Math.cos(e), Math.sin(e), Math.sin(a) * Math.cos(e)), c = new THREE.Mesh(new THREE.CircleGeometry(0.9 + rd() * 1.3, 7), black); c.position.copy(this.at('top', x, z, 1.95)).addScaledVector(nrm, r + 0.08); c.lookAt(c.position.clone().add(nrm)); c.renderOrder = 4; dm.add(c);
       for (let k = 0; k < 5; k++) { const bx2 = x + Math.cos(a) * (r + 2 + rd() * 5), bz2 = z + Math.sin(a) * (r + 2 + rd() * 5), b = this.box(0.4 + rd() * 1.2, 0.15 + rd() * 0.4, 0.4 + rd() * 1.1, k % 2 ? M.grey : M.white); b.position.set(bx2, this.heightAt(bx2, bz2) + 0.15, bz2); b.rotation.set(rd(), rd() * 3, rd()); dm.add(b); } }
+  }
+
+  // ---------- the Polar Ice Mine: floodlights in a crater that is always dark, icy patches, a canister filler, and the digger ----------
+  _mine() {
+    const M = this.M, T = this.top, cx = MINE.x, cz = MINE.z, at = (dx, dz, y = 0) => this.at('top', cx + dx, cz + dz, y);
+    const ice = this.iceM = glow(0x9fdcff, 0.9), frost = std({ color: 0xe8f6ff, roughness: 0.35, emissive: 0x6fb8e8, emissiveIntensity: 0.5 });
+    // a pale blue beacon so the mine can be found from far away
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 170, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0x9fdcff, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); beam.position.copy(at(0, 0, 85)); T.add(beam); this.mineBeam = beam;
+    // floodlight masts: the only light this floor ever gets
+    this.mineLights = [];
+    for (let i = 0; i < 4; i++) { const a = i * 1.5708 + 0.6, dx = Math.cos(a) * 46, dz = Math.sin(a) * 46, p = at(dx, dz); const g = new THREE.Group(); g.position.copy(p); T.add(g);
+      this.put(g, this.cyl(0.14, 0.22, 9, M.grey, 8), 0, 4.5, 0); this.put(g, this.box(1.6, 0.5, 0.5, M.dark), 0, 9.1, 0, 0, Math.atan2(-dx, -dz)); this.put(g, this.box(1.4, 0.34, 0.1, M.whiteG), -Math.sin(Math.atan2(dx, dz)) * 0.28, 9.1, -Math.cos(Math.atan2(dx, dz)) * 0.28, 0, Math.atan2(-dx, -dz));
+      this.solid('top', cx + dx, cz + dz, 0.6); if (i % 2 === 0) { const l = new THREE.PointLight(0xdff0ff, 0, 150, 1.1); l.position.set(p.x, p.y + 9, p.z); T.add(l); this.mineLights.push(l); } }
+    // icy patches: frost-bright ground that the bucket can bite into
+    this.minePatches = MINE.patches.map(([dx, dz]) => { const p = at(dx, dz, 0.07), g = new THREE.Group(); g.position.copy(p); T.add(g); const d = new THREE.Mesh(new THREE.CircleGeometry(3.4, 18), ice); d.rotation.x = -Math.PI / 2; g.add(d);
+      const rr = seeded(Math.round(dx * 7 + dz * 13 + 500)); for (let k = 0; k < 9; k++) { const c = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16 + rr() * 0.3, 0), frost); c.position.set((rr() - 0.5) * 5.4, 0.1, (rr() - 0.5) * 5.4); c.rotation.set(rr() * 3, rr() * 3, 0); g.add(c); } return g; });
+    // the canister filler: tip the bucket into the hopper, sealed canisters come out on the rack
+    const f = new THREE.Group(); f.position.copy(at(0, 0)); T.add(f); this.put(f, this.box(3.2, 1.6, 3.2, M.orange), 0, 3.1, 0); this.put(f, this.box(3.5, 0.2, 3.5, M.grey), 0, 3.95, 0); for (const [lx, lz] of [[-1.4, -1.4], [1.4, -1.4], [-1.4, 1.4], [1.4, 1.4]]) this.put(f, this.box(0.22, 2.4, 0.22, M.grey), lx, 1.2, lz);
+    this.put(f, this.cyl(0.5, 0.9, 1.1, M.dark, 12), 0, 1.9, 0); this.put(f, this.cyl(0.28, 0.28, 4.6, M.tankW, 10), 3.4, 1.2, 1.4, 0, 0, Math.PI / 2 - 0.25); this.put(f, this.box(5, 0.25, 2.2, M.grey), MINE.out[0] + 1, 0.13, MINE.out[1]); this.mineLed = this.put(f, this.sph(0.26, M.greenG.clone()), 1.9, 4.3, 1.9);
+    this.mineFill = this.put(f, this.box(2.6, 0.5, 2.6, frost), 0, 3.6, 0); this.mineFill.visible = false; this.solid('top', cx, cz, 2.6);
+    // a heated shelter and the power mast the digger's cable hangs from
+    const sh = new THREE.Group(); sh.position.copy(at(-13, -9)); T.add(sh); this.put(sh, this.box(5, 2.8, 3.6, M.white), 0, 1.4, 0); this.put(sh, this.box(5.2, 0.25, 3.8, M.orange), 0, 2.9, 0); this.put(sh, new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), M.warm), 0, 1.7, 1.82); this.solid('top', cx - 13, cz - 9, 3.2);
+    const pm = new THREE.Group(); pm.position.copy(at(-5, -4)); T.add(pm); this.put(pm, this.cyl(0.16, 0.24, 7, M.grey, 8), 0, 3.5, 0); this.put(pm, this.sph(0.3, M.amber), 0, 7.2, 0); this.solid('top', cx - 5, cz - 4, 0.6); this.mineMast = at(-5, -4, 7);
+    const cab = new THREE.BufferGeometry(); cab.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3)); this.mineCable = new THREE.Line(cab, new THREE.LineBasicMaterial({ color: 0x2a2c30 })); this.mineCable.frustumCulled = false; T.add(this.mineCable);
+    // the digger: tracked base, cab, and a boom, stick and bucket that really move
+    const d = this.dig = new THREE.Group(); this.scene.add(d);
+    for (const sx of [-1.15, 1.15]) { this.put(d, this.box(0.7, 0.75, 4.2, M.dark), sx, 0.38, 0); for (let i = 0; i < 5; i++) this.put(d, this.cyl(0.3, 0.3, 0.74, M.grey, 10), sx, 0.38, -1.7 + i * 0.85, 0, 0, Math.PI / 2); }
+    this.put(d, this.box(2.4, 0.5, 3.2, M.grey), 0, 0.95, -0.1); this.put(d, this.box(2.2, 1.3, 2.2, M.yellow), 0, 1.85, -0.5); this.put(d, this.box(1.3, 1.25, 1.3, M.dark), -0.35, 3.1, -0.2); this.put(d, new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.8), M.cyan), -0.35, 3.2, 0.46); this.put(d, this.sph(0.16, M.amber), 0.7, 2.7, -1.3);
+    const boom = this.digBoom = new THREE.Group(); boom.position.set(0.55, 2.3, 0.6); d.add(boom); this.put(boom, this.box(0.36, 0.36, 3.4, M.yellow), 0, 0, 1.7);
+    const stick = this.digStick = new THREE.Group(); stick.position.set(0, 0, 3.4); boom.add(stick); this.put(stick, this.box(0.28, 0.28, 2.3, M.yellow), 0, 0, 1.15); this.put(stick, this.cyl(0.07, 0.07, 1.6, M.metal, 6), 0, 0.3, 0.2, Math.PI / 2);
+    const bk = this.digBucket = new THREE.Group(); bk.position.set(0, 0, 2.3); stick.add(bk); this.put(bk, this.box(1.3, 0.14, 1.0, M.grey), 0, -0.45, 0.2); this.put(bk, this.box(1.3, 0.9, 0.14, M.grey), 0, -0.05, -0.3); for (const sx of [-0.65, 0.65]) this.put(bk, this.box(0.1, 0.9, 1.0, M.grey), sx, -0.05, 0.2); for (let i = -2; i <= 2; i++) this.put(bk, this.box(0.14, 0.1, 0.3, M.metal), i * 0.28, -0.45, 0.8);
+    this.digLoad = this.put(bk, this.box(1.1, 0.5, 0.8, frost), 0, -0.1, 0.2); this.digLoad.visible = false;
+    this.digLamp = new THREE.SpotLight(0xfff2dc, 0, 60, 0.6, 0.6, 1); this.digLamp.position.set(0, 3.3, 1); this.digLamp.target.position.set(0, 0, 9); d.add(this.digLamp, this.digLamp.target);
   }
 
   // Other countries' stations: a cracked dome, a leaning mast with a coloured beacon you can see from far away.
@@ -756,6 +791,14 @@ export class World {
       X.spot.material.emissiveIntensity = sunOn ? 2.5 * sn.factor : 0;
       const digging = (b && b.mode === 'ilm') || (S.flow.use.isru > 0); this.digT = (this.digT || 0) + (digging ? dt : 0); this.digger.rotation.y = -0.7 + Math.sin(this.digT * 0.6) * 0.7; this.digger.position.y = Math.abs(Math.sin(this.digT * 1.2)) * 0.05;
     }
+    if (S && S.mine && topZ) {   // the mine: floodlights always on (this floor has no day), patches fade as they are dug out, canisters fill
+      const near = ctx.player && Math.hypot(ctx.player.x - MINE.x, ctx.player.z - MINE.z) < MINE.r * 2.2; for (const l of this.mineLights) l.intensity = near ? 260 : 0;
+      this.iceM.emissiveIntensity = 0.75 + 0.25 * Math.sin(t * 2.2); S.mine.patches.forEach((p, i) => { const g = this.minePatches[i]; g.visible = p.left > 0; if (g.visible) g.scale.setScalar(0.55 + 0.45 * Math.min(1, p.left / 6)); });
+      this.mineFill.visible = S.mine.hopper > 0; this.mineLed.material.emissive.setHex(S.mine.hopper > 0 ? 0xffa424 : 0x4dff88); this.mineBeam.material.opacity = 0.11 + 0.05 * Math.sin(t * 2);
+      this.digLamp.intensity = ctx.digOn ? 60 : 0;
+      const cp = this.mineCable.geometry.attributes.position; cp.setXYZ(0, this.mineMast.x, this.mineMast.y, this.mineMast.z); cp.setXYZ(1, this.dig.position.x, this.dig.position.y + 2.6, this.dig.position.z); cp.needsUpdate = true;
+    }
+    this.dig.visible = topZ;
     const hitK = this.baseHit ? 0.1 : 1; if (hitK !== this._hitK) { this._hitK = hitK; for (const b of this.baseGlow) b.m.emissiveIntensity = b.k * hitK; this.baseDamage.visible = !!this.baseHit; }
     if (S) {
       for (const p of this.pads) { const v = S[p.k], on = v.charging; p.ring.material.emissive.setHex(on ? 0x49e6ff : 0x2a5560); p.ring.material.emissiveIntensity = on ? 2 + Math.sin(t * 6) : 1; p.led.material.emissive.setHex(v.charge > 0.5 ? 0x4dff88 : v.charge > 0.2 ? 0xffa424 : 0xff3b30); }

@@ -1164,5 +1164,16 @@
   "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dcf4-63ae-70ab-8fd2-92c06966d92c/6646e394-0850-489e-a008-c54d22531bd2.png",
   "bytes": 12403553,
   "seconds": 47
+ },
+ "rm_icemine": {
+  "request_id": "01a1dd1c-eed5-7cf7-be7d-26ad7f20dc87",
+  "status_url": "https://api.higgsfield.ai/requests/01a1dd1c-eed5-7cf7-be7d-26ad7f20dc87/status",
+  "prompt": "The floor of a permanently shadowed lunar crater that never sees the Sun, lit only by four tall floodlight masts casting hard pools of white light on dark grey regolith. Scattered across the floor are patches of pale blue-white frost and ice crystals glittering in the soil. In the middle a yellow tracked digger with a boom and bucket bites into one frost patch, throwing up a small spray of icy grains that fly in clean arcs. Beside it an orange hopper-fed canister filling machine on legs with a short rack of white canisters banded in pale blue, a small white heated shelter with one warm window, and a power mast with a cable running to the digger. The crater rim is a black wall against a black starless sky; a thin line of sunlight catches only the very top of the far rim. Extreme cold, no air, no haze, no light beams. Grounded space-agency engineering realism with the restrained production design of a prestige science-fiction film: white modular habitat buildings with visible panel seams and orange accents, believable scale, real lunar regolith with rover tracks and footprints, hard low sunlight with long black shadows, pure black sky. Photorealistic cinematic wide shot, ultra detailed. No people, no text, no letters, no numbers, no labels, no captions, no user interface, no logos, no flags, no watermark.",
+  "model": "marketing-studio/image/sunburst",
+  "refs": [],
+  "file": "assets/art/v4/rm_icemine.png",
+  "url": "https://d3u0tzju9qaucj.cloudfront.net/e4b2abfd-0f1a-43e1-ba5c-56d4df70ab8c/01a1dd1c-eed5-7cf7-be7d-26ad7f20dc87/08a1f2e5-cda4-4b4a-a27b-17036815c310.png",
+  "bytes": 14213443,
+  "seconds": 46
  }
 }

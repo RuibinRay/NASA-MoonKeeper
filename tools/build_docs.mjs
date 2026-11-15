@@ -68,7 +68,7 @@ Every claim below carries the **status of its evidence**, because "a lab has don
 |---|---|---|---|
 ${life.map(rowS).join('\n')}
 
-**How the game uses these numbers** (calculations live in \`js/life.js\` and are checked by \`node tools/life_test.mjs\`, 60 checks):
+**How the game uses these numbers** (calculations live in \`js/life.js\` and are checked by \`node tools/life_test.mjs\`, 70 checks):
 
 | In the game | Real number behind it | Game simplification |
 |---|---|---|
@@ -79,7 +79,7 @@ ${life.map(rowS).join('\n')}
 | **Crew breathing.** 0.84 kg of oxygen in, 1.00 kg of CO₂ out per person per day. | NASA's ECLSS mass balance. The newer BVAD figures are 0.895 and 1.085 kg. | We kept the older pair because the rest of the game is balanced on it. |
 | **Electrolysis.** 1.125 L of water and 0.125 kg of hydrogen per kg of oxygen. | Chemistry (2 H₂O → 2 H₂ + O₂). Really about 7 kWh per kg of oxygen. | The Oxygen Maker's power draw is a game size, about ten times the real figure, so that the choice hurts. |
 | **Ice extraction.** Seal icy soil in a chamber, pump out the air, warm it, the ice turns straight to vapour, a cold trap freezes the vapour, melt and filter. | 5.6% water in polar crater soil (LCROSS). Triple point 611.657 Pa. Sublimation takes 2.83 MJ per kg of ice. Ice vapour-pressure curve: −61°C at 1 Pa, −42°C at 10 Pa, −20°C at 100 Pa. | Thermal mining is a **concept**; microwave extraction is **lab-proven**; neither has run on the Moon. Canister size (120 kg), cold-trap capacity, heater efficiencies and wear are game numbers. Above 611 Pa the game gives 35% recovery because the meltwater soaks into the soil. |
-| **Icy soil is hauled in canisters from a polar mine.** | There is no ice at the base's latitude (8°N); surface ice is confined to within 20° of the poles. | The polar mine and its canisters are story. |
+| **Polar Ice Mine.** A crater whose floor never sees the Sun; you dig icy soil with a digger, two scoops fill a canister, and you haul canisters back to the Water Plant. | There is no ice at the base's latitude (8°N). Surface ice is confined to within 20° of the poles, in craters that are permanently shadowed; one measured −249°C. Soil there held 5.6% water where a probe struck it. | **Distance is story:** the real poles are about 2,500 km from this base, and the game draws the mine a few hundred metres away, as it does the other stations. Nobody has dug lunar ice yet (a NASA drill ran on the Moon in 2025 but did not reach ice). The floor temperature (−230°C), scoop and canister sizes, and the battery drain in the cold (3% of a charge per hour parked) are game numbers. The pale blue beam over the mine is a map marker, not a real light. |
 | **Water from rock (experimental).** Hydrogen plus ilmenite at about 1,000°C gives water. | FeTiO₃ + H₂ → Fe + TiO₂ + H₂O at 900–1,100°C, shown on real Apollo soil in the lab; ilmenite is 8–10% of local soil and 10.5% of it is removable oxygen. | 150 kg batches, up to 80% conversion: about 1.3 L for roughly 80 kWh. That is some fifteen times the energy per litre of ice extraction, which is the lesson. |
 | **Moon-soil experiment.** Three pots: water and plant food, treated moon soil, raw moon soil. | The 2022 Apollo-soil study (real Moon soil) and later work on imitation soil. | Final plant sizes of 100%, 70% and 38% are a simplified picture of the result. Treatment has only been tried on imitation soil. |
 | **Nothing grows on the open surface.** | No air, no liquid water, a 300-degree day-night swing, and radiation. | The game never offers it. |
@@ -98,6 +98,7 @@ ${life.map(rowS).join('\n')}
 - **Underground temperature.** The steady 17°C comes from LRO Diviner measurements of shaded pits, not from Chang'e samples. (Chang'e 5 returned samples in 2020, Chang'e 6 in 2024.) Plain soil a metre down is about −20°C (Apollo heat-flow probes).
 - **Light in the cave.** A visible shaft of light needs air or dust to scatter it. The lava tube is in vacuum, so the game and its pictures show only a hard bright patch on the floor under the skylight, and none at all during the two-week night. No sunlight reaches the station, so its farms grow under LED lamps and its modules have small portholes, not glass walls.
 - **Earth in the sky.** From the base (8.3°N, 33.2°E) Earth hangs high overhead, not on the horizon; the surface-base picture is cropped so that it shows no sky.
+- **Ice at our latitude.** There is none. The first design had canisters of icy soil simply waiting at the base; now you fetch them from a dark crater, and the notes say plainly that the distance is compressed.
 - **Dust storms.** The Moon has none. Dust events in the game are static-cling dust, impact spray and the real sunset "horizon glow".
 
 ## 6. Art

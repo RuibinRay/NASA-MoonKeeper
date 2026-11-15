@@ -4,7 +4,8 @@ import { computeFlows, roomOk, spend, harvest, collectEggs, cookBatch, runDustSh
 import { drawStation, roomState } from './ui.js';
 import { playMini } from './minigames.js';
 import { installLife } from './lifeui.js';
-import { ripeIn } from './life.js';
+import { ripeIn, dump, iceLeft } from './life.js';
+import { MINE } from './config.js';
 
 const FACTS = [
   'Look up! Earth never moves in our sky. The Moon always keeps the same face toward Earth, so from here Earth just hangs in one spot and slowly changes shape.',
@@ -18,6 +19,7 @@ const FACTS = [
   'Hens can eat dried grass, seeds and plant scraps. People cannot — our tummies are built differently.',
   'Why is there no glowing beam under the skylight? You can only see a light beam when air or dust scatters it. The cave has no air, so sunlight just makes a bright patch on the floor.',
   'The rover bounces in slow motion. Its springs push back just as hard as on Earth, but gravity pulls it down six times more gently — so every bump becomes a long, floating wallow.',
+  'The coldest places ever measured in the Solar System are not on Pluto. They are on our own Moon, in crater floors near the poles that sunlight has not touched for billions of years.',
   'Your tyre tracks will still be here in a million years. With no wind and no rain, nothing on the Moon rubs them out.',
   'Watch the dust your boots kick up. On Earth it would hang in the air as a cloud. Here there is no air, so every grain flies in a clean arc and drops straight back down.',
   'A plant grows only as fast as whatever it has least of: light, water, plant food, warmth or fresh air. Fixing anything else changes nothing.',
@@ -48,9 +50,15 @@ export function installActions(G) {
   const suitAct = () => ({ label: G.S.suitOn ? 'Take off your spacesuit (15 min)' : 'Put on your spacesuit (15 min)', run: G.toggleSuit });
   const needNoSuit = (what) => { if (!G.S.suitOn) return false; ui.toast(`You cannot ${what} in a spacesuit! Take it off at the Suit Lockers in the airlock.`, 'bad'); G.pointTo('suit'); return true; };
 
+  // ---------- the Polar Ice Mine: tip the digger's bucket into the filler; every two scoops seal one canister ----------
+  G.dumpDig = () => { const d = G.dig, s = G.S, n = d.load; if (!n) return; d.load = 0; const r = dump(s, n); G.audio.play('ok');
+    for (let i = 0; i < r.cans; i++) { const k = G.items.filter((q) => q.type === 'ice' && q.where === 'ground' && Math.hypot(q.x - MINE.x - MINE.out[0], q.z - MINE.z - MINE.out[1]) < 7).length; G.spawnItem('ice', 'top', MINE.x + MINE.out[0] + (k % 4) * 1.15, MINE.z + MINE.out[1] - 0.6 + Math.floor(k / 4) * 1.15); }
+    ui.toast(r.cans ? `${r.cans} canister${r.cans > 1 ? 's' : ''} of icy soil sealed and set on the rack.${r.sci ? ' +2 research for digging your first one!' : ''} Load ${r.cans > 1 ? 'them' : 'it'} on the rover or hopper for the Water Plant.` : `Tipped in. One more scoop will seal a canister.`, 'good');
+    if (r.cans) note(s, `Dug ${r.cans} canister${r.cans > 1 ? 's' : ''} of icy soil at the Polar Ice Mine.`, 'good'); };
+
   // ---------- vehicles ----------
-  G.enterVehicle = (v) => { P.in = v; P.vel.set(0, 0, 0); G.audio.play('ok'); G.camT = 0; if (G.state === 'play' && !G['_tip' + v]) { G['_tip' + v] = 1; ui.toast(v === 'car' ? 'Rover: W S to drive, A D to steer, E to get out. Park on the round pad to recharge.' : 'Hopper: Space to lift off, W to fly forward, A D to turn, C to come down, E to get out. It only charges on its own pad.'); } };
-  G.exitVehicle = () => { const v = P.in, o = G[v]; if (v === 'ship' && o.alt > 0.7) { ui.toast('Land first: hold C to come down.', 'bad'); return; } P.in = null; if (v === 'car') o.v = 0; else { o.vx = o.vz = 0; } P.pos.set(o.x + Math.cos(o.yaw) * 3.2, 0, o.z - Math.sin(o.yaw) * 3.2); P.pos.y = world.heightAt(P.pos.x, P.pos.z); G.regoPos.set(P.pos.x + 1, P.pos.y, P.pos.z + 1); G.audio.play('blip'); };
+  G.enterVehicle = (v) => { P.in = v; P.vel.set(0, 0, 0); G.audio.play('ok'); G.camT = 0; if (G.state === 'play' && !G['_tip' + v]) { G['_tip' + v] = 1; ui.toast(v === 'dig' ? 'Digger: W S to drive, A D to turn. Hold SPACE with the bucket over a pale blue patch to dig. Q tips the bucket into the filler. E to get out.' : v === 'car' ? 'Rover: W S to drive, A D to steer, E to get out. Park on the round pad to recharge.' : 'Hopper: Space to lift off, W to fly forward, A D to turn, C to come down, E to get out. It only charges on its own pad.'); } };
+  G.exitVehicle = () => { const v = P.in, o = G[v]; if (v === 'ship' && o.alt > 0.7) { ui.toast('Land first: hold C to come down.', 'bad'); return; } P.in = null; if (v === 'car' || v === 'dig') { o.v = 0; o.dig = 0; } else { o.vx = o.vz = 0; } P.pos.set(o.x + Math.cos(o.yaw) * 3.2, 0, o.z - Math.sin(o.yaw) * 3.2); P.pos.y = world.heightAt(P.pos.x, P.pos.z); G.regoPos.set(P.pos.x + 1, P.pos.y, P.pos.z + 1); G.audio.play('blip'); };
 
   // ---------- jobs: scenes that play by themselves while the clock runs ----------
   const J = {
@@ -83,7 +91,9 @@ export function installActions(G) {
   // The one thing E does right now (and sometimes a second thing on Q).
   G.context = () => {
     const s = G.S, c = {}, top = P.zone === 'top';
-    if (P.in) { c.e = { label: P.in === 'car' ? 'Get out of the rover' : 'Get out of the hopper', run: G.exitVehicle }; return c; }
+    if (P.in) { c.e = { label: P.in === 'car' ? 'Get out of the rover' : P.in === 'dig' ? 'Get out of the digger' : 'Get out of the hopper', run: G.exitVehicle };
+      if (P.in === 'dig') { if (G.dig.load > 0 && near(MINE.x, MINE.z, 10)) c.q = { label: `Tip ${G.dig.load} scoop${G.dig.load > 1 ? 's' : ''} into the canister filler`, run: G.dumpDig }; else c.q = { label: G.dig.load >= MINE.bucket ? 'Bucket full: drive to the orange filler' : 'Hold SPACE over a pale blue patch to dig', run: () => {} }; }
+      return c; }
     const it = P.carry, st = nearStation(), veh = top ? (near(G.car.x, G.car.z, 5.4) ? 'car' : near(G.ship.x, G.ship.z, 6) && G.ship.alt < 0.7 ? 'ship' : null) : null, m = top ? nearMount() : -1, lift = st && (st.id === 'gate' || st.id === 'lift');
     if (it) {
       const nm = ITEMS[it.type].name, vn = veh === 'car' ? 'rover' : 'hopper';
@@ -102,6 +112,7 @@ export function installActions(G) {
     const li = nearItem(), door = nearDoor(), hole = nearHole(), done = st && st.id === 'bench' ? s.bench.findIndex((b) => b && b.left <= 0) : -1;
     if (hole) c.e = { label: `Patch the hole in the ${hole.name} (1 material, 1 h)`, run: () => J.patch(hole.id) };
     else if (li) c.e = { label: `Pick up the ${ITEMS[li.type].name}`, run: () => G.take(li) };
+    else if (top && near(G.dig.x, G.dig.z, 5.5)) c.e = { label: 'Drive the digger', run: () => G.enterVehicle('dig') };
     else if (veh) c.e = { label: veh === 'car' ? 'Drive the rover' : 'Fly the hopper', run: () => G.enterVehicle(veh) };
     else if (m >= 0 && s.mounts[m] === 2) c.e = { label: 'Pull the broken panel off its mount (30 min)', run: () => J.removePanel(m) };
     else if (done >= 0) c.e = { label: 'Take the fixed panel', run: () => J.benchTake(done) };
@@ -121,6 +132,8 @@ export function installActions(G) {
     if (st.site) return sitePanel(st.site);
     if (st.room) return roomPanel(id);
     if (id === 'wplant') return G.waterPlant();
+    if (id === 'icemine') return ui.panel('Polar Ice Mine', { stats: [['Floor temperature', `${MINE.coldC}°C, always`], ['Icy patches left', `${s.mine.patches.filter((p) => p.left > 0).length} of ${s.mine.patches.length}${s.mode === 'unlimited' ? ' (endless)' : ` · ${iceLeft(s)} scoops`}`], ['Filler hopper', `${s.mine.hopper} of ${MINE.perCan} scoops`], ['Canisters dug so far', s.mine.cans], ['Digger bucket', `${G.dig.load} of ${MINE.bucket} scoops`]], actions: [{ label: 'Show me the digger', run: async () => G.pointTo({ zone: 'top', x: G.dig.x, z: G.dig.z, name: 'the digger', r: 4 }) }],
+      note: 'Sunlight never reaches this crater floor, so ice that drifted in billions of years ago is still here, mixed into the soil: about 5.6% by weight. Dig it, seal it in canisters, and haul it home. (Our story: real dark craters are at the Moon\'s poles, about 2,500 km from this base. The game draws this one a short trip away.)', img: 'rm_icemine' });
     if (st.info) return ui.panel(st.name, { stats: [], actions: [], note: world.baseHit ? `${st.info}<br><br><b>After the meteor shower:</b> ${st.hit}` : st.info, img: 'rm_surface' });
     if (id === 'bench') return ui.panel('Fix-It Bench', { stats: s.bench.map((b, i) => [`Slot ${i + 1}`, !b ? 'empty' : b.left > 0 ? `fixing… ${fmt.hrs(jobHours(s, b.left))} left` : 'FIXED — pick it up']), note: 'Carry a broken solar panel here and press E. The robot arm fixes it while you do something else. Each repair uses 1 material and electricity.' });
     if (id === 'fab') return ui.panel('Robot-Arm Builder', { stats: [['Materials', fmt.mat(s.mat)], ['Now building', s.fab ? `${s.fab.what === 'panel' ? 'solar panel' : 'battery module'} — ${fmt.hrs(jobHours(s, s.fab.left))} left` : 'nothing']],
@@ -215,7 +228,7 @@ export function installActions(G) {
     else if (F.eff < 1) { t = '<b>Brownout!</b> The battery is empty. Turn something down on the Power Board, and get more solar panels working.'; mood = 'alert'; }
     else if (s.o2 < 0.8 || F.o2Days < 0.6) { t = !roomOk(s, 'oxygen') ? '<b>Oxygen is low</b> and the Oxygen Room is not working. Fix that room first!' : s.water > 3 && s.lv.o2gen < 3 ? '<b>Oxygen is low!</b> Turn the Oxygen Maker up on the Power Board. It costs power and water.' : '<b>Oxygen is low!</b> Repair and switch on the Moon-Dust Oxygen Plant topside: it needs no water.'; go = !roomOk(s, 'oxygen') ? 'oxygen' : null; mood = 'alert'; }
     else if (f.scrubber && !s.extraKw.backup) { t = 'The air cleaner is broken and the air is going stale. Fix it in the Oxygen Room.'; go = 'oxygen'; mood = 'worried'; }
-    else if (s.water < 3 || F.waterDays < 1) { t = '<b>Water is low.</b> Turn the Water Recycler up. The Oxygen Maker drinks water too. Other stations have water tanks to salvage.'; mood = 'worried'; }
+    else if (s.water < 3 || F.waterDays < 1) { const cans = G.items.some((q) => q.type === 'ice'); t = '<b>Water is low.</b> Turn the Water Recycler up. The Oxygen Maker drinks water too. ' + (s.wx.batch ? 'The Water Plant is already working on a batch.' : s.wx.ice > 0 ? 'There is icy soil in the Water Plant hopper: run a batch.' : cans ? 'Carry the canisters of icy soil to the Water Plant and extract the ice.' : 'Dig more ice at the <b>Polar Ice Mine</b>: follow the pale blue light to the south-west.'); go = s.wx.batch ? null : s.wx.ice > 0 || cans ? 'wplant' : 'icemine'; mood = 'worried'; }
     else if (F.foodDays < 1) { t = s.raw >= 2 && roomOk(s, 'kitchen') ? 'Food is low — but you have raw food. Cook it in the Kitchen!' : ripeIn(s, 'potato') || ripeIn(s, 'tomato') ? 'Food is low. There are ripe crops to pick!' : s.eggs >= 1 ? 'Food is low. Collect the eggs in the Animal Bay!' : 'Food is low. Turn the Farm lights up, and look for food crates at the other stations.'; go = s.raw >= 2 ? 'kitchen' : ripeIn(s, 'potato') ? 'potato' : ripeIn(s, 'tomato') ? 'tomato' : s.eggs >= 1 ? 'animal' : null; mood = 'worried'; }
     else if (s.lv.heat < F.heatNeed) { t = `Topside is ${fmt.temp(F.sun.tempC)}. Our machines up there need heater level ${F.heatNeed} or they will break.`; mood = 'worried'; }
     else if (s.bench.some((b) => b && b.left <= 0)) { t = 'A panel is fixed and waiting on the Fix-It Bench. Carry it up and install it on an empty mount.'; go = 'bench'; }
@@ -230,6 +243,7 @@ export function installActions(G) {
     else if (s.nutri <= 0) { t = '<b>The plant food has run out</b>, so crops are crawling. Run the waste digester in the Water Room, or plant peas and soybeans: they make their own nitrogen.'; go = 'water'; mood = 'worried'; }
     else if (ripeIn(s, 'potato') || ripeIn(s, 'tomato')) { const id = ripeIn(s, 'potato') ? 'potato' : 'tomato'; t = `Ripe crops in the ${rn(id)}! Pick them: a ripe rack stops growing. Staples need cooking; salad is ready to eat.`; go = id; }
     else if (s.wx.ice > 0 && !s.wx.batch && top) { t = `There ${s.wx.ice === 1 ? 'is a canister' : 'are ' + s.wx.ice + ' canisters'} of icy soil in the Water Plant hopper. Set up a batch: gentle heat in a vacuum turns the ice straight to vapour.`; go = 'wplant'; mood = 'think'; }
+    else if (F.waterDays < 4 && !s.wx.batch && s.wx.ice === 0 && !G.items.some((q) => q.type === 'ice') && iceLeft(s) > 0) { t = 'Water is getting short and there is no icy soil left here. The <b>Polar Ice Mine</b> has plenty: follow the pale blue light to the south-west, dig with the digger, and bring canisters back to the Water Plant.'; go = 'icemine'; mood = 'think'; }
     else if (F.waterDays < 3 && !s.wx.batch && G.items.some((q) => q.type === 'ice' && q.where === 'ground')) { t = 'Water is getting short. There are canisters of icy polar soil by the Water Plant topside: carry them to the hopper and extract the ice.'; go = 'wplant'; mood = 'think'; }
     else if (s.raw >= 4 && roomOk(s, 'kitchen')) { t = 'You have raw food waiting. Cook it in the Kitchen — cooked food fills you up twice as much.'; go = 'kitchen'; }
     else if (s.eggs >= 3) { t = 'The hens have laid eggs. Collect them in the Animal Bay.'; go = 'animal'; }

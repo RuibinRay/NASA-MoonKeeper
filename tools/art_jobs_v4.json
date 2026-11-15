@@ -27,6 +27,13 @@
       "web": "assets/img/rm_farmracks.jpg",
       "webW": 1600,
       "prompt": "A sealed hydroponic farm room inside a Moon station seen down its length. Three long white hydroponic racks run to the back wall, each under its own strip of magenta-pink LED grow light: one rack of golden dwarf wheat, one of leafy green lettuce and spinach, one of pea vines on a low trellis. Thin channels of flowing water under the roots, blue nutrient pipes along the racks, a humidity condenser with cold fins on the wall, a small control panel glowing green, a thermostat display. Warm air haze."
+    },
+    {
+      "id": "rm_icemine",
+      "style": "exterior",
+      "web": "assets/img/rm_icemine.jpg",
+      "webW": 1600,
+      "prompt": "The floor of a permanently shadowed lunar crater that never sees the Sun, lit only by four tall floodlight masts casting hard pools of white light on dark grey regolith. Scattered across the floor are patches of pale blue-white frost and ice crystals glittering in the soil. In the middle a yellow tracked digger with a boom and bucket bites into one frost patch, throwing up a small spray of icy grains that fly in clean arcs. Beside it an orange hopper-fed canister filling machine on legs with a short rack of white canisters banded in pale blue, a small white heated shelter with one warm window, and a power mast with a cable running to the digger. The crater rim is a black wall against a black starless sky; a thin line of sunlight catches only the very top of the far rim. Extreme cold, no air, no haze, no light beams."
     }
   ]
 }

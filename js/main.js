@@ -5,9 +5,10 @@ import { Astronaut, Rego, Bolt } from './actors.js';
 import { UI } from './ui.js';
 import { Sound } from './audio.js';
 import { IC } from './icons.js';
-import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, BASE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, fmt } from './config.js';
+import { K, MODES, STATIONS, SITES, PIT, TUBE, AIRLOCK, BASE, MINE, SPAWN, ROOMS, CAR_PAD, SHIP_PAD, ITEMS, roomRect, fmt } from './config.js';
 import { createSim, step, computeFlows, applyDisaster, jobHours, addHelper, serialize, deserialize } from './sim.js';
 import { installActions } from './actions.js';
+import { patchAt, scoop } from './life.js';
 import { installEvents } from './events.js';
 import { comicIntro, tutorial, disaster, ending } from './story.js';
 
@@ -23,6 +24,7 @@ const G = (window.G = {
 G.audio = new Sound(); G.world = new World(canvas); G.ui = new UI(G);
 G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.world.scene.add(G.astro.group, G.rego.group);
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
+G.dig = { x: MINE.x - 10, z: MINE.z + 9, yaw: 2.3, v: 0, load: 0, prog: 0, boom: 0, dig: 0, dry: 0 };   // the digger at the Polar Ice Mine
 const groundY = (zone, x, z) => (zone === 'top' ? world.heightAt(x, z) : TUBE.y);
 $('#b-power').innerHTML = IC.bolt + '<small>Power<kbd>Tab</kbd></small>'; $('#b-map').innerHTML = IC.map + '<small>Map<kbd>M</kbd></small>'; $('#b-ask').innerHTML = IC.bot + '<small>Ask REGO<kbd>H</kbd></small>'; $('#b-data').innerHTML = IC.book + '<small>Guide<kbd>N</kbd></small>';
 $('#b-view').innerHTML = IC.eye + '<small>View<kbd>V</kbd></small>'; $('#b-speed').innerHTML = IC.speed + '<small id="speed-l">×1</small>'; $('#b-pause').innerHTML = IC.pause + '<small>Pause<kbd>P</kbd></small>'; $('#b-sound').innerHTML = IC.sound; $('#hp-ic').innerHTML = IC.heart;
@@ -210,7 +212,19 @@ function updatePlayer(dt) {
 }
 function updateVehicle(dt, free) {
   const S = G.S, k = G.keys, thr = free ? (k.w || k.ArrowUp ? 1 : 0) - (k.s || k.ArrowDown ? 1 : 0) + G.stick.y : 0, st = free ? (k.a || k.ArrowLeft ? 1 : 0) - (k.d || k.ArrowRight ? 1 : 0) - G.stick.x : 0, perk = S.perks.pilot ? 0.7 : 1;
-  if (P.in === 'car') {
+  if (P.in === 'dig') {   // the digger: slow, turns on the spot, and stays on its power cable
+    const d = G.dig; d.v += (thr * 5 - d.v) * Math.min(1, dt * 2.2); if (Math.abs(thr) < 0.05) d.v *= 1 - Math.min(1, dt * 3);
+    d.yaw += st * dt * 1.15; const p = { x: d.x + Math.sin(d.yaw) * d.v * dt, z: d.z + Math.cos(d.yaw) * d.v * dt }; pushOut(p, 'top', 2.3);
+    const ox = p.x - MINE.x, oz = p.z - MINE.z, od = Math.hypot(ox, oz); if (od > MINE.tether) { p.x = MINE.x + (ox / od) * MINE.tether; p.z = MINE.z + (oz / od) * MINE.tether; d.v *= 0.5; G.warn('cable', 'The digger runs on a power cable from the mast. It cannot leave the crater floor.', 'think', 12000); }
+    d.x = p.x; d.z = p.z; d.dig = free && k[' '] ? 1 : 0;
+    if (d.dig && d.boom > 0.8) { const bx = d.x + Math.sin(d.yaw) * 5.6, bz = d.z + Math.cos(d.yaw) * 5.6, i = patchAt(S, bx, bz);   // the bucket bites 5.6 m ahead
+      if (d.load >= MINE.bucket) G.warn('full', 'The bucket is full. Drive to the orange filler in the middle and press <b>Q</b> to tip it in.', 'happy', 9000);
+      else if (i >= 0) { d.prog += dt / MINE.digSec; if (Math.random() < dt * 14) world.puff(bx, bz, 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, 1.6, 1.4);
+        if (d.prog >= 1) { d.prog = 0; scoop(S, i); d.load++; G.audio.play('ok'); ui.toast(d.load >= MINE.bucket ? 'Bucket full! Tip it into the orange filler (Q).' : `One scoop of icy soil. The bucket holds ${MINE.bucket}.`, 'good'); } }
+      else { d.prog = 0; d.dry += dt; if (d.dry > 1.4) { d.dry = -8; ui.toast('Only dry soil here. Put the bucket over a pale blue patch.'); } } }
+    else d.prog = Math.max(0, d.prog - dt * 2);
+    P.pos.set(d.x, world.heightAt(d.x, d.z), d.z); P.face = d.yaw;
+  } else if (P.in === 'car') {
     const c = G.car, max = S.car.charge > 0 ? 15 : 2.2; c.v += (thr * max - c.v) * Math.min(1, dt * 1.5); if (Math.abs(thr) < 0.05) c.v *= 1 - Math.min(1, dt * 1.2);
     c.st = st; c.yaw += st * dt * 1.6 * clamp(c.v / 5, -1, 1); const p = { x: c.x + Math.sin(c.yaw) * c.v * dt, z: c.z + Math.cos(c.yaw) * c.v * dt }, bx = p.x, bz = p.z; pushOut(p, 'top', 2.2); topBounds(p, 12); if (p.x !== bx || p.z !== bz) c.v *= 0.6;
     const moved = Math.hypot(p.x - c.x, p.z - c.z); c.x = p.x; c.z = p.z;
@@ -254,6 +268,14 @@ function placeVehicles(dt) {
   D.trk += Math.hypot(c.x - D.px, c.z - D.pz); D.px = c.x; D.pz = c.z;
   if (D.trk > 0.55 && P.zone === 'top') { D.trk = 0; for (const sx of [-1.5, 1.5]) world.track(c.x + fz * sx - fx * 1.8 * Math.sign(c.v || 1), c.z - fx * sx - fz * 1.8 * Math.sign(c.v || 1), c.yaw); }
   if (!(P.in === 'ship')) { const gnd = world.heightAt(s.x, s.z); if (s.y < gnd || s.alt < 0.3) s.y = gnd; }
+  // the digger: it sits on the crater slope; boom, stick and bucket follow what you are doing
+  { const dg = G.dig, dx2 = Math.sin(dg.yaw), dz2 = Math.cos(dg.yaw), m = world.dig; if (P.in !== 'dig') dg.dig = 0;
+    m.position.set(dg.x, world.heightAt(dg.x, dg.z), dg.z); m.rotation.set(-Math.atan2(world.heightAt(dg.x + dx2 * 2, dg.z + dz2 * 2) - world.heightAt(dg.x - dx2 * 2, dg.z - dz2 * 2), 4), dg.yaw, 0, 'YXZ');
+    dg.boom += ((dg.dig ? 1 : 0) - dg.boom) * Math.min(1, dt * 3.5); const bite = dg.prog > 0 ? Math.sin(performance.now() * 0.014) * 0.05 : 0;
+    world.digBoom.rotation.x = -0.6 + dg.boom * 0.85 + bite; world.digStick.rotation.x = 1.3 - dg.boom * 1.02 + dg.prog * 0.45; world.digBucket.rotation.x = 0.6 - dg.boom * 0.8 + dg.prog * 0.9;
+    world.digLoad.visible = dg.load > 0; if (dg.load > 0) world.digLoad.scale.set(1, 0.5 + (0.5 * dg.load) / MINE.bucket, 1); }
+  // deep cold steals battery charge from anything parked on the crater floor
+  if (S) { const th = S.t, dh = Math.max(0, th - (G._mT ?? th)); G._mT = th; if (dh > 0 && dh < 5) for (const [k2, v] of [['car', c], ['ship', s]]) if (Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9) S[k2].charge = Math.max(0, S[k2].charge - MINE.drain * dh); }
   sg.position.set(s.x, s.y, s.z); sg.rotation.set(clamp(-Math.hypot(s.vx, s.vz) * 0.01, -0.3, 0), s.yaw, 0, 'YXZ');
   if (S) { const park = (v, pad, r, slow) => Math.hypot(v.x - pad[0], v.z - pad[1]) < r && slow; S.car.charging = park(c, CAR_PAD, 4.5, Math.abs(c.v) < 0.6) && S.car.charge < 1; S.ship.charging = park(s, SHIP_PAD, 5.5, s.alt < 0.4) && S.ship.charge < 1; }
 }
@@ -267,10 +289,10 @@ function updateRego(dt) {
   R.y = groundY(P.zone, R.x, R.z); g.position.copy(R);
   const want = sp > 0.8 ? Math.atan2(dx, dz) : js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z); let dy = want - g.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); g.rotation.y += dy * Math.min(1, dt * 6);
   let look = (js ? Math.atan2(js.x - R.x, js.z - R.z) : Math.atan2(P.pos.x - R.x, P.pos.z - R.z)) - g.rotation.y; look = clamp(Math.atan2(Math.sin(look), Math.cos(look)), -1.1, 1.1); G.rego.update(dt, sp, look);
-  const dark = P.zone === 'deep' ? !G.inside || (G.S && G.S.flow.eff < 1) : G.S && !G.S.flow.sun.up; G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = (dark || js) && !P.in ? (js ? 9 : 5) : 0;   // REGO lights the work
+  const dark = P.zone === 'deep' ? !G.inside || (G.S && G.S.flow.eff < 1) : G.inCrater || (G.S && !G.S.flow.sun.up); G.astro.lamp.intensity = dark && !P.in ? 14 : 0; G.rego.lamp.intensity = (dark || js) && !P.in ? (js ? 9 : 5) : 0;   // REGO lights the work
 }
 function updateCamera(dt) {
-  const c = world.camera; G.shake *= Math.pow(0.25, dt); const veh = P.in === 'car' ? 5 : P.in === 'ship' ? 8 : 0;
+  const c = world.camera; G.shake *= Math.pow(0.25, dt); const veh = P.in === 'car' ? 5 : P.in === 'ship' ? 8 : P.in === 'dig' ? 7 : 0;
   if (cam.fp && !P.in) { c.position.set(P.pos.x, P.pos.y + 1.78, P.pos.z); c.rotation.set(-cam.pitch, cam.yaw, 0, 'YXZ'); }
   else {
     const pp = Math.max(cam.pitch, 0.06), cp = Math.cos(pp), dist = cam.dist + veh; tmp.set(P.pos.x, P.pos.y + (P.in ? 2.6 : 1.75), P.pos.z);
@@ -317,13 +339,14 @@ let last = performance.now(), ccT = 0;
 function frame(now, manual) {
   if (!manual) requestAnimationFrame(frame); const dt = clamp((now - last) / 1000, 0, 0.05); last = now; if (G.state === 'title') return;
   if (G.jobTick) G.jobTick(dt);
-  G.inside = P.zone === 'deep' && world.indoors(P.pos.x, P.pos.z);
+  G.inside = P.zone === 'deep' && world.indoors(P.pos.x, P.pos.z); G.inCrater = P.zone === 'top' && Math.hypot(P.pos.x - MINE.x, P.pos.z - MINE.z) < MINE.r * 0.9;
+  if (G.inCrater && G.state === 'play' && !G._tipMine) { G._tipMine = 1; ui.bubble('The <b>Polar Ice Mine</b>. This crater floor never sees the Sun, so it stays near −230°C: cold enough to keep ice frozen for billions of years. Get in the <b>digger</b>, hold <b>SPACE</b> over a pale blue patch, then tip the bucket into the orange filler. Do not park here long: the cold drains batteries.', 'think', 16); }
   if (G.S) { const S = G.S; if (!S.suitOn && !G.inside) S.suitOn = true; S.here = G.inside ? world.roomAt(P.pos.x, P.pos.z) : null; G.astro.setSuit(G.suitShow ?? S.suitOn);
     if (G.inside && !G._wasIn && S.suitOn && G.state === 'play' && !G._tipIn) { G._tipIn = 1; ui.bubble('You are indoors, and the air is good. You can take your suit off at the <b>Suit Lockers</b>: indoor jobs go a quarter faster without big gloves, and you need it off to cook or sleep.', 'happy', 11); } G._wasIn = G.inside; }
   updatePlayer(dt); if (G.S) placeVehicles(dt); updateRego(dt); updateActors(dt); if (G.cineTick) G.cineTick(dt); else updateCamera(dt);
   if (G.S) { tickSim(dt); updateRad(dt); if (G.state !== 'over') updateGoal(); }
   placeItems();
-  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook' });
+  world.update(dt, G.S, P.pos, { player: P.pos, inside: G.inside, carOn: P.in === 'car', shipOn: P.in === 'ship', digOn: P.in === 'dig', shipFly: G.ship.alt > 0.3, cooking: G.jobbing?.tag === 'cook' });
   ccT += dt; if (ccT > 0.5 && G.S && P.zone === 'deep') { ccT = 0; G.paintCC(); }
   world.render();
   if (G.S && G.state !== 'over') { ui.hud(dt); const free = !ui.busy && !G.riding && G.sleepLeft <= 0 && !G.jobTick; ui.prompt(free ? G.promptText() : null); $('#sleep').classList.toggle('hidden', G.sleepLeft <= 0); if (G.sleepLeft > 0 && G._sleepAlerts === undefined) G._sleepAlerts = G.alerts().length; if (G.sleepLeft <= 0) G._sleepAlerts = undefined; }
@@ -332,13 +355,13 @@ requestAnimationFrame(frame);
 G.frame = (now) => frame(now, true);   // test hook: step the loop by hand
 
 // ---------- saving ----------
-G.save = () => { try { const S = G.S; if (!S || S.over) return; const o = { S: serialize(S), items: G.items.map((i) => ({ id: i.id, type: i.type, zone: i.zone, x: i.x, z: i.z, where: i.where, rot: i.rot })), car: { ...G.car, cargo: G.car.cargo.map((i) => i.id) }, ship: { ...G.ship, cargo: G.ship.cargo.map((i) => i.id) }, p: { x: P.pos.x, z: P.pos.z, zone: P.zone, carry: P.carry ? P.carry.id : 0 }, fol: G.followers.map((f) => f.site.id), done: G.done, next: G.nextEventAt, seq: G.itemSeq }; localStorage.setItem('mk2-save', JSON.stringify(o)); } catch (e) { /* storage may be blocked */ } };
+G.save = () => { try { const S = G.S; if (!S || S.over) return; const o = { S: serialize(S), items: G.items.map((i) => ({ id: i.id, type: i.type, zone: i.zone, x: i.x, z: i.z, where: i.where, rot: i.rot })), car: { ...G.car, cargo: G.car.cargo.map((i) => i.id) }, dig: { x: G.dig.x, z: G.dig.z, yaw: G.dig.yaw, load: G.dig.load }, ship: { ...G.ship, cargo: G.ship.cargo.map((i) => i.id) }, p: { x: P.pos.x, z: P.pos.z, zone: P.zone, carry: P.carry ? P.carry.id : 0 }, fol: G.followers.map((f) => f.site.id), done: G.done, next: G.nextEventAt, seq: G.itemSeq }; localStorage.setItem('mk2-save', JSON.stringify(o)); } catch (e) { /* storage may be blocked */ } };
 G.clearSave = () => { try { localStorage.removeItem('mk2-save'); } catch (e) {} };
 G.hasSave = () => { try { return !!localStorage.getItem('mk2-save'); } catch (e) { return false; } };
 function loadGame() {
   const o = JSON.parse(localStorage.getItem('mk2-save')); G.S = deserialize(o.S); world.baseHit = true; installActions(G); installEvents(G); G.done = o.done || {}; G.nextEventAt = o.next; G.itemSeq = o.seq;
   const byId = {}; for (const i of o.items) { const it = G.spawnItem(i.type, i.zone, i.x, i.z, i.where); it.id = i.id; it.rot = i.rot; byId[i.id] = it; }
-  Object.assign(G.car, o.car, { cargo: o.car.cargo.map((id) => byId[id]).filter(Boolean) }); Object.assign(G.ship, o.ship, { cargo: o.ship.cargo.map((id) => byId[id]).filter(Boolean), vx: 0, vz: 0, vy: 0, alt: 0 });
+  Object.assign(G.car, o.car, { cargo: o.car.cargo.map((id) => byId[id]).filter(Boolean) }); if (o.dig) Object.assign(G.dig, o.dig, { v: 0, prog: 0, dig: 0 }); Object.assign(G.ship, o.ship, { cargo: o.ship.cargo.map((id) => byId[id]).filter(Boolean), vx: 0, vz: 0, vy: 0, alt: 0 });
   P.zone = o.p.zone; G.S.zone = P.zone; world.setZone(P.zone); P.pos.set(o.p.x, groundY(P.zone, o.p.x, o.p.z), o.p.z); G.regoPos.set(o.p.x + 1.5, P.pos.y, o.p.z + 1.5); P.carry = byId[o.p.carry] || null;
   G.spawnSurvivors(); for (const id of o.fol) G.follow(SITES.find((s) => s.id === id));
   $('#title').classList.add('hidden'); ui.showHud(true); G.state = 'play'; G.simOn = true; ui.bubble('Welcome back! I kept everything just as you left it.', 'joy', 8);
