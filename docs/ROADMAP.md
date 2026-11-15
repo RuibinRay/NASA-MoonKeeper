@@ -596,3 +596,27 @@ The Map was white blobs on brown. It is now its own file, `js/mars/map.js`, and 
 **What kind of fact each is** is in MARS_SCIENCE.md, section 9. Several of these come from general knowledge of Mars and were not checked against a source in this pass; that list says which.
 
 **Checked.** `node tools/mars_test.mjs`: 161 checks (18 new). In the browser: each new place seen and found, the clouds by day and at dawn, Earth before sunrise, Phobos at night, no errors. Frame time could not be measured reliably in a background tab; the number of triangles drawn is unchanged (about 590,000 at the base).
+
+### Survive on Mars (milestone 3, first mission)
+
+Mars can now be won and lost. The mission page offers two ways to play Mars: **Explore** (as before: no ending) and **Survive on Mars**.
+
+**The mission.** Hold the outpost for 7 sols until the supply lander arrives. The tanks start low (12 kg of oxygen, 60 L of water, 36 kg of food, a battery about a third full), the panels are dusty, and there are 5 spare parts in the depot and 4 more still packed in the lander.
+
+**The storm.** A regional dust storm arrives in the second sol and stays about three sols, with the dust at 4.8 to 5.6 (the 2007 storm at Opportunity was above 5.5; the 2018 one reached 10.8). The solar field then makes about a third of its power. REGO warns of it from the start.
+
+**Things break.** Seven to thirteen breakdowns, one every half to one sol: the oxygen plant's filter, the heat pump, the air scrubber, the ice well's pump, a battery module, a row of solar tables, the dish, the greenhouse lamps. Each stops what that machine does. The first is always one that matters to life. A repair is done at the building's door, uses spare parts and takes time (half as long again in the storm). The breakdowns are made up for the game and the ending says so.
+
+**Choices.** When power is short REGO says what to switch off first (laboratory, greenhouse, radio, garage, living quarters, medical bay) and never names life support, heat, oxygen or water. Brushing the panels before and after the storm, and fetching the parts from the lander, both cost time.
+
+**Winning and losing.** The crew's health falls with no oxygen, stale air, cold rooms, no water or no food; at zero the mission is lost and the end screen names the cause, what led to it and what to do next time. Reaching the end of sol 7 wins. The end screen gives a grade from the crew's worst moment, the hours without full power and how much was mended.
+
+**Saves.** The survival mission has its own save, apart from Mars exploring and from the Moon.
+
+**Proved by playing it out** (`node tools/mars_survive_test.mjs`, 52 checks, 24 seeds, in steps of six minutes):
+- a player who does nothing loses every time, between sol 2.9 and 3.8;
+- a player who switches things off but mends nothing loses every time;
+- a careful player (fetches the parts, brushes the panels, mends what breaks, switches off what can wait in the storm) wins every time, with the crew at full health and no brownout;
+- mending everything but never switching anything off still wins, but with about 23 hours of brownout, rooms down to 4°C and a clearly lower grade. Load-shedding costs comfort and grade in this first mission; it does not yet decide life and death.
+
+**Not in this mission.** No surprise event cards, no crew jobs, no training, no story, and the supply lander is not shown landing. Repairs are a wait with a progress bar, not a hands-on job. The new texts are in English only.

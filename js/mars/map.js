@@ -43,7 +43,7 @@ export function clampView(v) { const lim = Math.max(0, 830 - v.span * 0.5); retu
 
 export function makeMarsMap(env) {
   const { G, ui, pill, INFO, SHORT, POI, TOUR } = env, P = G.player, cam = G.cam; let relief = null, regionCv = null, planetCv = null; const trail = []; let hits = [];
-  const S = () => env.state(), status = (id) => { const s = S(); return !s ? 'ok' : LOADS[id] && !s.on[id] ? 'off' : LOADS[id] && s.flow.eff < 1 ? 'low' : 'ok'; };
+  const S = () => env.state(), status = (id) => { const s = S(); return !s ? 'ok' : s.fault && (s.fault[id] || (id === 'power' && (s.fault.battery || s.fault.solar))) ? 'bad' : LOADS[id] && !s.on[id] ? 'off' : LOADS[id] && s.flow.eff < 1 ? 'low' : 'ok'; };
   const text = (c, s, x, y, col = '#fff', font = '600 11px Inter,sans-serif', align = 'center') => { c.save(); c.setLineDash([]); c.font = font; c.textAlign = align; c.textBaseline = 'middle'; c.lineWidth = 3; c.lineJoin = 'round'; c.strokeStyle = 'rgba(20,8,4,.88)'; c.strokeText(s, x, y); c.fillStyle = col; c.fillText(s, x, y); c.restore(); };
   const metres = (m) => (m < 0 ? '−' : '') + Math.abs(Math.round(m)).toLocaleString() + ' m';
 
@@ -87,7 +87,7 @@ export function makeMarsMap(env) {
     { const x = X(T.REACTOR.x), z = Z(T.REACTOR.z), r = Math.max(3.5, 2.6 * sc); c.fillStyle = '#ffd257'; c.strokeStyle = '#2a160e'; c.lineWidth = 1; c.beginPath(); c.arc(x, z, r, 0, TAU); c.fill(); c.stroke(); c.fillStyle = '#2a160e'; c.beginPath(); c.arc(x, z, r * 0.35, 0, TAU); c.fill(); if (big) hits.push({ x, y: z, r: r + 6, id: 'reactor', kind: 'poi' }); }
     { const x = X(T.DRILL.x), z = Z(T.DRILL.z), r = Math.max(3, 1.8 * sc); c.fillStyle = '#4da3ff'; c.strokeStyle = '#2a160e'; c.lineWidth = 1; c.beginPath(); c.moveTo(x, z - r); c.lineTo(x + r, z); c.lineTo(x, z + r); c.lineTo(x - r, z); c.closePath(); c.fill(); c.stroke(); if (big) hits.push({ x, y: z, r: r + 6, id: 'drill', kind: 'poi' }); }
     // the 14 buildings: coloured by what they are part of; red and crossed when switched off, amber when short of power
-    for (const b of T.BUILDINGS) { const x = X(b.x), z = Z(b.z), st = status(b.id), col = SYSTEMS[SYS_OF[b.id]][0];
+    for (const b of T.BUILDINGS) { const x = X(b.x), z = Z(b.z), st = status(b.id) === 'bad' ? 'off' : status(b.id), col = SYSTEMS[SYS_OF[b.id]][0];
       if (G.goal && G.goal.id === b.id) { shape(c, b, x, z, sc, 4); c.fillStyle = 'rgba(255,210,31,.35)'; c.fill(); }
       shape(c, b, x, z, sc); c.fillStyle = st === 'off' ? '#3a1c16' : col; c.fill(); c.strokeStyle = st === 'off' ? '#ff5a4a' : st === 'low' ? '#ffb347' : '#2a160e'; c.lineWidth = st === 'ok' ? 1 : 2; c.stroke();
       if (st === 'off') { const r = Math.max(3, (b.r || 5) * sc * 0.5); c.strokeStyle = '#ff5a4a'; c.lineWidth = 2; c.beginPath(); c.moveTo(x - r, z - r); c.lineTo(x + r, z + r); c.moveTo(x + r, z - r); c.lineTo(x - r, z + r); c.stroke(); }
@@ -165,7 +165,7 @@ export function makeMarsMap(env) {
   // ---------- the Map window ----------
   const BASE = { cx: 10, cz: 36, span: 125 }, AREA = { cx: 0, cz: 0, span: 830 };
   const describe = (h) => { const s = S(), d = (x, z) => `${Math.round(Math.hypot(x - P.pos.x, z - P.pos.z))} m`;
-    if (h.kind === 'building') { const b = T.B[h.id], st = status(h.id); return `<b>${INFO[h.id].name}</b> · ${d(b.door[0], b.door[1])}<br>${SYSTEMS[SYS_OF[h.id]][1]} · ${st === 'off' ? tt('switched off') : st === 'low' ? tt('short of power') : LOADS[h.id] ? tt`running, ${s.flow.use[h.id].toFixed(1)} kW` : tt('working')}<br><i>${tt('Click to be shown the way')}</i>`; }
+    if (h.kind === 'building') { const b = T.B[h.id], st = status(h.id); return `<b>${INFO[h.id].name}</b> · ${d(b.door[0], b.door[1])}<br>${SYSTEMS[SYS_OF[h.id]][1]} · ${st === 'bad' ? tt('broken: mend it at its door') : st === 'off' ? tt('switched off') : st === 'low' ? tt('short of power') : LOADS[h.id] ? tt`running, ${s.flow.use[h.id].toFixed(1)} kW` : tt('working')}<br><i>${tt('Click to be shown the way')}</i>`; }
     if (h.kind === 'poi') { const p = POI.find((q) => q.id === h.id), found = s && s.seen[h.id]; return found ? `<b>${p.name}</b> · ${d(p.x, p.z)}<br><i>${tt('Click to be shown the way')}</i>` : `<b>${tt('Something to find')}</b> · ${d(p.x, p.z)}<br><i>${tt('Click to be shown the way')}</i>`; }
     if (h.kind === 'rover') return `<b>${tt('My Rover')}</b> · ${Math.round(s.car.charge * 100)}%${s.car.charging ? ' · ' + tt('charging') : ''}<br><i>${tt('Click to be shown the way')}</i>`;
     if (h.kind === 'crew') return `<b>${h.name}</b> · ${tt('outdoors')}`; return h.name || ''; };

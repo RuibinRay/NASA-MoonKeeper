@@ -35,6 +35,7 @@ export const PLANT = {
   GREEN_KG_SOL: 0.3,                      // fresh food from the greenhouse
 };
 
+const NONE = {}, STOPS = { isru: 1, water: 1, greenhouse: 1, thermal: 1, comms: 1 };   // which broken machines stand still (a broken scrubber bed still lets Life Support clean water)
 export function createMars(seed = 1) {
   let a = seed >>> 0; const rng = () => { a = (a + 0x6d2b79f5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const S = {
@@ -87,17 +88,18 @@ export function earthElongation(S, t = S.t) { const th = 2.0 + (2 * Math.PI * (t
 // Everything that flows right now: power in and out, oxygen, water, food. Rates are per Earth hour unless named.
 export function marsFlows(S) {
   const sn = marsSun(S), G = groundLight(S, sn), perSol = MARS.SOL_H / 24;
-  const solar = (G * PLANT.ARRAY_M2 * PLANT.CELL_EFF * (1 - S.panelDust)) / 1000, reactor = PLANT.REACTOR_KW;
+  const bad = S.fault || NONE, runs = (k) => S.on[k] && !bad[k];   // a machine works if it is switched on and not broken
+  const solar = ((G * PLANT.ARRAY_M2 * PLANT.CELL_EFF * (1 - S.panelDust)) / 1000) * (bad.solar ? 0.7 : 1), reactor = PLANT.REACTOR_KW, cap = S.batteryCap * (bad.battery ? 0.6 : 1);   // a jammed row of tables, a dead battery module
   const solarClear = (sn.top * Math.max(0, sn.u) * skyFactor(0.45, sn.u) * PLANT.ARRAY_M2 * PLANT.CELL_EFF) / 1000;   // what clean panels would make under a clear sky right now
-  const use = {}; let demand = 0; for (const k in LOADS) { use[k] = S.on[k] ? LOADS[k] : 0; demand += use[k]; }
-  const heatExtra = S.on.thermal ? clamp((-40 - airTemp(S, sn)) / 50, 0, 1) * 2 : 0; use.thermal += heatExtra; demand += heatExtra;   // colder outside, more heating
+  const use = {}; let demand = 0; for (const k in LOADS) { use[k] = S.on[k] && !(bad[k] && STOPS[k]) ? LOADS[k] : 0; demand += use[k]; }   // a machine that has stopped draws nothing
+  const heatExtra = runs('thermal') ? clamp((-40 - airTemp(S, sn)) / 50, 0, 1) * 2 : 0; use.thermal += heatExtra; demand += heatExtra;   // colder outside, more heating
   const chargers = S.car.charging && S.on.garage ? 3 : 0; demand += chargers;
   const supply = solar + reactor, net = supply - demand, eff = S.battery > 0.01 || net >= 0 ? 1 : clamp(supply / Math.max(demand, 0.1), 0, 1);
-  const o2Make = S.on.isru ? PLANT.O2_KG_H * eff : 0, o2Use = (MARS.O2_PP * S.crew) / 24, o2Net = o2Make - o2Use;
-  const wUse = (MARS.H2O_PP * S.crew) / 24, wBack = S.on.lifesupport ? wUse * PLANT.RECYCLE * eff : 0, wWell = S.on.water ? (PLANT.WATER_L_SOL / MARS.SOL_H) * eff : 0, wNet = wWell + wBack - wUse;
-  const foodUse = (MARS.FOOD_PP * S.crew) / 24, warm = clamp((S.habTemp - 2) / 10, 0, 1), foodGrow = S.on.greenhouse ? (PLANT.GREEN_KG_SOL / MARS.SOL_H) * eff * warm : 0, spoil = S.on.storage ? 0 : 0.2, foodNet = foodGrow - foodUse - spoil;   // plants stop growing in the cold; unchilled food spoils
+  const o2Make = runs('isru') ? PLANT.O2_KG_H * eff : 0, o2Use = (MARS.O2_PP * S.crew) / 24, o2Net = o2Make - o2Use;
+  const wUse = (MARS.H2O_PP * S.crew) / 24, wBack = S.on.lifesupport ? wUse * PLANT.RECYCLE * eff : 0, wWell = runs('water') ? (PLANT.WATER_L_SOL / MARS.SOL_H) * eff : 0, wNet = wWell + wBack - wUse;
+  const foodUse = (MARS.FOOD_PP * S.crew) / 24, warm = clamp((S.habTemp - 2) / 10, 0, 1), foodGrow = runs('greenhouse') ? (PLANT.GREEN_KG_SOL / MARS.SOL_H) * eff * warm : 0, spoil = S.on.storage ? 0 : 0.2, foodNet = foodGrow - foodUse - spoil;   // plants stop growing in the cold; unchilled food spoils
   const days = (amt, rate) => (rate < 0 ? amt / -rate / 24 : Infinity);
-  return { sun: sn, G, solar, solarClear, reactor, supply, demand, net, eff, use, chargers, cap: S.batteryCap, battHours: net < 0 ? S.battery / -net : Infinity,
+  return { sun: sn, G, solar, solarClear, reactor, supply, demand, net, eff, use, chargers, cap, link: runs('comms'), battHours: net < 0 ? S.battery / -net : Infinity,
     o2Make, o2Use, o2Net, o2Days: days(S.o2, o2Net), wUse, wBack, wWell, wNet, waterDays: days(S.water, wNet), foodUse, foodGrow, foodNet, foodDays: days(S.food, foodNet),
     tempC: airTemp(S, sn), pressure: sitePressure(), tau: S.tau, direct: directFactor(S.tau, Math.max(sn.u, 0)), doseRate: MARS.RAD_OUT / 24, lightMin: lightMinutes(S), frost: 0, leaks: [], perSol };
 }
@@ -105,16 +107,17 @@ export function marsFlows(S) {
 // Move the outpost forward by dt Earth hours.
 export function marsStep(S, dt) {
   const F = (S.flow = marsFlows(S));
-  S.battery = clamp(S.battery + F.net * dt, 0, S.batteryCap);
+  S.battery = clamp(S.battery + F.net * dt, 0, F.cap);
   S.o2 = clamp(S.o2 + F.o2Net * dt, 0, S.o2Cap); S.water = clamp(S.water + F.wNet * dt, 0, S.waterCap); S.food = Math.max(0, S.food + F.foodNet * dt);
   S.panelDust = clamp(S.panelDust + (PLANT.DUST_PER_SOL * (1 + S.tau) * dt) / MARS.SOL_H, 0, 0.6);   // dustier air, faster build-up
   S.tau += (S.tauWant - S.tau) * Math.min(1, dt / 6); S.windDir += dt * 0.02; S.wind = 3 + 2.5 * Math.sin(S.t * 0.21) + 1.5 * Math.sin(S.t * 0.057) + S.tau * 1.5;
   S.dose += ((S.zone === 'top' ? MARS.RAD_OUT : MARS.RAD_IN) / 24) * dt; if (S.zone === 'top') S.stats.evaHours += dt;
   // the rooms: warmed by the heat pump, or cooling slowly towards the cold outside; the air goes stale without the scrubbers
-  const heated = S.on.thermal && F.eff > 0.5; S.habTemp += ((heated ? 21 : F.tempC) - S.habTemp) * (1 - Math.exp(-dt * (heated ? 0.8 : 0.02)));
-  S.co2 = clamp(S.co2 + (S.on.lifesupport && F.eff > 0.5 ? -0.6 : 0.02 * S.crew) * dt, 0.05, 8);
+  const bad = S.fault || NONE, heated = S.on.thermal && !bad.thermal && F.eff > 0.5; S.habTemp += ((heated ? 21 : F.tempC) - S.habTemp) * (1 - Math.exp(-dt * (heated ? 0.8 : 0.02)));
+  S.co2 = clamp(S.co2 + (S.on.lifesupport && !bad.lifesupport && F.eff > 0.5 ? -0.6 : 0.02 * S.crew) * dt, 0.05, 8);
   const hurt = (S.o2 <= 0 ? 12 : 0) + (S.co2 > 3 ? 3 : 0) + (S.habTemp < 5 ? 2 : 0) + (S.water <= 0 ? 3 : 0) + (S.food <= 0 ? 1 : 0);
-  S.health = clamp(S.health + (hurt ? -hurt : S.on.medical ? 2 : 0.5) * dt, 1, 100);   // this preview has no ending: health never reaches zero
+  S.health = clamp(S.health + (hurt ? -hurt : S.on.medical ? 2 : 0.5) * dt, S.hard ? 0 : 1, 100);   // free exploring has no ending: health stops at 1. A survival mission (S.hard) can be lost
+  if (F.eff < 1) S.stats.brownHours = (S.stats.brownHours || 0) + dt;
   if (S.car.charging && S.on.garage) { S.car.charge = Math.min(1, S.car.charge + 0.3 * dt * F.eff); if (S.car.charge >= 1) S.car.charging = false; }
   S.t += dt; S.stats.sols = Math.floor(S.t / MARS.SOL_H);
   return F;

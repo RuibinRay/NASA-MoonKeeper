@@ -9,8 +9,9 @@ import { WHO } from '../ui.js';
 import { MARS, LOADS, PLANT, createMars, marsFlows, marsStep, marsClock, marsSerialize, marsDeserialize } from './sim.js';
 import * as T from './terrain.js';
 import { makeMarsMap } from './map.js';
+import { makeMission } from './mission.js';
 
-const $ = (s) => document.querySelector(s), clamp = (x, a, b) => Math.max(a, Math.min(b, x)), SAVE = 'mk2-mars-save';
+const $ = (s) => document.querySelector(s), clamp = (x, a, b) => Math.max(a, Math.min(b, x)), SAVE = 'mk2-mars-save', SAVE_SURV = 'mk2-mars-survive-save';
 const el = (tag, cls, html) => { const d = document.createElement(tag); d.className = cls; if (html) d.innerHTML = html; return d; };
 // What kind of fact is this? Every panel says so.
 const CLS = { obs: ['real', tt('Observed on Mars')], demo: ['demo', tt('Demonstrated')], prop: ['prop', tt('Proposed by NASA studies')], game: ['game', tt('Made for the game')] };
@@ -83,12 +84,14 @@ export function installMars(G, deps) {
   const where = (id) => (id === 'car' ? { id, x: G.car.x, z: G.car.z, name: tt('My Rover') } : T.B[id] ? { id, x: T.B[id].door[0], z: T.B[id].door[1], name: INFO[id].name } : POI.find((p) => p.id === id));
 
   // ---------- time ----------
-  const pass = async (hours, title) => { passing = true; const n = Math.max(4, Math.min(40, Math.ceil(hours / 0.25))); for (let i = 0; i < n; i++) { marsStep(S, hours / n); ui.job(title, (i + 1) / n, '', hrs((hours * (n - i - 1)) / n)); if (i % 4 === 3) await new Promise((r) => setTimeout(r, 40)); } ui.job(null); passing = false; S.stats.jobs++; };
+  const saveKey = () => (S && S.mode === 'survive' ? SAVE_SURV : SAVE);
+  const pass = async (hours, title, rest = false) => { passing = true; const n = Math.max(4, Math.min(40, Math.ceil(hours / 0.25))); for (let i = 0; i < n; i++) { if (MIS.step(hours / n) && (rest || S.over)) { if (!S.over) ui.toast(tt('You are woken: something needs you.'), 'bad'); break; } ui.job(title, (i + 1) / n, '', hrs((hours * (n - i - 1)) / n)); if (i % 4 === 3) await new Promise((r) => setTimeout(r, 40)); } ui.job(null); passing = false; S.stats.jobs++; };
+  const MIS = makeMission({ G, ui, INFO, hrs, kw, state: () => S, pass: (h, t) => pass(h, t) });
   const toMorning = () => { const sn = S.flow.sun; return (((sn.rise + 0.6 - sn.hour + 24) % 24) * MARS.SOL_H) / 24; };
 
   // ---------- alerts and advice ----------
   G.alerts = () => {
-    const F = S.flow, a = [], pct = S.battery / S.batteryCap;
+    const F = S.flow, a = [], pct = S.battery / S.batteryCap; MIS.alerts(a);
     if (F.eff < 1) a.push({ key: 'power', text: tt('POWER IS OUT'), sub: tt('The battery is empty and the machines are slowing'), go: 'power' });
     else if (F.net < 0 && pct < 0.25) a.push({ text: tt('Battery low'), sub: tt`${Math.round(pct * 100)}% · ${hrs(F.battHours)} left`, kind: 'warn', go: 'power' });
     if (F.o2Net < 0 && F.o2Days * 24 / MARS.SOL_H < 3) a.push({ key: 'o2', text: tt('Oxygen running out'), sub: sols((F.o2Days * 24) / MARS.SOL_H), go: 'isru' });
@@ -103,13 +106,13 @@ export function installMars(G, deps) {
   };
   G.pointTo = (id, text) => { const w = where(id); if (!w) return; G.goal = { ...w, zone: 'top', text: text || null }; };
   G.advise = () => {
-    const al = G.alerts(), hot = al.find((a) => a.key) || al[0]; nagT = 0;
+    const al = G.alerts(), hot = al.find((a) => a.key && !a.key.startsWith('fault-')) || al.find((a) => !a.key || !a.key.startsWith('fault-')); nagT = 0; if (MIS.advise(!!(hot && hot.key))) return;
     if (hot) { const why = { power: tt('<b>The power is out.</b> Go to the Power Station: brush the dust off the panels, or switch off something that is not keeping the crew alive.'), o2: tt('<b>We are using oxygen faster than we make it.</b> Check the ISRU Facility is on and has power.'), water: tt('<b>The water is going down.</b> Check the Water Plant and the Life Support Module: one melts new ice, the other cleans used water.'), co2: tt('<b>The air indoors is going stale.</b> The Life Support Module scrubs out carbon dioxide. Switch it back on.'), cold: tt('<b>The rooms are cooling.</b> The Thermal Control Facility needs to be on, and it needs power.') }[hot.key];
       ui.bubble(why || `<b>${hot.text}.</b> ${hot.sub || ''}`, 'worried', 12); G.pointTo(hot.go); return; }
     if (S.seen.cmd && !S.seen.room && !inRoom) { ui.bubble(tt('Your crew is indoors. Walk to the <b>Airlock</b> and press <b>Q</b> to go inside the <b>Command Habitat</b> and meet them.'), 'happy', 12); G.pointTo('airlock'); return; }
     const b = TOUR.find((id) => !S.seen[id]); if (b) { ui.bubble(tt`Everything is running. Let us look at the <b>${INFO[b].name}</b>: ${INFO[b].does} Follow the yellow line on the ground and press <b>E</b> at its door.`, 'happy', 12); G.pointTo(b); return; }
     const p = POI.find((q) => !S.seen[q.id]); if (p) { ui.bubble(tt`You know the whole base now. Take the rover and find the <b>${p.name}</b>. It is ${Math.round(Math.hypot(p.x - P.pos.x, p.z - P.pos.z))} m away. Watch the rover's battery.`, 'happy', 12); G.pointTo(p.id); return; }
-    ui.bubble(tt('You have seen every building and every place on this map. Try the dust control at the Power Station to see what a storm does to the base. Survival, the story and flights between the Moon and Mars come in the next updates.'), 'joy', 14);
+    ui.bubble(tt('You have seen every building and every place on this map. Try the dust control at the Power Station to see what a storm does to the base. Then try <b>Survive on Mars</b> from the mission page.'), 'joy', 14);
   };
   const seen = (id, text, mood = 'happy') => { if (S.seen[id]) return false; S.seen[id] = 1; G.audio.play('ok'); if (text) ui.bubble(text, mood, 14); return true; };
 
@@ -209,7 +212,7 @@ export function installMars(G, deps) {
   G.doAction = async (k) => { if (ui.busy || passing || G.acting) return; const c = G.context()[k]; if (!c) return; G.acting = true; try { await c.run(); } finally { G.acting = false; } };
 
   // ---------- panels ----------
-  const place = (p) => ui.window({ title: p.name, img: `mars/mr_${p.id}`, html: `<p>${p.text}</p><div class="stat"><span>${tt('What kind of fact is this?')}</span><b>${pill(p.cls)}</b></div>` });
+  const place = (p) => MIS.place(p) || ui.window({ title: p.name, img: `mars/mr_${p.id}`, html: `<p>${p.text}</p><div class="stat"><span>${tt('What kind of fact is this?')}</span><b>${pill(p.cls)}</b></div>` });
   const toggle = (id) => ({ label: S.on[id] ? tt`Switch the ${INFO[id].name} off` : tt`Switch the ${INFO[id].name} on`, sub: S.on[id] ? tt`Saves ${kw(LOADS[id])}. Everything it does stops.` : tt`Uses ${kw(LOADS[id])}.`, norec: S.on[id], run: () => { S.on[id] = !S.on[id]; S.flow = marsFlows(S); G.audio.play(S.on[id] ? 'ok' : 'blip'); ui.toast(S.on[id] ? tt`${INFO[id].name}: on.` : tt`${INFO[id].name}: off.`, S.on[id] ? 'good' : ''); } });
   async function panel(id) {
     const I = INFO[id], F = (S.flow = marsFlows(S)), sn = F.sun, first = seen(id), perSol = MARS.SOL_H, st = [[tt('What it does'), I.does], [tt('It needs'), I.needs], [tt('It gives'), I.gives]], act = [];
@@ -218,8 +221,8 @@ export function installMars(G, deps) {
       act.push({ label: tt('Ask REGO what to do next'), run: () => G.advise() }, { label: tt('Open the map'), run: () => bigMap() }); }
     else if (id === 'power') { st.push([tt('Solar field'), tt`${kw(F.solar)} · sunlight on the ground ${Math.round(F.G)} W/m²`], [tt('Fission unit'), kw(F.reactor)], [tt('Being used'), kw(F.demand)], [tt('Battery'), tt`${Math.round(S.battery)} of ${S.batteryCap} kWh${F.net < 0 ? ' · ' + hrs(F.battHours) + tt(' left') : ''}`], [tt('Dust on the panels'), tt`${Math.round(S.panelDust * 100)}% of their power lost`], [tt('Dust in the sky'), tt`${S.tau.toFixed(2)} (${S.tau < 1 ? tt('clear') : S.tau < 2.5 ? tt('dusty') : tt('storm')})`]);
       act.push({ label: tt('Brush the dust off the solar panels'), sub: tt('Takes 2 hours outside.'), disabled: S.panelDust < 0.04, norec: S.panelDust < 0.1, run: async () => { await pass(2, tt('Brushing the solar panels…')); S.panelDust = 0.02; ui.toast(tt('The panels are clean again.'), 'good'); } });
-      for (const [v, name, sub] of [[0.45, tt('Science demo: make the sky clear'), tt('A normal clear day.')], [1.5, tt('Science demo: make the sky dusty'), tt('Dust season: a hazy sky.')], [4, tt('Science demo: make the sky a regional storm'), tt('Like the storms that cover part of the planet most years.')]]) act.push({ label: name, sub: sub + ' ' + tt('The dust thickens or clears over a few hours.'), norec: true, disabled: Math.abs(S.tauWant - v) < 0.01, run: () => { S.tauWant = v; ui.bubble(v > 2 ? tt('<b>Demo storm on its way.</b> Watch the sky, the shadows and the solar power over the next hours. Real storms cannot be switched on or off: this control is here so you can see what dust does.') : tt('The sky will change over the next few hours.'), v > 2 ? 'worried' : 'happy', 12); } }); }
-    else if (id === 'living') { st.push([tt('Rooms'), `${Math.round(S.habTemp)}°C`], [tt('Crew health'), `${Math.round(S.health)}%`]); act.push({ label: tt('Rest until morning'), sub: tt`Time runs on to sunrise (${hrs(toMorning())}). The outpost keeps working.`, disabled: !S.on.living || sn.up && sn.hour < sn.set - 2, norec: true, run: async () => { await ui.fade(true); await pass(toMorning(), tt('Resting…')); await ui.fade(false); ui.bubble(tt('Good morning! The Sun is coming up over the plain.'), 'joy', 8); } }); }
+      if (!MIS.on()) for (const [v, name, sub] of [[0.45, tt('Science demo: make the sky clear'), tt('A normal clear day.')], [1.5, tt('Science demo: make the sky dusty'), tt('Dust season: a hazy sky.')], [4, tt('Science demo: make the sky a regional storm'), tt('Like the storms that cover part of the planet most years.')]]) act.push({ label: name, sub: sub + ' ' + tt('The dust thickens or clears over a few hours.'), norec: true, disabled: Math.abs(S.tauWant - v) < 0.01, run: () => { S.tauWant = v; ui.bubble(v > 2 ? tt('<b>Demo storm on its way.</b> Watch the sky, the shadows and the solar power over the next hours. Real storms cannot be switched on or off: this control is here so you can see what dust does.') : tt('The sky will change over the next few hours.'), v > 2 ? 'worried' : 'happy', 12); } }); }
+    else if (id === 'living') { st.push([tt('Rooms'), `${Math.round(S.habTemp)}°C`], [tt('Crew health'), `${Math.round(S.health)}%`]); act.push({ label: tt('Rest until morning'), sub: tt`Time runs on to sunrise (${hrs(toMorning())}). The outpost keeps working.`, disabled: !S.on.living || sn.up && sn.hour < sn.set - 2, norec: true, run: async () => { await ui.fade(true); await pass(toMorning(), tt('Resting…'), true); await ui.fade(false); ui.bubble(tt('Good morning! The Sun is coming up over the plain.'), 'joy', 8); } }); }
     else if (id === 'lifesupport') st.push([tt('Carbon dioxide indoors'), `${S.co2.toFixed(2)}%`], [tt('Water cleaned and reused'), tt`${(F.wBack * perSol).toFixed(1)} L a sol (${Math.round(PLANT.RECYCLE * 100)}%)`], [tt('The crew breathe'), tt`${(F.o2Use * perSol).toFixed(1)} kg of oxygen a sol`]);
     else if (id === 'water') st.push([tt('In the tanks'), tt`${S.water.toFixed(0)} of ${S.waterCap} L`], [tt('From the ice well'), tt`${(F.wWell * perSol).toFixed(1)} L a sol`], [tt('The crew use'), tt`${(F.wUse * perSol).toFixed(1)} L a sol`]);
     else if (id === 'greenhouse') st.push([tt('Fresh food grown'), tt`${(F.foodGrow * perSol).toFixed(2)} kg a sol`], [tt('The crew eat'), tt`${(F.foodUse * perSol).toFixed(2)} kg a sol`], [tt('Warmth'), S.habTemp > 12 ? tt('good') : tt('too cold: the plants stop growing')]);
@@ -233,7 +236,7 @@ export function installMars(G, deps) {
     else if (id === 'thermal') st.push([tt('Outside'), `${Math.round(F.tempC)}°C`], [tt('Rooms'), `${Math.round(S.habTemp)}°C`], [tt('Today'), tt`${MARS.T_MIN}°C before dawn to ${MARS.T_MAX}°C in the afternoon`]);
     if (LOADS[id]) act.push(id === 'cmd' ? { label: tt('The Command Habitat cannot be switched off'), sub: tt('Its computers run every other building.'), disabled: true } : toggle(id));
     if ((id === 'airlock' || id === 'cmd') && !inRoom) act.unshift({ label: tt('Go inside the Command Habitat'), sub: tt('Through the airlock. Indoors your suit comes off.'), norec: !!S.seen.room, run: goInside });
-    st.push([tt('What kind of fact is this?'), pill(I.cls)]);
+    MIS.panel(id, st, act); st.push([tt('What kind of fact is this?'), pill(I.cls)]);
     await ui.panel(I.name, { stats: st, actions: act, note: I.note, img: `mars/mr_${id}` });
     if (first && id !== 'cmd') { const left = TOUR.filter((b) => !S.seen[b]).length; ui.toast(left === 1 ? tt`${INFO[id].name} visited. 1 building still to see.` : left ? tt`${INFO[id].name} visited. ${left} buildings still to see.` : tt('You have visited all 14 buildings!'), 'good'); }
   }
@@ -249,7 +252,7 @@ export function installMars(G, deps) {
     const w = innerWidth, h = innerHeight, c3 = world.camera, tid = G.goal && G.goal.id;
     for (const id in labels) { const q = labels[id], dist = Math.hypot(q.x - P.pos.x, q.z - P.pos.z), goal = tid === id; v3.set(q.x, world.heightAt(q.x, q.z) + q.up, q.z).project(c3);
       const show = !inRoom && (!q.poi || S.seen[id]) && v3.z < 1 && Math.abs(v3.x) < 1.1 && (goal || dist < (q.poi ? 120 : 48)); q.el.classList.toggle('hidden', !show); if (!show) continue;
-      q.el.style.transform = `translate(${((v3.x + 1) / 2) * w}px,${((1 - v3.y) / 2) * h}px) translate(-50%,-100%)`; const txt = `${q.name}<small>${dist.toFixed(0)} m</small>`; if (q.el.dataset.t !== txt) { q.el.dataset.t = txt; q.el.innerHTML = txt; } q.el.classList.toggle('goal', goal); q.el.classList.toggle('bad', !goal && !!LOADS[id] && !S.on[id]); }
+      q.el.style.transform = `translate(${((v3.x + 1) / 2) * w}px,${((1 - v3.y) / 2) * h}px) translate(-50%,-100%)`; const txt = `${q.name}<small>${dist.toFixed(0)} m</small>`; if (q.el.dataset.t !== txt) { q.el.dataset.t = txt; q.el.innerHTML = txt; } q.el.classList.toggle('goal', goal); q.el.classList.toggle('bad', !goal && ((!!LOADS[id] && !S.on[id]) || MIS.broken(id))); }
     hudT += dt; if (hudT < 0.2) return; hudT = 0;
     const F = S.flow, sn = F.sun, bp = S.battery / S.batteryCap, ck = marsClock(S), perSol = MARS.SOL_H, toSol = (d) => (d * 24) / MARS.SOL_H;
     gauge('power', Math.round(bp * 100) + '%', bp, F.net >= 0 ? tt`+${F.net.toFixed(1)} kW · Sun ${F.solar.toFixed(0)} kW` : tt`${F.net.toFixed(1)} kW · ${hrs(Math.min(F.battHours, 999))} left`, F.eff < 1 ? 2 : F.net < 0 && bp < 0.12 ? 2 : F.net < 0 && bp < 0.3 ? 1 : 0);
@@ -268,7 +271,7 @@ export function installMars(G, deps) {
     $('#carry').innerHTML = P.in === 'car' ? `${IC.car} ${tt('Rover')} ${Math.round(S.car.charge * 100)}%` : `${IC.crew} ${S.crew}`;
     const al = G.alerts().sort((x, y) => (x.key ? 0 : 1) - (y.key ? 0 : 1)), ak = al.map((x) => x.text + x.sub).join('|');
     if (ak !== hud.al) { hud.al = ak; const box = $('#alerts'); box.innerHTML = ''; al.slice(0, 5).forEach((x) => { const d = el('div', 'alert ' + (x.kind || ''), `${x.text}<small>${x.sub || ''}</small>`); d.onclick = () => x.go && G.pointTo(x.go); box.appendChild(d); }); }
-    ui.banner(S.tau > 2.5 ? (S.flow.sun.up ? tt('DUST STORM · the solar field is making very little power') : tt('DUST STORM · after sunrise the solar field will make very little power')) : null, true);
+    ui.banner(S.tau > 2.5 ? (S.flow.sun.up ? tt('DUST STORM · the solar field is making very little power') : tt('DUST STORM · after sunrise the solar field will make very little power')) : null, true); MIS.hud();
     MAP.mini(ui.mm, 340, 340);
   }
   function goal() {
@@ -282,7 +285,7 @@ export function installMars(G, deps) {
   function frame(dt) {
     G.inside = inRoom; G.inCrater = false; S.suitOn = !inRoom; S.zone = inRoom ? 'in' : 'top';   // indoors the sim counts the lower radiation dose
     deps.updatePlayer(dt); MAP.tick(); if (inRoom) T.keepInRoom(P.pos); deps.placeVehicles(dt); deps.updateRego(dt); if (inRoom) { T.keepInRoom(G.regoPos, 1); G.rego.group.position.copy(G.regoPos); } updateCrew(dt); deps.updateCamera(dt);
-    const run = G.simOn && !ui.busy && !G.paused && !passing; if (run) marsStep(S, (dt / S.m.hourLen) * G.speedMul); else if (!passing) S.flow = marsFlows(S);
+    const run = G.simOn && !ui.busy && !G.paused && !passing; if (run) MIS.step((dt / S.m.hourLen) * G.speedMul); else if (!passing) S.flow = marsFlows(S);
     // the rover: it charges on its pad, and warns you before you drive too far to get back
     { const c = G.car, home = Math.hypot(c.x - T.ROVER_PAD.x, c.z - T.ROVER_PAD.z); S.car.charging = S.on.garage && home < 4.6 && Math.abs(c.v) < 0.6 && S.car.charge < 1;
       if (P.in === 'car' && home > 60 && S.car.charge > 0 && S.car.charge < (home / 2600) * 1.3 + 0.05) G.warn('mrange', tt`<b>Turn back now!</b> The rover has ${Math.round(S.car.charge * 100)}% left, and the garage is ${Math.round(home)} m away.`, 'alert', 30000);
@@ -299,13 +302,13 @@ export function installMars(G, deps) {
   }
 
   // ---------- saving: Mars has its own save, apart from the Moon's ----------
-  G.save = () => { try { if (!S || passing) return false; localStorage.setItem(SAVE, JSON.stringify({ v: 1, S: marsSerialize(S), car: { x: G.car.x, z: G.car.z, yaw: G.car.yaw }, p: inRoom ? { x: T.ROOM.out[0], z: T.ROOM.out[1], in: null } : { x: P.pos.x, z: P.pos.z, in: P.in } })); return true; } catch (e) { return false; } };
-  G.clearSave = () => { try { localStorage.removeItem(SAVE); } catch (e) {} };
+  G.save = () => { try { if (!S || passing) return false; localStorage.setItem(saveKey(), JSON.stringify({ v: 1, S: marsSerialize(S), car: { x: G.car.x, z: G.car.z, yaw: G.car.yaw }, p: inRoom ? { x: T.ROOM.out[0], z: T.ROOM.out[1], in: null } : { x: P.pos.x, z: P.pos.z, in: P.in } })); return true; } catch (e) { return false; } };
+  G.clearSave = () => { try { localStorage.removeItem(saveKey()); } catch (e) {} };
 
-  async function start({ load = false } = {}) {
-    let o = null; if (load) { try { o = JSON.parse(localStorage.getItem(SAVE)); } catch (e) { o = null; } }
+  async function start({ load = false, mode = 'explore' } = {}) {
+    let o = null; if (load) { try { o = JSON.parse(localStorage.getItem(mode === 'survive' ? SAVE_SURV : SAVE)); } catch (e) { o = null; } }
     await world.setPlanet('mars'); makeCrew(); inRoom = false; world.mars.setInside(false); G.astro.setSuit(true);
-    S = G.S = o ? marsDeserialize(o.S) : createMars((Math.random() * 2 ** 31) >>> 0); G.planet = 'mars'; G.grav = MARS.GRAVITY; document.body.classList.add('mars'); G.applyVoice?.();
+    S = G.S = o ? marsDeserialize(o.S) : createMars((Math.random() * 2 ** 31) >>> 0); if (!o && mode === 'survive') MIS.begin(); G.planet = 'mars'; G.grav = MARS.GRAVITY; document.body.classList.add('mars'); G.applyVoice?.();
     G.edgeText = tt('That is the edge of this map. The plain goes on for hundreds of kilometres: look at the Region tab of the Map.');
     const car = o ? o.car : { x: T.ROVER_PAD.x, z: T.ROVER_PAD.z, yaw: Math.PI }; Object.assign(G.car, car, { v: 0, cargo: [] }); G.car.dyn = null;
     const p = o ? o.p : T.SPAWN; P.zone = 'top'; P.in = null; P.carry = null; P.vel.set(0, 0, 0); P.pos.set(p.x, world.heightAt(p.x, p.z), p.z); P.face = Math.PI; cam.yaw = 0.35; cam.pitch = 0.16; cam.dist = 9; G.regoPos.set(p.x + 2, P.pos.y, p.z + 1.5); if (o && o.p.in === 'car') { P.in = 'car'; P.pos.set(G.car.x, world.heightAt(G.car.x, G.car.z), G.car.z); }
@@ -318,9 +321,10 @@ export function installMars(G, deps) {
     $('#suit').className = 'glass on'; $('#suit').textContent = tt('SUIT ON'); $('#title').classList.add('hidden'); $('#mission').classList.add('hidden');
     S.flow = marsFlows(S); world.update(0.016, S, P.pos, {}); ui.showHud(true); G.state = 'play'; G.simOn = true; G.save();
     if (o) ui.bubble(tt('Welcome back to Mars! Everything is as you left it.'), 'joy', 8);
+    else if (MIS.on()) MIS.intro();
     else { ui.bubble(tt('<b>Welcome to Mars!</b> This is Arcadia Planitia: a cold, flat plain with ice under the soil. The sky is butterscotch because fine dust hangs in the thin air. Follow the <b>yellow line</b> on the ground to the <b>Command Habitat</b> and press <b>E</b> at its door. Press <b>H</b> whenever you want my advice, and <b>M</b> for the map.'), 'joy', 20); G.pointTo('cmd'); }
   }
   const key = (k) => { if (k === 'Tab') panel('power'); else if (k === 'm') bigMap(); else if (k === 'h') G.advise(); else if (k === 'n') facts(); else if (k === 'v') deps.toggleView(); else if (k === 'p') deps.togglePause(); };
-  return { start, frame, key, hasSave: () => { try { return !!localStorage.getItem(SAVE); } catch (e) { return false; } }, panel, bigMap, map: MAP };
+  return { start, frame, key, hasSave: () => { try { return !!localStorage.getItem(SAVE); } catch (e) { return false; } }, panel, bigMap, map: MAP, mission: MIS };
 }
 export const marsHasSave = () => { try { return !!localStorage.getItem(SAVE); } catch (e) { return false; } };
