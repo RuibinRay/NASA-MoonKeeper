@@ -4,6 +4,7 @@ import { World } from './world.js';
 import { Astronaut, Rego, Bolt } from './actors.js';
 import { UI } from './ui.js';
 import { Sound } from './audio.js';
+import { Voice } from './voice.js';
 import { IC } from './icons.js';
 import { playProcedure, playMini } from './minigames.js';
 import { jobEffect } from './jobfx.js';
@@ -23,7 +24,7 @@ const G = (window.G = {
   car: { x: CAR_PAD[0], z: CAR_PAD[1], yaw: 1.2, v: 0, cargo: [], max: 4 }, ship: { x: SHIP_PAD[0], z: SHIP_PAD[1], y: 0, yaw: 1.2, vx: 0, vz: 0, vy: 0, alt: 0, cargo: [], max: 2 },
   items: [], followers: [], crew: {}, siteNpc: {}, itemSeq: 1,
 });
-G.audio = new Sound(); G.world = new World(canvas); G.ui = new UI(G);
+G.audio = new Sound(); G.voice = new Voice(() => G.audio.on); G.world = new World(canvas); G.ui = new UI(G);
 G.astro = new Astronaut(0xff7a1a); G.rego = new Rego(); G.astro.lamp.visible = true; G.world.scene.add(G.astro.group, G.rego.group);
 G.lampMounts = [G.astro, G.rego].map((a) => { const m = new THREE.Group(); m.add(a.lamp, a.lamp.target); G.world.scene.add(m); return [m, a.group]; });   // lamps outside the bodies: hiding a body must not change the light count
 const P = G.player, cam = G.cam, world = G.world, ui = G.ui;
@@ -214,7 +215,8 @@ const runJob = ({ title, hours, steps = ['Working…'], site, onStep, pose = 'wo
     if (t < tw) { cam.pitch += (0.34 - cam.pitch) * dt * 2; cam.dist += (7 - cam.dist) * dt * 2; }   // walking over: just settle
     else { const sh = J.shots || (J.shots = jobShots(sp)), s = k < 0.55 ? sh.A : sh.B, deepZ = P.zone === 'deep', ez = Math.min(1, dt * (k < 0.55 ? 2.2 : 1.5));   // second angle for the second half
       cam.yaw += wrapA(s.yaw + Math.sin(t * 0.33) * 0.1 - cam.yaw) * ez; cam.pitch += ((J.high ? 0.03 : deepZ ? 0.3 : 0.36) - cam.pitch) * dt * 2; cam.dist += (s.d * (1 - 0.1 * k) - cam.dist) * ez;   // a slow drift and push-in, never a spin
-      J.fk = Math.min(1, (J.fk || 0) + dt * 1.6); J.focus = J.fk * sh.f; J.high = workY - P.pos.y > 3; J.lift = J.high ? (workY - P.pos.y - 1.75) * 0.3 * J.fk : -0.3 * J.fk; }   // work overhead: look up at it from low down if (Math.random() < dt * (tool === 'weld' ? 9 : 3) && pose === 'work' && t > tw) G.audio.play('step');
+      J.fk = Math.min(1, (J.fk || 0) + dt * 1.6); J.focus = J.fk * sh.f; J.high = workY - P.pos.y > 3; J.lift = J.high ? (workY - P.pos.y - 1.75) * 0.3 * J.fk : -0.3 * J.fk; }   // work overhead: look up at it from low down
+      if (Math.random() < dt * (tool === 'weld' ? 9 : 3) && pose === 'work' && t > tw) G.audio.play('step');
     ui.job(title, k, t < tw ? 'Walking over…' : steps[Math.min(steps.length - 1, Math.floor(k * steps.length))], hrs ? `${fmt.hrs(Math.max(0, hrs * (1 - k)))} to go` : ''); onStep?.(k);
     if (k >= 1) { G.jobTick = null; G.jobbing = null; world.sparks(null); G.rego.work = false; G.rego.workAim = undefined; ui.job(null); cam.pitch = pitch0; cam.dist = dist0; S.stats.jobs++; G.audio.play('ok'); res(); }
   };
@@ -268,6 +270,8 @@ function fpsTick(now) {
 }
 world.setQuality(G.qLevel()); G._fpsTick = fpsTick;   // test hook
 G.setGuide = (on) => { G.guide = !!on; world.guideOn = G.guide; try { localStorage.setItem('mk-guide', G.guide ? '1' : '0'); } catch (e) {} };
+G.voicePref = stored('mk-voice', ''); G.applyVoice = () => { G.voice.on = G.voicePref ? G.voicePref === '1' : !!G.S && G.S.mode === 'cadet'; if (!G.voice.on) G.voice.stop(); };
+G.setVoice = (on) => { G.voicePref = on ? '1' : '0'; store('mk-voice', G.voicePref); G.applyVoice(); if (on) G.voice.say('Hello! I am REGO. I will read my lines aloud for you.'); };
 G.quiz = stored('mk-quiz', '1') === '1'; G.setQuiz = (on) => { G.quiz = !!on; store('mk-quiz', on ? '1' : '0'); };
 G.audio.music = stored('mk-music', '1') === '1'; G.setMusic = (on) => { G.audio.setMusic(on); store('mk-music', on ? '1' : '0'); };
 G.setSound = (on) => { if (G.audio.on !== !!on) G.audio.toggle(); $('#b-sound').innerHTML = G.audio.on ? IC.sound : IC.mute; };
@@ -487,7 +491,7 @@ G.save = (force) => { try { const S = G.S; if (!S || S.over) return false; if (G
 G.clearSave = () => { try { localStorage.removeItem('mk2-save'); } catch (e) {} };
 G.hasSave = () => { try { return !!localStorage.getItem('mk2-save'); } catch (e) { return false; } };
 function loadGame() {
-  const o = JSON.parse(localStorage.getItem('mk2-save')); G.S = deserialize(o.S); world.baseHit = true; installActions(G); installEvents(G); G.done = o.done || {}; G.nextEventAt = o.next; G.itemSeq = o.seq;
+  const o = JSON.parse(localStorage.getItem('mk2-save')); G.S = deserialize(o.S); G.applyVoice(); world.baseHit = true; installActions(G); installEvents(G); G.done = o.done || {}; G.nextEventAt = o.next; G.itemSeq = o.seq;
   const byId = {}; for (const i of o.items) { const it = G.spawnItem(i.type, i.zone, i.x, i.z, i.where); it.id = i.id; it.rot = i.rot; byId[i.id] = it; }
   Object.assign(G.car, o.car, { cargo: o.car.cargo.map((id) => byId[id]).filter(Boolean) }); if (o.dig) Object.assign(G.dig, o.dig, { v: 0, prog: 0, dig: 0 }); Object.assign(G.ship, o.ship, { cargo: o.ship.cargo.map((id) => byId[id]).filter(Boolean), vx: 0, vz: 0, vy: 0, alt: 0 });
   P.zone = o.p.zone; G.S.zone = P.zone; world.setZone(P.zone); P.pos.set(o.p.x, groundY(P.zone, o.p.x, o.p.z), o.p.z); G.regoPos.set(o.p.x + 1.5, P.pos.y, o.p.z + 1.5); P.carry = byId[o.p.carry] || null;
@@ -516,7 +520,7 @@ document.querySelectorAll('.pillar').forEach((p) => p.insertAdjacentHTML('afterb
 if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = () => { G.audio.init(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
 async function start(modeKey, skip, seed) {
   G.audio.init(); G.audio.play('ok'); G.clearSave();
-  G.S = createSim(modeKey, seed || ((Math.random() * 2 ** 31) >>> 0)); installActions(G); installEvents(G);
+  G.S = createSim(modeKey, seed || ((Math.random() * 2 ** 31) >>> 0)); G.applyVoice(); installActions(G); installEvents(G);
   P.pos.set(SPAWN.x, world.heightAt(SPAWN.x, SPAWN.z), SPAWN.z); G.regoPos.set(SPAWN.x + 2, P.pos.y, SPAWN.z + 1.5); world.setZone('top'); G.ship.y = world.heightAt(G.ship.x, G.ship.z);
   $('#title').classList.add('hidden'); $('#mission').classList.add('hidden');
   const free = modeKey === 'unlimited';   // Unlimited: no story comic, straight to training, and nobody is lost
