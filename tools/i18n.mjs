@@ -237,21 +237,26 @@ function wrapAll(dry) {
   return { total, report };
 }
 
-// ---------------------------------------------------------------- the texts in the code and in index.html
+// ---------------------------------------------------------------- the texts in the code and in the pages
+// Every page at the top of the project with marked texts (index.html, science.html...): its data-t texts and its <title>.
+const pages = () => fs.readdirSync(ROOT).filter((f) => f.endsWith('.html') && /\bdata-t\b/.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))).sort();
 function htmlKeys() {
-  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), keys = [];
-  for (const m of html.matchAll(/<([a-zA-Z][\w-]*)\b([^>]*)>/g)) {
-    const [whole, name, attrs] = m;
-    if (/\bdata-t-title\b/.test(attrs)) { const t = attrs.match(/\btitle="([^"]*)"/); if (t) keys.push({ key: t[1], where: 'index.html title' }); }
-    if (/\bdata-t-alt\b/.test(attrs)) { const t = attrs.match(/\balt="([^"]*)"/); if (t) keys.push({ key: t[1], where: 'index.html alt' }); }
-    if (/\bdata-t-aria\b/.test(attrs)) { const t = attrs.match(/\baria-label="([^"]*)"/); if (t) keys.push({ key: t[1], where: 'index.html aria-label' }); }
-    if (!/\bdata-t\b(?!-)/.test(attrs)) continue;
-    // the element's inner HTML, up to its matching close tag
-    let depth = 1, p = m.index + whole.length; const re = new RegExp(`<(/?)${name}\\b[^>]*>`, 'g'); re.lastIndex = p;
-    let mm; while ((mm = re.exec(html))) { depth += mm[1] ? -1 : 1; if (!depth) break; }
-    keys.push({ key: html.slice(p, mm.index).replace(/\s+/g, ' ').trim(), where: 'index.html' });
+  const keys = [];
+  for (const page of pages()) {
+    const html = fs.readFileSync(path.join(ROOT, page), 'utf8');
+    for (const m of html.matchAll(/<([a-zA-Z][\w-]*)\b([^>]*)>/g)) {
+      const [whole, name, attrs] = m;
+      if (/\bdata-t-title\b/.test(attrs)) { const t = attrs.match(/\btitle="([^"]*)"/); if (t) keys.push({ key: t[1], where: `${page} title` }); }
+      if (/\bdata-t-alt\b/.test(attrs)) { const t = attrs.match(/\balt="([^"]*)"/); if (t) keys.push({ key: t[1], where: `${page} alt` }); }
+      if (/\bdata-t-aria\b/.test(attrs)) { const t = attrs.match(/\baria-label="([^"]*)"/); if (t) keys.push({ key: t[1], where: `${page} aria-label` }); }
+      if (!/\bdata-t\b(?!-)/.test(attrs)) continue;
+      // the element's inner HTML, up to its matching close tag
+      let depth = 1, p = m.index + whole.length; const re = new RegExp(`<(/?)${name}\\b[^>]*>`, 'g'); re.lastIndex = p;
+      let mm; while ((mm = re.exec(html))) { depth += mm[1] ? -1 : 1; if (!depth) break; }
+      keys.push({ key: html.slice(p, mm.index).replace(/\s+/g, ' ').trim(), where: page });
+    }
+    const title = html.match(/<title>([^<]*)<\/title>/); if (title) keys.push({ key: title[1], where: `${page} <title>` });
   }
-  const title = html.match(/<title>([^<]*)<\/title>/); if (title) keys.push({ key: title[1], where: 'index.html <title>' });
   return keys;
 }
 export function allKeys() {
