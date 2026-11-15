@@ -1,8 +1,8 @@
 // MOONKEEPER 2 — surprise events. Every solar storm, moonquake and meteoroid strike uses the date of a real recorded event.
 import { STORMS, QUAKES, IMPACTS, METEORITES } from './nasa-events.js';
 import { QUIZ } from './quiz.js';
-import { K, SITES, ROOMS, MOUNTS, FAB_OUT, fmt } from './config.js';
-import { computeFlows, startStorm, runDustShield, note, roomOk, holeTargets, holeRoom } from './sim.js';
+import { K, SYS, STATIONS, SITES, ROOMS, MOUNTS, FAB_OUT, fmt } from './config.js';
+import { computeFlows, startStorm, runDustShield, note, roomOk, working, holeTargets, holeRoom } from './sim.js';
 import { playMini } from './minigames.js';
 
 export function installEvents(G) {
@@ -51,10 +51,17 @@ export function installEvents(G) {
     async breach() { const opts = breachable(); if (!opts.length) return E.dust(); const id = pick(opts).id; G.done.breach = true; breach(id); G.shake = 1; await breachCard(id, 'Air Leak!', 'ev2_breach', null, `The cover of the tunnel into the ${rn(id)} has cracked — the meteor shower weakened it.`); },
     async dust() {
       const s = G.S, low = s.flow.sun.toSunset < 30 || !s.flow.sun.up; s.dust = Math.min(0.92, s.dust + 0.42); const loss = Math.round(s.dust * 75);
+      // a Panel cleaner already on the job, or a Sun that is already down, changes the best answer
+      const n = working(s, 'clean'), cleaning = n > 0, cleaner = cleaning && s.helpers.find((h) => h.role === 'clean'), clearH = Math.ceil((s.dust - 0.02) / (0.03 * Math.max(n, 1)));
+      const [advice, adviceText] = !s.flow.sun.up ? [3, 'The Sun is down, so the panels make nothing until sunrise. Leave it.'] : s.battery > 100 ? [0, 'You have battery to spare. Zap it and stay inside.']
+        : cleaning && clearH <= s.flow.sun.toSunset ? [2, `${cleaner.name} is already the Panel cleaner and will have it clean in about ${clearH} h. Stay inside.`]
+        : cleaning ? [1, `${cleaner.name} is cleaning, but needs about ${clearH} h and the Sun sets in ${Math.round(s.flow.sun.toSunset)} h. Brush it by hand to get the power back before dark.`] : [1, 'Battery is low. Brush it by hand, or give a robot the job.'];
       const i = await ui.card({ art: 'ev2_dust', title: low ? 'Sunset Dust' : 'Dusty Panels', body: `${low ? 'As the Sun sinks, static electricity lifts fine dust off the ground. Old robot landers photographed it glowing on the horizon.' : 'There are no dust storms on the Moon — no air, no wind. But landings and impacts throw dust for kilometres, and static electricity makes it cling.'} A grey film now covers the solar panels: <b>−${loss}% power</b>.`,
-        learn: 'Moon dust is sharp like broken glass and sticks by static electricity. The first Moon walkers found it on everything.', advice: s.battery > 100 ? 0 : 1, adviceText: s.battery > 100 ? 'You have battery to spare. Zap it and stay inside.' : 'Battery is low. Brush it by hand, or give a robot the job.',
-        choices: [{ label: 'Zap it with the dust shield', sub: 'Done in seconds, from indoors.', costs: ['−35 kWh battery'], disabled: s.battery < 35 }, { label: 'Brush it by hand', sub: 'At the Solar Field console.', costs: ['1.5 h topside', 'radiation'] }, { label: 'Give a helper the job', sub: 'Set a robot or crew member to "Panel cleaner" in the Control Center.', costs: ['1 kW for a robot, or food for a person'] }, { label: 'Leave it', costs: [`−${loss}% solar power`] }] });
-      if (i === 0) { runDustShield(s); ui.toast('Dust shield fired (−35 kWh).', 'good'); } else if (i === 1) G.pointTo('solar'); else if (i === 2) G.pointTo('control');
+        learn: 'Moon dust is sharp like broken glass and sticks by static electricity. The first Moon walkers found it on everything.', advice, adviceText,
+        choices: [{ label: 'Zap it with the dust shield', sub: 'Done in seconds, from indoors.', costs: ['−35 kWh battery'], disabled: s.battery < 35 }, { label: 'Brush it by hand', sub: 'At the Solar Field console.', costs: ['1.5 h topside', 'radiation'] },
+          cleaning ? { label: `Let ${cleaner.name} clean it`, sub: `${cleaner.name} is already the Panel cleaner.`, costs: [`About ${clearH} h until the film is gone`] } : { label: 'Give a helper the job', sub: 'Set a robot or crew member to "Panel cleaner" in the Control Center.', costs: ['1 kW for a robot, or food for a person'] },
+          { label: 'Leave it', costs: [s.flow.sun.up ? `−${loss}% solar power` : 'Nothing tonight: panels make no power until sunrise'] }] });
+      if (i === 0) { runDustShield(s); ui.toast('Dust shield fired (−35 kWh).', 'good'); } else if (i === 1) G.pointTo('solar'); else if (i === 2 && !cleaning) G.pointTo('control');
     },
     async quake() {
       const s = G.S, r = pick(QUAKES), roll = rng(), opts = breachable(); G.shake = 2.4; G.audio?.play('boom');
@@ -106,11 +113,15 @@ export function installEvents(G) {
     async drift() { const s = G.S; G.done.drift = true; s.f.commsDown = true; note(s, 'The dish drifted off Earth.', 'bad');
       const i = await ui.card({ art: 'ev2_comms', title: 'Signal Lost', body: 'The dish motor slipped and the beam slid off Earth. Earth has not moved — it hardly ever does in our sky — but the dish must point at it almost perfectly.', learn: 'Your signal takes 1.3 seconds to reach Earth and the reply takes 1.3 more. On Mars the wait is 4 to 24 minutes each way.', choices: [{ label: 'Go and aim the dish again', costs: ['1 h topside'] }, { label: 'Leave it for now', costs: ['No storm warnings'], gains: ['Saves 2 kW'] }] }); if (i === 0) G.pointTo('dish'); },
     async freeze() { const s = G.S; G.done.freeze = true; s.f.heater = true; note(s, 'A heater circuit failed in the cold.', 'bad');
+      // either way the heaters go to max: say what that really costs from where they are now (from OFF it is +5 kW, not +2)
+      const lv0 = s.lv.heat, up = SYS.heat.kw[3] - SYS.heat.kw[lv0], plus = up > 0 ? `+${up} kW: Topside Heaters from ${lv0 ? 'level ' + lv0 : 'OFF'} to max` : 'Topside Heaters stay at max';
       const i = await ui.card({ art: 'ev2_freeze', title: 'Heater Circuit Failure', body: `It is <b>${fmt.temp(s.flow.sun.tempC)}</b> topside. One heater circuit just died, so the machines up there now need one more heater level to stay alive.`, learn: 'With no air to hold heat, the lunar surface drops to about −173°C at night. Machines left unheated can crack.', advice: s.mat > 1 ? 0 : 1, adviceText: s.mat > 1 ? 'Fix the circuit. Extra heat all night is expensive.' : 'Save your materials. Turn the heaters up.',
-        choices: [{ label: 'Fix it at the Heater Hub', costs: ['1 material', '1.5 h topside in the dark', 'Heaters at max (+2 kW) until it is fixed'], disabled: s.mat < 1 }, { label: 'Run the heaters at max instead', costs: ['+2 kW for as long as it is broken'] }] }); s.lv.heat = 3; if (i === 0) { G.pointTo('yard'); ui.toast('REGO has turned the Topside Heaters to max until the circuit is fixed.'); } },
+        choices: [{ label: 'Fix it at the Heater Hub', costs: ['1 material', '1.5 h topside in the dark', `${plus} until it is fixed`], disabled: s.mat < 1 }, { label: 'Run the heaters at max instead', costs: [`${plus} for as long as it is broken`] }] }); s.lv.heat = 3; if (i === 0) { G.pointTo('yard'); ui.toast('REGO has turned the Topside Heaters to max until the circuit is fixed.'); } },
     async distress() { const s = G.S; G.done.distress = true; note(s, 'Picked up distress beacons from three other stations.');
+      // distances from you when you are on the surface (events wait while you drive, so this can fire at an outpost), else from the top of the elevator
+      const from = P.zone === 'top' ? [P.pos.x, P.pos.z] : STATIONS.find((q) => q.id === 'gate').pos, away = (q) => Math.round(Math.hypot(q.pos[0] - from[0], q.pos[1] - from[1]));
       const i = await ui.card({ art: 'ev2_rescue', good: true, title: 'Voices on the Radio', body: `REGO has picked up three weak beacons. Stations from other countries were hit by the same meteor shower — and <b>someone is still alive at each one</b>.<br><br><b>Aurora Station</b> (teal light, far to the north-west) · <b>Sakura Outpost</b> (purple light, north-east) · <b>Chandra Base</b> (green light, south-east).<br><br>Each has crates of materials, food and water. Each has an astronaut who can join your crew — a person works without electricity, but needs food, water and air.`,
-        learn: 'On the real Space Station, crews from many countries live and work together. In space, everyone looks after everyone.', choices: SITES.map((q) => ({ label: `Point the guide beam at ${q.name}`, sub: `${q.whoName}, ${q.job}. ${q.perk}`, costs: [`about ${Math.round(Math.hypot(q.pos[0], q.pos[1]))} m away`] })).concat([{ label: 'Not yet — the station comes first', gains: ['You can go any time: open the Map (M)'] }]) });
+        learn: 'On the real Space Station, crews from many countries live and work together. In space, everyone looks after everyone.', choices: SITES.map((q) => { const d = away(q); return { label: `Point the guide beam at ${q.name}`, sub: `${q.whoName}, ${q.job}. ${q.perk}`, costs: [d < 60 ? 'You are here' : `about ${d} m ${P.zone === 'top' ? 'from you' : 'from the elevator'}`] }; }).concat([{ label: 'Not yet — the station comes first', gains: ['You can go any time: open the Map (M)'] }]) });
       if (i < 3) G.pointTo(SITES[i].id); },
     async gearBreak() { const s = G.S, cold = !s.flow.sun.up; let what; if (!s.f.commsDown && rng() < 0.5) { s.f.commsDown = true; what = 'The dish motor'; } else if (breakPanels(1)) what = 'A solar panel'; else if (!s.f.heater) { s.f.heater = true; what = 'A heater circuit'; } else if (!s.f.commsDown) { s.f.commsDown = true; what = 'The dish motor'; }
       if (!what) return;   // nothing is left topside for the cold to break: no new card, the standing alert says it all
@@ -138,7 +149,8 @@ export function installEvents(G) {
       else { const c = []; if (!s.storm) c.push(['storm', G.done.bigStorm ? 2 : 3.2]); c.push(['meteor', 2.4], ['quake', 1.8]); if (breachable().length) c.push(['breach', 1.2]); if (up || s.flow.sun.nightHours < 20) c.push(['dust', 1.8]); if (!G.done.fire && roomOk(s, 'kitchen')) c.push(['fire', 1]); if (!G.done.co2 && !s.f.scrubber && roomOk(s, 'oxygen')) c.push(['co2', 1.1]); if (roomOk(s, 'tomato') && !G.done.mold) c.push(['mold', 1.1]); if (!G.done.pump && (roomOk(s, 'potato') || roomOk(s, 'tomato'))) c.push(['pump', 1]); if (!G.done.led && (roomOk(s, 'potato') || roomOk(s, 'tomato'))) c.push(['led', 0.8]); if (!G.done.seal && s.wx.runs > 0) c.push(['seal', 1.2]); if (s.flow.commsOn && !G.done.drift) c.push(['drift', 0.8]); if (!up && !G.done.freeze) c.push(['freeze', 1.6]);
         const list = c.filter((x) => x[0] !== G.lastEvent); let tot = list.reduce((a, b) => a + b[1], 0), r = rng() * tot; for (const [k, w] of list) { r -= w; if (r <= 0) { type = k; break; } } type = type || 'meteor'; }
     }
-    G.lastEvent = type; s.stats.events++; G.sleepLeft = 0; await E[type](); await G.askQuestion(type); G.scheduleNext(); G.save?.(true);   // the emergency is settled: save its outcome
+    G.lastEvent = type; s.stats.events++; G.sleepLeft = 0; G.setSpeed?.(1);   // an emergency is decided at normal speed: the cards' oxygen and travel estimates assume ×1
+    await E[type](); await G.askQuestion(type); G.scheduleNext(); G.save?.(true);   // the emergency is settled: save its outcome
   };
   // things the simulation asks the game to handle
   G.processPending = async () => {
