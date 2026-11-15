@@ -185,7 +185,10 @@ export function step(S, dt) {
   }
   if (S.o2 > 0 && S.P < K.AIR_KPA) { made = Math.min(K.AIR_KPA - S.P, 55 * dt); S.P += made; S.o2 = Math.max(0, S.o2 - made * K.O2_PER_KPA); }   // tanks top the hall back up
   S.P = clamp(S.P, 0, K.AIR_KPA);
-  S.flow.o2Leak = S.flow.o2Leak * 0.9 + ((made * K.O2_PER_KPA) / Math.max(dt, 1e-6)) * 24 * 0.1;
+  // Only air escaping through an open hole counts as a daily leak. Refilling a room once it is patched (or unlocked) is a one-off cost:
+  // counted as a leak, it made the alerts forecast "oxygen runs out in 20 h" while the Power Board said 2 days. Smoothed over about 15 game minutes.
+  const holeOpen = ROOMS.some((d) => S.rooms[d.id].hole > 0 && S.rooms[d.id].door), kL = 1 - Math.exp(-dt * 4);
+  S.flow.o2Leak += ((holeOpen ? ((made * K.O2_PER_KPA) / Math.max(dt, 1e-6)) * 24 : 0) - S.flow.o2Leak) * kL;
   // ---- oxygen, water
   S.o2 = clamp(S.o2 + (F.o2Elec + F.o2Isru + F.o2Farm - F.o2Use) * d, 0, S.o2Cap);
   S.water = clamp(S.water + F.wNet * d, 0, S.waterCap);

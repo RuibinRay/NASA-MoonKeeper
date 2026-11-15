@@ -123,6 +123,10 @@ function updateActors(dt) {
 // A target can be a station id, 'car', 'ship', or { zone, x, z, name }.
 G.resolve = (t) => { if (!t) return null; if (typeof t !== 'string') return t; if (t === 'car' || t === 'ship') return { zone: 'top', x: G[t].x, z: G[t].z, name: t === 'car' ? tt('Rover') : tt('Hopper'), id: t }; const s = STATIONS.find((q) => q.id === t); if (s) return { zone: s.zone, x: s.pos[0], z: s.pos[1], name: s.name, id: s.id, r: s.r }; const site = SITES.find((q) => q.id === t); if (site) return { zone: 'top', x: site.pos[0] + 2, z: site.pos[1] + 16, name: site.name, id: site.id, r: 9 }; const room = ROOMS.find((q) => q.id === t); return room ? { zone: 'deep', x: room.door, z: room.side * 9.5, name: room.name, id: t, r: 4 } : null; };
 G.pointTo = (t, text) => { const r = G.resolve(t); if (!r) return; G.goal = { ...r, text: text || null, cb: null, cond: null }; };
+// A job the player chose on an emergency card ("Go and fix it"). REGO's advice and the guide line stay on it until it is done,
+// unless something worse happens (a leak, a storm, a power cut): a panel finishing on the bench must not steal the line.
+G.chooseJob = (t, done, say) => { G.pointTo(t); G.chosen = { t, done, say }; };
+G.chosenJob = () => { const c = G.chosen; if (!c) return null; let fin = true; try { fin = c.done(); } catch (e) { /* the save has changed shape */ } if (fin) { G.chosen = null; return null; } return c; };
 G.goTo = (t, text) => new Promise((res) => { const r = G.resolve(t); G.goal = { ...r, text, cb: res, cond: null }; });
 G.waitFor = (cond, text, t) => new Promise((res) => { const r = G.resolve(t) || {}; G.goal = { ...r, text, cb: res, cond }; });
 function updateGoal() {
@@ -154,6 +158,9 @@ G.ride = async (to) => {
       setTimeout(() => { ui.toast(tt`${f.site.whoName} is safe inside the station and joins your crew! ${f.site.perk}`, 'good'); if (!ui.busy) ui.say([{ who: f.site.who, text: thanks }, { who: 'rego', mood: 'joy', text: tt('Welcome to Tranquility Deep! One more person means more food, water and air every day, so keep an eye on the gauges.') }]); }, 900); } G.followers = []; }
   if (G.simOn) G.simAdvance(0.2);
   await ui.fade(false); G.riding = false;
+  // Arriving somewhere new: no emergency for the first game hour (see G.eventMustWait), and if the guide has nothing left to show
+  // (the elevator was the goal, and it is reached), REGO points at the next job instead of leaving the player with no line.
+  if (G.state === 'play' && G.S) { G._arriveT = G.S.t; setTimeout(() => { if (G.state === 'play' && !ui.busy && !G.riding && !G.goal) G.advise(); }, 2500); }
   if (G.state === 'play') ui.toast(to === 'deep' ? tt('105 m down, inside the lava tube. Under the rock roof it is a steady 17°C with almost no radiation — but there is no air. The station is straight ahead: follow the blue lights.') : tt`Topside. It is ${Math.round(G.S.flow.sun.tempC)}°C out here, and every hour adds a little radiation.`);
 };
 
@@ -538,7 +545,7 @@ async function tickSim(dt) {
   if (!S.suitOn && G.inside) { const pr = S.here && S.rooms[S.here] ? S.rooms[S.here].p : S.P; if (pr < 60) G.warn('thin', pr < 45 ? tt('<b>You cannot breathe in here!</b> Get out of this room, or run to the Suit Lockers!') : tt('The air is getting thin in here. Leave, or put your suit on.'), 'alert', 6000); }
   if (S.fansUntil && S.t >= S.fansUntil) { delete S.extraKw.fans; S.fansUntil = 0; ui.toast(tt('Farm fans back to normal.')); }
   if (S.pending.length) { G.eventBusy = true; await G.processPending(); G.eventBusy = false; }
-  if (S.t >= G.nextEventAt && (S.hours === Infinity || S.hours - (S.t - S.t0) > 5) && !P.in) { G.eventBusy = true; await G.fireEvent(); G.eventBusy = false; }
+  if (S.t >= G.nextEventAt && (S.hours === Infinity || S.hours - (S.t - S.t0) > 5) && !P.in) { const wait = G.eventMustWait(); if (wait) G.nextEventAt = S.t + (wait === 'arrived' ? 1 : 2); else { G.eventBusy = true; await G.fireEvent(); G.eventBusy = false; } }
   G.nagT += dt; const F = S.flow, serious = G.alerts().some((a) => a.kind !== 'warn') || F.eff < 1 || F.o2Days < 0.8 || F.waterDays < 1 || F.foodDays < 1 || S.lv.heat < F.heatNeed;
   if (G.nagT > (serious ? (S.mode === 'cadet' ? 22 : 32) : 85) && $('#rego').classList.contains('hidden') && G.sleepLeft <= 0 && !G.goal?.cb) { G.nagT = 0; const keep = G.goal; G.advise(); if (!serious) G.goal = keep; }
   G.saveT += dt; if (G.saveT > 20 && G.state === 'play' && G.save()) G.saveT = 0;   // if now is a bad moment, try again next frame
