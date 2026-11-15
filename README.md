@@ -116,6 +116,7 @@ js/ui.js, icons.js    interface and hand-drawn icons
 js/minigames.js       dish aiming, air-filter build, fire fighting
 js/nasa-events.js     generated data module (see docs)
 docs/SCIENCE_AND_SOURCES.md   every real number, dataset and source — kept out of the game on purpose
+docs/REFERENCES.md    every dataset, reference and link (Moon, Mars, Science Center) on one page
 tools/                data download/build scripts, art generation, local server, checks (`comment_scan.mjs` finds code hidden inside a comment)
 assets/img, assets/tex        what the game loads   ·   assets/art   full-size art originals (git-ignored)
 ```
@@ -124,6 +125,7 @@ assets/img, assets/tex        what the game loads   ·   assets/art   full-size 
 
 The game shows no logos or citations so the screen stays clean for young players.
 All data sources, real numbers and simplifications are in [docs/SCIENCE_AND_SOURCES.md](docs/SCIENCE_AND_SOURCES.md).
+**Every dataset, reference and link, Moon and Mars, on one page: [docs/REFERENCES.md](docs/REFERENCES.md).**
 
 **For teachers:** a 40-minute lesson plan, the learning goals and the questions the game asks are in [docs/TEACHERS.md](docs/TEACHERS.md), and ready to print at `teachers.html` on the live site.
 
