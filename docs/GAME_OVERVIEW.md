@@ -133,7 +133,7 @@ Everything is done by hand in the world, not from a menu: you walk there, carry 
 | Research | Points from first harvests, new ways of heating ice and the moon-soil experiment buy five upgrades |
 | Experiment | The same seeds grown three ways: hydroponics, treated moon soil, raw moon soil |
 | Events | Solar storms, moonquakes, meteoroid strikes, air leaks, dust, fire, stale air, mold, pump and lamp failures, a drifting dish, a distress call |
-| Questions | After each kind of emergency, one short question about why it happened, with three answers. A right answer earns a research point; a wrong one costs nothing and the card explains |
+| Questions | After each kind of emergency, one short question about why it happened, with three answers. A right answer earns a research point; a wrong one costs nothing and the card explains. The end screen says how many were answered right |
 | REGO | Follows you, lights your work, points at the job, gives advice on H, and tells a real space fact when all is calm |
 | Clock and map | A mission clock with sunset, rescue and storm marks, and a line that shows the temperature outside falling after sunset while the cave stays at 17°C. A map of the surface and of the station |
 | Day and night page | A graph of one whole Moon day with "now", sunset, sunrise and rescue marked, three thermometers (outside, cave, station), and a short explanation of why the Moon is so hot and so cold |
