@@ -40,6 +40,8 @@ export function startSurvival(S) {
 }
 // Where the storm stands: 'before' (with hours to go), 'on', or 'after'.
 export function stormPhase(S, t = S.t) { const st = S.storm; if (!st) return { phase: 'none' }; return t < st.t0 ? { phase: 'before', inH: st.t0 - t } : t < st.t1 ? { phase: 'on', leftH: st.t1 - t } : { phase: 'after' }; }
+// Move a breakdown a third of a sol later, keeping the plan in time order. Too close to the end, it is dropped.
+function postpone(S, id) { const t = S.t + MARS.SOL_H / 3; if (t >= S.deadline - 0.35 * MARS.SOL_H) return; let i = 0; while (i < S.plan.length && S.plan[i].t <= t) i++; S.plan.splice(i, 0, { t, id }); }
 // Why the crew are in danger right now, worst first. Empty when all is well.
 export function dangers(S) { const d = []; if (S.o2 <= 0) d.push('air'); if (S.co2 > 3) d.push('co2'); if (S.habTemp < 5) d.push('cold'); if (S.water <= 0) d.push('water'); if (S.food <= 0) d.push('food'); return d; }
 // Move the mission forward by dt Earth hours. Returns what happened: [{ type: 'fault', id }, { type: 'storm', phase }, { type: 'over', win, cause }].
@@ -47,7 +49,9 @@ export function surviveStep(S, dt) {
   const out = []; if (S.over) return out; const before = stormPhase(S).phase;
   S.tauWant = stormPhase(S).phase === 'on' ? S.storm.tau : 0.5; marsStep(S, dt); S.stats.minBattery = Math.min(S.stats.minBattery, S.battery); S.stats.minRoom = Math.min(S.stats.minRoom ?? 99, S.habTemp); S.stats.minHealth = Math.min(S.stats.minHealth ?? 100, S.health);
   const after = stormPhase(S).phase; if (after !== before) out.push({ type: 'storm', phase: after });
-  while (S.plan.length && S.plan[0].t <= S.t) { const { id } = S.plan.shift(); if (S.fault[id]) continue; S.fault[id] = true; S.faultAt[id] = S.t; S.stats.faults++; out.push({ type: 'fault', id }); }
+  while (S.plan.length && S.plan[0].t <= S.t) { const { id } = S.plan.shift(); if (S.fault[id]) continue;
+    if (S.on[id] === false) { postpone(S, id); continue; }   // a machine that is switched off does not wear out: it breaks later, if it is running by then
+    S.fault[id] = true; S.faultAt[id] = S.t; S.stats.faults++; out.push({ type: 'fault', id }); }
   if (S.health <= 0) { S.over = { win: false, cause: dangers(S)[0] || 'health', t: S.t }; out.push({ type: 'over', ...S.over }); }
   else if (S.t >= S.deadline) { S.over = { win: true, t: S.t }; out.push({ type: 'over', ...S.over }); }
   return out;
@@ -59,8 +63,12 @@ export const canRepair = (S, id) => !!S.fault[id] && S.mat >= FAULTS[id].parts;
 export function repair(S, id) { if (!canRepair(S, id)) return false; S.mat -= FAULTS[id].parts; delete S.fault[id]; if (S.faultAt) delete S.faultAt[id]; S.stats.repairs = (S.stats.repairs || 0) + 1; return true; }
 // Unpack the spare parts still in the lander. Once.
 export function unpackCargo(S) { const n = S.cargo || 0; S.mat += n; S.cargo = 0; return n; }
-// What to switch off first when power is short: the things the crew can do without for a few sols. Never life support, heat, oxygen or water.
+// What to switch off first when power is short: the things the crew can do without for a few sols. Never life support or heat.
 export const SHED = ['lab', 'greenhouse', 'comms', 'garage', 'living', 'medical'].filter((k) => LOADS[k]);
+// The two machines that only fill a tank can rest too, while that tank holds enough: the crew live off the store and the power goes
+// to heat and clean air (both stop below half power). Hours the store lasts with the machine off; it may rest while that is over 1.5 sols.
+export const TANK_LEFT = { isru: (S, F) => S.o2 / Math.max(F.o2Use, 1e-6), water: (S, F) => S.water / Math.max(F.wUse - F.wBack, 1e-6) };
+export const canRest = (S, F, id) => TANK_LEFT[id](S, F) > 1.5 * MARS.SOL_H;
 // How the mission went, as one number from 0 to 100, for the end screen: half for the crew's worst moment,
 // a third for hours without full power, the rest for how much of what broke was mended.
 export function grade(S) {

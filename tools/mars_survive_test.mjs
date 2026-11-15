@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MARS, LOADS, PLANT, createMars, marsStep } from '../js/mars/sim.js';
-import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, dangers, grade, exploreUpkeep } from '../js/mars/survive.js';
+import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, dangers, grade, exploreUpkeep, TANK_LEFT, canRest } from '../js/mars/survive.js';
 import { marsSerialize, marsDeserialize, marsFlows } from '../js/mars/sim.js';
 
 let pass = 0, fail = 0;
@@ -129,6 +129,18 @@ ok(Object.values(FAULTS).reduce((s, f) => s + f.parts, 0) <= MISSION.parts + MIS
   ok(nextA[0] === nextB[0] && nextA[1] === nextB[1], 'after loading, the next random numbers are the ones the saved game would have had');
   ok(!first.includes(nextB[0]), 'not the sequence from the start again'); const C = createMars(41); ok(C.rng() === first[0], 'and the same seed still gives the same start');
   const M = fresh(41), M2 = startSurvival(createMars(41)); ok(JSON.stringify(M.plan) === JSON.stringify(M2.plan), 'so a seed still repeats a mission exactly'); }
+
+// ---- 10. a switched-off building does not break; a tank machine may rest only while its tank holds enough ----
+{ let hit = 0, later = 0, total = 0;
+  for (const seed of SEEDS) { const S = fresh(seed), first = S.plan.find((p) => p.id !== 'battery' && p.id !== 'solar'); if (!first) continue; total++;
+    S.on[first.id] = false; spend(S, first.t - S.t + 0.5); if (S.fault[first.id]) hit++;
+    if (S.plan.some((p) => p.id === first.id && p.t > first.t)) later++; }
+  ok(total > 10 && hit === 0, 'a breakdown never hits a building that is switched off', `${hit} of ${total}`);
+  ok(later > 0, 'it comes later instead, if the building is running by then', `${later} of ${total} moved later`); }
+{ const S = fresh(7), F = marsFlows(S);
+  ok(TANK_LEFT.isru(S, F) > 0 && canRest(S, F, 'isru') === TANK_LEFT.isru(S, F) > 1.5 * SOL, 'the oxygen plant may rest exactly while the tank lasts over a sol and a half', `${TANK_LEFT.isru(S, F).toFixed(0)} h`);
+  S.o2 = 1; ok(!canRest(S, marsFlows(S), 'isru'), 'and not with 1 kg left in the tank');
+  S.water = 500; ok(canRest(S, marsFlows(S), 'water'), 'a full water tank lets the ice well rest'); }
 
 console.log(`${pass} checks passed${fail ? ', ' + fail + ' FAILED' : ''}`);
 process.exitCode = fail ? 1 : 0;

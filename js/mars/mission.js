@@ -3,7 +3,8 @@
 import { tt } from '../i18n.js';
 import { IC } from '../icons.js';
 import { MARS, LOADS, marsStep } from './sim.js';
-import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, grade, exploreUpkeep } from './survive.js';
+import { MISSION, FAULTS, SHED, TANK_LEFT, canRest, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, grade, exploreUpkeep } from './survive.js';
+import { playMini } from '../minigames.js';
 
 const $ = (s) => document.querySelector(s);
 // A broken battery module or a jammed row of solar tables is mended at the Power Station; everything else at its own building.
@@ -20,6 +21,19 @@ export const FAULT_TEXT = {
   solar: { name: tt('Solar field: a row jammed'), alert: tt('<b>A row of solar tables has jammed.</b> Dust in the bearings: those tables no longer turn to the Sun, and solar power is down by 30%.'), fix: tt('Free the row at the <b>Power Station</b>. It needs no parts.'), done: tt('The row turns again. All the solar tables are following the Sun.') },
   comms: { name: tt('Dish: knocked off its aim'), alert: tt('<b>The wind has knocked the dish off its aim.</b> There is no link to Earth.'), fix: tt('Point it again at the <b>Communications Tower</b>. It needs no parts.'), done: tt('The dish is back on Earth. The link is up.') },
   greenhouse: { name: tt('Greenhouse: grow lamps out'), alert: tt('<b>The greenhouse lamps have gone out.</b> A driver has burned out, and nothing grows in the dark.'), fix: tt('Change the driver at the <b>Greenhouse</b>.'), done: tt('The lamps are on. The plants have their light back.') },
+};
+// The hands-on job for each repair: the same games as on the Moon, told for Mars, with the building's picture behind them.
+const BOLTS_WHY = tt('Repairs on Mars are done in thick gloves, so the tools are big and the bolts stay attached. Spare parts are months away: every repair has to hold the first time.');
+const BOLTS_MATTER = tt('A loose bolt shakes free in the wind and the cold; an over-tight one strips its thread. Either way the part fails again.');
+const MINI = {
+  isru: ['bolts', { title: tt('Open the filter housing'), winText: tt('New filter in!'), why: BOLTS_WHY, matter: BOLTS_MATTER }],
+  thermal: ['gauge', { title: tt('Reset the heat pump'), unit: 'kW', max: 4, how: tt('Drag the wheel to bring the heat pump back up. Hold the needle in the GREEN band until the ring closes.'), winText: tt('Heat pump running!') }],
+  lifesupport: ['bolts', { title: tt('Open the scrubber housing'), winText: tt('New bed in!'), why: BOLTS_WHY, matter: BOLTS_MATTER }],
+  water: ['bolts', { title: tt('Refit the ice well pump'), winText: tt('Pump refitted!'), why: BOLTS_WHY, matter: BOLTS_MATTER }],
+  battery: ['wires', { title: tt('Connect the new battery module'), winText: tt('Connected!') }],
+  solar: ['wipe', { title: tt('Brush the dust out of the bearings'), how: tt('Hold and drag the brush across the row. Keep going until the joints are clean.'), winText: tt('Turning again!'), why: tt('Mars dust is as fine as flour and sticks to everything. It blocks the sunlight on the glass and grinds in every moving joint.'), did: tt('You brushed the dust out of the bearings.'), matter: tt('A solar table that cannot turn to follow the Sun loses much of its power. Clean joints keep it moving.') }],
+  comms: ['gauge', { title: tt('Aim the dish at Earth'), unit: '%', max: 100, how: tt('Drag the wheel to turn the dish. Hold the needle in the GREEN band: that is the strongest signal from Earth.'), winText: tt('Link up!') }],
+  greenhouse: ['wires', { title: tt('Wire in the new lamp driver'), winText: tt('Lamps on!') }],
 };
 const CAUSE = {
   air: { title: tt('THE OXYGEN RAN OUT'), why: tt('The oxygen tank reached zero. The crew breathe 3.4 kg of oxygen a sol, and the tank only holds what the oxygen plant has made.'), tip: tt('Keep the ISRU Facility running and mended. In a power shortage it is one of the last things to switch off.') },
@@ -49,7 +63,8 @@ export function makeMission(env) {
   function stepOnce(h) {
     const s = S(); if (!on()) { marsStep(s, h); if (!s.train) for (const e of exploreUpkeep(s)) upkeep(e); return false; } let woke = false;
     for (const e of surviveStep(s, h)) { woke = true;
-      if (e.type === 'fault') { const f = FAULT_TEXT[e.id]; G.audio.play('alarm'); ui.bubble(`${f.alert} ${f.fix}`, 'alert', 16); G.pointTo(AT(e.id)); log(f.name, 'bad'); }
+      if (e.type === 'fault') { const f = FAULT_TEXT[e.id], unpackFirst = s.cargo > 0 && G.goal && G.goal.id === 'lander' && !canRepair(s, e.id);   // still on the way to the lander and short of parts: unpack first, the guide stays on the lander
+        G.audio.play('alarm'); ui.bubble(`${f.alert} ${f.fix}` + (unpackFirst ? ' ' + tt('Unpack the lander first: this repair needs the parts in its hold.') : ''), 'alert', 16); if (!unpackFirst) G.pointTo(AT(e.id)); log(f.name, 'bad'); }
       else if (e.type === 'storm' && e.phase === 'on') { G.audio.play('alarm'); ui.bubble(tt`<b>The dust storm is here.</b> The Sun's direct light is going, and the solar field will make about a third of its power for the next ${hrs(s.storm.t1 - s.t)}. Switch off what the crew can do without, so the battery lasts each night. Press <b>H</b> and I will say what to switch off first.`, 'alert', 20); log(tt('The dust storm arrived.'), 'bad'); }
       else if (e.type === 'storm') { ui.bubble(tt('<b>The storm is thinning.</b> The sky will clear over the next hours. The solar tables are coated in dust: brush them at the Power Station, then switch everything back on.'), 'joy', 16); log(tt('The dust storm ended.')); }
       else if (e.type === 'over') end(); }
@@ -70,18 +85,34 @@ export function makeMission(env) {
     for (const id of PRIORITY) if (s.fault[id]) a.push({ key: 'fault-' + id, text: FAULT_TEXT[id].name, sub: canRepair(s, id) ? tt('Mend it at its door') : tt('No spare parts for this'), go: AT(id) });
     if (ph.phase === 'before') a.push({ text: tt('Dust storm coming'), sub: tt`arrives in ${hrs(ph.inH)}`, kind: 'warn', go: 'power' });
   }
+  // What to switch off, biggest first, until it covers the shortfall: first what the crew can do without, then a tank
+  // machine whose tank holds enough. Life support and heat are never on the list.
+  const shedPlan = (s, F) => { const need = Math.max(0.5, -F.net), c = SHED.filter((k) => s.on[k] && F.use[k] > 0).sort((a, b) => F.use[b] - F.use[a]);
+    for (const k of ['isru', 'water']) if (s.on[k] && F.use[k] > 0 && canRest(s, F, k)) c.push(k);
+    const list = []; let saved = 0; for (const k of c) { if (saved >= need || list.length >= 4) break; list.push(k); saved += F.use[k]; } return { list, saved, more: c.length > list.length }; };   // four at most: a long list is not read
   // urgent = something else is already urgent (oxygen, water, cold, stale air): then the game's usual advice speaks
   function advise(urgent) {
     if (!on()) return false; const s = S(), F = s.flow, ph = stormPhase(s), say = (html, go, mood = 'worried') => { ui.bubble(html, mood, 14); if (go) G.pointTo(go); return true; };
-    const f = PRIORITY.find((k) => s.fault[k]);
+    // A tank machine resting while its tank runs low: switch it back on before anything else.
+    const low = ['isru', 'water'].find((k) => !s.on[k] && !canRest(s, F, k));
+    if (low) return say(low === 'isru' ? tt`<b>Switch the ISRU Facility back on.</b> The oxygen in the tanks lasts only ${hrs(TANK_LEFT.isru(s, F))} without it.` : tt`<b>Switch the Water Processing Plant back on.</b> The water lasts only ${hrs(TANK_LEFT.water(s, F))} without it.`, low, 'alert');
+    // Breakdowns: the ones in running buildings first. A broken building that is switched off can wait until the power is back.
+    const running = (k) => s.on[k] !== false, f = PRIORITY.find((k) => s.fault[k] && running(k)), fOff = PRIORITY.find((k) => s.fault[k] && !running(k));
     if (f && canRepair(s, f)) return say(`${FAULT_TEXT[f].alert} ${FAULT_TEXT[f].fix}`, AT(f), 'alert');
-    if (f && s.cargo > 0) return say(tt`<b>We have no spare parts left</b> for this repair. There are ${s.cargo} more still packed in the <b>lander</b>. Take the rover.`, 'lander', 'alert');
+    if ((f || fOff) && s.cargo > 0 && !canRepair(s, f || fOff)) return say(tt`<b>We have no spare parts left</b> for this repair. There are ${s.cargo} more still packed in the <b>lander</b>. Take the rover.`, 'lander', 'alert');
     if (urgent && !(F.eff < 1)) return false;
-    const next = SHED.find((k) => s.on[k]), short = F.eff < 1 || (ph.phase === 'on' && s.battery < 0.8 * F.cap) || (F.net < 0 && F.battHours < 9);
-    if (short && next) return say(tt`<b>Power is short.</b> Switch off the <b>${INFO[next].name}</b> at its door: it saves ${kw(LOADS[next])}, and the crew can do without it for a few sols. Never switch off life support, heat, oxygen or water.`, next);
+    // Short of power only while the battery is actually going down: charging in daylight, even in the storm, is not short.
+    const short = F.eff < 1 || (F.net < 0 && (F.battHours < 9 || (ph.phase === 'on' && s.battery < 0.8 * F.cap)));
+    if (short) { const p = shedPlan(s, F);
+      if (!p.list.length) return say(tt('<b>Power is short</b>, and everything that can wait is already off. Keep the Life Support Module and the heat pump running, and brush the solar panels as soon as the Sun is up.'), 'power');
+      const names = p.list.map((k) => tt`<b>${INFO[k].name}</b> (${kw(F.use[k] || LOADS[k])})`).join(', '), notes = [];
+      if (p.list.includes('isru')) notes.push(tt`The oxygen in the tanks lasts ${hrs(TANK_LEFT.isru(s, F))}, so the ISRU Facility can rest until the battery recovers.`);
+      if (p.list.includes('water')) notes.push(tt`The water lasts ${hrs(TANK_LEFT.water(s, F))}, so the Water Processing Plant can rest until the battery recovers.`);
+      return say([F.net < 0 ? tt`<b>Power is short:</b> the outpost uses ${kw(-F.net)} more than it makes.` : tt('<b>Power is short.</b>'), tt`Switch off ${names}. Each switch is at its building's door.`, ...notes, p.saved < -F.net - 0.05 ? (p.more ? tt('When those are off, press H and I will name the next ones.') : tt('That still leaves the battery running down, only slower: it is the most we can spare.')) : '', tt('Keep the Life Support Module and the heat pump on: below half power, the heat and the air scrubbers stop.')].filter(Boolean).join(' '), p.list[0]); }
     if (s.cargo > 0) return say(tt`Before the storm: there are <b>${s.cargo} spare parts</b> still packed in the <b>lander</b>. Take the rover and unpack them. You will need them when things break.`, 'lander', 'happy');
     if (s.panelDust > 0.08 && ph.phase !== 'on' && F.sun.up) return say((ph.phase === 'before' ? tt`The solar panels are losing <b>${Math.round(s.panelDust * 100)}%</b> of their power to dust. Brush them at the <b>Power Station</b> before the storm arrives.` : tt`The solar panels are losing <b>${Math.round(s.panelDust * 100)}%</b> of their power to dust. Brush them at the <b>Power Station</b>.`), 'power', 'happy');
-    const back = SHED.find((k) => !s.on[k]); if (back && ph.phase !== 'on' && s.battery > 0.7 * F.cap && F.net > 0) return say(tt`Power is back. Switch the <b>${INFO[back].name}</b> on again at its door.`, back, 'happy');
+    if (fOff && canRepair(s, fOff)) return say(tt`The <b>${INFO[AT(fOff)].name}</b> is switched off, and it is broken too: ${FAULT_TEXT[fOff].name}. Mend it at its door before you switch it back on.`, AT(fOff));
+    const back = ['isru', 'water', ...SHED].find((k) => !s.on[k]); if (back && ph.phase !== 'on' && s.battery > 0.7 * F.cap && F.net > 0) return say(tt`Power is back. Switch the <b>${INFO[back].name}</b> on again at its door.`, back, 'happy');
     if (f) return say(tt`<b>${FAULT_TEXT[f].name}.</b> We have no spare parts left to mend it. Keep everything else running until the supply lander arrives.`, null);
     return say(ph.phase === 'before' ? tt`All is in order. The storm arrives in ${hrs(ph.inH)}: go in with a full battery.` : tt`All is in order. The supply lander arrives in ${hrs(s.deadline - s.t)}. Keep an eye on the battery at night.`, null, 'happy');
   }
@@ -92,17 +123,20 @@ export function makeMission(env) {
     for (const f of PRIORITY.filter((k) => s.fault[k] && AT(k) === id).reverse()) { const need = FAULTS[f].parts, h = repairHours(s, f), T = FAULT_TEXT[f];
       st.unshift([tt('BROKEN'), `<span class="down">${T.name}</span>`]);
       act.unshift({ label: tt`Mend it: ${T.name}`, sub: (need ? (need > 1 ? tt`Uses ${need} spare parts (you have ${s.mat}).` : tt`Uses 1 spare part (you have ${s.mat}).`) : tt('Needs no parts.')) + ' ' + (s.tau > 2 ? tt`Takes ${hrs(h)} in the storm.` : tt`Takes ${hrs(h)}.`), disabled: !canRepair(s, f),
-        run: async () => { await env.pass(h, tt('Mending…')); if (s.over) return; if (repair(s, f)) { G.audio.play('ok'); ui.toast(T.done, 'good'); log(T.done); } } }); }
+        run: async () => { let hh = h;
+          if (G.minis !== false && MINI[f]) { const [kind, o] = MINI[f], r = await playMini(G, kind, { ...o, bg: 'mars/mr_' + AT(f), loseText: tt('Done the slow way') });   // the job by hand first; how it went changes how long the repair takes
+            if (!r.win || r.score < 0.55) { hh *= 1.3; ui.toast(tt('That was fiddly, so the repair takes 30% longer.')); } else if (r.stars === 3) { hh *= 0.85; ui.toast(tt('Clean work! The repair goes 15% faster.'), 'good'); } }
+          await env.pass(hh, tt('Mending…')); if (s.over) return; if (repair(s, f)) { G.audio.play('ok'); ui.toast(T.done, 'good'); log(T.done); setTimeout(() => { if (!s.over) G.advise(); }, 1500); } } }); }   // REGO's hint moves on to what matters next
     if (id === 'cmd' && on()) { const ph = stormPhase(s), bad = PRIORITY.filter((k) => s.fault[k]); st.push([tt('Supply lander'), tt`arrives in ${hrs(s.deadline - s.t)}`], [tt('Dust storm'), ph.phase === 'before' ? tt`arrives in ${hrs(ph.inH)}` : ph.phase === 'on' ? tt`here for about ${hrs(ph.leftH)} more` : tt('over')], [tt('Broken now'), bad.length ? bad.map((k) => FAULT_TEXT[k].name).join(' · ') : tt('nothing')], [tt('Spare parts'), s.cargo ? tt`${s.mat} here · ${s.cargo} still in the lander` : String(s.mat)]); }
   }
   // The lander: in the survival mission its hold still has spare parts in it.
   const place = (p) => { const s = S(); if (p.id !== 'lander' || !s.cargo) return null;
-    return ui.panel(p.name, { img: `mars/mr_${p.id}`, stats: [[tt('In the hold'), tt`${s.cargo} spare parts`], [tt('In the depot'), tt`${s.mat} spare parts`]], note: p.text, actions: [{ label: tt`Unpack the ${s.cargo} spare parts`, sub: tt('Load them on the rover and take them to the base.'), run: () => { const n = unpackCargo(s); G.audio.play('ok'); ui.toast(tt`${n} spare parts unpacked. You now have ${s.mat}.`, 'good'); log(tt('Spare parts unpacked from the lander.')); } }] }); };
+    return ui.panel(p.name, { img: `mars/mr_${p.id}`, stats: [[tt('In the hold'), tt`${s.cargo} spare parts`], [tt('In the depot'), tt`${s.mat} spare parts`]], note: p.text, actions: [{ label: tt`Unpack the ${s.cargo} spare parts`, sub: tt('They go straight into the outpost\'s store of spare parts.'), run: () => { const n = unpackCargo(s); G.audio.play('ok'); ui.toast(tt`${n} spare parts unpacked. You now have ${s.mat}.`, 'good'); log(tt('Spare parts unpacked from the lander.')); if (G.goal && G.goal.id === 'lander') G.goal = null; setTimeout(() => G.advise(), 1200); } }] }); };   // what next: often a repair that was waiting for these parts
 
   // ---------- the HUD ----------
   function hud() {
     if (!on()) return; const s = S(), ph = stormPhase(s);
-    $('#c-day').textContent = tt`Sol ${Math.min(MISSION.sols, Math.floor(s.t / sol) + 1)} of ${MISSION.sols}`;
+    $('#c-day').textContent = tt`Sol ${Math.min(MISSION.sols, Math.floor(s.t / sol) + 1)} of ${MISSION.sols}`; if (s.t >= s.deadline) $('#c-time').textContent = '24:00';   // the lander comes at the very end of the last sol, not at midnight of a sol 8
     $('#c-rescue').innerHTML = IC.rocket + tt` supply lander in ${hrs(Math.max(0, s.deadline - s.t))}`;
     if (ph.phase === 'before' && ph.inH < 14 && s.tau <= 2.5) ui.banner(tt`Dust storm arrives in ${hrs(ph.inH)} · charge the battery, brush the panels`, true);
   }
