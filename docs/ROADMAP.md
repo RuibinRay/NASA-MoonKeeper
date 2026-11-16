@@ -733,3 +733,15 @@ From the walkthrough of 15 Nov 2026 (W8 to W10).
 **Mars.** Before training REGO says where you are and who lives here; after it, a toast points to Survive on Mars. In training: the clock still goes back to the morning to keep the daylight, but a toast now says so; the distance to the lander is measured (it said "200 m" when it was 130); in the first steps the Command Habitat's panel points at Close, not at "Go inside"; and after switching the Laboratory off its panel comes back for the second press. The briefing's crew card reads "you and three others", to match "a crew of three" in the sentence above it.
 
 **Checked.** `node tools/mars_training_test.mjs`: 44 checks (4 new). In the browser: the game's own tutorial run with practice jobs that use things up, and everything back as it was afterwards; the Cadet comic and ending against Pilot's; the Mars opening, the panels in the first four steps, and the clock toast.
+
+### A win that was a near thing says so (walkthrough W17 to W19)
+
+The walkthrough won Pilot with no panels working, 56 hours of blackout and a day without food, under the headline "YOU ARE A MOONKEEPER"; and won Mars with 93 of 100 while leaving breakdowns for hours. Neither mission is made harder here. What changes is what the end screen says and scores.
+
+**The Moon's end screen.** A win with more than 12 hours of blackout, more than 2 hours without food, or health under 70 at the rescue now reads "RESCUED — AND ONLY JUST", with a "Next time" tip for whichever it was (only a loss had a tip before). The rules, the points and the ranks are unchanged.
+
+**The Mars score.** It was half for the crew's health, a third for hours without full power, and 15% for whether each breakdown was mended. That last share is now for mending **promptly**: full marks when breakdowns stood broken 3 hours or less on average, none at 12 hours (about half a sol), a straight line in between. Something still broken at the end counts for as long as it has stood. The end screen says the average. The walkthrough's run (9 breakdowns, 9.5 hours each on average, 5 hours without full power) would now score about 82, "Outpost Engineer", where it had 93, "Mars Keeper".
+
+**Carrying.** A solar panel or a battery module is carried at 80% of walking speed, up from 60%. The panel loop is the heart of the Moon mission, and dragging one panel through the cave took 2.5 game hours of a first day that ends 2.6 days in.
+
+**Checked.** `node tools/mars_survive_test.mjs`: 93 checks (8 new, on the promptness share). The careful simulated player still scores 75 or more on all 24 seeds; doing nothing still loses; every Moon mission is still won by a planned player and Commander is still not won by doing nothing.

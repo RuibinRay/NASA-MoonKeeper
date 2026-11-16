@@ -60,7 +60,14 @@ export function surviveStep(S, dt) {
 export const repairHours = (S, id) => FAULTS[id].hours * (S.tau > 2 ? 1.5 : 1);
 export const canRepair = (S, id) => !!S.fault[id] && S.mat >= FAULTS[id].parts;
 // Finish a repair (the time it took has already passed). Returns false if there were not enough parts.
-export function repair(S, id) { if (!canRepair(S, id)) return false; S.mat -= FAULTS[id].parts; delete S.fault[id]; if (S.faultAt) delete S.faultAt[id]; S.stats.repairs = (S.stats.repairs || 0) + 1; return true; }
+export function repair(S, id) { if (!canRepair(S, id)) return false; S.mat -= FAULTS[id].parts; delete S.fault[id];
+  if (S.faultAt && S.faultAt[id] !== undefined) { S.stats.brokenHours = (S.stats.brokenHours || 0) + Math.max(0, S.t - S.faultAt[id]); delete S.faultAt[id]; }   // how long it stood broken: the end screen grades that
+  S.stats.repairs = (S.stats.repairs || 0) + 1; return true; }
+// How long, on average, a breakdown stood broken (hours). What is still broken counts up to now.
+export function brokenAvg(S) { let h = S.stats.brokenHours || 0; for (const id in S.faultAt || {}) if (S.fault && S.fault[id]) h += Math.max(0, S.t - S.faultAt[id]); return S.stats.faults ? h / S.stats.faults : 0; }
+// The share of the score for repairs: full marks when breakdowns are mended within PROMPT.full hours on average, none at PROMPT.none.
+export const PROMPT = { full: 3, none: 12 };
+export const promptness = (S) => (S.stats.faults ? clamp((PROMPT.none - brokenAvg(S)) / (PROMPT.none - PROMPT.full), 0, 1) : 1);
 // Unpack the spare parts still in the lander. Once.
 export function unpackCargo(S) { const n = S.cargo || 0; S.mat += n; S.cargo = 0; return n; }
 // What to switch off first when power is short: the things the crew can do without for a few sols. Never life support or heat.
@@ -89,9 +96,9 @@ export function nightPlan(S, F, within = 6) {
   return { toSet, gap, nightH, have, need, cut: gap - have / nightH };
 }
 // How the mission went, as one number from 0 to 100, for the end screen: half for the crew's worst moment,
-// a third for hours without full power, the rest for how much of what broke was mended.
+// a third for hours without full power, the rest for how promptly what broke was mended (see promptness above).
 export function grade(S) {
-  const b = clamp(S.stats.minHealth ?? S.health, 0, 100) * 0.5 + clamp(100 - (S.stats.brownHours || 0) * 4, 0, 100) * 0.35 + clamp((S.stats.repairs / Math.max(1, S.stats.faults)) * 100, 0, 100) * 0.15;
+  const b = clamp(S.stats.minHealth ?? S.health, 0, 100) * 0.5 + clamp(100 - (S.stats.brownHours || 0) * 4, 0, 100) * 0.35 + promptness(S) * 100 * 0.15;
   return Math.round(S.over && !S.over.win ? b * 0.4 : b);
 }
 

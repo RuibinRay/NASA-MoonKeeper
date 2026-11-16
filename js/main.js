@@ -420,7 +420,7 @@ function updatePlayer(dt) {
   if (P.in) return updateVehicle(dt, free);
   let f = 0, r = 0; if (free) { f = (k.w || k.ArrowUp ? 1 : 0) - (k.s || k.ArrowDown ? 1 : 0) + G.stick.y; r = (k.d ? 1 : 0) - (k.a ? 1 : 0) + G.stick.x; if (k.ArrowLeft) cam.yaw += 1.9 * dt; if (k.ArrowRight) cam.yaw -= 1.9 * dt; }
   const sy = Math.sin(cam.yaw), cy = Math.cos(cam.yaw); tmp.set(-sy * f + cy * r, 0, -cy * f - sy * r); const l = tmp.length(); if (l > 1) tmp.multiplyScalar(1 / l);
-  const heavy = P.carry && ITEMS[P.carry.type].heavy, load = heavy ? 0.6 : P.carry ? 0.85 : 1, weak = G.S && G.S.health < 35 ? 0.7 : 1, maxV = (k.Shift && !heavy ? 10.5 : 6.4) * weak * load;
+  const heavy = P.carry && ITEMS[P.carry.type].heavy, load = heavy ? 0.8 : P.carry ? 0.85 : 1, weak = G.S && G.S.health < 35 ? 0.7 : 1, maxV = (k.Shift && !heavy ? 10.5 : 6.4) * weak * load;
   tmp.multiplyScalar(maxV); const acc = P.ground ? 7 : 1.2; P.vel.x += (tmp.x - P.vel.x) * Math.min(1, acc * dt); P.vel.z += (tmp.z - P.vel.z) * Math.min(1, acc * dt);
   const ox = P.pos.x, oz = P.pos.z; P.pos.x += P.vel.x * dt; P.pos.z += P.vel.z * dt; pushOut(P.pos, P.zone, 0.5);
   if (P.zone === 'top') { if (topBounds(P.pos, 7.5) && (!G._edgeT || performance.now() - G._edgeT > 9000)) { G._edgeT = performance.now(); ui.bubble(G.edgeText || tt('That is the edge of the map. Nothing but craters beyond here!'), 'worried', 6); } }

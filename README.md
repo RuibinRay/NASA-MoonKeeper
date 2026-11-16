@@ -103,7 +103,7 @@ js/mars/training.js   Mars: training, eleven short steps each finished by doing 
 tools/mars_training_test.mjs  44 checks: the training walked through with a stand-in player, step by step
 js/mars/survive.js    Mars: the survival mission's rules: the storm, the breakdowns, repairs, winning and losing (pure logic)
 js/mars/mission.js    Mars: the survival mission as the player meets it: warnings, repair buttons, advice, the end screen
-tools/mars_survive_test.mjs  85 checks, playing the mission out for 24 seeds: doing nothing loses, never mending loses, a careful player wins; a whole Mars year of exploring, winter included; and the night-ahead warning with its list of what to switch off
+tools/mars_survive_test.mjs  93 checks, playing the mission out for 24 seeds: doing nothing loses, never mending loses, a careful player wins; a whole Mars year of exploring, winter included; the night-ahead warning with its list of what to switch off; and the score for mending promptly
 js/mars/science.js    Mars: the Science Center, six demonstrations to try by hand (gravity, air pressure, solar power and dust, oxygen from the air, water from ice, flying between worlds)
 js/mars/transfer.js   flights between the Moon, Earth orbit and Mars: launch windows, flight times, engine burns and propellant (pure logic)
 science.html          the Mars Science Center as a page of its own
