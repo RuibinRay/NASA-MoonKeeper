@@ -31,7 +31,7 @@ export function makeTraining(env) {
     { id: 'drive', go: 'car', at: () => [G.car.x, G.car.z], short: tt('Get into the rover'), done: () => P.in === 'car',
       say: tt('Mended. Now the <b>rover</b>, for places too far to walk. Follow the line to it and press <b>E</b> to get in. Drive with <b>W</b> and <b>S</b>, steer with <b>A</b> and <b>D</b>.') },
     { id: 'lander', go: 'lander', at: () => [LANDER.x, LANDER.z], short: tt('Drive to the lander'), enter: () => { S().cargo = 2; }, done: () => near(LANDER.x, LANDER.z, 26),
-      say: tt('The lander stands 200 m to the west, with spare parts still in its hold. <b>Drive to it.</b> Watch the rover\'s battery in the corner: every metre uses a little.') },
+      say: () => tt`The lander stands ${Math.round(Math.hypot(LANDER.x - P.pos.x, LANDER.z - P.pos.z) / 10) * 10} m to the west, with spare parts still in its hold. <b>Drive to it.</b> Watch the rover's battery in the corner: every metre uses a little.` },
     { id: 'unpack', go: 'lander', at: () => [LANDER.x, LANDER.z], short: tt('Get out, then unpack the spare parts'), done: () => !S().cargo,
       say: tt('Press <b>E</b> to get out. Then press <b>E</b> at the lander and <b>unpack the spare parts</b>. Every repair that needs a part uses one of these.') },
     { id: 'park', at: () => [T.ROVER_PAD.x, T.ROVER_PAD.z], pad: true, short: tt('Drive back and park on the round pad'), done: () => Math.hypot(G.car.x - T.ROVER_PAD.x, G.car.z - T.ROVER_PAD.z) < 4.6 && Math.abs(G.car.v) < 0.6,
@@ -53,7 +53,7 @@ export function makeTraining(env) {
   // Every frame, after the game has drawn its own guide: keep it daytime, let the demo sky change at once, and move on when the step is done.
   function tick() {
     if (!active()) return; const s = S(), sn = s.flow.sun;
-    if (sn.hour > 15.5 || sn.hour < 8) s.t = Math.floor(s.t / SOL) * SOL + (9.5 / 24) * SOL;
+    if (sn.hour > 15.5 || sn.hour < 8) { s.t = Math.floor(s.t / SOL) * SOL + (9.5 / 24) * SOL; s.flow = marsFlows(s); ui.toast?.(tt('Training keeps the daylight: the clock has gone back to the morning.')); }
     if (Math.abs(s.tau - s.tauWant) > 0.01) { s.tau = s.tauWant; s.flow = marsFlows(s); }
     if (steps[i].done()) { i++; if (i >= steps.length) { i = steps.length - 1; return finish(false); } return enter(); }
     const st = steps[i], w = st.at ? st.at() : null;

@@ -51,5 +51,18 @@ const LANDER = [T.PAD.x + 12, T.PAD.z + 6];
   ok(Math.hypot(LANDER[0] - T.ROVER_PAD.x, LANDER[1] - T.ROVER_PAD.z) / 2600 < 0.2, 'the drive to the lander and back uses well under half the rover\'s battery', (2 * Math.hypot(LANDER[0] - T.ROVER_PAD.x, LANDER[1] - T.ROVER_PAD.z) / 2600).toFixed(2));
   ok(q.shown.length === 0 || q.shown.every((h) => h === null || /Training \d+ of 11/.test(h)), 'the bar at the top always says which step you are on'); }
 
+// ---- the lander's distance is measured from where you stand, and winding the clock back is said out loud ----
+{ const q = setup(), { S, P, G, TR } = q, toasts = []; const step = () => TR.tick();
+  P.pos.x = T.B.cmd.door[0]; P.pos.z = T.B.cmd.door[1]; step(); TR.note('panel', 'cmd'); step(); TR.note('panel', 'power'); step();
+  S.on.lab = false; step(); S.on.lab = true; step(); S.tauWant = 4; step(); S.tauWant = 0.45; step(); S.fault = {}; step();
+  P.pos.x = T.ROVER_PAD.x; P.pos.z = T.ROVER_PAD.z; P.in = 'car'; step();
+  ok(q.at() === 'lander', 'a short way through the steps to "lander"', q.at());
+  const line = q.said[q.said.length - 1].replace(/<[^>]+>/g, ''), m = /stands (\d+) m/.exec(line), real = Math.hypot(LANDER[0] - P.pos.x, LANDER[1] - P.pos.z);
+  ok(m && Math.abs(Number(m[1]) - real) <= 5, 'REGO gives the distance to the lander as it really is from where you stand', line.slice(0, 40) + ' · really ' + real.toFixed(0) + ' m');
+  const q2 = setup(), said2 = []; const TR2 = makeTraining({ G: q2.G, ui: { bubble: () => {}, objective: () => {}, toast: (t) => said2.push(t) }, state: () => q2.S, done: () => {} }); TR2.begin('explore'); TR2.intro();
+  q2.S.t = (16 / 24) * MARS.SOL_H; q2.S.flow = marsFlows(q2.S); TR2.tick();
+  ok(Math.abs(q2.S.flow.sun.hour - 9.5) < 0.2 && said2.length === 1 && /morning/.test(said2[0]), 'late in the day the training clock goes back to the morning, and a toast says so', said2.join(' | '));
+  TR2.tick(); TR2.tick(); ok(said2.length === 1, 'it says so once'); }
+
 console.log(`${pass} checks passed${fail ? ', ' + fail + ' FAILED' : ''}`);
 process.exitCode = fail ? 1 : 0;
