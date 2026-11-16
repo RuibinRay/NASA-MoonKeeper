@@ -685,3 +685,15 @@ From the walkthrough of 15 Nov 2026 (W1 to W7): in several places REGO's spoken 
 **Mars, the night ahead.** While the Sun is up (the last six hours of a clear day, all day in a storm) the game works out whether the battery will last the night on the fission unit alone. If not, an alert reads "Tonight the battery will not last" and REGO names what to switch off before dark. The rule is `nightPlan` in `js/mars/survive.js`, with `shedPlan` moved beside it.
 
 **Checked.** `node tools/mars_survive_test.mjs`: 85 checks (10 new: the night ahead and the list for it). All other checks pass. In the browser: the walkthrough's cases on both worlds.
+
+### The yellow line no longer goes through walls
+
+From the walkthrough of 15 Nov 2026 (W8 to W10).
+
+**On the Moon's surface** the line was one straight stroke from you to the place, so from the west side of the base it ran through a building, and a player following it walked into a wall. It now goes round buildings and round the pit, with the route finder Mars already had. That finder moved from `js/mars/terrain.js` to `js/route.js`, which both worlds use. The rover is given more room than a walker; the hopper in the air still gets a straight line. Finding a way takes about 1 ms.
+
+**In the station** the line already left a room by its door, but not when you stood in the doorway itself: from there it cut straight across the wall beside the door. Going into a room from its doorway, it first folded back to the middle of the hall. Both are gone: a doorway now counts as part of its door, and from the hall right at a door the line goes straight in.
+
+**When a job you chose on a card is done**, its line and REGO's reminder used to stay until you pressed H. They now go at once, and REGO says what matters next.
+
+**Checked.** `node tools/guide_test.mjs`: 20 checks. In the station, every line between 58 places (each room's console and far corner, each doorway, the hall beside each door, the cave) stays on the floor. On the surface: round a building, more room for the rover, a target inside its own building, round the pit, the elevator at the pit's rim, a far station. In the browser, a walker steered only by the game's route reached every room and every surface place tried, including the two spots where the walkthrough got stuck.

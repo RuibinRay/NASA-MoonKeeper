@@ -130,34 +130,8 @@ export function roomColliders() {
 // Keeps a point inside the round room, a little back from its wall.
 export function keepInRoom(p, pad = 0.55) { const dx = p.x - ROOM.x, dz = p.z - ROOM.z, d = Math.hypot(dx, dz), m = ROOM.r - pad; if (d > m) { p.x = ROOM.x + (dx / d) * m; p.z = ROOM.z + (dz / d) * m; } return p; }
 
-// The way to walk (or drive) from (px,pz) to (tx,tz) without going through a building, a tunnel or a boulder.
-// Returns corner points [[x,z], …], starting at the start and ending at the target. pad = how much room to leave (m).
-// Only the first 200 m are planned round obstacles: the guide line on the ground is never drawn further than that.
-export function routeAround(cols, px, pz, tx, tz, pad = 1.1) {
-  const hit = (ax, az, bx, bz, extra = 0) => { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz || 1e-9; for (const c of cols) { if (!c.r) continue; const t = Math.max(0, Math.min(1, ((c.x - ax) * dx + (c.z - az) * dz) / l2)), R = c.r + pad + extra; if ((ax + dx * t - c.x) ** 2 + (az + dz * t - c.z) ** 2 < R * R) return true; } return false; };
-  const D = Math.hypot(tx - px, tz - pz), far = D > 200, ex = far ? px + ((tx - px) * 200) / D : tx, ez = far ? pz + ((tz - pz) * 200) / D : tz, straight = [[px, pz], [tx, tz]];
-  if (D < 0.5 || !hit(px, pz, ex, ez)) return straight;
-  // a grid of 2 m squares round the two ends; a square is shut if a building stands on it
-  const cell = 2, x0 = Math.min(px, ex) - 40, z0 = Math.min(pz, ez) - 40, W = Math.ceil((Math.abs(ex - px) + 80) / cell), H = Math.ceil((Math.abs(ez - pz) + 80) / cell), shut = new Uint8Array(W * H);
-  for (const c of cols) { if (!c.r) continue; const R = c.r + pad, i0 = Math.max(0, Math.floor((c.x - R - x0) / cell)), i1 = Math.min(W - 1, Math.floor((c.x + R - x0) / cell)), j0 = Math.max(0, Math.floor((c.z - R - z0) / cell)), j1 = Math.min(H - 1, Math.floor((c.z + R - z0) / cell));
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const cx = x0 + (i + 0.5) * cell, cz = z0 + (j + 0.5) * cell; if ((cx - c.x) ** 2 + (cz - c.z) ** 2 < R * R) shut[j * W + i] = 1; } }
-  const at = (x, z) => Math.min(H - 1, Math.max(0, Math.floor((z - z0) / cell))) * W + Math.min(W - 1, Math.max(0, Math.floor((x - x0) / cell)));
-  const open = (k) => { for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const i = (k % W) + di, j = Math.floor(k / W) + dj; if (i >= 0 && j >= 0 && i < W && j < H) shut[j * W + i] = 0; } };
-  const a = at(px, pz), b = at(ex, ez); open(a); open(b);   // you may always step out of where you stand, and reach a door that is close to a wall
-  // shortest way over the open squares (A*), no cutting across the corner of a shut square
-  const g = new Float32Array(W * H).fill(Infinity), from = new Int32Array(W * H).fill(-1), heap = [], bi = b % W, bj = Math.floor(b / W), est = (k) => Math.hypot((k % W) - bi, Math.floor(k / W) - bj);
-  const push = (k, f) => { heap.push([f, k]); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
-  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = i * 2 + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
-  g[a] = 0; push(a, est(a)); let found = false;
-  while (heap.length) { const [f, k] = pop(); if (k === b) { found = true; break; } if (f > g[k] + est(k) + 1e-6) continue; const i = k % W, j = Math.floor(k / W);
-    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { if (!di && !dj) continue; const ni = i + di, nj = j + dj; if (ni < 0 || nj < 0 || ni >= W || nj >= H) continue; const n = nj * W + ni; if (shut[n] || (di && dj && (shut[j * W + ni] || shut[nj * W + i]))) continue;
-      const c = g[k] + (di && dj ? 1.4142 : 1); if (c < g[n]) { g[n] = c; from[n] = k; push(n, c + est(n)); } } }
-  if (!found) return straight;
-  const pts = []; for (let k = b; k !== -1; k = from[k]) pts.push([x0 + ((k % W) + 0.5) * cell, z0 + (Math.floor(k / W) + 0.5) * cell]); pts.reverse(); pts[0] = [px, pz]; pts[pts.length - 1] = [ex, ez];
-  // pull the string tight: keep only the corners you cannot see past
-  const out = [pts[0]]; let i = 0; while (i < pts.length - 1) { let j = pts.length - 1; while (j > i + 1 && hit(pts[i][0], pts[i][1], pts[j][0], pts[j][1], -0.35)) j--; out.push(pts[j]); i = j; }
-  if (far) out.push([tx, tz]); return out;
-}
+// The way round buildings, tunnels and boulders for the guide line. It lives in js/route.js, which the Moon uses too.
+export { routeAround } from '../route.js';
 
 // Pale dust settles in the lee of a crater's rim. How strongly (0…1) at a point, for the prevailing wind (towards the south-east).
 export const WIND = [0.82, 0.57];

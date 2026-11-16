@@ -130,6 +130,11 @@ G.chosenJob = () => { const c = G.chosen; if (!c) return null; let fin = true; t
 G.goTo = (t, text) => new Promise((res) => { const r = G.resolve(t); G.goal = { ...r, text, cb: res, cond: null }; });
 G.waitFor = (cond, text, t) => new Promise((res) => { const r = G.resolve(t) || {}; G.goal = { ...r, text, cb: res, cond }; });
 function updateGoal() {
+  // The job the player chose on a card is finished: its line and REGO's reminder go at once, and REGO says what matters next.
+  { const c = G.chosen; if (c && G.state === 'play') { let fin = false; try { fin = c.done(); } catch (e) { fin = true; }
+      if (fin) { G.chosen = null; const r = G.resolve(c.t), g0 = G.goal;
+        if (r && g0 && !g0.cb && g0.zone === r.zone && Math.abs(g0.x - r.x) < 0.01 && Math.abs(g0.z - r.z) < 0.01) { G.goal = null; world.setTarget(null); ui.objective(null); }
+        setTimeout(() => { if (G.state === 'play' && !ui.busy && !G.inJob && !G.riding && G.sleepLeft <= 0) G.advise(); }, 1200); } } }
   const g = G.goal; $('#goal-x').classList.toggle('hidden', !(g && g.sticky && G.state === 'play')); world.guideForce = !!(g && g.sticky);   // advice you asked for always draws its line, even with guide mode off
   if (!g) { if (world.target) world.setTarget(null); ui.objective(null); return; }
   if (g.id === 'car' || g.id === 'ship') { g.x = G[g.id].x; g.z = G[g.id].z; }
