@@ -697,3 +697,17 @@ From the walkthrough of 15 Nov 2026 (W8 to W10).
 **When a job you chose on a card is done**, its line and REGO's reminder used to stay until you pressed H. They now go at once, and REGO says what matters next.
 
 **Checked.** `node tools/guide_test.mjs`: 20 checks. In the station, every line between 80 places (each room's console and far corner, each doorway, the hall beside each door, the cave: 6,320 lines) stays on the floor. On the surface: round a building, more room for the rover, a target inside its own building, round the pit, the elevator at the pit's rim, a far station. In the browser, a walker steered only by the game's route reached every room and every surface place tried, including the two spots where the walkthrough got stuck.
+
+### REGO's picks, cards and events (walkthrough W11 to W16)
+
+**The air-leak card.** REGO's pick between "lock the door" and "run and patch" was already made on oxygen: it only sends you to patch when the walk, the patch and refilling the room leave more than 1 kg in the tank (0.3 kg for the Water Room and the Oxygen Room, which keep you alive). That rule is unchanged. What was missing was the reason: locking the Animal Bay looked like a careless pick when the room froze and the fish died. The glowing choice now carries REGO's reason ("Oxygen comes first. Patching would cost about 2.8 kg of your 3.3 kg, and that is too close."), and the "lock" choice names everything that will be lost: the fish in the Animal Bay, cooking in the Kitchen.
+
+**Picks that were missing.** "The Farm Pump Has Stopped" and "Half the Lamps Went Dark" now have a glowing pick with its reason (fix it, or "Not now" when there is no material). In a farm's own panel the job REGO would do glows: the pump first, then the lamps, then a ripe rack.
+
+**No new emergency while the power is out.** A blackout is emergency enough: storms, meteoroids and breakdowns now wait until the power is back, as they already waited once oxygen or water was gone. The "Frozen Solid" card no longer says the heaters "were set too low" when the level was right and the power was out; it says the power is out.
+
+**The question waits for the job.** After a card on which you chose a job ("Go and fix it", "Run there and patch the hole"), the quick question used to come at once, between choosing and doing. It now comes when the job is done.
+
+**Sleep.** Woken by something going wrong, the toast now reads "Something has gone wrong. You wake up early." where it said "You wake up rested". "Sleep for 8 hours" no longer glows for ten hours after you got up, or while the battery is running down.
+
+**Two lines that did not fit.** A rover or hopper whose battery dies while you are down in the station is now a short toast; the "walk home: follow the line to the elevator" warning is only for someone on the surface. On Mars, cold rooms with the heat pump running again read "The rooms are still cold, but the heat pump is running again", where REGO said the pump "needs to be on".

@@ -56,3 +56,8 @@
 .lf-bal:first-of-type{border-top:0}.lf-bal small{color:var(--mute);display:block;font-size:10.5px}.lf-bal .net{font-family:var(--head);text-align:right}
 .lf-real{display:inline-block;font-size:10px;font-family:var(--head);letter-spacing:.05em;border-radius:8px;padding:0 6px;margin-right:5px;border:1px solid}
 .lf-real.r{color:#9fe8b8;border-color:rgba(88,224,138,.5)}.lf-real.l{color:#8fd8ff;border-color:rgba(73,230,255,.5)}.lf-real.c{color:#ffd9a0;border-color:rgba(255,179,71,.5)}.lf-real.g{color:#d8b4ff;border-color:rgba(176,112,255,.5)}
+
+/* guide mode: the job REGO would do in this farm */
+.lf-btn.guide-rec{border-color:#ffd21f;box-shadow:0 0 0 2px rgba(255,210,31,.5),0 0 14px rgba(255,210,31,.5);animation:recGlow 1.6s ease-in-out infinite}
+.lf-btn.guide-rec:not(.go){color:#ffe36b;background:rgba(64,48,4,.95)}
+@media (prefers-reduced-motion:reduce){.lf-btn.guide-rec{animation:none}}
