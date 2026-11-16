@@ -149,7 +149,7 @@ function updateGoal() {
   let arr = '<i class="dot"></i>', tail = '';
   if (tgt) { const dx = tgt.x - P.pos.x, dz = tgt.z - P.pos.z, d = Math.hypot(dx, dz), sy = Math.sin(cam.yaw), cy = Math.cos(cam.yaw), a = Math.round((Math.atan2(dx * cy - dz * sy, -dx * sy - dz * cy) * 57.3) / 15) * 15;
     arr = `<i class="arr" style="transform:rotate(${a}deg)">▲</i>`; tail = `<small>${d < 30 ? Math.round(d) : Math.round(d / 5) * 5} m${suitFirst ? tt(' · suit up at the airlock first') : !same ? tt(' · take the elevator') : ''}</small>`; }
-  ui.objective(`${arr}<span>${g.text || tt('Go to: ') + g.name}</span>${tail}`);
+  ui.objective(G.jobTick ? null : `${arr}<span>${g.text || tt('Go to: ') + g.name}</span>${tail}`);   // not during a job: "walk to the panel" over someone already working on it reads wrong
   const near = same && Math.hypot(g.x - P.pos.x, g.z - P.pos.z) < (g.r || 5) + 1;
   if (g.cond ? g.cond() : near && !g.sticky) { G.goal = null; world.setTarget(null); ui.objective(null); g.cb?.(); }
 }
@@ -358,7 +358,7 @@ function setView(fp) {
   ui.toast(!cam.fp ? tt('Third-person view.') : P.zone === 'top' ? tt('First-person view. Look up to find Earth!') : G.inside ? tt('First-person view. Now you see the station through your own eyes.') : tt('First-person view. Look up at the rock roof of the cave.'));
 }
 function toggleView() { setView(!cam.fp); }
-function togglePause() { if (G.state !== 'play') return; G.paused = !G.paused; ui.banner(G.paused ? tt('PAUSED — press P to continue') : null, true); }
+function togglePause() { if (G.state !== 'play') return; G.paused = !G.paused; document.body.classList.toggle('paused', G.paused); ui.banner(G.paused ? tt('PAUSED — press P to continue') : null, true); }   // the picture dims while paused (see body.paused in the style sheet)
 // Looking away should not cost game time. When the tab is hidden or the window loses focus during play, pause just as the P key does.
 // Not while a card, a panel, a dialogue or a job is open (those stop the clock already, or are over in seconds), and never start again
 // without the player. Moon only for now: Mars has its own clock and has not been tried with this.

@@ -111,7 +111,9 @@ export function installMars(G, deps) {
     if (S.habTemp < 12) a.push({ key: 'cold', text: tt('The rooms are getting cold'), sub: `${Math.round(S.habTemp)}°C`, go: 'thermal' });
     if (S.tau > 2) a.push({ text: tt('Dust storm'), sub: F.sun.up ? tt`dust ${S.tau.toFixed(1)} · solar power ${Math.round((F.solar / Math.max(F.solarClear, 0.1)) * 100)}% of a clear day` : tt`dust ${S.tau.toFixed(1)} · night: no solar power until sunrise`, kind: 'warn', go: 'power' });   // at night the panels make nothing anyway: don't blame the dust
     if (S.panelDust > 0.15) a.push({ text: tt('Solar panels are dusty'), sub: tt`${Math.round(S.panelDust * 100)}% of their power lost`, kind: 'warn', go: 'power' });
-    for (const id in LOADS) if (!S.on[id]) a.push({ text: tt`${INFO[id].name} is switched off`, sub: tt('Switch it on at its door'), kind: 'warn', go: id });
+    { const off = Object.keys(LOADS).filter((id) => !S.on[id]);
+      if (off.length === 1) a.push({ text: tt`${INFO[off[0]].name} is switched off`, sub: tt('Switch it on at its door'), kind: 'warn', go: off[0] });
+      else if (off.length > 1) a.push({ text: tt`${off.length} buildings are switched off`, sub: off.map((id) => INFO[id].name).join(', '), kind: 'warn', go: 'power' }); }
     if (S.car.charge < 0.2) a.push({ text: tt('Rover battery low'), sub: `${Math.round(S.car.charge * 100)}%`, kind: 'warn', go: 'garage' });
     return a;
   };
@@ -282,10 +284,11 @@ export function installMars(G, deps) {
   const gauge = (id, v, bar, sub, state) => { $(`#g-${id}-v`).textContent = v; $(`#g-${id}-b`).style.width = clamp(bar * 100, 0, 100) + '%'; const s = $(`#g-${id}-s`); if (s.dataset.h !== sub) { s.dataset.h = sub; s.innerHTML = sub; } const g = $('#g-' + id); g.classList.toggle('warn', state === 1); g.classList.toggle('crit', state === 2); };
   function hud(dt) {
     // names over the buildings and the places you have found
-    const w = innerWidth, h = innerHeight, c3 = world.camera, tid = G.goal && G.goal.id;
+    const w = innerWidth, h = innerHeight, c3 = world.camera, tid = G.goal && G.goal.id, shown = [];
     for (const id in labels) { const q = labels[id], dist = Math.hypot(q.x - P.pos.x, q.z - P.pos.z), goal = tid === id; v3.set(q.x, world.heightAt(q.x, q.z) + q.up, q.z).project(c3);
-      const show = !inRoom && (!q.poi || S.seen[id]) && v3.z < 1 && Math.abs(v3.x) < 1.1 && (goal || dist < (q.poi ? 120 : 48)); q.el.classList.toggle('hidden', !show); if (!show) continue;
-      q.el.style.transform = `translate(${((v3.x + 1) / 2) * w}px,${((1 - v3.y) / 2) * h}px) translate(-50%,-100%)`; const txt = `${q.name}<small>${dist.toFixed(0)} m</small>`; if (q.el.dataset.t !== txt) { q.el.dataset.t = txt; q.el.innerHTML = txt; } q.el.classList.toggle('goal', goal); q.el.classList.toggle('bad', !goal && ((!!LOADS[id] && !S.on[id]) || MIS.broken(id))); }
+      const show = !inRoom && (!q.poi || S.seen[id]) && v3.z < 1 && Math.abs(v3.x) < 1.1 && (goal || dist < (q.poi ? 120 : 48)); if (!show) { q.el.classList.add('hidden'); continue; }
+      shown.push({ l: q.el, name: q.name, dist, goal, bad: !goal && ((!!LOADS[id] && !S.on[id]) || MIS.broken(id)), x: ((v3.x + 1) / 2) * w, y: ((1 - v3.y) / 2) * h }); }
+    ui.placeLabels(shown);   // the same rule as on the Moon: never over the HUD, never on top of a nearer label, the goal always shown
     hudT += dt; if (hudT < 0.2) return; hudT = 0;
     const F = S.flow, sn = F.sun, bp = S.battery / F.cap, ck = marsClock(S), perSol = MARS.SOL_H, toSol = (d) => (d * 24) / MARS.SOL_H;
     gauge('power', Math.round(bp * 100) + '%', bp, F.net >= 0 ? tt`+${F.net.toFixed(1)} kW · Sun ${F.solar.toFixed(0)} kW` : tt`${F.net.toFixed(1)} kW · ${hrs(Math.min(F.battHours, 999))} left`, F.eff < 1 ? 2 : F.net < 0 && bp < 0.12 ? 2 : F.net < 0 && bp < 0.3 ? 1 : 0);

@@ -127,7 +127,7 @@ export function installActions(G) {
       else if (veh) c.e = G[veh].cargo.length < G[veh].max ? { label: tt`Load the ${nm} onto the ${vn}`, run: () => G.load(veh) } : { label: tt`The ${vn} is full — put the ${nm} down`, run: () => G.drop() };
       else c.e = { label: tt`Put down the ${nm}`, put: true, run: () => G.drop() };
       if (st && st.id === 'suit' && c.e.put) { c.q = c.e; c.e = suitAct(); }
-      else if (c.e.put && st && !lift && G.state === 'play') c.q = { label: st.info ? tt`Look at the ${st.name}` : st.name, run: () => G.openStation(st) };   // carrying something into a room: its panel (and the repair in it) stays on Q
+      else if (c.e.put && st && !lift && G.state === 'play') { c.q = c.e; c.e = { label: st.info ? tt`Look at the ${st.name}` : st.name, run: () => G.openStation(st) }; }   // carrying something into a room: E is the room, as at the lockers and the elevator, and Q puts the thing down
       if (lift && c.e.run !== undefined && !c.e.ride) c.q = { label: tt('Ride the elevator'), ride: true, run: () => G.ride(st.id === 'gate' ? 'deep' : 'top') };
       else if (lift && veh && G[veh].cargo.length < G[veh].max) c.q = { label: tt`Load the ${nm} onto the ${vn}`, run: () => G.load(veh) };
       return c;
