@@ -96,6 +96,7 @@ export function installMars(G, deps) {
       if (!skipped) ui.toast(tt('Training complete. Now the real thing.'), 'good'); MIS.intro(); G.save(); return; }
     S.fault = {}; S.cargo = 0; S.tauWant = S.tau = 0.45; S.flow = marsFlows(S); G.save();
     ui.bubble(skipped ? tt('Training skipped. Press <b>H</b> whenever you want my advice, and <b>M</b> for the map.') : tt('<b>Training complete!</b> You can walk, drive, read a building, switch it off and mend it. The outpost is yours to explore: press <b>H</b> for a tour, and <b>M</b> for the map.'), 'joy', 14);
+    if (!skipped) ui.toast(tt('Ready for more? Choose <b>Survive on Mars</b> on the mission page.'), 'good');
   };
   const TRAIN = makeTraining({ G, ui, state: () => S, done: afterTraining });
   const toMorning = () => { const sn = S.flow.sun; return (((sn.rise + 0.6 - sn.hour + 24) % 24) * MARS.SOL_H) / 24; };
@@ -236,9 +237,9 @@ export function installMars(G, deps) {
       choices: [{ label: tt('Keep it running') }, { label: tt('Switch it off anyway'), sub: tt`Saves ${kw(LOADS[id])}.` }] });
     return i === 1;
   }
-  const toggle = (id) => ({ label: S.on[id] ? tt`Switch the ${INFO[id].name} off` : tt`Switch the ${INFO[id].name} on`, sub: S.on[id] ? tt`Saves ${kw(LOADS[id])}. Everything it does stops.` : tt`Uses ${kw(LOADS[id])}.`, norec: MIS.on() ? (S.on[id] ? !MIS.switches().off.includes(id) : MIS.switches().on !== id) : S.on[id], run: async () => { if (S.on[id] && !(await sureOff(id))) return; S.on[id] = !S.on[id]; S.flow = marsFlows(S); G.audio.play(S.on[id] ? 'ok' : 'blip'); ui.toast(S.on[id] ? tt`${INFO[id].name}: on.` : tt`${INFO[id].name}: off.`, S.on[id] ? 'good' : ''); } });
+  const toggle = (id) => ({ label: S.on[id] ? tt`Switch the ${INFO[id].name} off` : tt`Switch the ${INFO[id].name} on`, sub: S.on[id] ? tt`Saves ${kw(LOADS[id])}. Everything it does stops.` : tt`Uses ${kw(LOADS[id])}.`, norec: MIS.on() ? (S.on[id] ? !MIS.switches().off.includes(id) : MIS.switches().on !== id) : S.on[id], run: async () => { if (S.on[id] && !(await sureOff(id))) return; S.on[id] = !S.on[id]; S.flow = marsFlows(S); G.audio.play(S.on[id] ? 'ok' : 'blip'); ui.toast(S.on[id] ? tt`${INFO[id].name}: on.` : tt`${INFO[id].name}: off.`, S.on[id] ? 'good' : ''); if (!S.on[id] && TRAIN.active() && TRAIN.steps[TRAIN.step] === 'switch') panel(id); } });   // training asks for off, then on: the panel comes back for the second press
   async function panel(id) {
-    const closeRec = id === 'power' && TRAIN.active() && TRAIN.steps[TRAIN.step] === 'power';   // training: opening it was the step, so REGO points at Close to carry on
+    const closeRec = TRAIN.active() && ((id === 'power' && TRAIN.steps[TRAIN.step] === 'power') || (id === 'cmd' && (TRAIN.steps[TRAIN.step] === 'open' || TRAIN.steps[TRAIN.step] === 'power')));   // training: opening it was the step, so REGO points at Close to carry on
     TRAIN.note('panel', id);
     const I = INFO[id], F = (S.flow = marsFlows(S)), sn = F.sun, first = seen(id), perSol = MARS.SOL_H, st = [[tt('What it does'), I.does], [tt('It needs'), I.needs], [tt('It gives'), I.gives]], act = [];
     if (LOADS[id]) st.push([tt('Power'), S.on[id] ? (F.eff < 1 ? tt`${kw(F.use[id])} wanted · only ${Math.round(F.eff * 100)}% arriving` : kw(F.use[id])) : tt('switched off')]);
@@ -357,7 +358,7 @@ export function installMars(G, deps) {
     $('#suit').className = 'glass on'; $('#suit').textContent = tt('SUIT ON'); $('#title').classList.add('hidden'); $('#mission').classList.add('hidden');
     S.flow = marsFlows(S); world.update(0.016, S, P.pos, {}); ui.showHud(true); G.state = 'play'; G.simOn = true; G.save();
     if (o) ui.bubble(tt('Welcome back to Mars! Everything is as you left it.'), 'joy', 8);
-    else if (TRAIN.active()) TRAIN.intro();
+    else if (TRAIN.active()) { await ui.say([{ who: 'rego', mood: 'joy', text: tt('<b>Arcadia Planitia, Mars.</b> Four people live at this outpost, so far from Earth that a radio call takes many minutes to arrive. You are the newest.') }, { who: 'rego', text: tt('Mateo, Noor and Lena keep it running. Today I show you how it works.') }]); TRAIN.intro(); }
     else if (MIS.on()) MIS.intro();
     else { ui.bubble(tt('<b>Welcome to Mars!</b> This is Arcadia Planitia: a cold, flat plain with ice under the soil. The sky is butterscotch because fine dust hangs in the thin air. Follow the <b>yellow line</b> on the ground to the <b>Command Habitat</b> and press <b>E</b> at its door. Press <b>H</b> whenever you want my advice, and <b>M</b> for the map.'), 'joy', 20); G.pointTo('cmd'); }
   }

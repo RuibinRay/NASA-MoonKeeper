@@ -17,6 +17,8 @@ export async function comicIntro(G) {
 export async function tutorial(G) {
   const ui = G.ui, say = (l) => ui.say(l), S = G.S, P = G.player, world = G.world, near = (x, z, r) => Math.hypot(P.pos.x - x, P.pos.z - z) < r;
   const BM = 2, [mx, mz] = MOUNTS[BM]; S.mounts[BM] = 2;                               // one cracked panel to practise on
+  // Training is practice: what it uses up (a material for the bench, the rover's charge) and what it adds (raw food, log lines, job counts) is put back at the end
+  const keep = { mat: S.mat, raw: S.raw, car: S.car.charge, log: S.log.length, stats: { ...S.stats } };
   const V = G.addNpc('vasquez', 0xd8322a, 47, 26), O = G.addNpc('okoro', 0x2a62d8, mx + 5, mz + 6);
   await say([
     { who: 'vasquez', text: tt('First, your legs. <b>W A S D</b> to walk. Drag the mouse to look around. <b>Space</b> to hop — gravity here is one-sixth of Earth\'s, so you fly!') },
@@ -92,16 +94,17 @@ export async function tutorial(G) {
     await G.waitFor(() => ship.alt > 20, tt('Hold <b>Space</b> to climb above <b>20 m</b>'));
     await say([{ who: 'vasquez', text: tt('Good. Now <b>W</b> pushes you forward and <b>A</b> and <b>D</b> turn you. See the purple beam of light? That is Sakura Outpost. Flying drains the battery the whole time you are in the air, so go straight there.') }]);
     await G.waitFor(() => far(sx, sz) < 80, tt('Fly to the <b>purple light</b>: <b>W</b> forward, <b>A</b> and <b>D</b> to turn'), 'sakura');
-    await say([{ who: 'vasquez', text: tt('One more thing before you land. The hopper keeps gliding after you let go of <b>W</b>. Press <b>S</b> to slow down before you land.') }, { who: 'vasquez', text: tt('There is the tower with the red gate. Come down in front of it: hold <b>C</b>. The ring on the ground under you turns green where it is safe to land.') }]);
+    await say([{ who: 'vasquez', text: tt('One more thing before you land. The hopper keeps gliding after you let go of <b>W</b>. Press <b>S</b> to slow down before you land.') }, { who: 'vasquez', text: tt('And do not hang about up there. Hovering burns the battery too, even when you are standing still in the air.') }, { who: 'vasquez', text: tt('There is the tower with the red gate. Come down in front of it: hold <b>C</b>. The ring on the ground under you turns green where it is safe to land.') }]);
     await G.waitFor(() => !P.in && near(sx + 5, sz + 14, 45), tt('Hold <b>C</b> to land in front of the tower, then press <b>E</b> to get out'), { zone: 'top', x: sx + 4, z: sz + 26, name: tt('Sakura Outpost') });
+    const wide = Math.hypot(ship.x - (sx + 4), ship.z - (sz + 26)) > 18;   // how far from the spot in front of the gate the hopper came down
     await say([
-      { who: 'kenji', text: tt('Welcome to Sakura Outpost, neighbour! I am Kenji, the engineer here. Commander Vasquez said a rookie was learning to fly. That was a fine landing.') },
+      wide ? { who: 'kenji', text: tt('Welcome to Sakura Outpost, neighbour! I am Kenji, the engineer here. Commander Vasquez said a rookie was learning to fly. You came down a little wide of the gate, but you are down safely. Next time, slow down sooner with <b>S</b>.') } : { who: 'kenji', text: tt('Welcome to Sakura Outpost, neighbour! I am Kenji, the engineer here. Commander Vasquez said a rookie was learning to fly. That was a fine landing.') },
       { who: 'kenji', text: tt('Stations on the Moon look after each other: when one runs short, another sends a crate. Here is a practice crate. Pick it up with <b>E</b> and load it onto your hopper. The hopper carries two crates; the rover carries four.') },
     ]);
     await G.waitFor(() => P.carry === crate || ship.cargo.includes(crate), tt('Pick up the <b>food crate</b> next to Kenji (press <b>E</b>)'), { zone: 'top', x: sx + 9, z: sz + 17, name: tt('the food crate'), r: 1 });
     await G.waitFor(() => ship.cargo.includes(crate), tt('Carry the crate to the <b>hopper</b> and press <b>E</b> to load it'), 'ship');
     await say([{ who: 'kenji', text: tt('Remember the way here. If your station is ever in trouble, there are crates of materials, food and water at every station. Safe flight home!') }]);
-    await G.waitFor(() => !P.in && ship.alt < 0.5 && far(16, 52) < 26 && ship.cargo.includes(crate), tt('Fly home and land beside the <b>Cargo Depot</b>, then get out'), 'depot');
+    await G.waitFor(() => { const down = !P.in && ship.alt < 0.5 && ship.cargo.includes(crate), d = far(16, 52); if (down && d >= 26 && d < 400) G.warn('lesson-far', tt`You have landed ${Math.round(d)} m from the Cargo Depot. That is too far to carry a crate. Climb back in and hop closer.`, 'think', 20000); return down && d < 26; }, tt('Fly home and land beside the <b>Cargo Depot</b>, then get out'), 'depot');
     await say([{ who: 'vasquez', text: tt('Nicely done. Crates belong in the Cargo Depot. Press <b>Q</b> at the hopper to take the crate out, carry it to the depot and press <b>E</b>.') }]);
     await G.waitFor(() => !G.items.includes(crate), tt('Press <b>Q</b> at the hopper to take the crate out, carry it to the <b>Cargo Depot</b> and press <b>E</b>'), 'depot');
     await say([{ who: 'vasquez', text: tt('That is the whole trip. Two things to remember: the hopper only charges on its own pad, and a flight to another station and back uses about half its battery. Check the charge before you leave. Tobi will park it for you this time.') }]);
@@ -114,6 +117,7 @@ export async function tutorial(G) {
   ]);
   await G.waitFor(() => P.zone === 'deep', tt('<b>Get underground!</b> Ride the elevator down'), 'gate');
   await ui.fade(true); G.clearNpcs();
+  S.mat = keep.mat; S.raw = keep.raw; S.car.charge = keep.car; S.log.length = Math.min(S.log.length, keep.log); S.stats = keep.stats;
   if (G._flew) { Object.assign(G.ship, { x: SHIP_PAD[0], z: SHIP_PAD[1], vx: 0, vz: 0, vy: 0, alt: 0, yaw: 1.2 }); G.ship.y = world.heightAt(G.ship.x, G.ship.z); }
   await ui.fade(false);
 }
@@ -155,7 +159,8 @@ export async function disaster(G, skipped) {
   await showerScene(G);
   await ui.comic([{ title: tt('Chapter 3 · Alone'), btn: lim ? tt('Begin the mission ▸') : tt('Start building ▸'), panels: [
     { img: 'cm08', wide: true, cap: cap(tt('The meteor shower lasts four minutes. It hits every station on the Moon.')) },
-    { img: 'cm09', cap: cap(tt('Then, silence. Up top, nothing moves. The Commander and the Engineer do not come back.')), say: [by(tt('REGO'), tt('I… I cannot find their signals.'), 2)] },
+    G.S.mode === 'cadet' ? { img: 'cm09', cap: cap(tt('Then, silence. Up top, nothing moves. The Commander and the Engineer cannot get back: they have taken cover at another station.')), say: [by(tt('REGO'), tt('They are safe. But they cannot reach us.'), 2)] }
+      : { img: 'cm09', cap: cap(tt('Then, silence. Up top, nothing moves. The Commander and the Engineer do not come back.')), say: [by(tt('REGO'), tt('I… I cannot find their signals.'), 2)] },
     { img: 'cm10', cap: cap(tt('Down below, the big screen fills with red. Panels smashed. Rooms holed and frozen. The dish knocked over.')) },
     { img: 'cm11', cap: cap(lim ? tt`A rescue ship needs time to get ready, then three days to fly. It will arrive in <b>${days} days</b>.` : tt('No rescue ship can come for a long time. You will have to build a new home.')), say: [by(tt('Mission Control'), lim ? tt('You are the only one left there. Keep the power on and the air in. We are coming.') : tt('You are the only one left there. Rebuild. Make it a place where people can live.'), 0)] },
     { img: 'cm12', wide: true, cap: cap(tt('Some astronauts at the other stations may still be alive. And you are not alone.')), say: [by(tt('REGO'), tt('I am right here. Let us get the lights back on.'), 1)] },
@@ -171,7 +176,7 @@ export function ending(G) {
     why.push(S.dose < 40 ? tt`You took only ${S.dose.toFixed(1)} mSv of radiation — you used the rock roof well.` : tt`You took ${S.dose.toFixed(0)} mSv of radiation. Less time topside during storms would lower it.`);
     if (S.stats.brownHours > 2) why.push(tt`The station spent ${S.stats.brownHours.toFixed(0)} hours in brownout with an empty battery. More panels and battery modules before sunset would prevent that.`);
     { const asked = S.stats.asked || 0, right = S.stats.right || 0; if (asked) why.push((asked > 1 ? tt`After the emergencies you answered <b>${right} of ${asked}</b> questions right${right === asked && asked > 1 ? tt(': every one.') : '.'}` : tt`After the emergencies you answered <b>${right} of ${asked}</b> question right${right === asked && asked > 1 ? tt(': every one.') : '.'}`)); }
-    return { win: true, img: 'win2', title: tt('RESCUED — YOU ARE A MOONKEEPER'), sub: tt('The rescue ship is down. As you walk to the landing pad, REGO rolls beside you with both arms in the air. Commander Vasquez and Engineer Okoro would be proud.'), why,
+    return { win: true, img: 'win2', title: tt('RESCUED — YOU ARE A MOONKEEPER'), sub: S.mode === 'cadet' ? tt('The rescue ship is down. As you walk to the landing pad, REGO rolls beside you with both arms in the air. Commander Vasquez and Engineer Okoro wave from the hatch.') : tt('The rescue ship is down. As you walk to the landing pad, REGO rolls beside you with both arms in the air. Commander Vasquez and Engineer Okoro would be proud.'), why,
       science: tt('Everything you juggled is real. Future Moon crews must keep the air in, trade power between air, water, food and heat, hide from solar storms, and survive two-week nights. Lava tubes like this one are among the places scientists are studying for shelter.') };
   }
   const c = S.over.cause, why = []; let science, tip, title;

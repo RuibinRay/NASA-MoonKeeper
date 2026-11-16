@@ -272,7 +272,7 @@ export function installActions(G) {
       if (amt <= 0.01 && days !== Infinity) a.push({ text: tt`OUT OF ${upper(name)} — you are losing health`, sub: fix, go, key: id + '-out', wake: tt`<b>Wake up! There is no ${lower(name)} left.</b> ${fix}.` });
       else if (days * 24 < 6) a.push({ text: tt`${name} runs out in ${left(days)}`, sub: fix, go, key: id + '-low', wake: tt`<b>Wake up! ${name} runs out in ${left(days)}.</b> ${fix}.` });
       else if (days < 1.5) a.push({ text: tt`${name} runs out in ${left(days)}`, sub: fix, go, kind: 'warn' });
-      else if (days < toRescue) a.push({ text: tt`${name} will run out before rescue`, sub: tt`In ${left(days)}; the ship is ${left(toRescue)} away`, go, kind: 'warn' });
+      else if (days < toRescue && G.state !== 'tutorial') a.push({ text: tt`${name} will run out before rescue`, sub: tt`In ${left(days)}; the ship is ${left(toRescue)} away`, go, kind: 'warn' });
     }
     for (const d of ROOMS) { const stt = roomState(s, d.id); if (stt === 'leak') a.push({ text: tt`AIR LEAK: ${d.name}`, sub: tt('Patch the hole, or lock its door'), go: d.id }); else if (stt === 'sealed') a.push({ text: tt`${d.name}: sealed, no air`, sub: tt('Patch the hole to save it'), go: d.id, kind: 'warn' }); else if (stt === 'wreck') a.push({ text: tt`${d.name}: broken`, sub: tt`Rebuild it (${d.mat} materials)`, go: d.id, kind: 'warn' }); else if (!s.rooms[d.id].door && G.state === 'play') a.push({ text: tt`${d.name} door is locked`, sub: tt('Nothing is leaking there: unlock it at the door (E)'), go: d.id, kind: 'warn' }); }   // a locked door on a healthy room is easy to forget
     if (s.safeMode > 0) a.push({ text: tt`Topside safe mode: ${fmt.hrs(s.safeMode)}`, sub: tt('No solar or radio'), kind: 'warn' });
