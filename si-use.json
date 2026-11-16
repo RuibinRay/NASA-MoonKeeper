@@ -10,7 +10,8 @@
       "css/",
       "index.html",
       "teachers.html",
-      "docs/"
+      "docs/",
+      "favicon.svg"
     ],
     "checked_by": "automatic tests in tools/*_test.mjs, and play-throughs in a browser"
   },
@@ -18,18 +19,19 @@
     "si_generated": true,
     "tool": "Higgsfield image model (marketing-studio/image/sunburst), run by tools/gen_art.mjs",
     "covers": [
-      "assets/img/*.jpg and assets/img/mars/*.jpg (all 111 pictures: comic, characters, event cards, rooms, job games, title, endings, and the Mars buildings, places and crew)",
+      "assets/img/*.jpg and assets/img/mars/*.jpg (all 112 pictures: comic, characters, event cards, rooms, job games, title, endings, and the Mars buildings, places and crew)",
       "assets/tex/wall3.jpg, floor3.jpg, ceil3.jpg, door3.jpg (interior textures)"
     ],
     "watermark": "Every picture from assets/img shows a visible 'SI-generated' mark in the game (js/simark.js, css/style.css, js/minigames.js). The interior textures are tiled across 3D walls and floors, so they cannot carry a mark of their own: while the player is inside the station, a label in the bottom-left corner of the screen says 'Station walls and floors: SI-generated' (js/simark.js, texMark)."
   },
   "video": {
     "si_generated": true,
-    "tool": "Higgsfield Seedance 2.5 (image-to-video and video-edit); Higgsfield image model for the Mars title card; planned and edited with Claude (Anthropic), assembled with FFmpeg",
+    "tool": "Higgsfield Seedance 2.5 (image-to-video and video-edit) for the demo video, Higgsfield Seedance 2.0 (image-to-video) for the home page film; Higgsfield image model for the Mars title card; planned and edited with Claude (Anthropic), assembled with FFmpeg",
     "covers": [
-      "demo/moonkeeper-demo.mp4 (30-second demo): the opening shot and the hopper shot use Seedance 2.5, the Mars title card and the end card use SI-made pictures; the other ten shots are recorded straight from the game"
+      "demo/moonkeeper-demo.mp4 (30-second demo): the opening shot and the hopper shot use Seedance 2.5, the Mars title card and the end card use SI-made pictures; the other ten shots are recorded straight from the game",
+      "assets/video/title_loop.mp4 and title_loop_s.mp4 (the home page film): five seconds of the home page picture (assets/img/title3.jpg) with small movements, made with Higgsfield Seedance 2.0 image-to-video by tools/gen_film.mjs from tools/title_film.json; its first and last frame are the same picture, so it loops"
     ],
-    "watermark": "A visible 'SI-generated' mark in the top right corner for the whole video; the same facts are in the file's metadata comment."
+    "watermark": "A visible 'SI-generated' mark in the top right corner for the whole video; the same facts are in the file's metadata comment. The home page film plays inside the title background, which carries a visible 'SI-generated' mark (css/style.css)."
   },
   "translations": {
     "si_generated": true,

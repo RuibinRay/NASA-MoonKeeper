@@ -57,8 +57,9 @@ MOONKEEPER was made with SI tools, directed by a human designer who chose what t
 | What | SI tool | Where |
 |---|---|---|
 | Code, tests, tools and documents | Claude (Anthropic), through Claude Code | `js/`, `tools/`, `css/`, `index.html`, `teachers.html`, `docs/` |
-| Pictures | Higgsfield image model, run by `tools/gen_art.mjs` | all 111 pictures in `assets/img/` (83 for the Moon, 28 for Mars in `assets/img/mars/`); the interior textures `assets/tex/wall3`, `floor3`, `ceil3`, `door3` |
+| Pictures | Higgsfield image model, run by `tools/gen_art.mjs` | all 112 pictures in `assets/img/` (84 for the Moon, 28 for Mars in `assets/img/mars/`); the interior textures `assets/tex/wall3`, `floor3`, `ceil3`, `door3` |
 | Demo video | Higgsfield Seedance 2.5 (image to video for the opening shot, video edit for the hopper shot); a Higgsfield picture for the Mars title card; planned and edited with Claude | `demo/moonkeeper-demo.mp4`: ten of its fourteen shots are recorded straight from the game |
+| Home page film | Higgsfield Seedance 2.0, image to video, run by `tools/gen_film.mjs` from `tools/title_film.json`: the first and the last frame are both the home page picture, so it loops | `assets/video/title_loop.mp4` and `title_loop_s.mp4` (for phones): five seconds of the home page picture with small movements, shown under the same "SI-generated" mark as the picture |
 | Translations | Claude (Anthropic) | `lang/*.json`, checked by machine, not yet by native speakers |
 
 **Watermark:** every picture from `assets/img/` shows a visible "SI-generated" mark wherever the game shows it (`js/simark.js`; the title, mission and end backgrounds in `css/style.css`; the job games draw theirs on the canvas). The home screen also says the game was made with SI tools. The demo video carries a visible "SI-generated" mark for its whole length, and its file metadata says how it was made. The interior textures are tiled across the 3D walls and floors, so they cannot carry a mark of their own: while you are inside the station, a label in the bottom-left corner of the screen says "Station walls and floors: SI-generated" (`js/simark.js`).
