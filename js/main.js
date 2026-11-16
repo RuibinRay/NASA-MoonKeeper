@@ -134,7 +134,8 @@ function updateGoal() {
   { const c = G.chosen; if (c && G.state === 'play') { let fin = false; try { fin = c.done(); } catch (e) { fin = true; }
       if (fin) { G.chosen = null; const r = G.resolve(c.t), g0 = G.goal;
         if (r && g0 && !g0.cb && g0.zone === r.zone && Math.abs(g0.x - r.x) < 0.01 && Math.abs(g0.z - r.z) < 0.01) { G.goal = null; world.setTarget(null); ui.objective(null); }
-        setTimeout(() => { if (G.state === 'play' && !ui.busy && !G.inJob && !G.riding && G.sleepLeft <= 0) G.advise(); }, 1200); } } }
+        const q = G._quizLater; G._quizLater = null;   // the question that waited for this job
+        setTimeout(async () => { if (!(G.state === 'play' && !ui.busy && !G.inJob && !G.riding && G.sleepLeft <= 0)) return; if (q && G.askQuestion && !G.eventBusy) { G.eventBusy = true; try { await G.askQuestion(q); } finally { G.eventBusy = false; } } if (G.state === 'play' && !ui.busy) G.advise(); }, 1200); } } }
   const g = G.goal; $('#goal-x').classList.toggle('hidden', !(g && g.sticky && G.state === 'play')); world.guideForce = !!(g && g.sticky);   // advice you asked for always draws its line, even with guide mode off
   if (!g) { if (world.target) world.setTarget(null); ui.objective(null); return; }
   if (g.id === 'car' || g.id === 'ship') { g.x = G[g.id].x; g.z = G[g.id].z; }
@@ -491,7 +492,9 @@ function rangeCheck(S, car, ship) {
   const last = G._rng || (G._rng = { car: S.car.charge, ship: S.ship.charge, in: null });
   for (const [k, v] of [['car', car], ['ship', ship]]) {
     const ch = S[k].charge, name = k === 'car' ? tt('rover') : tt('hopper'), { home, need } = homeNeed(S, k, v), away = home > 20, near = P.in === k || Math.hypot(P.pos.x - v.x, P.pos.z - v.z) < 30, atMine = Math.hypot(v.x - MINE.x, v.z - MINE.z) < MINE.r * 0.9;
-    if (last[k] > 0 && ch <= 0 && away) { if (near) G.pointTo('gate'); G.warn('dead-' + k, tt`<b>The ${name}'s battery is empty</b>, ${Math.round(home)} m from its pad. ${k === 'ship' ? tt('A hopper only charges on its own pad, so it has to stay here.') : tt('A rover only charges on its pad.')} Walk home: follow the line to the elevator.`, 'alert', 60000); }
+    if (last[k] > 0 && ch <= 0 && away) { if (near) G.pointTo('gate');
+      if (P.zone === 'top') G.warn('dead-' + k, tt`<b>The ${name}'s battery is empty</b>, ${Math.round(home)} m from its pad. ${k === 'ship' ? tt('A hopper only charges on its own pad, so it has to stay here.') : tt('A rover only charges on its pad.')} Walk home: follow the line to the elevator.`, 'alert', 60000);
+      else ui.toast(k === 'ship' ? tt`The cold has emptied the hopper's battery, ${Math.round(home)} m from its pad.` : tt`The cold has emptied the rover's battery, ${Math.round(home)} m from its pad.`, 'bad'); }
     else if (away && near && !atMine && ch > 0 && P.zone === 'top') {   // the crater has its own warning
       if (ch < need) G.warn('range-' + k, tt`<b>The ${name} cannot get home on ${pct(ch)}.</b> The ${Math.round(home)} m back to its pad needs about ${pct(need)}${S.flow.frost > 0 ? tt(', and the cold keeps draining it') : ''}. ${k === 'ship' ? tt('Fly as far as it goes, then walk the rest.') : tt('Drive as far as it goes, then walk the rest.')}`, 'alert', 45000);
       else if (ch < need * 1.25 + 0.04) G.warn('range-' + k, tt`<b>Time to go home!</b> The ${name} is at <b>${pct(ch)}</b> and needs about ${pct(need)} to get back to its pad${S.flow.frost > 0 ? tt('. The night cold drains it even while it stands still') : ''}.`, 'worried', 45000);
@@ -664,10 +667,10 @@ async function tickSim(dt) {
   const S = G.S; S.zone = P.zone;
   if (!G.simOn || ui.busy || G.paused || G.riding || G.eventBusy || G.jobTick) { computeFlows(S); return; }
   let h = (dt / S.m.hourLen) * G.speedMul * (G.sleepLeft > 0 ? 22 : 1);
-  if (G.sleepLeft > 0) { G.sleepLeft -= h; const al = G.alerts(); if (al.filter((a) => a.kind !== 'warn').length > (G._sleepAlerts ?? 99)) G.sleepLeft = 0;
+  if (G.sleepLeft > 0) { G.sleepLeft -= h; const al = G.alerts(), early = al.filter((a) => a.kind !== 'warn').length > (G._sleepAlerts ?? 99); if (early) G.sleepLeft = 0;   // something new went wrong: awake before the eight hours are up
     const alarm = G._sleepKeys && al.find((a) => a.key && !G._sleepKeys.includes(a.key));   // a new emergency (power out, air/water/food nearly gone) always wakes you, even if a warning was already showing
     if (alarm) { G.sleepLeft = 0; G.audio.play('alarm'); ui.bubble(alarm.wake, 'alert', 12); }
-    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); if (!alarm) ui.toast(tt('You wake up rested.'), 'good'); } }
+    if (G.sleepLeft <= 0) { G.sleepLeft = 0; S.health = Math.min(100, S.health + 8); G._wokeT = S.t; if (!alarm) ui.toast(early ? tt('Something has gone wrong. You wake up early.') : tt('You wake up rested.'), early ? '' : 'good'); } }
   G.simAdvance(h);
   const st = S.storm;
   if (st && S.t >= st.start) { if (!st.begun) { st.begun = true; G.sleepLeft = 0; G.audio.play('alarm'); if (P.zone === 'top') { ui.bubble(tt('<b>The storm is here!</b> Elevator. Now. The rock roof will shield you.'), 'alert', 12); G.pointTo('gate'); } } ui.banner(P.zone === 'top' ? tt('RADIATION STORM — GET UNDERGROUND!') : tt('Solar storm raging topside — you are shielded down here'), P.zone !== 'top'); }

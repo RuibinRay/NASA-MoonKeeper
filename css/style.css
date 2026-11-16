@@ -351,6 +351,7 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
 .choice.guide-rec::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,240,170,.28),transparent);animation:shine 2.4s ease-in-out infinite;pointer-events:none}
 @keyframes shine{0%{left:-60%}60%,100%{left:120%}}
 .choice.guide-rec:hover{border-color:#ffe36b;background:linear-gradient(180deg,rgba(84,62,6,.97),rgba(40,29,5,.97))}
+.choice .rec-why{display:block;margin:4px 0 2px;color:#ffe9a8;font-size:12.5px;line-height:1.35}   /* REGO's reason, on the choice it would press */
 .rec-tag{position:absolute;left:10px;top:6px;display:flex;align-items:center;gap:6px;font-family:var(--head);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#ffd21f}
 .rec-tag img{width:18px;height:18px;border-radius:50%;border:1.5px solid #ffd21f;object-fit:cover}
 .set-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:13px 14px;border-radius:12px;background:rgba(10,18,28,.9);border:1px solid var(--line);margin-bottom:8px;cursor:pointer}
