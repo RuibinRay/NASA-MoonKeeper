@@ -69,6 +69,25 @@ export const SHED = ['lab', 'greenhouse', 'comms', 'garage', 'living', 'medical'
 // to heat and clean air (both stop below half power). Hours the store lasts with the machine off; it may rest while that is over 1.5 sols.
 export const TANK_LEFT = { isru: (S, F) => S.o2 / Math.max(F.o2Use, 1e-6), water: (S, F) => S.water / Math.max(F.wUse - F.wBack, 1e-6) };
 export const canRest = (S, F, id) => TANK_LEFT[id](S, F) > 1.5 * MARS.SOL_H;
+// What to switch off, biggest first, until it covers the shortfall (in kW): first what the crew can do without, then a tank
+// machine whose tank holds enough. Life support and heat are never on the list. Four at most: a long list is not read.
+export function shedPlan(S, F, short = -F.net) {
+  const need = Math.max(0.5, short), c = SHED.filter((k) => S.on[k] && F.use[k] > 0).sort((a, b) => F.use[b] - F.use[a]);
+  for (const k of ['isru', 'water']) if (S.on[k] && F.use[k] > 0 && canRest(S, F, k)) c.push(k);
+  const list = []; let saved = 0; for (const k of c) { if (saved >= need || list.length >= 4) break; list.push(k); saved += F.use[k]; }
+  return { list, saved, more: c.length > list.length };
+}
+// The night ahead, asked while the Sun is still up (within `within` hours of sunset): on the fission unit alone, will the
+// battery carry the outpost to sunrise, or to the end of the mission? Returns null when it will. Otherwise: hours to sunset,
+// the kW the outpost is short at night, the length of the night, the kWh the battery should hold at sunset, the kWh the
+// night needs, and the kW to switch off so that it lasts.
+export function nightPlan(S, F, within = 6) {
+  const sn = F.sun; if (!sn.up) return null; const toSet = (sn.set - sn.hour) * (MARS.SOL_H / 24); if (!(toSet > 0 && toSet < within)) return null;
+  const gap = F.demand - F.reactor; if (!(gap > 0.5)) return null;
+  const nightH = Math.min(MARS.SOL_H - sn.dayH, (S.deadline ?? Infinity) - S.t - toSet); if (!(nightH > 1)) return null;
+  const have = Math.min(F.cap, S.battery + Math.max(0, F.net) * toSet * 0.5), need = gap * nightH; if (have >= need) return null;   // half of what it is making now: the Sun gets lower all the way to sunset
+  return { toSet, gap, nightH, have, need, cut: gap - have / nightH };
+}
 // How the mission went, as one number from 0 to 100, for the end screen: half for the crew's worst moment,
 // a third for hours without full power, the rest for how much of what broke was mended.
 export function grade(S) {

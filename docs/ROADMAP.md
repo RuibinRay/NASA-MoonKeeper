@@ -673,3 +673,15 @@ The improvements list from the newest Pilot playtest (15 Nov 2026), and its two 
 **The two bugs.** *Standing stuck in the station:* the moon-soil bed and the experiment bench were solid while hidden, so both farms had unseen obstacles; they are now solid only while shown. The two times reported (4.5 s and 13 s) are also exactly the shortest and longest job scenes, when the player cannot move by design, so this may not be all of it. *The panel left outside the airlock:* holding E fired the action many times a second (pick up, put down, pick up), and E also turns dialogue pages, so one press too many after the last line put the panel down. A held key now acts once, and E is ignored for a third of a second after a dialogue closes. Which of the two the tester met is not known.
 
 **Left alone.** The gap between surprise events: main already holds a new emergency back while two jobs are open, and that has not been played yet. The harvest game's timing still needs a real child.
+
+### REGO and the screens say the same thing
+
+From the walkthrough of 15 Nov 2026 (W1 to W7): in several places REGO's spoken advice and the screen it sent you to disagreed.
+
+**The Moon's Power Board.** REGO's hint (H) used its own list of things to turn down, and the Power Board used another, so REGO could say "turn down the Earth Link and the farm lights" while the board said "nothing can be turned down". Both now come from the board's one rule (`ui.powerHint`): REGO names the switch that glows. In a brownout at night with nothing else to shed, the board now turns the Topside Heaters down (weak machines freeze topside anyway, and the power is better spent on air and water); before, it stopped at "nothing can be turned down". The day before a night that will run short, the board shows the night warning, where it used to say "Nothing needs changing right now". When the rescue ship lands before the next sunrise, the words count to the rescue and no longer talk about "the next night". REGO only suggests giving a resting robot a job when the Control Center would glow one for it.
+
+**Mars switches.** A switch now glows only when REGO would have you press it: "switch off" for the buildings it names, "switch on" when power is back (it used to glow "on" always and "off" never). The Power Station panel (Tab, from anywhere) carries those switches and one for every building that is off, and comes back after each press. REGO's words say so.
+
+**Mars, the night ahead.** While the Sun is up (the last six hours of a clear day, all day in a storm) the game works out whether the battery will last the night on the fission unit alone. If not, an alert reads "Tonight the battery will not last" and REGO names what to switch off before dark. The rule is `nightPlan` in `js/mars/survive.js`, with `shedPlan` moved beside it.
+
+**Checked.** `node tools/mars_survive_test.mjs`: 85 checks (10 new: the night ahead and the list for it). All other checks pass. In the browser: the walkthrough's cases on both worlds.
