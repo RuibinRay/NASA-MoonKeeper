@@ -3,7 +3,7 @@
 import { tt } from '../i18n.js';
 import { IC } from '../icons.js';
 import { MARS, LOADS, marsStep } from './sim.js';
-import { MISSION, FAULTS, SHED, TANK_LEFT, canRest, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, grade, exploreUpkeep, shedPlan, nightPlan } from './survive.js';
+import { MISSION, FAULTS, SHED, TANK_LEFT, canRest, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, grade, exploreUpkeep, shedPlan, nightPlan, brokenAvg, PROMPT } from './survive.js';
 import { playMini } from '../minigames.js';
 
 const $ = (s) => document.querySelector(s);
@@ -161,6 +161,7 @@ export function makeMission(env) {
     const g = grade(s), rank = !o.win ? tt('Mission lost') : g >= 90 ? tt('Mars Keeper') : g >= 75 ? tt('Outpost Engineer') : g >= 55 ? tt('Storm Survivor') : tt('Just Made It'), c = CAUSE[o.cause] || CAUSE.health, st = s.stats, why = [];
     if (o.win) { why.push(tt`You kept four people alive for <b>${MISSION.sols} sols</b>, through a dust storm that reached <b>${s.storm.tau.toFixed(1)}</b> on the dust scale.`);
       why.push(st.repairs === st.faults ? tt`${st.faults} things broke, and you mended every one.` : tt`${st.faults} things broke, and you mended ${st.repairs} of them.`);
+      if (st.faults) { const w = brokenAvg(s); why.push(w <= PROMPT.full ? tt`A breakdown waited ${hrs(w)} on average before it was mended. That is prompt.` : tt`A breakdown waited <b>${hrs(w)}</b> on average before it was mended. Mending within ${PROMPT.full} hours scores highest: a broken machine is doing nothing for the crew.`); }
       why.push(st.brownHours < 0.5 ? tt('The power never failed: you switched off what could wait, and the battery lasted every night.') : tt`The outpost spent <b>${st.brownHours.toFixed(0)} hours</b> without full power, and the rooms fell to ${Math.round(st.minRoom)}°C. Switching off more of what the crew could do without would have kept the battery up.`); }
     else { why.push(tt`${clock(o.t)}: ${c.why}`); const left = PRIORITY.filter((k) => s.fault[k]); if (left.length) why.push(tt`Still broken at the end: ${left.map((k) => FAULT_TEXT[k].name).join(' · ')}.`);
       if (st.brownHours > 2) why.push(tt`The outpost spent ${st.brownHours.toFixed(0)} hours without full power. In a brownout every machine slows, and the heat pump stops when it gets less than half its power.`); }

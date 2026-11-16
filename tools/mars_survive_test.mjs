@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MARS, LOADS, PLANT, createMars, marsStep } from '../js/mars/sim.js';
-import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, dangers, grade, exploreUpkeep, TANK_LEFT, canRest, shedPlan, nightPlan } from '../js/mars/survive.js';
+import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, dangers, grade, exploreUpkeep, TANK_LEFT, canRest, shedPlan, nightPlan, brokenAvg, promptness, PROMPT } from '../js/mars/survive.js';
 import { marsSerialize, marsDeserialize, marsFlows } from '../js/mars/sim.js';
 
 let pass = 0, fail = 0;
@@ -157,6 +157,19 @@ ok(Object.values(FAULTS).reduce((s, f) => s + f.parts, 0) <= MISSION.parts + MIS
   ok(after === null || after.need < np.need, 'with those off, the night needs less', after ? `still ${after.need.toFixed(0)} kWh` : 'covered');
   const D = at(fresh(3), 16, 120); D.deadline = D.t + 3; ok(nightPlan(D, D.flow) === null || nightPlan(D, D.flow).nightH <= 3, 'a mission that ends tonight only counts the hours that are left');
   const Z = at(fresh(3), 12, 200), z = shedPlan(Z, { ...Z.flow, net: -3 }); ok(z.list.length >= 1 && z.saved >= 3, 'short by 3 kW: the first thing on the list covers it', z.list.join(' ')); }
+
+// ---- the repairs share of the score is for mending promptly ----
+{ const mk = () => { const S = fresh(5); S.plan = []; S.mat = 9; S.stats.faults = 0; S.stats.repairs = 0; S.stats.brokenHours = 0; return S; };
+  const brk = (S, id) => { S.fault[id] = true; S.faultAt[id] = S.t; S.stats.faults++; };
+  const A = mk(); ok(promptness(A) === 1 && brokenAvg(A) === 0, 'nothing broke: full marks for repairs');
+  brk(A, 'comms'); A.t += 1; ok(repair(A, 'comms') && Math.abs(brokenAvg(A) - 1) < 1e-9 && promptness(A) === 1, 'mended after one hour: full marks', brokenAvg(A));
+  const B = mk(); brk(B, 'comms'); B.t += PROMPT.none; repair(B, 'comms'); ok(promptness(B) < 1e-9, `mended after ${PROMPT.none} hours: no marks for repairs`, promptness(B));
+  const C = mk(); brk(C, 'comms'); C.t += (PROMPT.full + PROMPT.none) / 2; repair(C, 'comms'); ok(Math.abs(promptness(C) - 0.5) < 1e-9, 'half way between: half marks', promptness(C));
+  const D = mk(); brk(D, 'comms'); D.t += 20; ok(brokenAvg(D) === 20 && promptness(D) === 0, 'something left broken counts for as long as it has stood broken', brokenAvg(D));
+  const E = mk(); brk(E, 'comms'); E.t += 1; repair(E, 'comms'); brk(E, 'greenhouse'); E.t += 9; repair(E, 'greenhouse'); ok(Math.abs(brokenAvg(E) - 5) < 1e-9 && promptness(E) > 0.7 && promptness(E) < 0.8, 'two breakdowns, one mended fast and one slowly: the average counts', brokenAvg(E));
+  const fast = mk(), slow = mk(); for (const S of [fast, slow]) { S.stats.minHealth = 100; S.over = { win: true }; } brk(fast, 'comms'); fast.t += 1; repair(fast, 'comms'); brk(slow, 'comms'); slow.t += 14; repair(slow, 'comms');
+  ok(grade(fast) === 100 && grade(slow) === 85, 'the same mission mended at once scores 100, mended half a sol late 85', `${grade(fast)} and ${grade(slow)}`);
+  const P = mk(); P.faultAt = undefined; P.fault.thermal = true; P.stats.faults = 1; ok(repair(P, 'thermal') && promptness(P) === 1, 'a practice repair with no clock on it still works'); }
 
 console.log(`${pass} checks passed${fail ? ', ' + fail + ' FAILED' : ''}`);
 process.exitCode = fail ? 1 : 0;
