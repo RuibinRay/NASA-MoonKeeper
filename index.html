@@ -7,6 +7,7 @@
 <meta name="description" content="A 3D Moon-base survival and building game for ages 7 to 18. Keep the power on and the air in until rescue arrives.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Bangers&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -61,7 +62,7 @@
 
 <!-- full-screen layers -->
 <div id="title" class="screen">
-  <div class="title-bg"></div>
+  <div class="title-bg"><video id="title-film" muted loop playsinline preload="none" aria-hidden="true"></video></div><div class="title-sky" aria-hidden="true"><i></i><i></i><i></i></div>
   <label id="lang-box" title="Language" data-t-title><span aria-hidden="true">🌐</span><select id="lang-pick" aria-label="Language" data-t-aria></select></label>
   <div class="title-inner">
     <div class="eyebrow" data-t><i></i>A Moon-base survival and building adventure</div>

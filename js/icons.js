@@ -1,6 +1,7 @@
 // MOONKEEPER 2 — hand-drawn line icons (no emoji, so they look the same on every device).
 const P = (d) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 export const IC = {
+  play: P('<path d="M7 4l13 8-13 8z"/>'),
   bolt: P('<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>'),
   air: P('<path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4-6"/><path d="M3 20h18"/>'),
   o2: P('<circle cx="8" cy="14" r="5"/><circle cx="17" cy="7" r="3"/><circle cx="18" cy="18" r="2"/>'),

@@ -1,0 +1,17 @@
+{
+ "stillResolution": "4k",
+ "stillStyle": "Kid-friendly modern animated-movie cartoon illustration: rounded friendly shapes, clean bold outlines, soft cel shading, bright cheerful saturated colors, cinematic lighting with a strong rim light. On the Moon the sky is black with stars and there is no air. No text, no letters, no numbers, no logos, no flags, no watermark.",
+ "videoStyle": "The camera is locked off and does not move at all. Same cartoon illustration style as the first frame; keep every character and object exactly where it is. No cuts, no fades, no text, no logos. The last frame is identical to the first frame, so the clip loops without a jump.",
+ "variants": {
+  "k4": { "endpoint": "bytedance/seedance-2.0/image-to-video", "resolution": "4k" },
+  "hd": { "endpoint": "bytedance/seedance-2.5/image-to-video", "resolution": "1080p" }
+ },
+ "stills": [
+  { "id": "title3", "refs": ["https://ruibinray.github.io/NASA-MoonKeeper/assets/img/title2.jpg", "https://ruibinray.github.io/NASA-MoonKeeper/assets/img/c_rookie.jpg", "https://ruibinray.github.io/NASA-MoonKeeper/assets/img/c_rego.jpg"],
+    "prompt": "Epic wide cartoon key art for a Moon adventure game, in the same art style and with the same characters, rover and station as the first reference image, recomposed. All the subjects are in the right 45 percent of the picture: the young astronaut hero in the white suit with orange bands and a gold visor (second reference image) stands heroically, seen from a low three-quarter back angle, with the small white-and-orange helper robot on tank treads (third reference image) beside them looking up at them, and behind them a chunky six-wheeled rover car carrying a blue solar panel. In the middle distance on the right, a field of blue solar panels and a huge round pit glowing with warm orange-red light from an underground station, with tiny warm lights along its rim. A large blue Earth hangs in the upper right of the black starry sky. The left 55 percent of the picture is calm, dark and empty: black starry sky above a dark, flat grey lunar plain with a few small craters and long shadows, with no characters and no objects there. Two thin bright meteor streaks high in the sky on the left. Low sunlight from the right gives everything a bright rim light and long black shadows." }
+ ],
+ "clips": [
+  { "id": "title_loop", "from": "title3", "to": "title3",
+    "prompt": "A living illustration with very small, gentle movements: the stars twinkle softly; the tiny lights along the rim of the pit blink and the warm glow inside the pit pulses slowly; a thin veil of grey dust drifts low over the ground; the Earth turns very slowly; the small robot's antenna light blinks and it tilts its head a little toward the astronaut and back; the astronaut's shoulders rise and fall once as if breathing; one thin meteor streaks silently across the far sky and is gone. Nothing else moves." }
+ ]
+}

@@ -765,6 +765,14 @@ const showMission = (on) => { $('#mission').classList.toggle('hidden', !on); $('
 $('#btn-start').onclick = () => { G.audio.init(); G.audio.play('click'); showMission(true); }; $('#btn-back').onclick = () => showMission(false); $('#btn-tour').onclick = () => ui.guide('tour'); $('#btn-games').onclick = () => { G.audio.init(); ui.guide('games'); };
 $('#btn-launch').onclick = () => { if (planet === 'mars') { $('#btn-launch').textContent = tt('Loading…'); G.startMars({ mode: marsMode, train: !$('#skip-tut').checked }); } else start(mode, $('#skip-tut').checked); };
 document.querySelectorAll('.pillar').forEach((p) => p.insertAdjacentHTML('afterbegin', `<i>${IC[p.dataset.ic] || ''}</i>`));
+// The home page's key art is alive: a short looping film of the same picture plays behind the title. It is fetched after
+// the page has drawn, stops the moment the home page is left (the game needs the machine to itself), and is skipped
+// for people who ask their device for less motion.
+{ const film = $('#title-film'), home = $('#title'), bg = $('.title-bg'), calm = matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if (film && !calm) { const sync = () => { if (home.classList.contains('hidden')) film.pause(); else film.play().catch(() => {}); };
+    film.addEventListener('playing', () => film.classList.add('on'), { once: true }); new MutationObserver(sync).observe(home, { attributes: true, attributeFilter: ['class'] });
+    setTimeout(() => { film.src = innerWidth < 700 ? 'assets/video/title_loop_s.mp4' : 'assets/video/title_loop.mp4'; sync(); }, 600);
+    addEventListener('pointermove', (e) => { if (e.pointerType === 'touch' || home.classList.contains('hidden')) return; bg.style.setProperty('--px', ((e.clientX / innerWidth - 0.5) * -16).toFixed(1) + 'px'); bg.style.setProperty('--py', ((e.clientY / innerHeight - 0.5) * -9).toFixed(1) + 'px'); }, { passive: true }); } }
 if (G.hasSave()) { const b = $('#btn-continue'); b.classList.remove('hidden'); b.onclick = async () => { if (G._starting) return; G._starting = true; G.audio.init(); if (!world.warmMs) b.textContent = tt('Loading…'); await world.warm(); try { loadGame(); } catch (e) { console.error(e); G.clearSave(); location.reload(); } }; }
 async function start(modeKey, skip, seed) {
   G.audio.init(); G.audio.play('ok'); G.clearSave();
