@@ -3,7 +3,7 @@
 import { tt } from '../i18n.js';
 import { IC } from '../icons.js';
 import { MARS, LOADS, marsStep } from './sim.js';
-import { MISSION, FAULTS, SHED, TANK_LEFT, canRest, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, grade, exploreUpkeep } from './survive.js';
+import { MISSION, FAULTS, SHED, TANK_LEFT, canRest, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, grade, exploreUpkeep, shedPlan, nightPlan } from './survive.js';
 import { playMini } from '../minigames.js';
 
 const $ = (s) => document.querySelector(s);
@@ -84,12 +84,21 @@ export function makeMission(env) {
     if (!on() && !faulty()) return; const s = S(), ph = on() ? stormPhase(s) : { phase: 'none' };
     for (const id of PRIORITY) if (s.fault[id]) a.push({ key: 'fault-' + id, text: FAULT_TEXT[id].name, sub: canRepair(s, id) ? tt('Mend it at its door') : tt('No spare parts for this'), go: AT(id) });
     if (ph.phase === 'before') a.push({ text: tt('Dust storm coming'), sub: tt`arrives in ${hrs(ph.inH)}`, kind: 'warn', go: 'power' });
+    if (on() && s.flow && !isShort(s, s.flow, ph)) { const np = nightPlan(s, s.flow, ph.phase === 'on' ? 24 : 6); if (np) a.push({ text: tt('Tonight the battery will not last'), sub: tt`After sunset: ${kw(s.flow.reactor)} made, ${kw(s.flow.demand)} used`, kind: 'warn', go: 'power' }); }
   }
-  // What to switch off, biggest first, until it covers the shortfall: first what the crew can do without, then a tank
-  // machine whose tank holds enough. Life support and heat are never on the list.
-  const shedPlan = (s, F) => { const need = Math.max(0.5, -F.net), c = SHED.filter((k) => s.on[k] && F.use[k] > 0).sort((a, b) => F.use[b] - F.use[a]);
-    for (const k of ['isru', 'water']) if (s.on[k] && F.use[k] > 0 && canRest(s, F, k)) c.push(k);
-    const list = []; let saved = 0; for (const k of c) { if (saved >= need || list.length >= 4) break; list.push(k); saved += F.use[k]; } return { list, saved, more: c.length > list.length }; };   // four at most: a long list is not read
+  // Short of power only while the battery is actually going down: charging in daylight, even in the storm, is not short.
+  const isShort = (s, F, ph) => F.eff < 1 || (F.net < 0 && (F.battHours < 9 || (ph.phase === 'on' && s.battery < 0.8 * F.cap)));
+  // The switches REGO would have you press right now: buildings to switch off (power is short, or tonight will be), or one
+  // to switch back on. The building panels and the Power Station panel glow these same switches, so the words and the
+  // buttons never disagree.
+  function switches() {
+    if (!on()) return { off: [], on: null }; const s = S(), F = s.flow, ph = stormPhase(s);
+    const low = ['isru', 'water'].find((k) => !s.on[k] && !canRest(s, F, k)); if (low) return { off: [], on: low };
+    if (isShort(s, F, ph)) return { off: shedPlan(s, F).list, on: null };
+    const np = nightPlan(s, F, ph.phase === 'on' ? 24 : 6); if (np) return { off: shedPlan(s, F, np.cut).list, on: null };
+    const back = ['isru', 'water', ...SHED].find((k) => !s.on[k]); return { off: [], on: back && ph.phase !== 'on' && s.battery > 0.7 * F.cap && F.net > 0 ? back : null };
+  }
+  const WHERE = () => tt('Press Tab: their switches are on the Power Station panel, and at each building\'s door too.');
   // urgent = something else is already urgent (oxygen, water, cold, stale air): then the game's usual advice speaks
   function advise(urgent) {
     if (!on()) return false; const s = S(), F = s.flow, ph = stormPhase(s), say = (html, go, mood = 'worried') => { ui.bubble(html, mood, 14); if (go) G.pointTo(go); return true; };
@@ -101,19 +110,24 @@ export function makeMission(env) {
     if (f && canRepair(s, f)) return say(`${FAULT_TEXT[f].alert} ${FAULT_TEXT[f].fix}`, AT(f), 'alert');
     if ((f || fOff) && s.cargo > 0 && !canRepair(s, f || fOff)) return say(tt`<b>We have no spare parts left</b> for this repair. There are ${s.cargo} more still packed in the <b>lander</b>. Take the rover.`, 'lander', 'alert');
     if (urgent && !(F.eff < 1)) return false;
-    // Short of power only while the battery is actually going down: charging in daylight, even in the storm, is not short.
-    const short = F.eff < 1 || (F.net < 0 && (F.battHours < 9 || (ph.phase === 'on' && s.battery < 0.8 * F.cap)));
+    const short = isShort(s, F, ph);
     if (short) { const p = shedPlan(s, F);
       if (!p.list.length) return say(tt('<b>Power is short</b>, and everything that can wait is already off. Keep the Life Support Module and the heat pump running, and brush the solar panels as soon as the Sun is up.'), 'power');
       const names = p.list.map((k) => tt`<b>${INFO[k].name}</b> (${kw(F.use[k] || LOADS[k])})`).join(', '), notes = [];
       if (p.list.includes('isru')) notes.push(tt`The oxygen in the tanks lasts ${hrs(TANK_LEFT.isru(s, F))}, so the ISRU Facility can rest until the battery recovers.`);
       if (p.list.includes('water')) notes.push(tt`The water lasts ${hrs(TANK_LEFT.water(s, F))}, so the Water Processing Plant can rest until the battery recovers.`);
-      return say([F.net < 0 ? tt`<b>Power is short:</b> the outpost uses ${kw(-F.net)} more than it makes.` : tt('<b>Power is short.</b>'), tt`Switch off ${names}. Each switch is at its building's door.`, ...notes, p.saved < -F.net - 0.05 ? (p.more ? tt('When those are off, press H and I will name the next ones.') : tt('That still leaves the battery running down, only slower: it is the most we can spare.')) : '', tt('Keep the Life Support Module and the heat pump on: below half power, the heat and the air scrubbers stop.')].filter(Boolean).join(' '), p.list[0]); }
+      return say([F.net < 0 ? tt`<b>Power is short:</b> the outpost uses ${kw(-F.net)} more than it makes.` : tt('<b>Power is short.</b>'), tt`Switch off ${names}.`, WHERE(), ...notes, p.saved < -F.net - 0.05 ? (p.more ? tt('When those are off, press H and I will name the next ones.') : tt('That still leaves the battery running down, only slower: it is the most we can spare.')) : '', tt('Keep the Life Support Module and the heat pump on: below half power, the heat and the air scrubbers stop.')].filter(Boolean).join(' '), p.list[0]); }
+    // The night ahead, said while there is still daylight to act in (all day long in a storm, the last six hours otherwise).
+    { const np = nightPlan(s, F, ph.phase === 'on' ? 24 : 6);
+      if (np) { const p = shedPlan(s, F, np.cut), lead = tt`<b>Tonight the battery will not last.</b> After sunset, in ${hrs(np.toSet)}, only the fission unit makes power: ${kw(F.reactor)}, and the outpost uses ${kw(F.demand)}. The battery will hold about ${Math.round(np.have)} kWh and the night needs about ${Math.round(np.need)} kWh.`;
+        if (!p.list.length) return say(lead + ' ' + tt('Everything that can wait is already off. Keep the Life Support Module and the heat pump running.'), 'power');
+        return say([lead, tt`Switch off ${p.list.map((k) => tt`<b>${INFO[k].name}</b> (${kw(F.use[k] || LOADS[k])})`).join(', ')} before dark.`, WHERE()].join(' '), p.list[0]); } }
     if (s.cargo > 0) return say(tt`Before the storm: there are <b>${s.cargo} spare parts</b> still packed in the <b>lander</b>. Take the rover and unpack them. You will need them when things break.`, 'lander', 'happy');
     if (s.panelDust > 0.08 && ph.phase !== 'on' && F.sun.up) return say((ph.phase === 'before' ? tt`The solar panels are losing <b>${Math.round(s.panelDust * 100)}%</b> of their power to dust. Brush them at the <b>Power Station</b> before the storm arrives.` : tt`The solar panels are losing <b>${Math.round(s.panelDust * 100)}%</b> of their power to dust. Brush them at the <b>Power Station</b>.`), 'power', 'happy');
     if (fOff && canRepair(s, fOff)) return say(tt`The <b>${INFO[AT(fOff)].name}</b> is switched off, and it is broken too: ${FAULT_TEXT[fOff].name}. Mend it at its door before you switch it back on.`, AT(fOff));
     const back = ['isru', 'water', ...SHED].find((k) => !s.on[k]); if (back && ph.phase !== 'on' && s.battery > 0.7 * F.cap && F.net > 0) return say(tt`Power is back. Switch the <b>${INFO[back].name}</b> on again at its door.`, back, 'happy');
     if (f) return say(tt`<b>${FAULT_TEXT[f].name}.</b> We have no spare parts left to mend it. Keep everything else running until the supply lander arrives.`, null);
+    if (ph.phase === 'on' && F.sun.up) return say(tt`Nothing needs switching off yet: the battery should last tonight. I will say so before dark if that changes. The supply lander arrives in ${hrs(s.deadline - s.t)}.`, null, 'happy');
     return say(ph.phase === 'before' ? tt`All is in order. The storm arrives in ${hrs(ph.inH)}: go in with a full battery.` : tt`All is in order. The supply lander arrives in ${hrs(s.deadline - s.t)}. Keep an eye on the battery at night.`, null, 'happy');
   }
 
@@ -161,5 +175,5 @@ export function makeMission(env) {
         <div class="row" style="margin-top:16px"><button class="primary" id="again">${o.win ? tt('Play again') : tt('Try again')}</button><span class="fine" style="margin:0">${tt('Science notes and data sources: docs/MARS_SCIENCE.md in this project.')}</span></div></div>`;
       $('#again').onclick = () => { const u = new URL(location.href); u.searchParams.set('go', 'mars-survive'); location.href = u.href; }; await ui.fade(false); }, o.win ? 1600 : 900);
   }
-  return { on, begin, intro, step, alerts, advise, panel, place, hud, broken, end };
+  return { on, begin, intro, step, alerts, advise, panel, place, hud, broken, end, switches };
 }

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MARS, LOADS, PLANT, createMars, marsStep } from '../js/mars/sim.js';
-import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, dangers, grade, exploreUpkeep, TANK_LEFT, canRest } from '../js/mars/survive.js';
+import { MISSION, FAULTS, SHED, startSurvival, surviveStep, stormPhase, repairHours, canRepair, repair, unpackCargo, dangers, grade, exploreUpkeep, TANK_LEFT, canRest, shedPlan, nightPlan } from '../js/mars/survive.js';
 import { marsSerialize, marsDeserialize, marsFlows } from '../js/mars/sim.js';
 
 let pass = 0, fail = 0;
@@ -141,6 +141,22 @@ ok(Object.values(FAULTS).reduce((s, f) => s + f.parts, 0) <= MISSION.parts + MIS
   ok(TANK_LEFT.isru(S, F) > 0 && canRest(S, F, 'isru') === TANK_LEFT.isru(S, F) > 1.5 * SOL, 'the oxygen plant may rest exactly while the tank lasts over a sol and a half', `${TANK_LEFT.isru(S, F).toFixed(0)} h`);
   S.o2 = 1; ok(!canRest(S, marsFlows(S), 'isru'), 'and not with 1 kg left in the tank');
   S.water = 500; ok(canRest(S, marsFlows(S), 'water'), 'a full water tank lets the ice well rest'); }
+
+// ---- the night ahead, and what to switch off for it ----
+{ const at = (S, hour, batt) => { S.t = hour * (SOL / 24); S.battery = batt; S.flow = marsFlows(S); return S; };
+  const A = at(fresh(3), 16, 120), np = nightPlan(A, A.flow);
+  ok(np && np.need > np.have && np.gap > 5 && np.nightH > 8 && np.toSet > 0 && np.toSet < 6, 'late afternoon with a low battery: the night will not be covered', np && `${np.have.toFixed(0)} kWh held, ${np.need.toFixed(0)} needed`);
+  ok(nightPlan(at(fresh(3), 16, 500), A.flow) === null || nightPlan(at(fresh(3), 16, 500), marsFlows(at(fresh(3), 16, 500))) === null, 'with a full battery it is');
+  ok(nightPlan(at(fresh(3), 10, 120), marsFlows(at(fresh(3), 10, 120))) === null, 'in the morning it is too early to say (outside a storm)');
+  const M = fresh(3); M.tau = 5; at(M, 10, 120); ok(nightPlan(M, M.flow, 24) !== null, 'but in a storm, when the panels make little, it is said all day long');
+  const N = at(fresh(3), 23, 120); ok(nightPlan(N, N.flow, 24) === null, 'and at night it is too late: then the battery warning speaks');
+  const p = shedPlan(A, A.flow, np.cut);
+  ok(p.list.length >= 1 && p.list.length <= 4 && p.list.every((k) => SHED.includes(k) || k === 'isru' || k === 'water') && !p.list.includes('lifesupport') && !p.list.includes('thermal'), 'the list for the night: at most four, and never life support or heat', p.list.join(' '));
+  ok(p.saved >= np.cut - 1e-9 || !p.more, 'it saves what the night is short by, or it is all there is');
+  for (const k of p.list) A.on[k] = false; A.flow = marsFlows(A); const after = nightPlan(A, A.flow);
+  ok(after === null || after.need < np.need, 'with those off, the night needs less', after ? `still ${after.need.toFixed(0)} kWh` : 'covered');
+  const D = at(fresh(3), 16, 120); D.deadline = D.t + 3; ok(nightPlan(D, D.flow) === null || nightPlan(D, D.flow).nightH <= 3, 'a mission that ends tonight only counts the hours that are left');
+  const Z = at(fresh(3), 12, 200), z = shedPlan(Z, { ...Z.flow, net: -3 }); ok(z.list.length >= 1 && z.saved >= 3, 'short by 3 kW: the first thing on the list covers it', z.list.join(' ')); }
 
 console.log(`${pass} checks passed${fail ? ', ' + fail + ' FAILED' : ''}`);
 process.exitCode = fail ? 1 : 0;
