@@ -2,6 +2,7 @@
 import * as THREE from '../lib/three.module.min.js';
 import { K, STATIONS, SITES, PIT, TUBE, HALL, AIRLOCK, BASE, MINE, ROOMS, ROOM_H, MOUNTS, CAR_PAD, SHIP_PAD, BENCH, FAB, FAB_OUT, roomRect, roomSpot, doorSpot } from './config.js';
 import { tt } from './i18n.js';
+import { surfaceRoute, stationRoute } from './route.js';
 
 const V3 = THREE.Vector3;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -967,14 +968,13 @@ export class World {
   // Corner points of the walk from (px,pz) to (tx,tz). Underground it leaves a room by its door, follows the hall, and enters the target room by its door.
   _guideRoute(px, pz, tx, tz) {
     if (this.planet === 'mars') return this.mars.route(px, pz, tx, tz);
-    const pts = [[px, pz]]; if (this.zone !== 'deep') return [...pts, [tx, tz]];
-    const roomAt = (x, z) => ROOMS.find((r) => { const q = roomRect(r); return x > q.x0 - 0.4 && x < q.x1 + 0.4 && z > q.z0 - 0.4 && z < q.z1 + 0.4; });
-    const ra = roomAt(px, pz), rb = roomAt(tx, tz), caveA = !this.indoors(px, pz), caveB = !this.indoors(tx, tz), gate = [AIRLOCK.x0 - 1.6, 0];
-    if (!(ra && ra === rb) && !(caveA && caveB)) {
-      if (ra) pts.push([ra.door, ra.side * 5.6], [ra.door, 0]); else if (caveA) pts.push(gate, [AIRLOCK.x0 + 1.5, 0]);
-      if (rb) pts.push([rb.door, 0], [rb.door, rb.side * 5.6]); else if (caveB) pts.push([AIRLOCK.x0 + 1.5, 0], gate);
+    if (this.zone !== 'deep') {   // the surface: round the buildings and the pit, as on Mars. In the air the hopper flies straight.
+      const c = this._ctx || {}; if (c.shipFly) return [[px, pz], [tx, tz]];
+      const pad = c.carOn ? 2.4 : c.digOn ? 2.6 : 1.1, key = `${Math.round(px / 1.5)},${Math.round(pz / 1.5)},${Math.round(tx)},${Math.round(tz)},${pad},${this.colliders.top.length}`, R = this._topRoute;
+      if (R && R.key === key) { R.pts[0] = [px, pz]; return R.pts; }
+      const r = surfaceRoute(this.colliders.top, { x: PIT.x, z: PIT.z, r: PIT.r + 6.5 }, px, pz, tx, tz, pad); this._topRoute = { key, pts: r }; return r;
     }
-    pts.push([tx, tz]); return pts.filter((p, i) => !i || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) > 0.3);
+    return stationRoute(px, pz, tx, tz, this._stationEnv || (this._stationEnv = { rooms: ROOMS, rect: roomRect, hallZ: HALL.z1, airlockX: AIRLOCK.x0, indoors: (x, z) => this.indoors(x, z) }));
   }
   _guideUpdate(dt, p) {
     const L = this.guideLine, T = this.target; if (!L) return;
@@ -998,6 +998,7 @@ export class World {
     pos.needsUpdate = true; uv.needsUpdate = true; L.geometry.setDrawRange(0, (S.length - 1) * 6); L.visible = true;
   }
   update(dt, S, focus, ctx = {}) {
+    this._ctx = ctx;   // the route on the surface needs to know whether you walk, drive or fly
     if (this.planet === 'mars') { this._guideUpdate(dt, ctx.player || focus); return this.mars.update(dt, S, focus, ctx); }
     this._guideUpdate(dt, ctx.player || focus);
     this.t += dt; const t = this.t, M = this.M;

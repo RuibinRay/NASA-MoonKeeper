@@ -113,6 +113,7 @@ docs/MARS_SCIENCE.md  every Mars number in the game, its class (observed, demons
 js/world.js           3D world (surface base, other stations, the cave, the white-panelled station, vehicles)
 js/actors.js          astronaut, REGO, BOLT robots
 js/follow.js          how REGO keeps up with you without walking into walls (pure logic; `node tools/follow_test.mjs` runs 44 checks)
+js/route.js           the way the yellow guide line takes: round buildings and the pit on the Moon's surface, through the doors in the station, round buildings on Mars (pure logic; `node tools/guide_test.mjs` runs 20 checks)
 js/ui.js, icons.js    interface and hand-drawn icons
 js/minigames.js       dish aiming, air-filter build, fire fighting
 js/nasa-events.js     generated data module (see docs)
