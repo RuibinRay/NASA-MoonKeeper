@@ -523,7 +523,6 @@ export class UI {
   }
   _labels() {
     const G = this.G, cam = G.world.camera, v = this._v || (this._v = G.world.stationPos('solar').clone()), w = innerWidth, h = innerHeight, bad = G.badPlaces ? G.badPlaces() : {}, tid = G.world.target && G.world.target.id, now = performance.now(), list = [];
-    if (!this._hudR || now - this._hudAt > 400) { this._hudAt = now; this._hudR = ['#clock', '#gauges', '#side', '#alerts'].map((q) => $(q).getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0); }   // where the HUD is, looked up a few times a second
     const each = (s, name) => {
       const l = this.labels[s.id]; if (s.zone !== G.player.zone) { l.classList.add('hidden'); return; }
       v.copy(G.world.stationPos(s.id)); const dist = Math.hypot(v.x - G.player.pos.x, v.z - G.player.pos.z); v.y += s.zone === 'top' ? 5 : 3.2; v.project(cam);
@@ -532,8 +531,16 @@ export class UI {
       list.push({ l, name, dist, goal, bad: !!bad[s.id] && !goal, x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h });
     };
     for (const s of STATIONS) each(s, s.name); for (const s of SITES) each({ id: s.id, zone: 'top', site: true }, s.name);
-    // The place the guide points at goes first and is always shown. Every other label is left out when it would lie under the top of
-    // the HUD or the alert list, or on top of the label of a nearer place.
+    this.placeLabels(list);
+  }
+  // Puts world labels on the screen, for the Moon and for Mars. list = [{ l (the element), name, dist, goal, bad, x, y }].
+  placeLabels(list) {
+    const now = performance.now();
+    // where the HUD is, looked up a few times a second: the clock, the gauges, the side column, the alerts, the objective strip and its
+    // buttons, the bottom bar, REGO's bubble and the E prompt
+    if (!this._hudR || now - this._hudAt > 400) { this._hudAt = now; this._hudR = ['#clock', '#gauges', '#side', '#alerts', '#objective', '#goal-x', '#train-skip', '#banner', '#btns', '#rego', '#prompt'].map((q) => $(q)).filter((e) => e && !e.classList.contains('hidden')).map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0); }
+    // The place the guide points at goes first and is always shown. Every other label is left out when it would lie under any part
+    // of the HUD, or on top of the label of a nearer place.
     list.sort((a, b) => (b.goal - a.goal) || a.dist - b.dist);
     const taken = [], over = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
     for (const q of list) { const l = q.l, lw = l._w || 64 + q.name.length * 7, lh = l._h || 24, box = { left: q.x - lw / 2 - 3, right: q.x + lw / 2 + 3, top: q.y - lh - 2, bottom: q.y + 2 };
@@ -559,8 +566,8 @@ export class UI {
       <h3>${res.win ? tt('How you did it') : tt('Here is what happened — and why')}</h3><ol class="chain">${res.why.map((x) => `<li>${gloss(x)}</li>`).join('')}</ol>
       <div class="learn">${tt`<b>The real science:</b> ${gloss(res.science)}`}</div>${res.tip ? `<div class="note">${tt`<b>Next time:</b> ${res.tip}`}</div>` : ''}
       <h3>${tt`Your mission, hour by hour`}</h3><canvas id="chart" width="1800" height="460"></canvas><div class="legend">${series.map((s) => `<span><i style="background:${s[1]}"></i>${s[0]}</span>`).join('')}<span><i style="background:#182a52"></i>${tt('night')}</span></div>
-      <h3>${tt`Mission log`}</h3><div class="logbox">${S.log.map((l) => `<div><b>${fmt.day(l.t)} ${fmt.clock(l.t)}</b> — ${l.text}</div>`).join('') || tt('Nothing logged.')}</div>
-      <div class="row" style="margin-top:16px"><button class="primary" id="again">${res.win ? tt('Play again') : tt('Try again')}</button><span class="fine" style="margin:0">${tt`Science notes and data sources: see the docs folder of this project.`}</span></div></div>`;
+      <h3>${tt`Mission log`}</h3><div class="logbox">${S.log.map((l) => `<div><b>${S.hours !== Infinity && l.t >= S.m.days * 24 ? tt('Rescue day') : fmt.day(l.t)} ${fmt.clock(l.t)}</b> — ${l.text}</div>`).join('') || tt('Nothing logged.')}</div>
+      <div class="row" style="margin-top:16px"><button class="primary" id="again">${res.win ? tt('Play again') : tt('Try again')}</button><button id="end-mars">${tt('Now try Mars')}</button><span class="fine" style="margin:0">${tt`Science notes and data sources: see the docs folder of this project.`} <a href="docs/SCIENCE_AND_SOURCES.html" target="_blank" rel="noopener">${tt('Open the science notes')}</a></span></div></div>`;
     const cv = $('#chart'), c = cv.getContext('2d'), W = cv.width, H = cv.height, T0 = S.t0, T = Math.max(S.t - T0, 24), X = (t) => 50 + ((t - T0) / T) * (W - 70), Y = (v) => H - 34 - clamp(v, 0, 1) * (H - 60);
     c.fillStyle = '#060b12'; c.fillRect(0, 0, W, H); const ns = S.m.sunsetDay * 24; if (ns < T) { c.fillStyle = '#101d3c'; c.fillRect(X(T0 + ns), 10, X(T0 + T) - X(T0 + ns), H - 44); }
     c.strokeStyle = 'rgba(255,255,255,.08)'; c.fillStyle = '#9bb0c3'; c.font = '20px sans-serif'; const stepD = Math.max(1, Math.ceil(T / 24 / 12));
@@ -568,5 +575,6 @@ export class UI {
     for (const l of S.log) if (l.kind === 'bad') { c.fillStyle = 'rgba(255,82,82,.45)'; c.fillRect(X(l.t) - 1, 10, 3, H - 44); }
     for (const [, col, k] of series) { c.strokeStyle = col; c.lineWidth = k === 6 ? 4 : 2.5; c.beginPath(); S.hist.forEach((hh, i) => (i ? c.lineTo(X(hh[0]), Y(hh[k])) : c.moveTo(X(hh[0]), Y(hh[k])))); c.stroke(); }
     $('#again').onclick = () => { this.G.clearSave?.(); location.reload(); };
+    $('#end-mars').onclick = () => { this.G.clearSave?.(); let trained = false; try { trained = localStorage.getItem('mk-mars-trained') === '1'; } catch (e) { /* no storage: start with the training */ } const u = new URL(location.href); u.search = ''; u.searchParams.set('go', trained ? 'mars' : 'mars-train'); location.href = u.href; };
   }
 }

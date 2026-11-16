@@ -123,7 +123,7 @@ export const STATIONS = [
   { id: 'wplant', zone: 'top', name: tt('Water Plant'),         ico: 'room',   pos: [46, -18],    r: 4.5 },
   { id: 'mine',  zone: 'top',  name: tt('Moon-Dust Mine'),      ico: 'room',   pos: [78, -23],    r: 6, info: tt('Diggers scoop up moon soil and a conveyor carries it to the Oxygen Plant next door. Nearly half the weight of moon soil is oxygen, locked inside the rock.'), hit: tt('The digger still works. Repair the Oxygen Plant and it will feed it again.') },
   { id: 'icemine', zone: 'top', name: tt('Polar Ice Mine'),     ico: 'room',   pos: [MINE.x + 5, MINE.z - 5], r: 5.5 },
-  { id: 'lift',  zone: 'deep', name: tt('Elevator to Surface'), ico: 'lift',   pos: [TUBE.skyX, 0], r: 6 },
+  { id: 'lift',  zone: 'deep', name: tt('Elevator to Surface'), ico: 'lift',   pos: [TUBE.skyX, 0], r: 8 },   // r reaches the spot you arrive on (6.2 m away)
   { id: 'suit',  zone: 'deep', name: tt('Suit Lockers'),        ico: 'room',   pos: [-65.2, -1.6], r: 3.3 },
   { id: 'bench', zone: 'deep', name: tt('Fix-It Bench'),        ico: 'wrench', pos: BENCH,      r: 4.5 },
   { id: 'fab',   zone: 'deep', name: tt('Robot-Arm Builder'),   ico: 'arm',    pos: FAB,        r: 4.5 },

@@ -711,3 +711,13 @@ From the walkthrough of 15 Nov 2026 (W8 to W10).
 **Sleep.** Woken by something going wrong, the toast now reads "Something has gone wrong. You wake up early." where it said "You wake up rested". "Sleep for 8 hours" no longer glows for ten hours after you got up, or while the battery is running down.
 
 **Two lines that did not fit.** A rover or hopper whose battery dies while you are down in the station is now a short toast; the "walk home: follow the line to the elevator" warning is only for someone on the surface. On Mars, cold rooms with the heat pump running again read "The rooms are still cold, but the heat pump is running again", where REGO said the pump "needs to be on".
+
+### Screen and controls (walkthrough W27 to W37)
+
+**World labels keep clear of the whole HUD, on both worlds.** The Moon's rule (never over the HUD, never on a nearer label, the goal always shown) is now one function, `ui.placeLabels`, and Mars uses it too: on Mars a label used to sit on the health bar. The HUD it keeps clear of now includes the objective strip and its buttons, the bottom bar, REGO's bubble and the E prompt.
+
+**Carrying.** The health bar is never squeezed under 30 px: the name of what you carry drops to a line of its own when the two do not fit. Carrying something into a room, **E is now the room and Q puts the thing down**, the same as at the Suit Lockers and the elevator (it was the other way round in rooms, and a panel was easily put down by mistake). The elevator's reach now covers the spot you arrive on, so E there rides and does not drop what you carry.
+
+**Smaller things.** The objective strip steps aside while a job is being done. The home page no longer shows both scroll bars (its picture overhangs the window by 14 px so it can drift with the mouse; that overhang counted as something to scroll to). Nothing shows through the sticky Launch bar on the mission page. On Mars, buildings you switched off are one alert ("3 buildings are switched off"), not one each. A crop that needs two days or more says so in days. The Moon's mission log says "Rescue day" where the clock does. Both end screens have a second button ("Now try Mars", "Back to the start") and a link to the science notes. A paused game dims and loses its colour, so it cannot be mistaken for a frozen one.
+
+**Not done, because they need to be looked at:** the camera going into the cave rock while dragging a panel, and REGO standing in front of the astronaut in a job scene. The camera was reworked after the walkthrough (smooth zoom, a camera lock), so the first may already be different. The Mars clock ending on "24:00" is on purpose: the lander comes at the very end of the last sol.
