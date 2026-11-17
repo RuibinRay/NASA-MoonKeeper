@@ -98,7 +98,7 @@ export function prose(text) {
 }
 
 // Where a literal is used, if not on screen: comparisons, keys, selectors, storage, sounds...
-const CALLS = /(?:^|[^\w$])(?:\$|\$\$|querySelector|querySelectorAll|getElementById|closest|matches|add|remove|toggle|contains|addEventListener|removeEventListener|getItem|setItem|removeItem|createElement|setAttribute|getAttribute|hasAttribute|RegExp|startsWith|endsWith|indexOf|includes|split|getContext|play|log|warn|error|info|debug|has|get|delete)\(\s*$/;
+const CALLS = /(?:^|[^\w$])(?:\$|\$\$|querySelector|querySelectorAll|getElementById|closest|matches|matchMedia|add|remove|toggle|contains|addEventListener|removeEventListener|getItem|setItem|removeItem|createElement|setAttribute|getAttribute|hasAttribute|RegExp|startsWith|endsWith|indexOf|includes|split|getContext|play|log|warn|error|info|debug|has|get|delete)\(\s*$/;
 export function usedForCode(l) {
   const b = l.before, a = l.after;
   if (CALLS.test(b)) return 'argument of a lookup call';

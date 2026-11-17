@@ -454,6 +454,47 @@ button.primary{font-size:19px;padding:14px 34px;border-radius:14px;transition:tr
   #job{bottom:330px}
 }
 
+/* ---------- phones, pass 3: the gauges and the alert list fold away (js/ui.js fold) ----------
+   Folded, the seven gauges are one slim row of icons and bars, and the alerts are their most urgent line with a "+2" button.
+   The goal strip sits just under the gauges and the alerts just under the goal, measured as they change (--g-b, --clock-b, --obj-b). */
+#g-fold,#al-fold{display:none}
+@media (max-width:600px) and (orientation:portrait),(max-height:480px) and (orientation:landscape){
+  #gauges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}.gauge{max-width:none}   /* open: four and three, and the fold button in the last place */
+  #g-fold{display:grid;place-items:center;min-height:30px;padding:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--cyan);backdrop-filter:blur(8px)}
+  #g-fold .ic{width:18px;height:18px;transform:rotate(180deg);transition:transform .25s}
+  #hud.fold-g #gauges{grid-template-columns:repeat(8,minmax(0,1fr));cursor:pointer}
+  #hud.fold-g #g-fold{min-height:0;border-radius:10px}#hud.fold-g #g-fold .ic{transform:none}
+  #hud.fold-g .gauge{padding:4px 5px 5px;border-radius:10px}
+  #hud.fold-g .gauge .g-top{justify-content:center}
+  #hud.fold-g .gauge .g-top span,#hud.fold-g .gauge .g-top b,#hud.fold-g .gauge .g-sub{display:none}
+  #hud.fold-g .gauge .g-top .ic{display:block;width:15px;height:15px}
+  #hud.fold-g .gauge .bar{height:5px;margin:4px 0 0}
+  #al-fold{display:flex;align-items:center;justify-content:center;gap:3px;flex:none;align-self:flex-start;min-width:34px;min-height:26px;padding:2px 9px;border-radius:8px;background:rgba(8,14,22,.88);border:1px solid var(--line);color:#fff;font:700 12.5px var(--head);direction:ltr}   /* "+4", never "4+", in Arabic too */
+  #al-fold.hidden{display:none}
+  #al-fold .ic{width:15px;height:15px;transform:rotate(180deg)}
+  #hud:not(.fold-a) #al-fold{order:-1}   /* open: the fold button heads the list */
+  #hud.fold-a #alerts{flex-direction:row;align-items:stretch;gap:5px}
+  #hud.fold-a #alerts .alert{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #hud.fold-a #alerts .alert:nth-child(n+2),#hud.fold-a #alerts .alert small{display:none}
+  #hud.fold-a #al-fold .ic{transform:none}
+  #hud:not(.fold-a) #alerts{overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent}
+  #hud:not(.fold-a) #alerts .alert:nth-child(n+3),#hud:not(.fold-a) #alerts .alert small{display:block}   /* open: every alert, each with its second line */
+}
+@media (max-width:600px) and (orientation:portrait){
+  #objective{top:calc(var(--g-b,240px) + 6px)}
+  #goal-x{top:calc(var(--obj-b,290px) + 5px)}
+  #hud #alerts{top:calc(var(--obj-b,290px) + 6px)}
+  #hud.fold-a:has(#goal-x.hidden) #alerts{max-width:calc(100vw - 16px)}   /* one line, and nothing beside it: the whole width */
+  #hud:not(.fold-a) #alerts{max-height:calc(100vh - var(--obj-b,290px) - 270px)}   /* open, it stops above the stick */
+}
+@media (max-height:480px) and (orientation:landscape){
+  #clock{flex:0 1 auto;min-width:0;max-width:30vw}#clock-main{flex-wrap:wrap;row-gap:2px}#clock-sub{flex-wrap:wrap;row-gap:1px}   /* a long day or sunset line wraps, and the gauges keep room for their names */
+  #objective{top:calc(max(var(--g-b,100px), var(--clock-b,86px)) + 6px)}
+  #goal-x{top:calc(var(--obj-b,130px) + 4px)}
+  #hud #alerts{top:calc(var(--clock-b,86px) + 6px);max-width:calc(30vw - 16px);max-height:none}   /* under the clock, and never as far in as the goal strip (40vw wide, in the middle) */
+  #hud:not(.fold-a) #alerts{max-height:calc(100vh - var(--clock-b,86px) - 150px)}   /* open, it stops above the stick */
+}
+
 /* ---------- interface motion: things arrive, count and settle; nothing loops for attention unless it is an emergency ---------- */
 @keyframes fadeIn{from{opacity:0}}
 @keyframes winIn{from{opacity:0;transform:translateY(16px) scale(.97)}}
