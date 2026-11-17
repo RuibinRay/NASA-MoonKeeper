@@ -43,4 +43,5 @@ export const IC = {
   book: P('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6"/>'),
   ok: P('<path d="M4 12l5 5L20 6"/>'),
   gear: P('<circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'),
+  chev: P('<path d="M6 9l6 6 6-6"/>'),
 };

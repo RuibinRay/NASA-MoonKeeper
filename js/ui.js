@@ -6,6 +6,7 @@ import { realMoonSvg, realFacts, roundTo, ROVER_KMH } from './moonmap.js';
 import { tt, LANG, LANGS } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
+const PHONE = matchMedia('(max-width:600px) and (orientation:portrait), (max-height:480px) and (orientation:landscape)');   // the same two cases as the phone rules in style.css
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
@@ -132,6 +133,27 @@ export class UI {
     $('#rego').onclick = () => $('#rego').classList.add('hidden'); $('#dialog').onclick = () => this._dlgNext?.(); addEventListener('click', (e) => { if (this.dialogOpen && !this.modalStack && !e.target.closest('#dialog, #modal, #comic, button')) this._dlgNext?.(); });
     this.mm = $('#minimap').getContext('2d');
     { const hm = el('div', 'hidden'); hm.id = 'home'; $('#you').insertAdjacentElement('afterend', hm); }   // one line under the health bar: the charge the rover or hopper needs to get home
+    // Phones: the gauges and the alert list fold away to a slim strip, so they no longer cover the station. Folded, each gauge is its icon
+    // and its bar (amber or red when it needs you), and the alert list is its most urgent line with a "+2" button for the rest. One tap
+    // opens them again, and the choice is kept for next time. On bigger screens nothing folds: the buttons are not shown there.
+    this._fold = { g: true, a: true }; try { Object.assign(this._fold, JSON.parse(localStorage.getItem('mk-fold') || '{}')); } catch (e) { /* no storage: start folded */ }
+    const gf = el('button', '', IC.chev); gf.id = 'g-fold'; gf.onclick = (e) => { e.stopPropagation(); this.fold('g', !this._fold.g); }; gz.appendChild(gf);
+    gz.addEventListener('click', () => { if (this._fold.g && PHONE.matches) this.fold('g', false); });   // folded, a tap anywhere on the strip opens it
+    const ab = $('#alerts'), af = el('button', 'hidden'); af.id = 'al-fold'; ab.appendChild(af); this._gf = gf; this._af = af; af.onclick = (e) => { e.stopPropagation(); this.fold('a', !this._fold.a); };
+    this._alSync = () => { const n = ab.querySelectorAll('.alert').length; if (ab.lastChild !== af) ab.appendChild(af); af.classList.toggle('hidden', !n); const more = this._fold.a && n > 1 ? '+' + (n - 1) : ''; if (af.dataset.k !== more) { af.dataset.k = more; af.innerHTML = more || IC.chev; } };
+    new MutationObserver(this._alSync).observe(ab, { childList: true });   // the Moon and Mars each redraw the list; the button goes back at its end
+    // On phones the goal strip sits just under the gauges, and the alerts under the clock (sideways) or the goal (upright), wherever folding
+    // or a long name puts them: style.css reads these three measurements.
+    const hud = $('#hud'), bot = (q) => { const e = $(q); return e && e.offsetParent ? e.offsetTop + e.offsetHeight : 0; };
+    const place = () => { hud.style.setProperty('--g-b', bot('#gauges') + 'px'); hud.style.setProperty('--clock-b', bot('#clock') + 'px'); hud.style.setProperty('--obj-b', (bot('#objective') || Math.max(bot('#gauges'), bot('#clock'))) + 'px'); };
+    const ro = new ResizeObserver(place); for (const q of ['#top', '#gauges', '#clock', '#objective']) ro.observe($(q));
+    this.fold();
+  }
+  fold(k, v) {
+    const f = this._fold; if (k) { f[k] = v; try { localStorage.setItem('mk-fold', JSON.stringify(f)); } catch (e) { /* no storage: kept until the page closes */ } }
+    const h = $('#hud'), gf = this._gf, af = this._af; h.classList.toggle('fold-g', f.g); h.classList.toggle('fold-a', f.a);
+    gf.title = f.g ? tt('Show all the numbers') : tt('Fold the gauges away'); gf.setAttribute('aria-label', gf.title); gf.setAttribute('aria-expanded', String(!f.g));
+    af.title = f.a ? tt('Show all the alerts') : tt('Fold the alerts away'); af.setAttribute('aria-label', af.title); af.setAttribute('aria-expanded', String(!f.a)); this._alSync();
   }
   get busy() { return this.modalStack > 0 || this.dialogOpen || this.comicOpen; }
   showHud(on) { const h = $('#hud'); if (on && h.classList.contains('hidden')) { h.classList.add('enter'); clearTimeout(this._hudT); this._hudT = setTimeout(() => h.classList.remove('enter'), 900); } h.classList.toggle('hidden', !on); }
